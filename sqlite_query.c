@@ -1,0 +1,359 @@
+/*-------------------------------------------------------------------------
+ *
+ * SQLite Foreign Data Wrapper for PostgreSQL
+ *
+ * Portions Copyright (c) 2018, TOSHIBA CORPORATION
+ *
+ * IDENTIFICATION
+ * 		sqlite_query.c
+ *
+ *-------------------------------------------------------------------------
+ */
+
+#include "postgres.h"
+
+#include "sqlite_fdw.h"
+
+#include <stdio.h>
+
+#include <sqlite3.h>
+
+#include "foreign/fdwapi.h"
+#include "foreign/foreign.h"
+#include "nodes/makefuncs.h"
+#include "storage/ipc.h"
+#include "utils/array.h"
+#include "utils/builtins.h"
+#include "utils/numeric.h"
+#include "utils/date.h"
+#include "utils/datetime.h"
+#include "utils/hsearch.h"
+#include "utils/syscache.h"
+#include "utils/lsyscache.h"
+#include "utils/rel.h"
+#include "utils/timestamp.h"
+#include "utils/formatting.h"
+#include "utils/memutils.h"
+#include "utils/guc.h"
+#include "access/htup_details.h"
+#include "access/sysattr.h"
+#include "access/reloptions.h"
+#include "commands/defrem.h"
+#include "commands/explain.h"
+#include "commands/vacuum.h"
+#include "funcapi.h"
+#include "miscadmin.h"
+#include "nodes/makefuncs.h"
+#include "nodes/nodeFuncs.h"
+#include "optimizer/cost.h"
+#include "optimizer/paths.h"
+#include "optimizer/prep.h"
+#include "optimizer/restrictinfo.h"
+#include "optimizer/var.h"
+#include "optimizer/cost.h"
+#include "optimizer/pathnode.h"
+#include "optimizer/plancat.h"
+#include "optimizer/planmain.h"
+#include "parser/parsetree.h"
+#include "catalog/pg_type.h"
+#include "funcapi.h"
+#include "miscadmin.h"
+#include "postmaster/syslogger.h"
+#include "storage/fd.h"
+#include "catalog/pg_type.h"
+
+
+
+
+#define DATE_SQLITE_PG(x, y) \
+do { \
+x->year = y.tm_year; \
+x->month = y.tm_mon; \
+x->day= y.tm_mday; \
+x->hour = y.tm_hour; \
+x->minute = y.tm_min; \
+x->second = y.tm_sec; \
+} while(0);
+
+
+static int	dec_bin(int n);
+static int	bin_dec(int n);
+
+
+/*
+ * convert_sqlite_to_pg: Convert Sqlite data into PostgreSQL's compatible data types
+ */
+Datum
+sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum)
+{
+	Datum		value_datum = 0;
+	Datum		valueDatum = 0;
+	regproc		typeinput;
+	HeapTuple	tuple;
+	int			typemod;
+	char		str[MAXDATELEN];
+
+	/* get the type's output function */
+	tuple = SearchSysCache1(TYPEOID, ObjectIdGetDatum(pgtyp));
+	if (!HeapTupleIsValid(tuple))
+		elog(ERROR, "cache lookup failed for type%u", pgtyp);
+
+	typeinput = ((Form_pg_type) GETSTRUCT(tuple))->typinput;
+	typemod = ((Form_pg_type) GETSTRUCT(tuple))->typtypmod;
+	ReleaseSysCache(tuple);
+
+	switch (pgtyp)
+	{
+			/*
+			 * Sqlite gives BIT / BIT(n) data type as decimal value. The only
+			 * way to retrieve this value is to use BIN, OCT or HEX function
+			 * in Sqlite, otherwise sqlite client shows the actual decimal
+			 * value, which could be a non - printable character. For exmple
+			 * in Sqlite
+			 *
+			 * CREATE TABLE t (b BIT(8)); INSERT INTO t SET b = b'1001';
+			 * SELECT BIN(b) FROM t; +--------+ | BIN(b) | +--------+ | 1001 |
+			 * +--------+
+			 *
+			 * PostgreSQL expacts all binary data to be composed of either '0'
+			 * or '1'. Sqlite gives value 9 hence PostgreSQL reports error.
+			 * The solution is to convert the decimal number into equivalent
+			 * binary string.
+			 */
+
+		case BYTEAOID:
+			{
+				int			blobsize = sqlite3_column_bytes(stmt, attnum);
+
+				value_datum = (Datum) palloc0(blobsize + VARHDRSZ);
+				memcpy(VARDATA(value_datum), sqlite3_column_blob(stmt, attnum), blobsize);
+				SET_VARSIZE(value_datum, blobsize + VARHDRSZ);
+				return PointerGetDatum(value_datum);
+			}
+		case VARBITOID:
+		case BITOID:
+			sprintf(str, "%d", dec_bin(sqlite3_column_int(stmt, attnum)));
+			valueDatum = CStringGetDatum((char *) str);
+			break;
+		case INT2OID:
+			{
+				int			value = sqlite3_column_int(stmt, attnum);
+
+				return Int16GetDatum(value);
+			}
+		case INT4OID:
+			{
+				int			value = sqlite3_column_int(stmt, attnum);
+
+				return Int32GetDatum(value);
+			}
+		case INT8OID:
+			{
+				sqlite3_int64 value = sqlite3_column_int64(stmt, attnum);
+
+				return Int64GetDatum(value);
+			}
+		case FLOAT4OID:
+
+			{
+				double		value = sqlite3_column_double(stmt, attnum);
+
+				return Float4GetDatum((float4) value);
+				break;
+			}
+		case FLOAT8OID:
+			{
+				double		value = sqlite3_column_double(stmt, attnum);
+
+				return Float8GetDatum((float8) value);
+				break;
+			}
+		default:
+			valueDatum = CStringGetDatum((char *) sqlite3_column_text(stmt, attnum));
+	}
+	/* convert string value to appropriate type value */
+	value_datum = OidFunctionCall3(typeinput, valueDatum, ObjectIdGetDatum(InvalidOid), Int32GetDatum(typemod));
+
+	return value_datum;
+}
+
+/*
+ * bind_sql_var:
+ * Bind the values provided as DatumBind the values and nulls to modify the target table (INSERT/UPDATE)
+ */
+void
+sqlite_bind_sql_var(Oid type, int attnum, Datum value, sqlite3_stmt * stmt, bool *isnull)
+{
+	int			ret = SQLITE_OK;
+
+	attnum++;
+
+	/* Avoid to bind buffer in case value is NULL */
+	if (*isnull)
+	{
+		sqlite3_bind_null(stmt, attnum);
+		return;
+	}
+
+	switch (type)
+	{
+		case INT2OID:
+			{
+				int16		dat = DatumGetInt16(value);
+
+				ret = sqlite3_bind_int(stmt, attnum, dat);
+				break;
+			}
+		case INT4OID:
+			{
+				int32		dat = DatumGetInt32(value);
+
+				ret = sqlite3_bind_int(stmt, attnum, dat);
+				break;
+			}
+		case INT8OID:
+			{
+				int64		dat = DatumGetInt64(value);
+
+				ret = sqlite3_bind_int64(stmt, attnum, dat);
+				break;
+			}
+
+		case FLOAT4OID:
+
+			{
+				float4		dat = DatumGetFloat4(value);
+
+				ret = sqlite3_bind_double(stmt, attnum, (double) dat);
+				break;
+			}
+		case FLOAT8OID:
+			{
+				float8		dat = DatumGetFloat8(value);
+
+				ret = sqlite3_bind_double(stmt, attnum, dat);
+				break;
+			}
+
+		case NUMERICOID:
+			{
+				Datum		valueDatum = DirectFunctionCall1(numeric_float8, value);
+				float8		dat = DatumGetFloat8(valueDatum);
+
+				ret = sqlite3_bind_double(stmt, attnum, dat);
+				break;
+			}
+		case BOOLOID:
+			{
+				int32		dat = DatumGetInt32(value);
+
+				ret = sqlite3_bind_int(stmt, attnum, dat);
+				break;
+			}
+
+		case BPCHAROID:
+		case VARCHAROID:
+		case TEXTOID:
+		case JSONOID:
+		case NAMEOID:
+		case TIMEOID:
+		case TIMESTAMPOID:
+		case TIMESTAMPTZOID:
+			{
+				/* Bind as text because SQLite does not have these types */
+				char	   *outputString = NULL;
+				Oid			outputFunctionId = InvalidOid;
+				bool		typeVarLength = false;
+
+				getTypeOutputInfo(type, &outputFunctionId, &typeVarLength);
+				outputString = OidOutputFunctionCall(outputFunctionId, value);
+				ret = sqlite3_bind_text(stmt, attnum, outputString, -1, SQLITE_TRANSIENT);
+				break;
+			}
+
+
+		case VARBITOID:
+		case BITOID:
+			{
+				int32		dat;
+				char	   *outputString = NULL;
+				Oid			outputFunctionId = InvalidOid;
+				bool		typeVarLength = false;
+
+				getTypeOutputInfo(type, &outputFunctionId, &typeVarLength);
+				outputString = OidOutputFunctionCall(outputFunctionId, value);
+				dat = bin_dec(atoi(outputString));
+				ret = sqlite3_bind_int(stmt, attnum, dat);
+				break;
+			}
+
+		case BYTEAOID:
+			{
+				int			len;
+				char	   *dat = NULL;
+				char	   *result = DatumGetPointer(value);
+
+				if (VARATT_IS_1B(result))
+				{
+					len = VARSIZE_1B(result) - VARHDRSZ_SHORT;
+					dat = VARDATA_1B(result);
+				}
+				else
+				{
+					len = VARSIZE_4B(result) - VARHDRSZ;
+					dat = VARDATA_4B(result);
+				}
+				ret = sqlite3_bind_blob(stmt, attnum, dat, len, SQLITE_TRANSIENT);
+				break;
+			}
+
+		default:
+			{
+				ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+								errmsg("cannot convert constant value to Sqlite value %u", type),
+								errhint("Constant value data type: %u", type)));
+				break;
+			}
+	}
+	if (ret != SQLITE_OK)
+		ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+						errmsg("Can't convert constant value to Sqlite: %s",
+							   sqlite3_errmsg(sqlite3_db_handle(stmt))),
+						errhint("Constant value data type: %u", type)));
+
+}
+
+static
+int
+dec_bin(int n)
+{
+	int			rem,
+				i = 1;
+	int			bin = 0;
+
+	while (n != 0)
+	{
+		rem = n % 2;
+		n /= 2;
+		bin += rem * i;
+		i *= 10;
+	}
+	return bin;
+}
+
+static int
+bin_dec(int n)
+{
+	int			dec = 0;
+	int			i = 0;
+	int			rem;
+
+	while (n != 0)
+	{
+		rem = n % 10;
+		n /= 10;
+		dec += rem * pow(2, i);
+		++i;
+	}
+	return dec;
+}
