@@ -1,0 +1,209 @@
+CREATE EXTENSION sqlite_fdw;
+CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
+OPTIONS (database '../../test.db');
+CREATE SERVER sqlite2 FOREIGN DATA WRAPPER sqlite_fdw;
+IMPORT FOREIGN SCHEMA public FROM SERVER sqlite_svr INTO public;
+INSERT INTO "type_STRING"(col) VALUES ('string');
+INSERT INTO "type_BOOLEAN"(col) VALUES (TRUE);
+INSERT INTO "type_BOOLEAN"(col) VALUES (FALSE);
+INSERT INTO "type_BYTE"(col) VALUES ('c');
+INSERT INTO "type_SINT"(col) VALUES (32767);
+INSERT INTO "type_SINT"(col) VALUES (-32768);
+INSERT INTO "type_BINT"(col) VALUES (9223372036854775807);
+INSERT INTO "type_BINT"(col) VALUES (-9223372036854775808);
+INSERT INTO "type_INTEGER"(col) VALUES (9223372036854775807);
+INSERT INTO "type_FLOAT"(col) VALUES (3.1415);
+INSERT INTO "type_DOUBLE"(col) VALUES (3.14159265);
+INSERT INTO "type_TIMESTAMP" VALUES ('2017.11.06 12:34:56.789', '2017.11.06');
+INSERT INTO "type_TIMESTAMP" VALUES ('2017.11.06 1:3:0', '2017.11.07');
+INSERT INTO "type_BLOB"(col) VALUES (bytea('\xDEADBEEF'));
+SELECT * FROM "type_STRING";
+  col   
+--------
+ string
+(1 row)
+
+SELECT * FROM "type_BOOLEAN";
+ col 
+-----
+ t
+ f
+(2 rows)
+
+SELECT * FROM "type_BYTE";
+ col 
+-----
+ c
+(1 row)
+
+SELECT * FROM "type_SINT";
+  col   
+--------
+  32767
+ -32768
+(2 rows)
+
+SELECT * FROM "type_BINT";
+         col          
+----------------------
+  9223372036854775807
+ -9223372036854775808
+(2 rows)
+
+SELECT * FROM "type_INTEGER";
+         col         
+---------------------
+ 9223372036854775807
+(1 row)
+
+SELECT * FROM "type_FLOAT";
+  col   
+--------
+ 3.1415
+(1 row)
+
+SELECT * FROM "type_DOUBLE";
+    col     
+------------
+ 3.14159265
+(1 row)
+
+set datestyle=ISO;
+SELECT * FROM "type_TIMESTAMP";
+           col           |          b          
+-------------------------+---------------------
+ 2017-11-06 12:34:56.789 | 2017-11-06 00:00:00
+ 2017-11-06 01:03:00     | 2017-11-07 00:00:00
+(2 rows)
+
+SELECT * FROM "type_BLOB";
+    col     
+------------
+ \xdeadbeef
+(1 row)
+
+CREATE FOREIGN TABLE BitT (p integer, a BIT(3), b BIT VARYING(5)) SERVER sqlite_svr;
+insert into bitt values(1, B'100', B'10111');
+SELECT * FROM bitt;
+ p |  a  |   b   
+---+-----+-------
+ 1 | 100 | 10111
+(1 row)
+
+insert into "type_STRING" values('TYPE');
+insert into "type_STRING" values('type');
+-- not pushdown
+SELECT  *FROM "type_STRING" WHERE col like 'TYP%';
+ col  
+------
+ TYPE
+(1 row)
+
+EXPLAIN SELECT  *FROM "type_STRING" WHERE col like 'TYP%';
+                                                  QUERY PLAN                                                   
+---------------------------------------------------------------------------------------------------------------
+ Foreign Scan on "type_STRING"  (cost=10.00..1000000.00 rows=1000000 width=32)
+   SQLite plan: SEARCH TABLE type_STRING USING COVERING INDEX sqlite_autoindex_type_STRING_1 (col>? AND col<?)
+(2 rows)
+
+-- pushdown
+SELECT  *FROM "type_STRING" WHERE col ilike 'typ%';
+ col  
+------
+ TYPE
+ type
+(2 rows)
+
+EXPLAIN SELECT  *FROM "type_STRING" WHERE col ilike 'typ%';
+                                  QUERY PLAN                                   
+-------------------------------------------------------------------------------
+ Foreign Scan on "type_STRING"  (cost=10.00..1000000.00 rows=1000000 width=32)
+   Filter: (col ~~* 'typ%'::text)
+   SQLite plan: SCAN TABLE type_STRING
+(3 rows)
+
+SELECT  *FROM "type_STRING" WHERE col ilike 'typ%' and col like 'TYPE';
+ col  
+------
+ TYPE
+(1 row)
+
+EXPLAIN SELECT  *FROM "type_STRING" WHERE col ilike 'typ%' and col like 'TYPE';
+                                                  QUERY PLAN                                                   
+---------------------------------------------------------------------------------------------------------------
+ Foreign Scan on "type_STRING"  (cost=10.00..1000000.00 rows=1000000 width=32)
+   Filter: (col ~~* 'typ%'::text)
+   SQLite plan: SEARCH TABLE type_STRING USING COVERING INDEX sqlite_autoindex_type_STRING_1 (col>? AND col<?)
+(3 rows)
+
+SELECT * FROM "type_TIMESTAMP";
+           col           |          b          
+-------------------------+---------------------
+ 2017-11-06 12:34:56.789 | 2017-11-06 00:00:00
+ 2017-11-06 01:03:00     | 2017-11-07 00:00:00
+(2 rows)
+
+EXPLAIN (VERBOSE, COSTS OFF) SELECT * FROM  "type_TIMESTAMP" WHERE col > date ('2017.11.06 12:34:56.789') ;
+                                            QUERY PLAN                                            
+--------------------------------------------------------------------------------------------------
+ Foreign Scan on public."type_TIMESTAMP"
+   Output: col, b
+   SQLite query: SELECT "col", "b" FROM main."type_TIMESTAMP" WHERE (("col" > '2017-11-06'))
+   SQLite plan: SEARCH TABLE type_TIMESTAMP USING INDEX sqlite_autoindex_type_TIMESTAMP_1 (col>?)
+(4 rows)
+
+SELECT * FROM  "type_TIMESTAMP" WHERE col > date ('2017.11.06 12:34:56.789') ;
+           col           |          b          
+-------------------------+---------------------
+ 2017-11-06 01:03:00     | 2017-11-07 00:00:00
+ 2017-11-06 12:34:56.789 | 2017-11-06 00:00:00
+(2 rows)
+
+EXPLAIN (VERBOSE, COSTS OFF) SELECT * FROM  "type_TIMESTAMP" WHERE col::text > date ('2017.11.06 12:34:56.789')::text ;
+                              QUERY PLAN                               
+-----------------------------------------------------------------------
+ Foreign Scan on public."type_TIMESTAMP"
+   Output: col, b
+   Filter: (("type_TIMESTAMP".col)::text > ('2017-11-06'::date)::text)
+   SQLite query: SELECT "col", "b" FROM main."type_TIMESTAMP"
+   SQLite plan: SCAN TABLE type_TIMESTAMP
+(5 rows)
+
+SELECT * FROM  "type_TIMESTAMP" WHERE col::text > date ('2017.11.06 12:34:56.789')::text ;
+           col           |          b          
+-------------------------+---------------------
+ 2017-11-06 12:34:56.789 | 2017-11-06 00:00:00
+ 2017-11-06 01:03:00     | 2017-11-07 00:00:00
+(2 rows)
+
+EXPLAIN  (VERBOSE, COSTS OFF) SELECT * FROM  "type_TIMESTAMP" WHERE col > b - interval '1 hour'; 
+                                   QUERY PLAN                                   
+--------------------------------------------------------------------------------
+ Foreign Scan on public."type_TIMESTAMP"
+   Output: col, b
+   Filter: ("type_TIMESTAMP".col > ("type_TIMESTAMP".b - '@ 1 hour'::interval))
+   SQLite query: SELECT "col", "b" FROM main."type_TIMESTAMP"
+   SQLite plan: SCAN TABLE type_TIMESTAMP
+(5 rows)
+
+SELECT * FROM  "type_TIMESTAMP" WHERE col > b - interval '1 hour';
+           col           |          b          
+-------------------------+---------------------
+ 2017-11-06 12:34:56.789 | 2017-11-06 00:00:00
+(1 row)
+
+EXPLAIN (VERBOSE, COSTS OFF) SELECT * FROM  "type_TIMESTAMP" WHERE col > b;
+                                     QUERY PLAN                                     
+------------------------------------------------------------------------------------
+ Foreign Scan on public."type_TIMESTAMP"
+   Output: col, b
+   SQLite query: SELECT "col", "b" FROM main."type_TIMESTAMP" WHERE (("col" > "b"))
+   SQLite plan: SCAN TABLE type_TIMESTAMP
+(4 rows)
+
+SELECT * FROM  "type_TIMESTAMP" WHERE col > b;
+           col           |          b          
+-------------------------+---------------------
+ 2017-11-06 12:34:56.789 | 2017-11-06 00:00:00
+(1 row)
+
