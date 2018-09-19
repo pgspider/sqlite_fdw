@@ -1,6 +1,6 @@
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '../../test.db');
+OPTIONS (database '/tmp/sqlitefdw_test.db');
 CREATE FOREIGN TABLE department(department_id int OPTIONS (key 'true'), department_name text) SERVER sqlite_svr; 
 CREATE FOREIGN TABLE employee(emp_id int OPTIONS (key 'true'), emp_name text, emp_dept_id int) SERVER sqlite_svr;
 CREATE FOREIGN TABLE empdata(emp_id int OPTIONS (key 'true'), emp_dat bytea) SERVER sqlite_svr;

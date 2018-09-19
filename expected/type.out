@@ -1,6 +1,6 @@
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '../../test.db');
+OPTIONS (database '/tmp/sqlitefdw_test.db');
 CREATE SERVER sqlite2 FOREIGN DATA WRAPPER sqlite_fdw;
 IMPORT FOREIGN SCHEMA public FROM SERVER sqlite_svr INTO public;
 INSERT INTO "type_STRING"(col) VALUES ('string');
