@@ -264,7 +264,7 @@ sqlite_prepare_wrapper(sqlite3 * db, char *query, sqlite3_stmt * *stmt,
 	int			rc;
 
 	elog(DEBUG1, "sqlite_fdw : %s %s\n", __func__, query);
-	rc = sqlite3_prepare(db, query, -1, stmt, pzTail);
+	rc = sqlite3_prepare_v2(db, query, -1, stmt, pzTail);
 	if (rc != SQLITE_OK)
 	{
 		ereport(ERROR,
