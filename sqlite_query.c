@@ -187,11 +187,13 @@ sqlite_bind_sql_var(Oid type, int attnum, Datum value, sqlite3_stmt * stmt, bool
 	int			ret = SQLITE_OK;
 
 	attnum++;
+	elog(DEBUG2, "sqlite_fdw : %s %d type=%u ", __func__, attnum, type);
 
-	/* Avoid to bind buffer in case value is NULL */
 	if (*isnull)
 	{
-		sqlite3_bind_null(stmt, attnum);
+		ret = sqlite3_bind_null(stmt, attnum);
+		if (ret != SQLITE_OK)
+			elog(ERROR, "sqlite3_bind_null failed with rc=%d", ret);
 		return;
 	}
 
