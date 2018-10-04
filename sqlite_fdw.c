@@ -1350,25 +1350,6 @@ sqliteExplainForeignScan(ForeignScanState *node,
 	{
 		ExplainPropertyText("SQLite query", festate->query, es);
 	}
-
-	initStringInfo(&buf);
-	appendStringInfo(&buf, "EXPLAIN QUERY PLAN %s", festate->query);
-
-	db = sqlite_get_connection(server);
-	sqlite_prepare_wrapper(db, buf.data, &stmt, NULL);
-
-	for (;;)
-	{
-		int			rc = sqlite3_step(stmt);
-
-		if (rc == SQLITE_DONE)
-			break;
-		else if (rc != SQLITE_ROW)
-			sqlitefdw_report_error(ERROR, stmt, db, sqlite3_sql(stmt), rc);
-
-		ExplainPropertyText("SQLite plan", (char *) sqlite3_column_text(stmt, 3), es);
-	}
-	sqlite3_finalize(stmt);
 }
 
 
