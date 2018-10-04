@@ -3,11 +3,24 @@ This PostgreSQL extension is a Foreign Data Wrapper for [SQLite][1].
 This version of sqlite_fdw can work with PostgreSQL 9.6 and 10.  
 
 ## 1. Installation
-1. Preapre SQLite library  
-    [Download SQLite source code][2] and [Build SQLite][3]  
+### 1. Install SQLite library
 
-2. Build and install sqlite_fdw
+For debian or ubuntu:
+<pre>
+apt-get install libsqlite3-dev
+</pre>
 
+You can also [download SQLite source code][2] and [build SQLite][3].
+
+### 2. Build and install sqlite_fdw
+
+Add a directory of pg_config to PATH and build and install sqlite_fdw.
+<pre>
+make USE_PGXS=1
+make install USE_PGXS=1
+</pre>
+
+If you want to build sqlite_fdw in a source tree of PostgreSQL, use
 <pre>
 make
 make install
