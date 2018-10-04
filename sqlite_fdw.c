@@ -1998,6 +1998,12 @@ sqlite_to_pg_type(StringInfo str, char *type)
 		}
 	}
 
+	if (strcmp(type, "datetime") == 0) {
+		appendStringInfoString(str, "timestamp");
+		pfree(type);
+		return;
+	}
+
 	for (i = 0; pg_type[i] != NULL; i++)
 	{
 		if (strncmp(type, pg_type[i], strlen(pg_type[i])) == 0)
