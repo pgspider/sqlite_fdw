@@ -629,6 +629,38 @@ SELECT * from multiprimary, numbers WHERE multiprimary.a=numbers.a;
  2 | 20 | 40 | 2 | Two
 (4 rows)
 
+INSERT INTO numbers VALUES(4, 'Four');
+-- All where clauses are pushed down
+SELECT * FROM numbers WHERE abs(a) = 4 AND upper(b) = 'FOUR' AND lower(b) = 'four';
+ a |  b   
+---+------
+ 4 | Four
+(1 row)
+
+EXPLAIN (verbose, costs off)  SELECT b, length(b) FROM numbers WHERE abs(a) = 4 AND upper(b) = 'FOUR' AND lower(b) = 'four';
+                                                          QUERY PLAN                                                           
+-------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.numbers
+   Output: b, length((b)::text)
+   SQLite query: SELECT "b" FROM main."numbers" WHERE ((abs("a") = 4)) AND ((upper("b") = 'FOUR')) AND ((lower("b") = 'four'))
+(3 rows)
+
+-- Only "length(b) = 4" are pushed down
+SELECT b, length(b) FROM numbers WHERE length(b) = 4 AND power(1, a) != 0 AND length(reverse(b)) = 4;
+  b   | length 
+------+--------
+ Four |      4
+(1 row)
+
+EXPLAIN (verbose, costs off) SELECT b, length(b) FROM numbers WHERE length(b) = 4 AND power(1, a) != 0 AND length(reverse(b)) = 4;
+                                                                   QUERY PLAN                                                                    
+-------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.numbers
+   Output: b, length((b)::text)
+   Filter: ((power('1'::double precision, (numbers.a)::double precision) <> '0'::double precision) AND (length(reverse((numbers.b)::text)) = 4))
+   SQLite query: SELECT "a", "b" FROM main."numbers" WHERE ((length("b") = 4))
+(4 rows)
+
 DROP FUNCTION test_param_WHERE();
 DROP FOREIGN TABLE numbers;
 DROP FOREIGN TABLE department;
