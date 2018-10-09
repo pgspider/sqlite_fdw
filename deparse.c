@@ -622,8 +622,6 @@ foreign_expr_walker(Node *node,
 			{
 				Aggref	   *agg = (Aggref *) node;
 				ListCell   *lc;
-
-				FuncExpr   *func = (FuncExpr *) node;
 				char	   *opername = NULL;
 				Oid			schema;
 
@@ -631,7 +629,7 @@ foreign_expr_walker(Node *node,
 				tuple = SearchSysCache1(PROCOID, ObjectIdGetDatum(agg->aggfnoid));
 				if (!HeapTupleIsValid(tuple))
 				{
-					elog(ERROR, "cache lookup failed for function %u", func->funcid);
+					elog(ERROR, "cache lookup failed for function %u", agg->aggfnoid);
 				}
 				opername = pstrdup(((Form_pg_proc) GETSTRUCT(tuple))->proname.data);
 				schema = ((Form_pg_proc) GETSTRUCT(tuple))->pronamespace;
