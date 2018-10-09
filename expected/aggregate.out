@@ -46,3 +46,26 @@ explain (costs off, verbose) select sum(a) from multiprimary group by b having a
          SQLite query: SELECT "a", "b" FROM main."multiprimary"
 (7 rows)
 
+-- stddev and variance are not pushed down
+explain (costs off, verbose) select stddev(a) from multiprimary;
+                        QUERY PLAN                         
+-----------------------------------------------------------
+ Aggregate
+   Output: stddev(a)
+   ->  Foreign Scan on public.multiprimary
+         Output: a, b, c
+         SQLite query: SELECT "a" FROM main."multiprimary"
+(5 rows)
+
+explain (costs off, verbose) select sum(a) from multiprimary group by b having variance(a) > 0;
+                           QUERY PLAN                           
+----------------------------------------------------------------
+ HashAggregate
+   Output: sum(a), b
+   Group Key: multiprimary.b
+   Filter: (variance(multiprimary.a) > '0'::numeric)
+   ->  Foreign Scan on public.multiprimary
+         Output: a, b, c
+         SQLite query: SELECT "a", "b" FROM main."multiprimary"
+(7 rows)
+

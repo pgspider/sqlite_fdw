@@ -623,6 +623,35 @@ foreign_expr_walker(Node *node,
 				Aggref	   *agg = (Aggref *) node;
 				ListCell   *lc;
 
+				FuncExpr   *func = (FuncExpr *) node;
+				char	   *opername = NULL;
+				Oid			schema;
+
+				/* get function name and schema */
+				tuple = SearchSysCache1(PROCOID, ObjectIdGetDatum(agg->aggfnoid));
+				if (!HeapTupleIsValid(tuple))
+				{
+					elog(ERROR, "cache lookup failed for function %u", func->funcid);
+				}
+				opername = pstrdup(((Form_pg_proc) GETSTRUCT(tuple))->proname.data);
+				schema = ((Form_pg_proc) GETSTRUCT(tuple))->pronamespace;
+				ReleaseSysCache(tuple);
+
+				/* ignore functions in other than the pg_catalog schema */
+				if (schema != PG_CATALOG_NAMESPACE)
+					return false;
+
+				/* these function can be passed to SQLite */
+				if (!(strcmp(opername, "sum") == 0
+					  || strcmp(opername, "avg") == 0
+					  || strcmp(opername, "max") == 0
+					  || strcmp(opername, "min") == 0
+					  || strcmp(opername, "count") == 0))
+				{
+					return false;
+				}
+
+
 				/* Not safe to pushdown when not in grouping context */
 				if (glob_cxt->foreignrel->reloptkind != RELOPT_UPPER_REL)
 					return false;
