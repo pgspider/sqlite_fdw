@@ -177,6 +177,17 @@ SELECT sum(a) A from multiprimary group by b having avg(abs(a)) > 0 AND sum(a) >
 
 SELECT * from multiprimary, numbers WHERE multiprimary.a=numbers.a;
 
+
+INSERT INTO numbers VALUES(4, 'Four');
+
+-- All where clauses are pushed down
+SELECT * FROM numbers WHERE abs(a) = 4 AND upper(b) = 'FOUR' AND lower(b) = 'four';
+EXPLAIN (verbose, costs off)  SELECT b, length(b) FROM numbers WHERE abs(a) = 4 AND upper(b) = 'FOUR' AND lower(b) = 'four';
+
+-- Only "length(b) = 4" are pushed down
+SELECT b, length(b) FROM numbers WHERE length(b) = 4 AND power(1, a) != 0 AND length(reverse(b)) = 4;
+EXPLAIN (verbose, costs off) SELECT b, length(b) FROM numbers WHERE length(b) = 4 AND power(1, a) != 0 AND length(reverse(b)) = 4;
+
 DROP FUNCTION test_param_WHERE();
 DROP FOREIGN TABLE numbers;
 DROP FOREIGN TABLE department;

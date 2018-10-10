@@ -379,7 +379,69 @@ foreign_expr_walker(Node *node,
 
 		case T_FuncExpr:
 			{
-				return false;
+				FuncExpr   *func = (FuncExpr *) node;
+				char	   *opername = NULL;
+				Oid			schema;
+
+				/* get function name and schema */
+				tuple = SearchSysCache1(PROCOID, ObjectIdGetDatum(func->funcid));
+				if (!HeapTupleIsValid(tuple))
+				{
+					elog(ERROR, "cache lookup failed for function %u", func->funcid);
+				}
+				opername = pstrdup(((Form_pg_proc) GETSTRUCT(tuple))->proname.data);
+				schema = ((Form_pg_proc) GETSTRUCT(tuple))->pronamespace;
+				ReleaseSysCache(tuple);
+
+				/* ignore functions in other than the pg_catalog schema */
+				if (schema != PG_CATALOG_NAMESPACE)
+					return false;
+
+				/* these function can be passed to SQLite */
+				if (!(strcmp(opername, "abs") == 0
+					  || strcmp(opername, "length") == 0
+					  || strcmp(opername, "lower") == 0
+					  || strcmp(opername, "ltrim") == 0
+					  || strcmp(opername, "replace") == 0
+					  || strcmp(opername, "round") == 0
+					  || strcmp(opername, "rtrim") == 0
+					  || strcmp(opername, "substr") == 0
+					  || strcmp(opername, "upper") == 0))
+				{
+					return false;
+				}
+
+				if (!foreign_expr_walker((Node *) func->args,
+										 glob_cxt, &inner_cxt))
+					return false;
+
+
+				/*
+				 * If function's input collation is not derived from a foreign
+				 * Var, it can't be sent to remote.
+				 */
+				if (func->inputcollid == InvalidOid)
+					 /* OK, inputs are all noncollatable */ ;
+				else if (inner_cxt.state != FDW_COLLATE_SAFE ||
+						 func->inputcollid != inner_cxt.collation)
+					return false;
+
+				/*
+				 * Detect whether node is introducing a collation not derived
+				 * from a foreign Var.  (If so, we just mark it unsafe for now
+				 * rather than immediately returning false, since the parent
+				 * node might not care.)
+				 */
+				collation = func->funccollid;
+				if (collation == InvalidOid)
+					state = FDW_COLLATE_NONE;
+				else if (inner_cxt.state == FDW_COLLATE_SAFE &&
+						 collation == inner_cxt.collation)
+					state = FDW_COLLATE_SAFE;
+				else if (collation == DEFAULT_COLLATION_OID)
+					state = FDW_COLLATE_NONE;
+				else
+					state = FDW_COLLATE_UNSAFE;
 			}
 			break;
 		case T_OpExpr:
@@ -402,6 +464,7 @@ foreign_expr_walker(Node *node,
 
 				/* opname is not a SQL identifier, so we should not quote it. */
 				cur_opname = NameStr(form->oprname);
+
 				/* ILIKE cannot be pushed down to SQLite */
 				if (strcmp(cur_opname, "~~*") == 0 || strcmp(cur_opname, "!~~*") == 0)
 				{
@@ -559,6 +622,33 @@ foreign_expr_walker(Node *node,
 			{
 				Aggref	   *agg = (Aggref *) node;
 				ListCell   *lc;
+				char	   *opername = NULL;
+				Oid			schema;
+
+				/* get function name and schema */
+				tuple = SearchSysCache1(PROCOID, ObjectIdGetDatum(agg->aggfnoid));
+				if (!HeapTupleIsValid(tuple))
+				{
+					elog(ERROR, "cache lookup failed for function %u", agg->aggfnoid);
+				}
+				opername = pstrdup(((Form_pg_proc) GETSTRUCT(tuple))->proname.data);
+				schema = ((Form_pg_proc) GETSTRUCT(tuple))->pronamespace;
+				ReleaseSysCache(tuple);
+
+				/* ignore functions in other than the pg_catalog schema */
+				if (schema != PG_CATALOG_NAMESPACE)
+					return false;
+
+				/* these function can be passed to SQLite */
+				if (!(strcmp(opername, "sum") == 0
+					  || strcmp(opername, "avg") == 0
+					  || strcmp(opername, "max") == 0
+					  || strcmp(opername, "min") == 0
+					  || strcmp(opername, "count") == 0))
+				{
+					return false;
+				}
+
 
 				/* Not safe to pushdown when not in grouping context */
 				if (glob_cxt->foreignrel->reloptkind != RELOPT_UPPER_REL)
