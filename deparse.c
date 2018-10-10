@@ -391,11 +391,11 @@ foreign_expr_walker(Node *node,
 				}
 				opername = pstrdup(((Form_pg_proc) GETSTRUCT(tuple))->proname.data);
 				schema = ((Form_pg_proc) GETSTRUCT(tuple))->pronamespace;
-				if (schema != PG_CATALOG_NAMESPACE) {
-					ReleaseSysCache(tuple);
-					return false;
-				}
 				ReleaseSysCache(tuple);
+
+				/* ignore functions in other than the pg_catalog schema */
+				if (schema != PG_CATALOG_NAMESPACE)
+					return false;
 
 				/* these function can be passed to SQLite */
 				if (!(strcmp(opername, "abs") == 0
@@ -633,13 +633,11 @@ foreign_expr_walker(Node *node,
 				}
 				opername = pstrdup(((Form_pg_proc) GETSTRUCT(tuple))->proname.data);
 				schema = ((Form_pg_proc) GETSTRUCT(tuple))->pronamespace;
-				/* ignore functions in other than the pg_catalog schema */
-				if (schema != PG_CATALOG_NAMESPACE) {
-					ReleaseSysCache(tuple);
-					return false;
-				}
 				ReleaseSysCache(tuple);
 
+				/* ignore functions in other than the pg_catalog schema */
+				if (schema != PG_CATALOG_NAMESPACE)
+					return false;
 
 				/* these function can be passed to SQLite */
 				if (!(strcmp(opername, "sum") == 0
