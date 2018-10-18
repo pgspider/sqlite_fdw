@@ -61,6 +61,8 @@ SELECT * FROM employee WHERE emp_id NOT IN (SELECT emp_id FROM employee WHERE em
 SELECT * FROM employee WHERE emp_name NOT IN ('emp - 1', 'emp - 2') LIMIT 5;
 SELECT * FROM employee WHERE emp_name NOT IN ('emp - 10') LIMIT 5;
 
+SELECT * FROM numbers WHERE (CASE WHEN a % 2 = 0 THEN 1 WHEN a % 5 = 0 THEN 1 ELSE 0 END) = 1;
+SELECT * FROM numbers WHERE (CASE b WHEN 'Two' THEN 1 WHEN 'Six' THEN 1 ELSE 0 END) = 1;
 
 create or replace function test_param_WHERE() returns void as $$
 DECLARE
@@ -174,9 +176,9 @@ SELECT sum(b),max(b), min(b) from multiprimary;
 SELECT sum(b+5)+2 from multiprimary group by b/2 order by b/2;
 SELECT sum(a) from multiprimary group by b having sum(a) > 0 order by sum(a);
 SELECT sum(a) A from multiprimary group by b having avg(abs(a)) > 0 AND sum(a) > 0 order by A;
+SELECT count(nullif(a, 1)) FROM multiprimary;
 
 SELECT * from multiprimary, numbers WHERE multiprimary.a=numbers.a;
-
 
 INSERT INTO numbers VALUES(4, 'Four');
 
@@ -187,6 +189,9 @@ EXPLAIN (verbose, costs off)  SELECT b, length(b) FROM numbers WHERE abs(a) = 4 
 -- Only "length(b) = 4" are pushed down
 SELECT b, length(b) FROM numbers WHERE length(b) = 4 AND power(1, a) != 0 AND length(reverse(b)) = 4;
 EXPLAIN (verbose, costs off) SELECT b, length(b) FROM numbers WHERE length(b) = 4 AND power(1, a) != 0 AND length(reverse(b)) = 4;
+
+INSERT INTO multiprimary (b,c) VALUES (99, 100);
+SELECT c FROM multiprimary WHERE COALESCE(a,b,c) = 99;
 
 DROP FUNCTION test_param_WHERE();
 DROP FOREIGN TABLE numbers;

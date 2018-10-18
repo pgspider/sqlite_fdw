@@ -327,6 +327,23 @@ SELECT * FROM employee WHERE emp_name NOT IN ('emp - 10') LIMIT 5;
       5 | emp - 5  |           5
 (5 rows)
 
+SELECT * FROM numbers WHERE (CASE WHEN a % 2 = 0 THEN 1 WHEN a % 5 = 0 THEN 1 ELSE 0 END) = 1;
+ a |   b   
+---+-------
+ 2 | Two
+ 4 | Four
+ 5 | Five
+ 6 | Six
+ 8 | Eight
+(5 rows)
+
+SELECT * FROM numbers WHERE (CASE b WHEN 'Two' THEN 1 WHEN 'Six' THEN 1 ELSE 0 END) = 1;
+ a |  b  
+---+-----
+ 2 | Two
+ 6 | Six
+(2 rows)
+
 create or replace function test_param_WHERE() returns void as $$
 DECLARE
   n varchar;
@@ -620,6 +637,12 @@ SELECT sum(a) A from multiprimary group by b having avg(abs(a)) > 0 AND sum(a) >
  2
 (3 rows)
 
+SELECT count(nullif(a, 1)) FROM multiprimary;
+ count 
+-------
+     1
+(1 row)
+
 SELECT * from multiprimary, numbers WHERE multiprimary.a=numbers.a;
  a | b  | c  | a |  b  
 ---+----+----+---+-----
@@ -660,6 +683,13 @@ EXPLAIN (verbose, costs off) SELECT b, length(b) FROM numbers WHERE length(b) = 
    Filter: ((power('1'::double precision, (numbers.a)::double precision) <> '0'::double precision) AND (length(reverse((numbers.b)::text)) = 4))
    SQLite query: SELECT "a", "b" FROM main."numbers" WHERE ((length("b") = 4))
 (4 rows)
+
+INSERT INTO multiprimary (b,c) VALUES (99, 100);
+SELECT c FROM multiprimary WHERE COALESCE(a,b,c) = 99;
+  c  
+-----
+ 100
+(1 row)
 
 DROP FUNCTION test_param_WHERE();
 DROP FOREIGN TABLE numbers;
