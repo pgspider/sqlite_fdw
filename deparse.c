@@ -116,6 +116,9 @@ static void sqlite_deparse_target_list(StringInfo buf, PlannerInfo *root, Index 
 						   Bitmapset *attrs_used, List **retrieved_attrs);
 static void sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *root);
 static void sqlite_deparse_select(List *tlist, List **retrieved_attrs, deparse_expr_cxt *context);
+static void sqlite_deparse_case_expr(CaseExpr *node, deparse_expr_cxt *context);
+static void sqlite_deparse_null_if_expr(NullIfExpr *node, deparse_expr_cxt *context);
+static void sqlite_deparse_coalesce_expr(CoalesceExpr *node, deparse_expr_cxt *context);
 static void deparseFromExprForRel(StringInfo buf, PlannerInfo *root,
 					  RelOptInfo *foreignrel,
 					  bool use_alias, List **params_list);
@@ -281,7 +284,6 @@ foreign_expr_walker(Node *node,
 	/* Set up inner_cxt for possible recursion to child nodes */
 	inner_cxt.collation = InvalidOid;
 	inner_cxt.state = FDW_COLLATE_NONE;
-
 	switch (nodeTag(node))
 	{
 		case T_Var:
@@ -361,6 +363,24 @@ foreign_expr_walker(Node *node,
 				state = FDW_COLLATE_NONE;
 			}
 			break;
+		case T_CaseTestExpr:
+			{
+				CaseTestExpr	*c = (CaseTestExpr *) node;
+
+				/*
+				 * If the expr has nondefault collation, either it's of a
+				 * non-builtin type, or it reflects folding of a CollateExpr;
+				 * either way, it's unsafe to send to the remote.
+				 */
+				if (c->collation != InvalidOid &&
+					c->collation != DEFAULT_COLLATION_OID)
+					return false;
+
+				/* Otherwise, we can consider that it doesn't set collation */
+				collation = InvalidOid;
+				state = FDW_COLLATE_NONE;
+			}
+			break;
 		case T_Param:
 			{
 				Param	   *p = (Param *) node;
@@ -376,7 +396,6 @@ foreign_expr_walker(Node *node,
 					state = FDW_COLLATE_UNSAFE;
 			}
 			break;
-
 		case T_FuncExpr:
 			{
 				FuncExpr   *func = (FuncExpr *) node;
@@ -445,7 +464,7 @@ foreign_expr_walker(Node *node,
 			}
 			break;
 		case T_OpExpr:
-
+		case T_NullIfExpr:
 			{
 				OpExpr	   *oe = (OpExpr *) node;
 
@@ -590,8 +609,6 @@ foreign_expr_walker(Node *node,
 				state = FDW_COLLATE_NONE;
 			}
 			break;
-
-
 		case T_List:
 			{
 				List	   *l = (List *) node;
@@ -615,6 +632,52 @@ foreign_expr_walker(Node *node,
 				state = inner_cxt.state;
 
 				/* Don't apply exprType() to the list. */
+				check_type = false;
+			}
+			break;
+		case T_CoalesceExpr:
+			{
+				CoalesceExpr 	*coalesce = (CoalesceExpr *) node;
+				ListCell		*lc;
+
+				if (list_length(coalesce->args) < 2)
+					return false;
+
+				/* Recurse to each argument */
+				foreach(lc, coalesce->args)
+				{
+					if (!foreign_expr_walker((Node *) lfirst(lc),
+											 glob_cxt, &inner_cxt))
+						return false;
+				}
+			}
+			break;
+		case T_CaseExpr:
+			{
+				ListCell	*lc;
+
+				/* Recurse to condition subexpressions. */
+				foreach(lc, ((CaseExpr *) node)->args)
+				{
+					if (!foreign_expr_walker((Node *) lfirst(lc),
+											 glob_cxt, &inner_cxt))
+						return false;
+				}
+			}
+			break;
+		case T_CaseWhen:
+			{
+				CaseWhen	*whenExpr = (CaseWhen*) node;
+
+				/* Recurse to condition expression. */
+				if (!foreign_expr_walker((Node *) whenExpr->expr,
+											glob_cxt, &inner_cxt))
+					return false;
+				/* Recurse to result expression. */
+				if (!foreign_expr_walker((Node *) whenExpr->result,
+										 glob_cxt, &inner_cxt))
+					return false;
+				/* Don't apply exprType() to the case when expr. */
 				check_type = false;
 			}
 			break;
@@ -785,7 +848,6 @@ foreign_expr_walker(Node *node,
 				break;
 		}
 	}
-
 	/* It looks OK */
 	return true;
 }
@@ -1424,6 +1486,15 @@ deparseExpr(Expr *node, deparse_expr_cxt *context)
 		case T_ArrayExpr:
 			sqlite_deparse_array_expr((ArrayExpr *) node, context);
 			break;
+		case T_CaseExpr:
+			sqlite_deparse_case_expr((CaseExpr *) node, context);
+			break;
+		case T_CoalesceExpr:
+			sqlite_deparse_coalesce_expr((CoalesceExpr *) node, context);
+			break;
+		case T_NullIfExpr:
+			sqlite_deparse_null_if_expr((NullIfExpr *) node, context);
+			break;
 		case T_Aggref:
 			deparseAggref((Aggref *) node, context);
 			break;
@@ -2003,6 +2074,85 @@ sqlite_deparse_array_expr(ArrayExpr *node, deparse_expr_cxt *context)
 		first = false;
 	}
 	appendStringInfoChar(buf, ']');
+}
+/*
+ * Deparse given CASE expression
+ */
+static void
+sqlite_deparse_case_expr(CaseExpr *node, deparse_expr_cxt *context)
+{
+	StringInfo	 buf = context->buf;
+	ListCell	*lc = NULL;
+
+	appendStringInfoString(buf, "CASE ");
+
+	/* If CASE arg WHEN then appen arg before continuing */
+	if (node->arg != NULL)
+		deparseExpr(node->arg, context);
+
+	/* Add individual cases */
+	foreach (lc, node->args)
+	{
+		CaseWhen	*whenclause = (CaseWhen *)lfirst(lc);
+
+		/* WHEN */
+		appendStringInfoString(buf, " WHEN ");
+		if (node->arg == NULL)	/* CASE WHEN */
+			deparseExpr(whenclause->expr, context);
+		else 					/* CASE arg WHEN */
+			deparseExpr(lsecond(((OpExpr *)whenclause->expr)->args), context);
+
+		/* THEN */
+		appendStringInfoString(buf, " THEN ");
+		deparseExpr(whenclause->result, context);
+	}
+
+	/* add ELSE if needed */
+	if (node->defresult != NULL)
+	{
+		appendStringInfoString(buf, " ELSE ");
+		deparseExpr(node->defresult, context);
+	}
+
+	/* append END */
+	appendStringInfoString(buf, " END");
+}
+
+/*
+ * Deparse given NULLIF(val1, val2) expression.
+ */
+static void
+sqlite_deparse_null_if_expr(NullIfExpr *node, deparse_expr_cxt *context)
+{
+	StringInfo	buf = context->buf;
+
+	appendStringInfoString(buf, "NULLIF(");
+	deparseExpr(lfirst(list_head(node->args)), context);
+	appendStringInfoString(buf, ", ");
+	deparseExpr(lfirst(list_tail(node->args)), context);
+	appendStringInfoChar(buf, ')');
+}
+
+/*
+ * Deparse given COALESCE(...) expression.
+ */
+static void
+sqlite_deparse_coalesce_expr(CoalesceExpr *node, deparse_expr_cxt *context)
+{
+	StringInfo	 buf = context->buf;
+	ListCell	*lc;
+	bool		first = true;
+
+	appendStringInfoString(buf, "COALESCE(");
+	foreach(lc, node->args)
+	{
+		if (!first)
+			appendStringInfoString(buf, ", ");
+		first = false;
+
+		deparseExpr(lfirst(lc), context);
+	}
+	appendStringInfoChar(buf, ')');
 }
 
 /*
