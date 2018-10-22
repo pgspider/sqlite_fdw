@@ -249,10 +249,9 @@ sqlite_fdw_handler(PG_FUNCTION_ARGS)
 	/* support for IMPORT FOREIGN SCHEMA */
 	fdwroutine->ImportForeignSchema = sqliteImportForeignSchema;
 
-#if (PG_VERSION_NUM >= 100000)
 	/* Support functions for upper relation push-down */
 	fdwroutine->GetForeignUpperPaths = sqliteGetForeignUpperPaths;
-#endif
+
 	PG_RETURN_POINTER(fdwroutine);
 }
 
@@ -1678,16 +1677,16 @@ foreign_grouping_ok(PlannerInfo *root, RelOptInfo *grouped_rel)
 
 		foreach(lc, (List *) query->havingQual)
 		{
-			Expr	   *expr = (Expr *) lfirst(lc);
-
-#if (PG_VERSION_NUM >= 100000)
-			RestrictInfo *rinfo;
+			Expr 			*expr = (Expr *) lfirst(lc);
+			RestrictInfo 	*rinfo;
 
 			/*
 			 * Currently, the core code doesn't wrap havingQuals in
 			 * RestrictInfos, so we must make our own.
 			 */
 			Assert(!IsA(expr, RestrictInfo));
+
+#if (PG_VERSION_NUM >= 100000)
 			rinfo = make_restrictinfo(expr,
 									  true,
 									  false,
@@ -1696,17 +1695,14 @@ foreign_grouping_ok(PlannerInfo *root, RelOptInfo *grouped_rel)
 									  grouped_rel->relids,
 									  NULL,
 									  NULL);
-
+#else
+			rinfo = make_simple_restrictinfo(expr);
+#endif
 			if (sqlite_is_foreign_expr(root, grouped_rel, expr))
 				fpinfo->remote_conds = lappend(fpinfo->remote_conds, rinfo);
 			else
 				fpinfo->local_conds = lappend(fpinfo->local_conds, rinfo);
-#else
-			if (!sqlite_is_foreign_expr(root, grouped_rel, expr))
-				fpinfo->local_conds = lappend(fpinfo->local_conds, expr);
-			else
-				fpinfo->remote_conds = lappend(fpinfo->remote_conds, expr);
-#endif
+
 		}
 	}
 
