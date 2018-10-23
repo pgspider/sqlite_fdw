@@ -418,6 +418,7 @@ foreign_expr_walker(Node *node,
 
 				/* these function can be passed to SQLite */
 				if (!(strcmp(opername, "abs") == 0
+					  || strcmp(opername, "btrim") == 0
 					  || strcmp(opername, "length") == 0
 					  || strcmp(opername, "lower") == 0
 					  || strcmp(opername, "ltrim") == 0
