@@ -56,7 +56,7 @@ SELECT * FROM t1;
 ## 3. Features
 - Support update to foreign table  
 - WHERE clauses are pushdowned  
-- Aggregate function are pushdowned (PostgreSQL 10 only)  
+- Aggregate function are pushdowned
 - Transactions  
 
 ## 4. Limitations
