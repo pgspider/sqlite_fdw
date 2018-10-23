@@ -1,6 +1,6 @@
 # SQLite Foreign Data Wrapper for PostgreSQL
 This PostgreSQL extension is a Foreign Data Wrapper for [SQLite][1].  
-This version of sqlite_fdw can work with PostgreSQL 9.6 and 10.  
+The current version can work with PostgreSQL 9.6 and 10.  
 
 ## 1. Installation
 ### 1. Install SQLite library
@@ -27,28 +27,29 @@ make install
 </pre>
 
 ## 2. Usage
-### Load extension:
+### Load extension
 <pre>
 CREATE EXTENSION sqlite_fdw;
 </pre>
 
-### Create server specifying SQLite database path as option:
+### Create server
+Please specify SQLite database path using `database` option:
 <pre>
 CREATE SERVER sqlite_server FOREIGN DATA WRAPPER sqlite_fdw OPTIONS (database '/tmp/test.db');
 </pre>
 
 
-### Create foreign table:
+### Create foreign table
 <pre>
 CREATE FOREIGN TABLE t1(a integer, b text) SERVER sqlite_server OPTIONS (table 't1_sqlite');
 </pre>
 
-### Or you can use import foreign schema:
+### Import foreign schema
 <pre>
 IMPORT FOREIGN SCHEMA public FROM SERVER sqlite_server INTO public;
 </pre>
 
-### Access foregin table:
+### Access foregin table
 <pre>
 SELECT * FROM t1;
 </pre>
@@ -62,7 +63,10 @@ SELECT * FROM t1;
 ## 4. Limitations
 Nothing.
 
-## 5. License
+## 5. Contributing
+Opening issues and pull requests on GitHub are welcome.
+
+## 6. License
 Copyright (c) 2017-2018, TOSHIBA Corporation  
 Copyright (c) 2011 - 2016, EnterpriseDB Corporation  
 
