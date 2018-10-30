@@ -571,6 +571,7 @@ sqliteGetForeignPlan(
 	 * Items in the list must match enum FdwScanPrivateIndex, above.
 	 */
 	fdw_private = list_make3(makeString(sql.data), retrieved_attrs, makeInteger(for_update));
+	fdw_private = lappend(fdw_private, makeInteger(bms_next_member(root->all_baserels, -1)));
 	if (baserel->reloptkind == RELOPT_JOINREL ||
 		baserel->reloptkind == RELOPT_UPPER_REL)
 		fdw_private = lappend(fdw_private,
@@ -624,7 +625,7 @@ sqliteBeginForeignScan(ForeignScanState *node, int eflags)
 	if (fsplan->scan.scanrelid > 0)
 		rtindex = fsplan->scan.scanrelid;
 	else
-		rtindex = bms_next_member(fsplan->fs_relids, -1);
+		rtindex = intVal(list_nth(fsplan->fdw_private, 3));
 	rte = rt_fetch(rtindex, estate->es_range_table);
 
 	/* Get info about foreign table. */
