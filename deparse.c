@@ -365,7 +365,7 @@ foreign_expr_walker(Node *node,
 			break;
 		case T_CaseTestExpr:
 			{
-				CaseTestExpr	*c = (CaseTestExpr *) node;
+				CaseTestExpr *c = (CaseTestExpr *) node;
 
 				/*
 				 * If the expr has nondefault collation, either it's of a
@@ -638,8 +638,8 @@ foreign_expr_walker(Node *node,
 			break;
 		case T_CoalesceExpr:
 			{
-				CoalesceExpr 	*coalesce = (CoalesceExpr *) node;
-				ListCell		*lc;
+				CoalesceExpr *coalesce = (CoalesceExpr *) node;
+				ListCell   *lc;
 
 				if (list_length(coalesce->args) < 2)
 					return false;
@@ -655,7 +655,7 @@ foreign_expr_walker(Node *node,
 			break;
 		case T_CaseExpr:
 			{
-				ListCell	*lc;
+				ListCell   *lc;
 
 				/* Recurse to condition subexpressions. */
 				foreach(lc, ((CaseExpr *) node)->args)
@@ -668,11 +668,11 @@ foreign_expr_walker(Node *node,
 			break;
 		case T_CaseWhen:
 			{
-				CaseWhen	*whenExpr = (CaseWhen*) node;
+				CaseWhen   *whenExpr = (CaseWhen *) node;
 
 				/* Recurse to condition expression. */
 				if (!foreign_expr_walker((Node *) whenExpr->expr,
-											glob_cxt, &inner_cxt))
+										 glob_cxt, &inner_cxt))
 					return false;
 				/* Recurse to result expression. */
 				if (!foreign_expr_walker((Node *) whenExpr->result,
@@ -2076,14 +2076,15 @@ sqlite_deparse_array_expr(ArrayExpr *node, deparse_expr_cxt *context)
 	}
 	appendStringInfoChar(buf, ']');
 }
+
 /*
  * Deparse given CASE expression
  */
 static void
 sqlite_deparse_case_expr(CaseExpr *node, deparse_expr_cxt *context)
 {
-	StringInfo	 buf = context->buf;
-	ListCell	*lc = NULL;
+	StringInfo	buf = context->buf;
+	ListCell   *lc = NULL;
 
 	appendStringInfoString(buf, "CASE ");
 
@@ -2092,16 +2093,16 @@ sqlite_deparse_case_expr(CaseExpr *node, deparse_expr_cxt *context)
 		deparseExpr(node->arg, context);
 
 	/* Add individual cases */
-	foreach (lc, node->args)
+	foreach(lc, node->args)
 	{
-		CaseWhen	*whenclause = (CaseWhen *)lfirst(lc);
+		CaseWhen   *whenclause = (CaseWhen *) lfirst(lc);
 
 		/* WHEN */
 		appendStringInfoString(buf, " WHEN ");
 		if (node->arg == NULL)	/* CASE WHEN */
 			deparseExpr(whenclause->expr, context);
-		else 					/* CASE arg WHEN */
-			deparseExpr(lsecond(((OpExpr *)whenclause->expr)->args), context);
+		else					/* CASE arg WHEN */
+			deparseExpr(lsecond(((OpExpr *) whenclause->expr)->args), context);
 
 		/* THEN */
 		appendStringInfoString(buf, " THEN ");
@@ -2140,8 +2141,8 @@ sqlite_deparse_null_if_expr(NullIfExpr *node, deparse_expr_cxt *context)
 static void
 sqlite_deparse_coalesce_expr(CoalesceExpr *node, deparse_expr_cxt *context)
 {
-	StringInfo	 buf = context->buf;
-	ListCell	*lc;
+	StringInfo	buf = context->buf;
+	ListCell   *lc;
 	bool		first = true;
 
 	appendStringInfoString(buf, "COALESCE(");

@@ -284,7 +284,8 @@ sqlitefdw_report_error(int elevel, sqlite3_stmt * stmt, sqlite3 * conn,
 	if (message)
 		message = pstrdup(message);
 
-	if (!sql && stmt) {
+	if (!sql && stmt)
+	{
 		sql = sqlite3_sql(stmt);
 		if (sql)
 			sql = pstrdup(sqlite3_sql(stmt));

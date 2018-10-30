@@ -1152,7 +1152,7 @@ sqliteExecForeignInsert(EState *estate,
 	foreach(lc, fmstate->retrieved_attrs)
 	{
 		int			attnum = lfirst_int(lc) - 1;
-		Oid type = slot->tts_tupleDescriptor->attrs[attnum]->atttypid;
+		Oid			type = slot->tts_tupleDescriptor->attrs[attnum]->atttypid;
 
 		value = slot_getattr(slot, attnum + 1, &isnull[attnum]);
 		sqlite_bind_sql_var(type, attnum, value, fmstate->stmt, &isnull[attnum]);
@@ -1240,7 +1240,7 @@ sqliteExecForeignUpdate(EState *estate,
 	foreach(lc, fmstate->retrieved_attrs)
 	{
 		int			attnum = lfirst_int(lc);
-		Oid type;
+		Oid			type;
 		bool		is_null;
 		Datum		value = 0;
 
@@ -1677,8 +1677,8 @@ foreign_grouping_ok(PlannerInfo *root, RelOptInfo *grouped_rel)
 
 		foreach(lc, (List *) query->havingQual)
 		{
-			Expr 			*expr = (Expr *) lfirst(lc);
-			RestrictInfo 	*rinfo;
+			Expr	   *expr = (Expr *) lfirst(lc);
+			RestrictInfo *rinfo;
 
 			/*
 			 * Currently, the core code doesn't wrap havingQuals in
@@ -1967,7 +1967,7 @@ sqlite_to_pg_type(StringInfo str, char *type)
 
 	for (i = 0; affinity[i][0] != NULL; i++)
 	{
-		if (strstr(type, affinity[i][0]) !=0)
+		if (strstr(type, affinity[i][0]) != 0)
 		{
 			appendStringInfoString(str, affinity[i][1]);
 			pfree(type);
@@ -1975,7 +1975,8 @@ sqlite_to_pg_type(StringInfo str, char *type)
 		}
 	}
 
-	if (strcmp(type, "datetime") == 0) {
+	if (strcmp(type, "datetime") == 0)
+	{
 		appendStringInfoString(str, "timestamp");
 		pfree(type);
 		return;
