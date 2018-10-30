@@ -164,12 +164,13 @@ static bool sqliteAnalyzeForeignTable(Relation relation,
 static List *sqliteImportForeignSchema(ImportForeignSchemaStmt *stmt,
 						  Oid serverOid);
 
-static void sqliteGetForeignUpperPaths(PlannerInfo *root,
+static void
+sqliteGetForeignUpperPaths(PlannerInfo *root,
 						   UpperRelationKind stage,
 						   RelOptInfo *input_rel,
 						   RelOptInfo *output_rel
 #if (PG_VERSION_NUM >= 110000)
-							,void *extra
+						   ,void *extra
 #endif
 );
 
@@ -1013,9 +1014,9 @@ sqlitePlanForeignModify(PlannerInfo *root,
 			{
 				attname = get_attname(foreignTableId, attrno
 #if (PG_VERSION_NUM >= 110000)
-				, false
+									  ,false
 #endif
-				);
+					);
 				condAttr = lappend(condAttr, attname);
 			}
 		}
@@ -1123,12 +1124,12 @@ sqliteBeginForeignModify(ModifyTableState *mtstate,
 		 * it
 		 */
 		fmstate->junk_idx[i] =
-			ExecFindJunkAttributeInTlist(subplan->targetlist, 
-			get_attname(foreignTableId, i + 1
+			ExecFindJunkAttributeInTlist(subplan->targetlist,
+										 get_attname(foreignTableId, i + 1
 #if (PG_VERSION_NUM >= 110000)
-				, false
+													 ,false
 #endif
-			));
+													 ));
 	}
 
 }
@@ -1164,7 +1165,7 @@ sqliteExecForeignInsert(EState *estate,
 	foreach(lc, fmstate->retrieved_attrs)
 	{
 		int			attnum = lfirst_int(lc) - 1;
-		Oid type = TupleDescAttr(slot->tts_tupleDescriptor, attnum)->atttypid;
+		Oid			type = TupleDescAttr(slot->tts_tupleDescriptor, attnum)->atttypid;
 
 		value = slot_getattr(slot, attnum + 1, &isnull[attnum]);
 		sqlite_bind_sql_var(type, attnum, value, fmstate->stmt, &isnull[attnum]);
@@ -1330,33 +1331,8 @@ sqliteExplainForeignScan(ForeignScanState *node,
 {
 
 	SqliteFdwExecState *festate = (SqliteFdwExecState *) node->fdw_state;
-	ForeignTable *table;
-	ForeignServer *server;
-	ForeignScan *fsplan = (ForeignScan *) node->ss.ps.plan;
-	RangeTblEntry *rte;
-	int			rtindex;
-	EState	   *estate = node->ss.ps.state;
-	StringInfoData buf;
-	sqlite3    *db;
-	sqlite3_stmt *stmt = NULL;
 
 	elog(DEBUG1, "sqlite_fdw : %s", __func__);
-
-	/*
-	 * Identify which user to do the remote access as.  This should match what
-	 * ExecCheckRTEPerms() does.  In case of a join or aggregate, use the
-	 * lowest-numbered member RTE as a representative; we would get the same
-	 * result from any.
-	 */
-	if (fsplan->scan.scanrelid > 0)
-		rtindex = fsplan->scan.scanrelid;
-	else
-		rtindex = bms_next_member(fsplan->fs_relids, -1);
-	rte = rt_fetch(rtindex, estate->es_range_table);
-
-	table = GetForeignTable(rte->relid);
-	server = GetForeignServer(table->serverid);
-
 	if (es->verbose)
 	{
 		ExplainPropertyText("SQLite query", festate->query, es);
@@ -1806,11 +1782,13 @@ static void
 sqliteGetForeignUpperPaths(PlannerInfo *root, UpperRelationKind stage,
 						   RelOptInfo *input_rel, RelOptInfo *output_rel
 #if (PG_VERSION_NUM >= 110000)
-							,void *extra
+						   ,void *extra
 #endif
 )
 {
 	SqliteFdwRelationInfo *fpinfo;
+
+	elog(DEBUG1, "sqlite_fdw : %s", __func__);
 
 	/*
 	 * If input rel is not safe to pushdown, then simply return as we cannot

@@ -1379,9 +1379,9 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 	if (colname == NULL)
 		colname = get_attname(rte->relid, varattno
 #if (PG_VERSION_NUM >= 110000)
-				, false
+							  ,false
 #endif
-				);
+			);
 	appendStringInfoString(buf, sqlite_quote_identifier(colname, QUOTE));
 }
 
