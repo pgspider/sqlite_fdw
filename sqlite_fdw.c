@@ -167,8 +167,11 @@ static List *sqliteImportForeignSchema(ImportForeignSchemaStmt *stmt,
 static void sqliteGetForeignUpperPaths(PlannerInfo *root,
 						   UpperRelationKind stage,
 						   RelOptInfo *input_rel,
-						   RelOptInfo *output_rel);
-
+						   RelOptInfo *output_rel
+#if (PG_VERSION_NUM >= 110000)
+							,void *extra
+#endif
+);
 
 static void sqlite_prepare_wrapper(sqlite3 * db, char *query, sqlite3_stmt * *result, const char **pzTail);
 static int	get_estimate(Oid foreigntableid);
@@ -682,8 +685,8 @@ make_tuple_from_result_row(sqlite3_stmt * stmt,
 	foreach(lc, retrieved_attrs)
 	{
 		int			attnum = lfirst_int(lc) - 1;
-		Oid			pgtype = tupleDescriptor->attrs[attnum]->atttypid;
-		int32		pgtypmod = tupleDescriptor->attrs[attnum]->atttypmod;
+		Oid			pgtype = TupleDescAttr(tupleDescriptor, attnum)->atttypid;
+		int32		pgtypmod = TupleDescAttr(tupleDescriptor, attnum)->atttypmod;
 
 		if (sqlite3_column_type(stmt, attid) != SQLITE_NULL)
 		{
@@ -959,7 +962,7 @@ sqlitePlanForeignModify(PlannerInfo *root,
 
 		for (attnum = 1; attnum <= tupdesc->natts; attnum++)
 		{
-			Form_pg_attribute attr = tupdesc->attrs[attnum - 1];
+			Form_pg_attribute attr = TupleDescAttr(tupdesc, attnum - 1);
 
 			if (!attr->attisdropped)
 				targetAttrs = lappend_int(targetAttrs, attnum);
@@ -1008,7 +1011,11 @@ sqlitePlanForeignModify(PlannerInfo *root,
 
 			if (IS_KEY_COLUMN(def))
 			{
-				attname = get_relid_attribute_name(foreignTableId, attrno);
+				attname = get_attname(foreignTableId, attrno
+#if (PG_VERSION_NUM >= 110000)
+				, false
+#endif
+				);
 				condAttr = lappend(condAttr, attname);
 			}
 		}
@@ -1091,7 +1098,7 @@ sqliteBeginForeignModify(ModifyTableState *mtstate,
 	foreach(lc, fmstate->retrieved_attrs)
 	{
 		int			attnum = lfirst_int(lc);
-		Form_pg_attribute attr = RelationGetDescr(rel)->attrs[attnum - 1];
+		Form_pg_attribute attr = TupleDescAttr(RelationGetDescr(rel), attnum - 1);
 
 		Assert(!attr->attisdropped);
 
@@ -1116,7 +1123,12 @@ sqliteBeginForeignModify(ModifyTableState *mtstate,
 		 * it
 		 */
 		fmstate->junk_idx[i] =
-			ExecFindJunkAttributeInTlist(subplan->targetlist, get_relid_attribute_name(foreignTableId, i + 1));
+			ExecFindJunkAttributeInTlist(subplan->targetlist, 
+			get_attname(foreignTableId, i + 1
+#if (PG_VERSION_NUM >= 110000)
+				, false
+#endif
+			));
 	}
 
 }
@@ -1152,7 +1164,7 @@ sqliteExecForeignInsert(EState *estate,
 	foreach(lc, fmstate->retrieved_attrs)
 	{
 		int			attnum = lfirst_int(lc) - 1;
-		Oid			type = slot->tts_tupleDescriptor->attrs[attnum]->atttypid;
+		Oid type = TupleDescAttr(slot->tts_tupleDescriptor, attnum)->atttypid;
 
 		value = slot_getattr(slot, attnum + 1, &isnull[attnum]);
 		sqlite_bind_sql_var(type, attnum, value, fmstate->stmt, &isnull[attnum]);
@@ -1245,7 +1257,7 @@ sqliteExecForeignUpdate(EState *estate,
 		Datum		value = 0;
 
 		/* first attribute cannot be in target list attribute */
-		type = slot->tts_tupleDescriptor->attrs[attnum - 1]->atttypid;
+		type = TupleDescAttr(slot->tts_tupleDescriptor, attnum - 1)->atttypid;
 
 		value = slot_getattr(slot, attnum, &is_null);
 
@@ -1792,7 +1804,11 @@ foreign_grouping_ok(PlannerInfo *root, RelOptInfo *grouped_rel)
  */
 static void
 sqliteGetForeignUpperPaths(PlannerInfo *root, UpperRelationKind stage,
-						   RelOptInfo *input_rel, RelOptInfo *output_rel)
+						   RelOptInfo *input_rel, RelOptInfo *output_rel
+#if (PG_VERSION_NUM >= 110000)
+							,void *extra
+#endif
+)
 {
 	SqliteFdwRelationInfo *fpinfo;
 

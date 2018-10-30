@@ -1260,7 +1260,7 @@ sqlite_deparse_target_list(StringInfo buf,
 	*retrieved_attrs = NIL;
 	for (i = 1; i <= tupdesc->natts; i++)
 	{
-		Form_pg_attribute attr = tupdesc->attrs[i - 1];
+		Form_pg_attribute attr = TupleDescAttr(tupdesc, i - 1);
 
 		/* Ignore dropped attributes. */
 		if (attr->attisdropped)
@@ -1377,8 +1377,11 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 	 * option, use attribute name.
 	 */
 	if (colname == NULL)
-		colname = get_relid_attribute_name(rte->relid, varattno);
-
+		colname = get_attname(rte->relid, varattno
+#if (PG_VERSION_NUM >= 110000)
+				, false
+#endif
+				);
 	appendStringInfoString(buf, sqlite_quote_identifier(colname, QUOTE));
 }
 
