@@ -31,6 +31,10 @@
 
 #define CR_NO_ERROR 0
 
+#if !(PG_VERSION_NUM >= 110000)
+#define TupleDescAttr(tupdesc, i) (&(tupdesc)->attrs[(i)])
+#endif
+
 /*
  * Options structure to store the Sqlite
  * server information
