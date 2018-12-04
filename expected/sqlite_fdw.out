@@ -691,11 +691,34 @@ SELECT c FROM multiprimary WHERE COALESCE(a,b,c) = 99;
  100
 (1 row)
 
+CREATE FOREIGN TABLE multiprimary2(a int, b int, c int OPTIONS(column_name 'b')) SERVER sqlite_svr OPTIONS (table 'multiprimary');
+SELECT * FROM multiprimary2;
+ a | b  | c  
+---+----+----
+ 1 |  2 |  2
+ 1 |  2 |  2
+ 1 | 10 | 10
+ 2 | 20 | 20
+   | 99 | 99
+(5 rows)
+
+ALTER FOREIGN TABLE multiprimary2 ALTER COLUMN a OPTIONS(ADD column_name 'b');
+SELECT * FROM multiprimary2;
+ a  | b  | c  
+----+----+----
+  2 |  2 |  2
+  2 |  2 |  2
+ 10 | 10 | 10
+ 20 | 20 | 20
+ 99 | 99 | 99
+(5 rows)
+
 DROP FUNCTION test_param_WHERE();
 DROP FOREIGN TABLE numbers;
 DROP FOREIGN TABLE department;
 DROP FOREIGN TABLE employee;
 DROP FOREIGN TABLE empdata;
 DROP FOREIGN TABLE multiprimary;
+DROP FOREIGN TABLE multiprimary2;
 DROP SERVER sqlite_svr;
 DROP EXTENSION sqlite_fdw CASCADE;

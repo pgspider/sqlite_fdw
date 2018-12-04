@@ -193,12 +193,19 @@ EXPLAIN (verbose, costs off) SELECT b, length(b) FROM numbers WHERE length(b) = 
 INSERT INTO multiprimary (b,c) VALUES (99, 100);
 SELECT c FROM multiprimary WHERE COALESCE(a,b,c) = 99;
 
+
+CREATE FOREIGN TABLE multiprimary2(a int, b int, c int OPTIONS(column_name 'b')) SERVER sqlite_svr OPTIONS (table 'multiprimary');
+SELECT * FROM multiprimary2;
+ALTER FOREIGN TABLE multiprimary2 ALTER COLUMN a OPTIONS(ADD column_name 'b');
+SELECT * FROM multiprimary2;
+
 DROP FUNCTION test_param_WHERE();
 DROP FOREIGN TABLE numbers;
 DROP FOREIGN TABLE department;
 DROP FOREIGN TABLE employee;
 DROP FOREIGN TABLE empdata;
 DROP FOREIGN TABLE multiprimary;
+DROP FOREIGN TABLE multiprimary2;
 DROP SERVER sqlite_svr;
 DROP EXTENSION sqlite_fdw CASCADE;
 

@@ -58,6 +58,7 @@ static struct SqliteFdwOption valid_options[] =
 	{"table", ForeignTableRelationId},
 	{"database", ForeignServerRelationId},
 	{"key", AttributeRelationId},
+	{"column_name", AttributeRelationId},
 	/* Sentinel */
 	{NULL, InvalidOid}
 };
