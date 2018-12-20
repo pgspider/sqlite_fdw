@@ -1494,15 +1494,15 @@ sqliteImportForeignSchema(ImportForeignSchemaStmt *stmt,
 
 				sqlite_to_pg_type(&buf, type_name);
 
+				/* part of the primary key */
+				if (primary_key)
+					appendStringInfo(&buf, " OPTIONS (key 'true')");
+
 				if (not_null && import_not_null)
 					appendStringInfo(&buf, " NOT NULL");
 
 				if (default_val && import_default)
 					appendStringInfo(&buf, " DEFAULT %s", default_val);
-
-				/* part of the primary key */
-				if (primary_key)
-					appendStringInfo(&buf, " OPTIONS (key 'true')");
 
 			}
 
