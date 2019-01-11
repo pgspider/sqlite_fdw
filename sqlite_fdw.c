@@ -909,8 +909,8 @@ sqliteAddForeignUpdateTargets(Query *parsetree,
 				/* ... and add it to the query's targetlist */
 				parsetree->targetList = lappend(parsetree->targetList, tle);
 				has_key = true;
-			}
-			else
+			} 
+			else if (strcmp(def->defname, "key") == 0)
 			{
 				elog(ERROR, "impossible column option \"%s\"", def->defname);
 			}
@@ -939,7 +939,6 @@ sqlitePlanForeignModify(PlannerInfo *root,
 	Relation	rel;
 	List	   *targetAttrs = NULL;
 	StringInfoData sql;
-	char	   *attname;
 	Oid			foreignTableId;
 	TupleDesc	tupdesc;
 	int			i;
@@ -1013,12 +1012,7 @@ sqlitePlanForeignModify(PlannerInfo *root,
 
 			if (IS_KEY_COLUMN(def))
 			{
-				attname = get_attname(foreignTableId, attrno
-#if (PG_VERSION_NUM >= 110000)
-									  ,false
-#endif
-					);
-				condAttr = lappend(condAttr, attname);
+				condAttr = lappend_int(condAttr, attrno);
 			}
 		}
 	}

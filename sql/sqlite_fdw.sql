@@ -199,6 +199,14 @@ SELECT * FROM multiprimary2;
 ALTER FOREIGN TABLE multiprimary2 ALTER COLUMN a OPTIONS(ADD column_name 'b');
 SELECT * FROM multiprimary2;
 
+
+CREATE FOREIGN TABLE columntest(a int OPTIONS(column_name 'a a', key 'true'), "b b" int  OPTIONS(key 'true'), c int OPTIONS(column_name 'c c')) SERVER sqlite_svr;
+INSERT INTO columntest VALUES(1,2,3);
+UPDATE columntest SET c=10 WHERE a = 1;
+SELECT * FROM columntest;
+UPDATE columntest SET a=100 WHERE c = 10;
+SELECT * FROM columntest;
+
 DROP FUNCTION test_param_WHERE();
 DROP FOREIGN TABLE numbers;
 DROP FOREIGN TABLE department;
@@ -206,6 +214,7 @@ DROP FOREIGN TABLE employee;
 DROP FOREIGN TABLE empdata;
 DROP FOREIGN TABLE multiprimary;
 DROP FOREIGN TABLE multiprimary2;
+DROP FOREIGN TABLE columntest;
 DROP SERVER sqlite_svr;
 DROP EXTENSION sqlite_fdw CASCADE;
 

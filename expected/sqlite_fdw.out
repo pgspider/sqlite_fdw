@@ -491,7 +491,7 @@ COMMIT;
 -- violate unique constraint
 UPDATE numbers SET b='Two' WHERE a = 1; 
 ERROR:  failed to execute remote SQL: rc=19 UNIQUE constraint failed: numbers.b 
-   sql=UPDATE main."numbers" SET "b" = ? WHERE a = ?
+   sql=UPDATE main."numbers" SET "b" = ? WHERE "a"=?
 SELECT * from numbers;
  a |  b  
 ---+-----
@@ -713,6 +713,22 @@ SELECT * FROM multiprimary2;
  99 | 99 | 99
 (5 rows)
 
+CREATE FOREIGN TABLE columntest(a int OPTIONS(column_name 'a a', key 'true'), "b b" int  OPTIONS(key 'true'), c int OPTIONS(column_name 'c c')) SERVER sqlite_svr;
+INSERT INTO columntest VALUES(1,2,3);
+UPDATE columntest SET c=10 WHERE a = 1;
+SELECT * FROM columntest;
+ a | b b | c  
+---+-----+----
+ 1 |   2 | 10
+(1 row)
+
+UPDATE columntest SET a=100 WHERE c = 10;
+SELECT * FROM columntest;
+  a  | b b | c  
+-----+-----+----
+ 100 |   2 | 10
+(1 row)
+
 DROP FUNCTION test_param_WHERE();
 DROP FOREIGN TABLE numbers;
 DROP FOREIGN TABLE department;
@@ -720,5 +736,6 @@ DROP FOREIGN TABLE employee;
 DROP FOREIGN TABLE empdata;
 DROP FOREIGN TABLE multiprimary;
 DROP FOREIGN TABLE multiprimary2;
+DROP FOREIGN TABLE columntest;
 DROP SERVER sqlite_svr;
 DROP EXTENSION sqlite_fdw CASCADE;

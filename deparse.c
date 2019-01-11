@@ -1521,7 +1521,7 @@ deparseExpr(Expr *node, deparse_expr_cxt *context)
 void
 sqlite_deparse_update(StringInfo buf, PlannerInfo *root,
 					  Index rtindex, Relation rel,
-					  List *targetAttrs, List *attname)
+					  List *targetAttrs, List *attnums)
 {
 	AttrNumber	pindex;
 	bool		first;
@@ -1547,13 +1547,12 @@ sqlite_deparse_update(StringInfo buf, PlannerInfo *root,
 		pindex++;
 	}
 	i = 0;
-	foreach(lc, attname)
+	foreach(lc, attnums)
 	{
-		if (i == 0)
-			appendStringInfo(buf, " WHERE %s = ?", (char *) lfirst(lc));
-		else
-			appendStringInfo(buf, " AND %s = ?", (char *) lfirst(lc));
-
+		int			attnum = lfirst_int(lc);
+		appendStringInfo(buf, i == 0 ? " WHERE " : " AND ");
+		sqlite_deparse_column_ref(buf, rtindex, attnum, root);
+		appendStringInfo(buf, "=?");
 		i++;
 	}
 }
@@ -1578,11 +1577,10 @@ sqlite_deparse_delete(StringInfo buf, PlannerInfo *root,
 	sqlite_deparse_relation(buf, rel);
 	foreach(lc, attname)
 	{
-		if (i == 0)
-			appendStringInfo(buf, " WHERE %s = ?", (char *) lfirst(lc));
-		else
-			appendStringInfo(buf, " AND %s = ?", (char *) lfirst(lc));
-
+		int			attnum = lfirst_int(lc);
+		appendStringInfo(buf, i == 0 ? " WHERE " : " AND ");
+		sqlite_deparse_column_ref(buf, rtindex, attnum, root);
+		appendStringInfo(buf, "=?");
 		i++;
 	}
 }

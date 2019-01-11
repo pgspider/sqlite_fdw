@@ -9,6 +9,7 @@ CREATE TABLE empdata(emp_id int primary key, emp_dat bytea);
 CREATE TABLE numbers(a int primary key, b varchar(255) unique);
 CREATE TABLE t(a integer primary key, b integer);
 CREATE TABLE multiprimary(a integer, b integer, c integer, primary key(b,c));
+CREATE TABLE columntest("a a" integer, "b b" integer,"c c" integer, primary key("a a","b b") );
 
 CREATE TABLE "type_STRING" (col text primary key);
 CREATE TABLE "type_BOOLEAN" (col boolean primary key);
