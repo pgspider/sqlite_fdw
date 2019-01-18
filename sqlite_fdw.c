@@ -557,7 +557,7 @@ sqliteGetForeignPlan(
 								  remote_exprs, best_path->path.pathkeys,
 								  false, &retrieved_attrs, &params_list);
 
-	for_update = true;
+	for_update = false;
 	if (root->parse->commandType == CMD_UPDATE ||
 		root->parse->commandType == CMD_DELETE ||
 		root->parse->commandType == CMD_INSERT)
