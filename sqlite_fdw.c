@@ -1142,28 +1142,26 @@ sqliteExecForeignInsert(EState *estate,
 	SqliteFdwExecState *fmstate = (SqliteFdwExecState *) resultRelInfo->ri_FdwState;
 	ListCell   *lc;
 	Datum		value = 0;
-	int			n_params = 0;
 	MemoryContext oldcontext;
 	int			rc = SQLITE_OK;
-	bool	   *isnull;
 	int			nestlevel;
+	int			bindnum = 0;
 
 	elog(DEBUG1, "sqlite_fdw : %s", __func__);
 
-	n_params = list_length(fmstate->retrieved_attrs);
 
 	oldcontext = MemoryContextSwitchTo(fmstate->temp_cxt);
-
-	isnull = (bool *) palloc0(sizeof(bool) * n_params);
 
 	nestlevel = sqlite_set_transmission_modes();
 	foreach(lc, fmstate->retrieved_attrs)
 	{
 		int			attnum = lfirst_int(lc) - 1;
 		Oid			type = TupleDescAttr(slot->tts_tupleDescriptor, attnum)->atttypid;
+		bool		isnull;
 
-		value = slot_getattr(slot, attnum + 1, &isnull[attnum]);
-		sqlite_bind_sql_var(type, attnum, value, fmstate->stmt, &isnull[attnum]);
+		value = slot_getattr(slot, attnum + 1, &isnull);
+		sqlite_bind_sql_var(type, bindnum, value, fmstate->stmt, &isnull);
+		bindnum++;
 	}
 	sqlite_reset_transmission_modes(nestlevel);
 
