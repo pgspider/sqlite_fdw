@@ -557,10 +557,10 @@ sqliteGetForeignPlan(
 								  remote_exprs, best_path->path.pathkeys,
 								  false, &retrieved_attrs, &params_list);
 
-	for_update = false;
-	if (baserel->relid == root->parse->resultRelation &&
-		(root->parse->commandType == CMD_UPDATE ||
-		 root->parse->commandType == CMD_DELETE))
+	for_update = true;
+	if (root->parse->commandType == CMD_UPDATE ||
+		root->parse->commandType == CMD_DELETE ||
+		root->parse->commandType == CMD_INSERT)
 	{
 		/* Relation is UPDATE/DELETE target, so use FOR UPDATE */
 		for_update = true;
@@ -909,7 +909,7 @@ sqliteAddForeignUpdateTargets(Query *parsetree,
 				/* ... and add it to the query's targetlist */
 				parsetree->targetList = lappend(parsetree->targetList, tle);
 				has_key = true;
-			} 
+			}
 			else if (strcmp(def->defname, "key") == 0)
 			{
 				elog(ERROR, "impossible column option \"%s\"", def->defname);

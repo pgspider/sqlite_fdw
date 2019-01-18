@@ -6,6 +6,7 @@ CREATE FOREIGN TABLE employee(emp_id int OPTIONS (key 'true'), emp_name text, em
 CREATE FOREIGN TABLE empdata(emp_id int OPTIONS (key 'true'), emp_dat bytea) SERVER sqlite_svr;
 CREATE FOREIGN TABLE numbers(a int OPTIONS (key 'true'), b varchar(255)) SERVER sqlite_svr;
 CREATE FOREIGN TABLE multiprimary(a int, b int OPTIONS (key 'true'), c int OPTIONS(key 'true')) SERVER sqlite_svr;
+CREATE FOREIGN TABLE noprimary(a int, b int) SERVER sqlite_svr;
 SELECT * FROM department LIMIT 10;
  department_id | department_name 
 ---------------+-----------------
@@ -729,6 +730,15 @@ SELECT * FROM columntest;
  100 |   2 | 10
 (1 row)
 
+INSERT INTO noprimary VALUES(1,2);
+INSERT INTO noprimary SELECT * FROM noprimary;
+SELECT * FROM noprimary;
+ a | b 
+---+---
+ 1 | 2
+ 1 | 2
+(2 rows)
+
 DROP FUNCTION test_param_WHERE();
 DROP FOREIGN TABLE numbers;
 DROP FOREIGN TABLE department;
@@ -737,5 +747,6 @@ DROP FOREIGN TABLE empdata;
 DROP FOREIGN TABLE multiprimary;
 DROP FOREIGN TABLE multiprimary2;
 DROP FOREIGN TABLE columntest;
+DROP FOREIGN TABLE noprimary;
 DROP SERVER sqlite_svr;
 DROP EXTENSION sqlite_fdw CASCADE;
