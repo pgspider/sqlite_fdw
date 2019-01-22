@@ -251,6 +251,27 @@ sqlite_is_foreign_expr(PlannerInfo *root,
 	return true;
 }
 
+static bool
+is_valid_type(Oid type)
+{
+	switch (type)
+	{
+		case INT2OID:
+		case INT4OID:
+		case INT8OID:
+		case OIDOID:
+		case FLOAT4OID:
+		case FLOAT8OID:
+		case NUMERICOID:
+		case VARCHAROID:
+		case TEXTOID:
+		case TIMEOID:
+		case TIMESTAMPOID:
+		case TIMESTAMPTZOID:
+			return true;
+	}
+	return false;
+}
 
 /*
  * Check if expression is safe to execute remotely, and return true if so.
@@ -384,6 +405,9 @@ foreign_expr_walker(Node *node,
 		case T_Param:
 			{
 				Param	   *p = (Param *) node;
+
+				if (!is_valid_type(p->paramtype))
+					return false;
 
 				/*
 				 * Collation rule is same as for Consts and non-foreign Vars.
@@ -1550,6 +1574,7 @@ sqlite_deparse_update(StringInfo buf, PlannerInfo *root,
 	foreach(lc, attnums)
 	{
 		int			attnum = lfirst_int(lc);
+
 		appendStringInfo(buf, i == 0 ? " WHERE " : " AND ");
 		sqlite_deparse_column_ref(buf, rtindex, attnum, root);
 		appendStringInfo(buf, "=?");
@@ -1578,6 +1603,7 @@ sqlite_deparse_delete(StringInfo buf, PlannerInfo *root,
 	foreach(lc, attname)
 	{
 		int			attnum = lfirst_int(lc);
+
 		appendStringInfo(buf, i == 0 ? " WHERE " : " AND ");
 		sqlite_deparse_column_ref(buf, rtindex, attnum, root);
 		appendStringInfo(buf, "=?");
