@@ -142,6 +142,12 @@ static TupleTableSlot *sqliteExecForeignDelete(EState *estate,
 static void sqliteEndForeignModify(EState *estate,
 					   ResultRelInfo *rinfo);
 
+#if (PG_VERSION_NUM >= 110000)
+static void sqliteEndForeignInsert(EState *estate,
+					   ResultRelInfo *resultRelInfo);
+static void sqliteBeginForeignInsert(ModifyTableState *mtstate,
+						 ResultRelInfo *resultRelInfo);
+#endif
 
 static void sqliteExplainForeignScan(ForeignScanState *node,
 						 struct ExplainState *es);
@@ -242,6 +248,10 @@ sqlite_fdw_handler(PG_FUNCTION_ARGS)
 	fdwroutine->ExecForeignUpdate = sqliteExecForeignUpdate;
 	fdwroutine->ExecForeignDelete = sqliteExecForeignDelete;
 	fdwroutine->EndForeignModify = sqliteEndForeignModify;
+#if (PG_VERSION_NUM >= 110000)
+	fdwroutine->BeginForeignInsert = sqliteBeginForeignInsert;
+	fdwroutine->EndForeignInsert = sqliteEndForeignInsert;
+#endif
 
 	/* support for EXPLAIN */
 	fdwroutine->ExplainForeignScan = sqliteExplainForeignScan;
@@ -1128,7 +1138,20 @@ sqliteBeginForeignModify(ModifyTableState *mtstate,
 	}
 
 }
-
+#if (PG_VERSION_NUM >= 110000)
+static void
+sqliteBeginForeignInsert(ModifyTableState *mtstate,
+						 ResultRelInfo *resultRelInfo)
+{
+	elog(ERROR, "Not support partition insert");
+}
+static void
+sqliteEndForeignInsert(EState *estate,
+					   ResultRelInfo *resultRelInfo)
+{
+	elog(ERROR, "Not support partition insert");
+}
+#endif
 /*
  * sqliteExecForeignInsert
  *		Insert one row into a foreign table
