@@ -32,5 +32,6 @@ CREATE TABLE shorty (
    c   character(10)
 );
 
+CREATE TABLE "A a" (col int primary key);
 
 analyze;

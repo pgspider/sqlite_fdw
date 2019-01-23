@@ -1473,8 +1473,8 @@ sqliteImportForeignSchema(ImportForeignSchemaStmt *stmt,
 			appendStringInfo(&buf, "CREATE FOREIGN TABLE %s.%s (\n",
 							 stmt->local_schema, quote_identifier(table));
 
-			query = palloc0(strlen(table) + 20);
-			sprintf(query, "PRAGMA table_info(%s)", table);
+			query = palloc0(strlen(table) + 30);
+			sprintf(query, "PRAGMA table_info(%s)", quote_identifier(table));
 
 			sqlite_prepare_wrapper(db, query, (sqlite3_stmt * *) & pragma_stmt, NULL);
 
