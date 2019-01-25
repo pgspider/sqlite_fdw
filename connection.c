@@ -18,6 +18,7 @@
 #include "mb/pg_wchar.h"
 #include "miscadmin.h"
 #include "utils/hsearch.h"
+#include "utils/inval.h"
 #include "utils/memutils.h"
 #include "utils/resowner.h"
 #include "utils/syscache.h"
@@ -61,6 +62,8 @@ static void sqlitefdw_subxact_callback(SubXactEvent event,
 						   SubTransactionId mySubid,
 						   SubTransactionId parentSubid,
 						   void *arg);
+static void
+			sqlitefdw_inval_callback(Datum arg, int cacheid, uint32 hashvalue);
 
 /*
  * sqlite_get_connection:
@@ -98,6 +101,8 @@ sqlite_get_connection(ForeignServer *server)
 		 */
 		RegisterXactCallback(sqlitefdw_xact_callback, NULL);
 		RegisterSubXactCallback(sqlitefdw_subxact_callback, NULL);
+		CacheRegisterSyscacheCallback(FOREIGNSERVEROID,
+									  sqlitefdw_inval_callback, (Datum) 0);
 	}
 
 	/* Set flag that we did GetConnection during the current transaction */
@@ -124,12 +129,31 @@ sqlite_get_connection(ForeignServer *server)
 		/* initialize new hashtable entry (key is already filled in) */
 		entry->conn = NULL;
 	}
+
+	/*
+	 * If the connection needs to be remade due to invalidation, disconnect as
+	 * soon as we're out of all transactions.
+	 */
+	if (entry->conn != NULL && entry->invalidated && entry->xact_depth == 0)
+	{
+		int			rc = sqlite3_close(entry->conn);
+
+		elog(DEBUG1, "closing connection %p for option changes to take effect. sqlite3_close=%d",
+			 entry->conn, rc);
+		entry->conn = NULL;
+	}
+
 	if (entry->conn == NULL)
 	{
 		int			rc;
 		char	   *err;
 
 		entry->xact_depth = 0;
+		entry->invalidated = false;
+		entry->server_hashvalue =
+			GetSysCacheHashValue1(FOREIGNSERVEROID,
+								  ObjectIdGetDatum(server->serverid));
+
 		rc = sqlite3_open(dbpath, &entry->conn);
 		if (rc != SQLITE_OK)
 			ereport(ERROR,
@@ -470,5 +494,44 @@ sqlitefdw_subxact_callback(SubXactEvent event, SubTransactionId mySubid,
 
 		/* OK, we're outta that level of subtransaction */
 		entry->xact_depth--;
+	}
+}
+
+/*
+ * Connection invalidation callback function
+ *
+ * After a change to a pg_foreign_server or pg_user_mapping catalog entry,
+ * mark connections depending on that entry as needing to be remade.
+ * We can't immediately destroy them, since they might be in the midst of
+ * a transaction, but we'll remake them at the next opportunity.
+ *
+ * Although most cache invalidation callbacks blow away all the related stuff
+ * regardless of the given hashvalue, connections are expensive enough that
+ * it's worth trying to avoid that.
+ *
+ * NB: We could avoid unnecessary disconnection more strictly by examining
+ * individual option values, but it seems too much effort for the gain.
+ */
+static void
+sqlitefdw_inval_callback(Datum arg, int cacheid, uint32 hashvalue)
+{
+	HASH_SEQ_STATUS scan;
+	ConnCacheEntry *entry;
+
+	Assert(cacheid == FOREIGNSERVEROID || cacheid == USERMAPPINGOID);
+
+	/* ConnectionHash must exist already, if we're registered */
+	hash_seq_init(&scan, ConnectionHash);
+	while ((entry = (ConnCacheEntry *) hash_seq_search(&scan)))
+	{
+		/* Ignore invalid entries */
+		if (entry->conn == NULL)
+			continue;
+
+		/* hashvalue == 0 means a cache reset, must clear all state */
+		if (hashvalue == 0 ||
+			(cacheid == FOREIGNSERVEROID &&
+			 entry->server_hashvalue == hashvalue))
+			entry->invalidated = true;
 	}
 }
