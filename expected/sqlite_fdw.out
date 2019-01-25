@@ -1,3 +1,5 @@
+--SET log_min_messages  TO DEBUG1;
+--SET client_min_messages  TO DEBUG1;
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlitefdw_test.db');

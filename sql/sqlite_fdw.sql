@@ -1,3 +1,5 @@
+--SET log_min_messages  TO DEBUG1;
+--SET client_min_messages  TO DEBUG1;
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlitefdw_test.db');
@@ -207,7 +209,6 @@ UPDATE columntest SET c=10 WHERE a = 1;
 SELECT * FROM columntest;
 UPDATE columntest SET a=100 WHERE c = 10;
 SELECT * FROM columntest;
-
 INSERT INTO noprimary VALUES(1,2);
 INSERT INTO noprimary SELECT * FROM noprimary;
 SELECT * FROM noprimary;

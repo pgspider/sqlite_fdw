@@ -1,3 +1,5 @@
+--SET log_min_messages  TO DEBUG1;
+--SET client_min_messages  TO DEBUG1;
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlitefdw_test.db');
@@ -21,6 +23,8 @@ INSERT INTO "type_DOUBLE"(col) VALUES (3.14159265);
 INSERT INTO "type_TIMESTAMP" VALUES ('2017.11.06 12:34:56.789', '2017.11.06');
 INSERT INTO "type_TIMESTAMP" VALUES ('2017.11.06 1:3:0', '2017.11.07');
 INSERT INTO "type_BLOB"(col) VALUES (bytea('\xDEADBEEF'));
+\d typetest;
+INSERT INTO typetest VALUES(1,'a', 'b', 'c','2017.11.06 12:34:56.789', '2017.11.06 12:34:56.789' ) ;
 
 SELECT * FROM "type_STRING";
 SELECT * FROM "type_BOOLEAN";
@@ -33,7 +37,7 @@ SELECT * FROM "type_DOUBLE";
 set datestyle=ISO;
 SELECT * FROM "type_TIMESTAMP";
 SELECT * FROM "type_BLOB";
-
+SELECT * FROM typetest;
 
 CREATE FOREIGN TABLE BitT (p integer, a BIT(3), b BIT VARYING(5)) SERVER sqlite_svr;
 insert into bitt values(1, B'100', B'10111');

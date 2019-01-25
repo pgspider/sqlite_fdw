@@ -25,6 +25,7 @@ CREATE TABLE "type_TIMESTAMP" (col timestamp primary key, b timestamp);--, c dat
 CREATE TABLE "type_BLOB" (col blob primary key);
 CREATE TABLE BitT (p integer primary key, a BIT(3), b BIT VARYING(5));
 CREATE TABLE notype (a);
+CREATE TABLE typetest (i integer, v varchar(10) , c char(10), t text, d datetime, ti timestamp);
 
 -- a table that is missing some fields
 CREATE TABLE shorty (

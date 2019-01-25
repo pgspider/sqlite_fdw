@@ -1958,12 +1958,15 @@ sqlite_to_pg_type(StringInfo str, char *type)
 		{"doub", "double precision"},
 	{NULL, NULL}};
 
-	static const char *pg_type[] = {
-		"time",
-		"date",
-		"bit",					/* bit(n) and bit varying(n) */
-		"boolean",
-		NULL
+	static const char *pg_type[][2] = {
+		{"datetime", "timestamp"},
+		{"time"},
+		{"date"},
+		{"bit"},					/* bit(n) and bit varying(n) */
+		{"boolean"},
+		{"varchar"},
+		{"char"},
+		{NULL}
 	};
 
 	if (type == NULL || type[0] == '\0')
@@ -1975,6 +1978,20 @@ sqlite_to_pg_type(StringInfo str, char *type)
 
 	type = str_tolower(type, strlen(type), C_COLLATION_OID);
 
+	for (i = 0; pg_type[i][0] != NULL; i++)
+	{
+		if (strncmp(type, pg_type[i][0], strlen(pg_type[i][0])) == 0)
+		{
+			/* Pass type to PostgreSQL as it is */
+			if (pg_type[i][1] == NULL)
+				appendStringInfoString(str, type);
+			else
+				appendStringInfoString(str, pg_type[i][1]);
+			pfree(type);
+			return;
+		}
+	}
+
 	for (i = 0; affinity[i][0] != NULL; i++)
 	{
 		if (strstr(type, affinity[i][0]) != 0)
@@ -1984,25 +2001,6 @@ sqlite_to_pg_type(StringInfo str, char *type)
 			return;
 		}
 	}
-
-	if (strcmp(type, "datetime") == 0)
-	{
-		appendStringInfoString(str, "timestamp");
-		pfree(type);
-		return;
-	}
-
-	for (i = 0; pg_type[i] != NULL; i++)
-	{
-		if (strncmp(type, pg_type[i], strlen(pg_type[i])) == 0)
-		{
-			/* Pass type to PostgreSQL as it is */
-			appendStringInfoString(str, type);
-			pfree(type);
-			return;
-		}
-	}
-
 	/* decimal for numeric affinity */
 	appendStringInfoString(str, "decimal");
 	pfree(type);
