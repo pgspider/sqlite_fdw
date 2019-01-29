@@ -131,7 +131,7 @@ static void appendAggOrderBy(List *orderList, List *targetList,
 static void appendOrderByClause(List *pathkeys, deparse_expr_cxt *context);
 static void appendFunctionName(Oid funcid, deparse_expr_cxt *context);
 
-					   static Node *deparseSortGroupClause(Index ref, List *tlist, bool force_colno,
+static Node *deparseSortGroupClause(Index ref, List *tlist, bool force_colno,
 					   deparse_expr_cxt *context);
 static void deparseExplicitTargetList(List *tlist, List **retrieved_attrs,
 						  deparse_expr_cxt *context);
@@ -325,14 +325,12 @@ foreign_expr_walker(Node *node,
 					/* Var belongs to foreign table */
 
 					/*
-					 * System columns other than ctid and oid should not be
-					 * sent to the remote, since we don't make any effort to
-					 * ensure that local and remote values match (tableoid, in
-					 * particular, almost certainly doesn't match).
+					 * System columns should not be sent to the remote, since
+					 * we don't make any effort to ensure that local and
+					 * remote values match (tableoid, in particular, almost
+					 * certainly doesn't match).
 					 */
-					if (var->varattno < 0 &&
-						var->varattno != SelfItemPointerAttributeNumber &&
-						var->varattno != ObjectIdAttributeNumber)
+					if (var->varattno < 0)
 						return false;
 
 					/* Else check the collation */
@@ -2526,7 +2524,7 @@ appendFunctionName(Oid funcid, deparse_expr_cxt *context)
  * need not find it again.
  */
 static Node *
-deparseSortGroupClause(Index ref, List *tlist,  bool force_colno,deparse_expr_cxt *context)
+deparseSortGroupClause(Index ref, List *tlist, bool force_colno, deparse_expr_cxt *context)
 {
 	StringInfo	buf = context->buf;
 	TargetEntry *tle;
