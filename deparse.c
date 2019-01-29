@@ -766,19 +766,10 @@ foreign_expr_walker(Node *node,
 						return false;
 				}
 
-				/*
-				 * For aggorder elements, check whether the sort operator, if
-				 * specified, is shippable or not.
-				 */
-				if (agg->aggorder)
+				if (agg->aggorder || agg->aggfilter)
 				{
 					return false;
 				}
-
-				/* Check aggregate filter */
-				if (!foreign_expr_walker((Node *) agg->aggfilter,
-										 glob_cxt, &inner_cxt))
-					return false;
 
 				/*
 				 * If aggregate's input collation is not derived from a
