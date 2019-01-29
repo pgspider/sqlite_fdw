@@ -646,6 +646,13 @@ SELECT count(nullif(a, 1)) FROM multiprimary;
      1
 (1 row)
 
+SELECT a,a FROM multiprimary group by 1,2;
+ a | a 
+---+---
+ 1 | 1
+ 2 | 2
+(2 rows)
+
 SELECT * from multiprimary, numbers WHERE multiprimary.a=numbers.a;
  a | b  | c  | a |  b  
 ---+----+----+---+-----

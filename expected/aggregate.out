@@ -16,22 +16,22 @@ explain (costs off, verbose) select sum(b),max(b), min(b), avg(b) from multiprim
 (3 rows)
 
 explain (costs off, verbose) select sum(b+5)+2 from multiprimary group by b/2 order by b/2;
-                                                 QUERY PLAN                                                 
-------------------------------------------------------------------------------------------------------------
+                                            QUERY PLAN                                            
+--------------------------------------------------------------------------------------------------
  Sort
    Output: ((sum((b + 5)) + '2'::numeric)), ((b / 2))
    Sort Key: ((multiprimary.b / 2))
    ->  Foreign Scan
          Output: ((sum((b + 5)) + '2'::numeric)), ((b / 2))
-         SQLite query: SELECT (sum(("b" + 5)) + 2), ("b" / 2) FROM main."multiprimary" GROUP BY (("b" / 2))
+         SQLite query: SELECT (sum(("b" + 5)) + 2), ("b" / 2) FROM main."multiprimary" GROUP BY 2
 (6 rows)
 
 explain (costs off, verbose) select sum(a) from multiprimary group by b having sum(a) > 0;
-                                             QUERY PLAN                                             
-----------------------------------------------------------------------------------------------------
+                                            QUERY PLAN                                            
+--------------------------------------------------------------------------------------------------
  Foreign Scan
    Output: (sum(a)), b
-   SQLite query: SELECT sum("a"), "b" FROM main."multiprimary" GROUP BY "b" HAVING ((sum("a") > 0))
+   SQLite query: SELECT sum("a"), "b" FROM main."multiprimary" GROUP BY 2 HAVING ((sum("a") > 0))
 (3 rows)
 
 explain (costs off, verbose) select sum(a) from multiprimary group by b having avg(a^2) > 0 and sum(a) > 0;

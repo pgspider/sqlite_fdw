@@ -180,6 +180,7 @@ SELECT sum(b+5)+2 from multiprimary group by b/2 order by b/2;
 SELECT sum(a) from multiprimary group by b having sum(a) > 0 order by sum(a);
 SELECT sum(a) A from multiprimary group by b having avg(abs(a)) > 0 AND sum(a) > 0 order by A;
 SELECT count(nullif(a, 1)) FROM multiprimary;
+SELECT a,a FROM multiprimary group by 1,2;
 
 SELECT * from multiprimary, numbers WHERE multiprimary.a=numbers.a;
 

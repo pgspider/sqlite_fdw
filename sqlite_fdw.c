@@ -1562,7 +1562,7 @@ static bool
 foreign_grouping_ok(PlannerInfo *root, RelOptInfo *grouped_rel)
 {
 	Query	   *query = root->parse;
-	PathTarget *grouping_target;
+	PathTarget *grouping_target = root->upper_targets[UPPERREL_GROUP_AGG];
 	SqliteFdwRelationInfo *fpinfo = (SqliteFdwRelationInfo *) grouped_rel->fdw_private;
 	SqliteFdwRelationInfo *ofpinfo;
 	List	   *aggvars;
@@ -1585,23 +1585,7 @@ foreign_grouping_ok(PlannerInfo *root, RelOptInfo *grouped_rel)
 	if (ofpinfo->local_conds)
 		return false;
 
-	/*
-	 * The targetlist expected from this node and the targetlist pushed down
-	 * to the foreign server may be different. The latter requires
-	 * sortgrouprefs to be set to push down GROUP BY clause, but should not
-	 * have those arising from ORDER BY clause. These sortgrouprefs may be
-	 * different from those in the plan's targetlist. Use a copy of path
-	 * target to record the new sortgrouprefs.
-	 */
-	grouping_target = copy_pathtarget(root->upper_targets[UPPERREL_GROUP_AGG]);
 
-	/*
-	 * Evaluate grouping targets and check whether they are safe to push down
-	 * to the foreign side.  All GROUP BY expressions will be part of the
-	 * grouping target and thus there is no need to evaluate it separately.
-	 * While doing so, add required expressions into target list which can
-	 * then be used to pass to foreign server.
-	 */
 	i = 0;
 	foreach(lc, grouping_target->exprs)
 	{
@@ -1612,6 +1596,7 @@ foreign_grouping_ok(PlannerInfo *root, RelOptInfo *grouped_rel)
 		/* Check whether this expression is part of GROUP BY clause */
 		if (sgref && get_sortgroupref_clause_noerr(sgref, query->groupClause))
 		{
+			TargetEntry *tle;
 			/*
 			 * If any of the GROUP BY expression is not shippable we can not
 			 * push down aggregation to the foreign server.
@@ -1619,8 +1604,17 @@ foreign_grouping_ok(PlannerInfo *root, RelOptInfo *grouped_rel)
 			if (!sqlite_is_foreign_expr(root, grouped_rel, expr))
 				return false;
 
-			/* Pushable, add to tlist */
-			tlist = add_to_flat_tlist(tlist, list_make1(expr));
+			/*
+			 * Pushable, so add to tlist.  We need to create a TLE for this
+			 * expression and apply the sortgroupref to it.  We cannot use
+			 * add_to_flat_tlist() here because that avoids making duplicate
+			 * entries in the tlist.  If there are duplicate entries with
+			 * distinct sortgrouprefs, we have to duplicate that situation in
+			 * the output tlist.
+			 */
+			tle = makeTargetEntry(expr, list_length(tlist) + 1, NULL, false);
+			tle->ressortgroupref = sgref;
+			tlist = lappend(tlist, tle);
 		}
 		else
 		{
@@ -1632,13 +1626,7 @@ foreign_grouping_ok(PlannerInfo *root, RelOptInfo *grouped_rel)
 			}
 			else
 			{
-				/*
-				 * If we have sortgroupref set, then it means that we have an
-				 * ORDER BY entry pointing to this expression.  Since we are
-				 * not pushing ORDER BY with GROUP BY, clear it.
-				 */
-				if (sgref)
-					grouping_target->sortgrouprefs[i] = 0;
+
 
 				/* Not matched exactly, pull the var with aggregates then */
 				aggvars = pull_var_clause((Node *) expr,
@@ -1748,8 +1736,6 @@ foreign_grouping_ok(PlannerInfo *root, RelOptInfo *grouped_rel)
 		}
 	}
 
-	/* Transfer any sortgroupref data to the replacement tlist */
-	apply_pathtarget_labeling_to_tlist(tlist, grouping_target);
 
 	/* Store generated targetlist */
 	fpinfo->grouped_tlist = tlist;
