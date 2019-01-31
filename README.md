@@ -2,7 +2,7 @@
 This PostgreSQL extension is a Foreign Data Wrapper for [SQLite][1].  
 The current version can work with PostgreSQL 9.6, 10 and 11.  
 
-## 1. Installation
+## Installation
 ### 1. Install SQLite library
 
 For debian or ubuntu:
@@ -26,7 +26,7 @@ make
 make install
 </pre>
 
-## 2. Usage
+## Usage
 ### Load extension
 <pre>
 CREATE EXTENSION sqlite_fdw;
@@ -54,19 +54,19 @@ IMPORT FOREIGN SCHEMA public FROM SERVER sqlite_server INTO public;
 SELECT * FROM t1;
 </pre>
 
-## 3. Features
+## Features
 - Support update to foreign table  
 - WHERE clauses are pushdowned  
 - Aggregate function are pushdowned
 - Transactions  
 
-## 4. Limitations
-Nothing.
-
-## 5. Contributing
+## Limitations
+- `COPY` command for foreign tables is not supported
+- Insert into a partitioned table which has foreign partitions is not supported
+## Contributing
 Opening issues and pull requests on GitHub are welcome.
 
-## 6. License
+## License
 Copyright (c) 2017-2018, TOSHIBA Corporation  
 Copyright (c) 2011 - 2016, EnterpriseDB Corporation  
 
