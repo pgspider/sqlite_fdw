@@ -181,7 +181,6 @@ SELECT sum(a) from multiprimary group by b having sum(a) > 0 order by sum(a);
 SELECT sum(a) A from multiprimary group by b having avg(abs(a)) > 0 AND sum(a) > 0 order by A;
 SELECT count(nullif(a, 1)) FROM multiprimary;
 SELECT a,a FROM multiprimary group by 1,2;
-
 SELECT * from multiprimary, numbers WHERE multiprimary.a=numbers.a;
 
 INSERT INTO numbers VALUES(4, 'Four');
@@ -202,6 +201,10 @@ CREATE FOREIGN TABLE multiprimary2(a int, b int, c int OPTIONS(column_name 'b'))
 SELECT * FROM multiprimary2;
 ALTER FOREIGN TABLE multiprimary2 ALTER COLUMN a OPTIONS(ADD column_name 'b');
 SELECT * FROM multiprimary2;
+ALTER FOREIGN TABLE multiprimary2 ALTER COLUMN b OPTIONS (column_name 'nosuch column');
+SELECT * FROM multiprimary2;
+EXPLAIN (VERBOSE) SELECT * FROM multiprimary2;
+SELECT a FROM multiprimary2 WHERE b = 1;
 
 
 CREATE FOREIGN TABLE columntest(a int OPTIONS(column_name 'a a', key 'true'), "b b" int  OPTIONS(key 'true'), c int OPTIONS(column_name 'c c')) SERVER sqlite_svr;

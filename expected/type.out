@@ -167,7 +167,7 @@ EXPLAIN (VERBOSE, COSTS OFF) SELECT * FROM  "type_TIMESTAMP" WHERE col > date ('
 ---------------------------------------------------------------------------------------------
  Foreign Scan on public."type_TIMESTAMP"
    Output: col, b
-   SQLite query: SELECT "col", "b" FROM main."type_TIMESTAMP" WHERE (("col" > '2017-11-06'))
+   SQLite query: SELECT `col`, `b` FROM main."type_TIMESTAMP" WHERE ((`col` > '2017-11-06'))
 (3 rows)
 
 SELECT * FROM  "type_TIMESTAMP" WHERE col > date ('2017.11.06 12:34:56.789') ;
@@ -183,7 +183,7 @@ EXPLAIN (VERBOSE, COSTS OFF) SELECT * FROM  "type_TIMESTAMP" WHERE col::text > d
  Foreign Scan on public."type_TIMESTAMP"
    Output: col, b
    Filter: (("type_TIMESTAMP".col)::text > ('2017-11-06'::date)::text)
-   SQLite query: SELECT "col", "b" FROM main."type_TIMESTAMP"
+   SQLite query: SELECT `col`, `b` FROM main."type_TIMESTAMP"
 (4 rows)
 
 SELECT * FROM  "type_TIMESTAMP" WHERE col::text > date ('2017.11.06 12:34:56.789')::text ;
@@ -199,7 +199,7 @@ EXPLAIN  (VERBOSE, COSTS OFF) SELECT * FROM  "type_TIMESTAMP" WHERE col > b - in
  Foreign Scan on public."type_TIMESTAMP"
    Output: col, b
    Filter: ("type_TIMESTAMP".col > ("type_TIMESTAMP".b - '@ 1 hour'::interval))
-   SQLite query: SELECT "col", "b" FROM main."type_TIMESTAMP"
+   SQLite query: SELECT `col`, `b` FROM main."type_TIMESTAMP"
 (4 rows)
 
 SELECT * FROM  "type_TIMESTAMP" WHERE col > b - interval '1 hour';
@@ -213,7 +213,7 @@ EXPLAIN (VERBOSE, COSTS OFF) SELECT * FROM  "type_TIMESTAMP" WHERE col > b;
 ------------------------------------------------------------------------------------
  Foreign Scan on public."type_TIMESTAMP"
    Output: col, b
-   SQLite query: SELECT "col", "b" FROM main."type_TIMESTAMP" WHERE (("col" > "b"))
+   SQLite query: SELECT `col`, `b` FROM main."type_TIMESTAMP" WHERE ((`col` > `b`))
 (3 rows)
 
 SELECT * FROM  "type_TIMESTAMP" WHERE col > b;

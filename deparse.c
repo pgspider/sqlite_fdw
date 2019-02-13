@@ -1396,7 +1396,7 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 							  ,false
 #endif
 			);
-	appendStringInfoString(buf, sqlite_quote_identifier(colname, QUOTE));
+	appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
 }
 
 
