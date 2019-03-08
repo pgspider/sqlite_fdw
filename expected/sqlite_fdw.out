@@ -662,6 +662,24 @@ SELECT * from multiprimary, numbers WHERE multiprimary.a=numbers.a;
  2 | 20 | 40 | 2 | Two
 (4 rows)
 
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT sum(a) FROM multiprimary HAVING sum(a) > 0;
+                        QUERY PLAN                         
+-----------------------------------------------------------
+ Aggregate
+   Output: sum(a)
+   Filter: (sum(multiprimary.a) > 0)
+   ->  Foreign Scan on public.multiprimary
+         Output: a, b, c
+         SQLite query: SELECT `a` FROM main."multiprimary"
+(6 rows)
+
+SELECT sum(a) FROM multiprimary HAVING sum(a) > 0;
+ sum 
+-----
+   5
+(1 row)
+
 INSERT INTO numbers VALUES(4, 'Four');
 -- All where clauses are pushed down
 SELECT * FROM numbers WHERE abs(a) = 4 AND upper(b) = 'FOUR' AND lower(b) = 'four';

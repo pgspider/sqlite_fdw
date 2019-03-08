@@ -183,6 +183,10 @@ SELECT count(nullif(a, 1)) FROM multiprimary;
 SELECT a,a FROM multiprimary group by 1,2;
 SELECT * from multiprimary, numbers WHERE multiprimary.a=numbers.a;
 
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT sum(a) FROM multiprimary HAVING sum(a) > 0;
+SELECT sum(a) FROM multiprimary HAVING sum(a) > 0;
+
 INSERT INTO numbers VALUES(4, 'Four');
 
 -- All where clauses are pushed down

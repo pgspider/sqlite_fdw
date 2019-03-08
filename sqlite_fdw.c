@@ -1837,6 +1837,10 @@ add_foreign_grouping_paths(PlannerInfo *root, RelOptInfo *input_rel,
 		!root->hasHavingQual)
 		return;
 
+	/* SQLite does not allow HAVING without GROUP BY */
+	if (root->hasHavingQual && !parse->groupClause)
+		return;
+
 	grouping_target = root->upper_targets[UPPERREL_GROUP_AGG];
 
 	/* save the input_rel as outerrel in fpinfo */
