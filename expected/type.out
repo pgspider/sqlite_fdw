@@ -104,14 +104,6 @@ SELECT * FROM typetest;
  1 | a | b          | c | 2017-11-06 12:34:56.789 | 2017-11-06 12:34:56.789
 (1 row)
 
-CREATE FOREIGN TABLE BitT (p integer, a BIT(3), b BIT VARYING(5)) SERVER sqlite_svr;
-insert into bitt values(1, B'100', B'10111');
-SELECT * FROM bitt;
- p |  a  |   b   
----+-----+-------
- 1 | 100 | 10111
-(1 row)
-
 insert into "type_STRING" values('TYPE');
 insert into "type_STRING" values('type');
 -- not pushdown

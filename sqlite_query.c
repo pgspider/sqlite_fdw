@@ -63,23 +63,6 @@
 #include "catalog/pg_type.h"
 
 
-
-
-#define DATE_SQLITE_PG(x, y) \
-do { \
-x->year = y.tm_year; \
-x->month = y.tm_mon; \
-x->day= y.tm_mday; \
-x->hour = y.tm_hour; \
-x->minute = y.tm_min; \
-x->second = y.tm_sec; \
-} while(0);
-
-
-static int	dec_bin(int n);
-static int	bin_dec(int n);
-
-
 /*
  * convert_sqlite_to_pg: Convert Sqlite data into PostgreSQL's compatible data types
  */
@@ -91,7 +74,6 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum)
 	regproc		typeinput;
 	HeapTuple	tuple;
 	int			typemod;
-	char		str[MAXDATELEN];
 
 	/* get the type's output function */
 	tuple = SearchSysCache1(TYPEOID, ObjectIdGetDatum(pgtyp));
@@ -130,11 +112,6 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum)
 				SET_VARSIZE(value_datum, blobsize + VARHDRSZ);
 				return PointerGetDatum(value_datum);
 			}
-		case VARBITOID:
-		case BITOID:
-			sprintf(str, "%d", dec_bin(sqlite3_column_int(stmt, attnum)));
-			valueDatum = CStringGetDatum((char *) str);
-			break;
 		case INT2OID:
 			{
 				int			value = sqlite3_column_int(stmt, attnum);
@@ -272,23 +249,6 @@ sqlite_bind_sql_var(Oid type, int attnum, Datum value, sqlite3_stmt * stmt, bool
 				ret = sqlite3_bind_text(stmt, attnum, outputString, -1, SQLITE_TRANSIENT);
 				break;
 			}
-
-
-		case VARBITOID:
-		case BITOID:
-			{
-				int32		dat;
-				char	   *outputString = NULL;
-				Oid			outputFunctionId = InvalidOid;
-				bool		typeVarLength = false;
-
-				getTypeOutputInfo(type, &outputFunctionId, &typeVarLength);
-				outputString = OidOutputFunctionCall(outputFunctionId, value);
-				dat = bin_dec(atoi(outputString));
-				ret = sqlite3_bind_int(stmt, attnum, dat);
-				break;
-			}
-
 		case BYTEAOID:
 			{
 				int			len;
@@ -323,39 +283,4 @@ sqlite_bind_sql_var(Oid type, int attnum, Datum value, sqlite3_stmt * stmt, bool
 							   sqlite3_errmsg(sqlite3_db_handle(stmt))),
 						errhint("Constant value data type: %u", type)));
 
-}
-
-static
-int
-dec_bin(int n)
-{
-	int			rem,
-				i = 1;
-	int			bin = 0;
-
-	while (n != 0)
-	{
-		rem = n % 2;
-		n /= 2;
-		bin += rem * i;
-		i *= 10;
-	}
-	return bin;
-}
-
-static int
-bin_dec(int n)
-{
-	int			dec = 0;
-	int			i = 0;
-	int			rem;
-
-	while (n != 0)
-	{
-		rem = n % 10;
-		n /= 10;
-		dec += rem * pow(2, i);
-		++i;
-	}
-	return dec;
 }

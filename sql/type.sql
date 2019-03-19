@@ -39,10 +39,6 @@ SELECT * FROM "type_TIMESTAMP";
 SELECT * FROM "type_BLOB";
 SELECT * FROM typetest;
 
-CREATE FOREIGN TABLE BitT (p integer, a BIT(3), b BIT VARYING(5)) SERVER sqlite_svr;
-insert into bitt values(1, B'100', B'10111');
-SELECT * FROM bitt;
-
 insert into "type_STRING" values('TYPE');
 insert into "type_STRING" values('type');
 
