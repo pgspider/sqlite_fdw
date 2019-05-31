@@ -634,8 +634,13 @@ sqliteBeginForeignScan(ForeignScanState *node, int eflags)
 	 */
 	if (fsplan->scan.scanrelid > 0)
 		rtindex = fsplan->scan.scanrelid;
-	else
+	else {
 		rtindex = intVal(list_nth(fsplan->fdw_private, 3));
+		if (rtindex == -2) {
+			/* root->all_baserels at GetForeignPlan is empty */
+			rtindex = bms_next_member(fsplan->fs_relids, -1);
+		}
+	}
 	rte = rt_fetch(rtindex, estate->es_range_table);
 
 	/* Get info about foreign table. */
