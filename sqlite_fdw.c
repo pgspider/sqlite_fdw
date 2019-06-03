@@ -581,7 +581,7 @@ sqliteGetForeignPlan(
 	 * Items in the list must match enum FdwScanPrivateIndex, above.
 	 */
 	fdw_private = list_make3(makeString(sql.data), retrieved_attrs, makeInteger(for_update));
-	fdw_private = lappend(fdw_private, makeInteger(bms_next_member(root->all_baserels, -1)));
+	fdw_private = lappend(fdw_private, makeInteger(root->all_baserels == NULL ? -2 : bms_next_member(root->all_baserels, -1)));
 	if (baserel->reloptkind == RELOPT_JOINREL ||
 		baserel->reloptkind == RELOPT_UPPER_REL)
 		fdw_private = lappend(fdw_private,
