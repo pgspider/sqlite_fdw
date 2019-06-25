@@ -1,6 +1,8 @@
 def NODE_NAME = 'AWS_Instance_CentOS'
+def BRANCH_NAME = 'Branch [' + env.BRANCH_NAME + ']'
+def BUILD_INFO = 'Jenkins job: ' + env.BUILD_URL
 def MAIL_TO='$DEFAULT_RECIPIENTS'
-def MAIL_SUBJECT='[CI PGSpider] SQLite FDW Test FAILED'
+def MAIL_SUBJECT='[CI PGSpider] SQLite FDW Test FAILED ' + BRANCH_NAME
 def SQLITE_FDW_URL = 'https://github.com/pgspider/sqlite_fdw.git'
 
 def retrySh(String shCmd) {
@@ -47,7 +49,7 @@ pipeline {
             post {
                 failure {
                     echo '** BUILD FAILED !!! NEXT STAGE WILL BE SKIPPED **'
-                    emailext subject: "${MAIL_SUBJECT}", body: '${BUILD_LOG, maxLines=200, escapeHtml=false}', to: "${MAIL_TO}", attachLog: false
+                    emailext subject: "${MAIL_SUBJECT}", body: BUILD_INFO + "\nGit commit: " + env.GIT_URL.replace(".git", "/commit/") + env.GIT_COMMIT + "\n" + '${BUILD_LOG, maxLines=200, escapeHtml=false}', to: "${MAIL_TO}", attachLog: false
                 }
             }
         }
@@ -65,7 +67,7 @@ pipeline {
                         status = sh(returnStatus: true, script: "grep -q 'All [0-9]* tests passed' 'make_check.out'")
                         if (status != 0) {
                             unstable(message: "Set UNSTABLE result")
-                            emailext subject: "${MAIL_SUBJECT}", body: '${FILE,path="make_check.out"}', to: "${MAIL_TO}", attachLog: false
+                            emailext subject: "${MAIL_SUBJECT}", body: BUILD_INFO + "\nGit commit: " + env.GIT_URL.replace(".git", "/commit/") + env.GIT_COMMIT + "\n" + '${FILE,path="make_check.out"}', to: "${MAIL_TO}", attachLog: false
                             sh 'cat regression.diffs || true'
                         }
                     }
