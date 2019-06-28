@@ -5399,131 +5399,27 @@ select * from int4_tbl a,
 --    int8_tbl b cross join int8_tbl c) ss
 --   on a.q2 = ss.bq1;
 -- case requiring nested PlaceHolderVars
-explain (verbose, costs off)
-select * from
-  int8_tbl c left join (
-    int8_tbl a left join (select q1, coalesce(q2,42) as x from int8_tbl b) ss1
-      on a.q2 = ss1.q1
-    cross join
-    lateral (select q1, coalesce(ss1.x,q2) as y from int8_tbl d) ss2
-  ) on c.q2 = ss2.q1,
-  lateral (select ss2.y offset 0) ss3;
-                                                                                   QUERY PLAN                                                                                   
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- Nested Loop
-   Output: c.q1, c.q2, a.q1, a.q2, b.q1, (COALESCE(b.q2, '42'::bigint)), d.q1, (COALESCE(COALESCE(b.q2, '42'::bigint), d.q2)), ((COALESCE(COALESCE(b.q2, '42'::bigint), d.q2)))
-   ->  Merge Left Join
-         Output: c.q1, c.q2, a.q1, a.q2, b.q1, d.q1, (COALESCE(b.q2, '42'::bigint)), (COALESCE(COALESCE(b.q2, '42'::bigint), d.q2))
-         Merge Cond: (c.q2 = d.q1)
-         ->  Sort
-               Output: c.q1, c.q2
-               Sort Key: c.q2
-               ->  Foreign Scan on public.int8_tbl c
-                     Output: c.q1, c.q2
-                     SQLite query: SELECT `q1`, `q2` FROM main."int8_tbl"
-         ->  Materialize
-               Output: a.q1, a.q2, b.q1, d.q1, (COALESCE(b.q2, '42'::bigint)), (COALESCE(COALESCE(b.q2, '42'::bigint), d.q2))
-               ->  Sort
-                     Output: a.q1, a.q2, b.q1, d.q1, (COALESCE(b.q2, '42'::bigint)), (COALESCE(COALESCE(b.q2, '42'::bigint), d.q2))
-                     Sort Key: d.q1
-                     ->  Nested Loop
-                           Output: a.q1, a.q2, b.q1, d.q1, (COALESCE(b.q2, '42'::bigint)), (COALESCE(COALESCE(b.q2, '42'::bigint), d.q2))
-                           ->  Merge Left Join
-                                 Output: a.q1, a.q2, b.q1, (COALESCE(b.q2, '42'::bigint))
-                                 Merge Cond: (a.q2 = b.q1)
-                                 ->  Sort
-                                       Output: a.q1, a.q2
-                                       Sort Key: a.q2
-                                       ->  Foreign Scan on public.int8_tbl a
-                                             Output: a.q1, a.q2
-                                             SQLite query: SELECT `q1`, `q2` FROM main."int8_tbl"
-                                 ->  Materialize
-                                       Output: b.q1, (COALESCE(b.q2, '42'::bigint))
-                                       ->  Sort
-                                             Output: b.q1, (COALESCE(b.q2, '42'::bigint))
-                                             Sort Key: b.q1
-                                             ->  Foreign Scan on public.int8_tbl b
-                                                   Output: b.q1, COALESCE(b.q2, '42'::bigint)
-                                                   SQLite query: SELECT `q1`, `q2` FROM main."int8_tbl"
-                           ->  Materialize
-                                 Output: d.q1, (COALESCE(COALESCE(b.q2, '42'::bigint), d.q2))
-                                 ->  Foreign Scan on public.int8_tbl d
-                                       Output: d.q1, COALESCE(COALESCE(b.q2, '42'::bigint), d.q2)
-                                       SQLite query: SELECT `q1`, `q2` FROM main."int8_tbl"
-   ->  Result
-         Output: (COALESCE(COALESCE(b.q2, '42'::bigint), d.q2))
-(42 rows)
-
+-- explain (verbose, costs off)
+-- select * from
+--   int8_tbl c left join (
+--     int8_tbl a left join (select q1, coalesce(q2,42) as x from int8_tbl b) ss1
+--       on a.q2 = ss1.q1
+--     cross join
+--     lateral (select q1, coalesce(ss1.x,q2) as y from int8_tbl d) ss2
+--   ) on c.q2 = ss2.q1,
+--   lateral (select ss2.y offset 0) ss3;
 -- case that breaks the old ph_may_need optimization
-explain (verbose, costs off)
-select c.*,a.*,ss1.q1,ss2.q1,ss3.* from
-  int8_tbl c left join (
-    int8_tbl a left join
-      (select q1, coalesce(q2,f1) as x from int8_tbl b, int4_tbl b2
-       where q1 < f1) ss1
-      on a.q2 = ss1.q1
-    cross join
-    lateral (select q1, coalesce(ss1.x,q2) as y from int8_tbl d) ss2
-  ) on c.q2 = ss2.q1,
-  lateral (select * from int4_tbl i where ss2.y > f1) ss3;
-                                               QUERY PLAN                                               
---------------------------------------------------------------------------------------------------------
- Merge Left Join
-   Output: c.q1, c.q2, a.q1, a.q2, b.q1, d.q1, i.f1
-   Merge Cond: (c.q2 = d.q1)
-   Filter: ((COALESCE(COALESCE(b.q2, (b2.f1)::bigint), d.q2)) > i.f1)
-   ->  Sort
-         Output: c.q1, c.q2, i.f1
-         Sort Key: c.q2
-         ->  Nested Loop
-               Output: c.q1, c.q2, i.f1
-               ->  Foreign Scan on public.int8_tbl c
-                     Output: c.q1, c.q2
-                     SQLite query: SELECT `q1`, `q2` FROM main."int8_tbl"
-               ->  Materialize
-                     Output: i.f1
-                     ->  Foreign Scan on public.int4_tbl i
-                           Output: i.f1
-                           SQLite query: SELECT `f1` FROM main."int4_tbl"
-   ->  Materialize
-         Output: a.q1, a.q2, b.q1, d.q1, (COALESCE(COALESCE(b.q2, (b2.f1)::bigint), d.q2))
-         ->  Sort
-               Output: a.q1, a.q2, b.q1, d.q1, (COALESCE(COALESCE(b.q2, (b2.f1)::bigint), d.q2))
-               Sort Key: d.q1
-               ->  Nested Loop
-                     Output: a.q1, a.q2, b.q1, d.q1, (COALESCE(COALESCE(b.q2, (b2.f1)::bigint), d.q2))
-                     ->  Merge Left Join
-                           Output: a.q1, a.q2, b.q1, (COALESCE(b.q2, (b2.f1)::bigint))
-                           Merge Cond: (a.q2 = b.q1)
-                           ->  Sort
-                                 Output: a.q1, a.q2
-                                 Sort Key: a.q2
-                                 ->  Foreign Scan on public.int8_tbl a
-                                       Output: a.q1, a.q2
-                                       SQLite query: SELECT `q1`, `q2` FROM main."int8_tbl"
-                           ->  Materialize
-                                 Output: b.q1, (COALESCE(b.q2, (b2.f1)::bigint))
-                                 ->  Sort
-                                       Output: b.q1, (COALESCE(b.q2, (b2.f1)::bigint))
-                                       Sort Key: b.q1
-                                       ->  Nested Loop
-                                             Output: b.q1, COALESCE(b.q2, (b2.f1)::bigint)
-                                             Join Filter: (b.q1 < b2.f1)
-                                             ->  Foreign Scan on public.int8_tbl b
-                                                   Output: b.q1, b.q2
-                                                   SQLite query: SELECT `q1`, `q2` FROM main."int8_tbl"
-                                             ->  Materialize
-                                                   Output: b2.f1
-                                                   ->  Foreign Scan on public.int4_tbl b2
-                                                         Output: b2.f1
-                                                         SQLite query: SELECT `f1` FROM main."int4_tbl"
-                     ->  Materialize
-                           Output: d.q1, (COALESCE(COALESCE(b.q2, (b2.f1)::bigint), d.q2))
-                           ->  Foreign Scan on public.int8_tbl d
-                                 Output: d.q1, COALESCE(COALESCE(b.q2, (b2.f1)::bigint), d.q2)
-                                 SQLite query: SELECT `q1`, `q2` FROM main."int8_tbl"
-(54 rows)
-
+-- explain (verbose, costs off)
+-- select c.*,a.*,ss1.q1,ss2.q1,ss3.* from
+--   int8_tbl c left join (
+--     int8_tbl a left join
+--       (select q1, coalesce(q2,f1) as x from int8_tbl b, int4_tbl b2
+--        where q1 < f1) ss1
+--       on a.q2 = ss1.q1
+--     cross join
+--     lateral (select q1, coalesce(ss1.x,q2) as y from int8_tbl d) ss2
+--   ) on c.q2 = ss2.q1,
+--   lateral (select * from int4_tbl i where ss2.y > f1) ss3;
 -- check we don't try to do a unique-ified semijoin with LATERAL
 explain (verbose, costs off)
 select * from
