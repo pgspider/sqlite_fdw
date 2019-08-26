@@ -972,7 +972,10 @@ sqlitePlanForeignModify(PlannerInfo *root,
 	foreignTableId = RelationGetRelid(rel);
 	tupdesc = RelationGetDescr(rel);
 
-	if (operation == CMD_INSERT)
+	if (operation == CMD_INSERT ||
+		(operation == CMD_UPDATE &&
+		 rel->trigdesc &&
+		 rel->trigdesc->trig_update_before_row))
 	{
 		int			attnum;
 
