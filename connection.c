@@ -59,9 +59,9 @@ static bool do_sql_command(sqlite3 * conn, const char *sql, int level);
 static void begin_remote_xact(ConnCacheEntry *entry);
 static void sqlitefdw_xact_callback(XactEvent event, void *arg);
 static void sqlitefdw_subxact_callback(SubXactEvent event,
-						   SubTransactionId mySubid,
-						   SubTransactionId parentSubid,
-						   void *arg);
+									   SubTransactionId mySubid,
+									   SubTransactionId parentSubid,
+									   void *arg);
 static void
 			sqlitefdw_inval_callback(Datum arg, int cacheid, uint32 hashvalue);
 

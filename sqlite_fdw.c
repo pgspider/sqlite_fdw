@@ -83,24 +83,24 @@ PG_FUNCTION_INFO_V1(sqlite_fdw_handler);
 
 
 static void sqliteGetForeignRelSize(PlannerInfo *root,
-						RelOptInfo *baserel,
-						Oid foreigntableid);
+									RelOptInfo *baserel,
+									Oid foreigntableid);
 
 static void sqliteGetForeignPaths(PlannerInfo *root,
-					  RelOptInfo *baserel,
-					  Oid foreigntableid);
+								  RelOptInfo *baserel,
+								  Oid foreigntableid);
 
 static ForeignScan *sqliteGetForeignPlan(PlannerInfo *root,
-					 RelOptInfo *baserel,
-					 Oid foreigntableid,
-					 ForeignPath *best_path,
-					 List *tlist,
-					 List *scan_clauses,
-					 Plan *outer_plan);
+										 RelOptInfo *baserel,
+										 Oid foreigntableid,
+										 ForeignPath *best_path,
+										 List *tlist,
+										 List *scan_clauses,
+										 Plan *outer_plan);
 
 
 static void sqliteBeginForeignScan(ForeignScanState *node,
-					   int eflags);
+								   int eflags);
 
 static TupleTableSlot *sqliteIterateForeignScan(ForeignScanState *node);
 
@@ -110,73 +110,73 @@ static void sqliteEndForeignScan(ForeignScanState *node);
 
 
 static void sqliteAddForeignUpdateTargets(Query *parsetree,
-							  RangeTblEntry *target_rte,
-							  Relation target_relation);
+										  RangeTblEntry *target_rte,
+										  Relation target_relation);
 
 static List *sqlitePlanForeignModify(PlannerInfo *root,
-						ModifyTable *plan,
-						Index resultRelation,
-						int subplan_index);
+									 ModifyTable *plan,
+									 Index resultRelation,
+									 int subplan_index);
 
 static void sqliteBeginForeignModify(ModifyTableState *mtstate,
-						 ResultRelInfo *rinfo,
-						 List *fdw_private,
-						 int subplan_index,
-						 int eflags);
+									 ResultRelInfo *rinfo,
+									 List *fdw_private,
+									 int subplan_index,
+									 int eflags);
 
 static TupleTableSlot *sqliteExecForeignInsert(EState *estate,
-						ResultRelInfo *rinfo,
-						TupleTableSlot *slot,
-						TupleTableSlot *planSlot);
+											   ResultRelInfo *rinfo,
+											   TupleTableSlot *slot,
+											   TupleTableSlot *planSlot);
 
 static TupleTableSlot *sqliteExecForeignUpdate(EState *estate,
-						ResultRelInfo *rinfo,
-						TupleTableSlot *slot,
-						TupleTableSlot *planSlot);
+											   ResultRelInfo *rinfo,
+											   TupleTableSlot *slot,
+											   TupleTableSlot *planSlot);
 
 static TupleTableSlot *sqliteExecForeignDelete(EState *estate,
-						ResultRelInfo *rinfo,
-						TupleTableSlot *slot,
-						TupleTableSlot *planSlot);
+											   ResultRelInfo *rinfo,
+											   TupleTableSlot *slot,
+											   TupleTableSlot *planSlot);
 
 static void sqliteEndForeignModify(EState *estate,
-					   ResultRelInfo *rinfo);
+								   ResultRelInfo *rinfo);
 
 #if (PG_VERSION_NUM >= 110000)
 static void sqliteEndForeignInsert(EState *estate,
-					   ResultRelInfo *resultRelInfo);
+								   ResultRelInfo *resultRelInfo);
 static void sqliteBeginForeignInsert(ModifyTableState *mtstate,
-						 ResultRelInfo *resultRelInfo);
+									 ResultRelInfo *resultRelInfo);
 #endif
 
 static void sqliteExplainForeignScan(ForeignScanState *node,
-						 struct ExplainState *es);
+									 struct ExplainState *es);
 
 
 static void sqliteExplainForeignModify(ModifyTableState *mtstate,
-						   ResultRelInfo *rinfo,
-						   List *fdw_private,
-						   int subplan_index,
-						   struct ExplainState *es);
+									   ResultRelInfo *rinfo,
+									   List *fdw_private,
+									   int subplan_index,
+									   struct ExplainState *es);
 
 
 
 static bool sqliteAnalyzeForeignTable(Relation relation,
-						  AcquireSampleRowsFunc *func,
-						  BlockNumber *totalpages);
+									  AcquireSampleRowsFunc *func,
+									  BlockNumber *totalpages);
 
 
 
 static List *sqliteImportForeignSchema(ImportForeignSchemaStmt *stmt,
-						  Oid serverOid);
+									   Oid serverOid);
 
 static void
-sqliteGetForeignUpperPaths(PlannerInfo *root,
-						   UpperRelationKind stage,
-						   RelOptInfo *input_rel,
-						   RelOptInfo *output_rel
+			sqliteGetForeignUpperPaths(PlannerInfo *root,
+									   UpperRelationKind stage,
+									   RelOptInfo *input_rel,
+									   RelOptInfo *output_rel
 #if (PG_VERSION_NUM >= 110000)
-						   ,void *extra
+									   ,void *extra
 #endif
 );
 
@@ -185,25 +185,25 @@ static int	get_estimate(Oid foreigntableid);
 static void sqlite_to_pg_type(StringInfo str, char *typname);
 
 static void prepare_query_params(PlanState *node,
-					 List *fdw_exprs,
-					 int numParams,
-					 FmgrInfo **param_flinfo,
-					 List **param_exprs,
-					 const char ***param_values,
-					 Oid **param_types);
+								 List *fdw_exprs,
+								 int numParams,
+								 FmgrInfo **param_flinfo,
+								 List **param_exprs,
+								 const char ***param_values,
+								 Oid **param_types);
 
 static void process_query_params(ExprContext *econtext,
-					 FmgrInfo *param_flinfo,
-					 List *param_exprs,
-					 const char **param_values,
-					 sqlite3_stmt * *stmt,
-					 Oid *param_types);
+								 FmgrInfo *param_flinfo,
+								 List *param_exprs,
+								 const char **param_values,
+								 sqlite3_stmt * *stmt,
+								 Oid *param_types);
 
 static void create_cursor(ForeignScanState *node);
 static bool foreign_grouping_ok(PlannerInfo *root, RelOptInfo *grouped_rel);
 static void add_foreign_grouping_paths(PlannerInfo *root,
-						   RelOptInfo *input_rel,
-						   RelOptInfo *grouped_rel);
+									   RelOptInfo *input_rel,
+									   RelOptInfo *grouped_rel);
 
 /*
  * Library load-time initialization, sets on_proc_exit() callback for
@@ -634,9 +634,11 @@ sqliteBeginForeignScan(ForeignScanState *node, int eflags)
 	 */
 	if (fsplan->scan.scanrelid > 0)
 		rtindex = fsplan->scan.scanrelid;
-	else {
+	else
+	{
 		rtindex = intVal(list_nth(fsplan->fdw_private, 3));
-		if (rtindex == -2) {
+		if (rtindex == -2)
+		{
 			/* root->all_baserels at GetForeignPlan is empty */
 			rtindex = bms_next_member(fsplan->fs_relids, -1);
 		}
@@ -1605,6 +1607,7 @@ foreign_grouping_ok(PlannerInfo *root, RelOptInfo *grouped_rel)
 		if (sgref && get_sortgroupref_clause_noerr(sgref, query->groupClause))
 		{
 			TargetEntry *tle;
+
 			/*
 			 * If any of the GROUP BY expression is not shippable we can not
 			 * push down aggregation to the foreign server.
@@ -1960,7 +1963,7 @@ sqlite_to_pg_type(StringInfo str, char *type)
 		{"datetime", "timestamp"},
 		{"time"},
 		{"date"},
-		{"bit"},					/* bit(n) and bit varying(n) */
+		{"bit"},				/* bit(n) and bit varying(n) */
 		{"boolean"},
 		{"varchar"},
 		{"char"},

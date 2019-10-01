@@ -87,8 +87,8 @@ typedef struct deparse_expr_cxt
  * remote server.
  */
 static bool foreign_expr_walker(Node *node,
-					foreign_glob_cxt *glob_cxt,
-					foreign_loc_cxt *outer_cxt);
+								foreign_glob_cxt *glob_cxt,
+								foreign_loc_cxt *outer_cxt);
 
 /*
  * Functions to construct string representation of a node tree.
@@ -102,39 +102,39 @@ static void sqlite_deparse_op_expr(OpExpr *node, deparse_expr_cxt *context);
 static void sqlite_deparse_operator_name(StringInfo buf, Form_pg_operator opform);
 
 static void sqlite_deparse_scalar_array_op_expr(ScalarArrayOpExpr *node,
-									deparse_expr_cxt *context);
+												deparse_expr_cxt *context);
 static void sqlite_deparse_relabel_type(RelabelType *node, deparse_expr_cxt *context);
 static void sqlite_deparse_bool_expr(BoolExpr *node, deparse_expr_cxt *context);
 static void sqlite_deparse_null_test(NullTest *node, deparse_expr_cxt *context);
 static void sqlite_deparse_array_expr(ArrayExpr *node, deparse_expr_cxt *context);
 static void sqlite_print_remote_param(int paramindex, Oid paramtype, int32 paramtypmod,
-						  deparse_expr_cxt *context);
+									  deparse_expr_cxt *context);
 static void sqlite_print_remote_placeholder(Oid paramtype, int32 paramtypmod,
-								deparse_expr_cxt *context);
+											deparse_expr_cxt *context);
 static void sqlite_deparse_relation(StringInfo buf, Relation rel);
 static void sqlite_deparse_target_list(StringInfo buf, PlannerInfo *root, Index rtindex, Relation rel,
-						   Bitmapset *attrs_used, List **retrieved_attrs);
+									   Bitmapset *attrs_used, List **retrieved_attrs);
 static void sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *root);
 static void sqlite_deparse_select(List *tlist, List **retrieved_attrs, deparse_expr_cxt *context);
 static void sqlite_deparse_case_expr(CaseExpr *node, deparse_expr_cxt *context);
 static void sqlite_deparse_null_if_expr(NullIfExpr *node, deparse_expr_cxt *context);
 static void sqlite_deparse_coalesce_expr(CoalesceExpr *node, deparse_expr_cxt *context);
 static void deparseFromExprForRel(StringInfo buf, PlannerInfo *root,
-					  RelOptInfo *foreignrel,
-					  bool use_alias, List **params_list);
+								  RelOptInfo *foreignrel,
+								  bool use_alias, List **params_list);
 static void deparseFromExpr(List *quals, deparse_expr_cxt *context);
 static void deparseAggref(Aggref *node, deparse_expr_cxt *context);
 static void appendConditions(List *exprs, deparse_expr_cxt *context);
 static void appendGroupByClause(List *tlist, deparse_expr_cxt *context);
 static void appendAggOrderBy(List *orderList, List *targetList,
-				 deparse_expr_cxt *context);
+							 deparse_expr_cxt *context);
 static void appendOrderByClause(List *pathkeys, deparse_expr_cxt *context);
 static void appendFunctionName(Oid funcid, deparse_expr_cxt *context);
 
 static Node *deparseSortGroupClause(Index ref, List *tlist, bool force_colno,
-					   deparse_expr_cxt *context);
+									deparse_expr_cxt *context);
 static void deparseExplicitTargetList(List *tlist, List **retrieved_attrs,
-						  deparse_expr_cxt *context);
+									  deparse_expr_cxt *context);
 static Expr *find_em_expr_for_rel(EquivalenceClass *ec, RelOptInfo *rel);
 static bool is_builtin(Oid objectId);
 
