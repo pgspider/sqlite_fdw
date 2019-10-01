@@ -1,5 +1,6 @@
 # SQLite Foreign Data Wrapper for PostgreSQL
 This PostgreSQL extension is a Foreign Data Wrapper for [SQLite][1].
+
 The current version can work with PostgreSQL 9.6, 10, 11 and 12.
 
 ## Installation
@@ -40,10 +41,15 @@ CREATE SERVER sqlite_server FOREIGN DATA WRAPPER sqlite_fdw OPTIONS (database '/
 
 
 ### Create foreign table
+Please specify `table` option if SQLite table name is different from foreign table name.
 <pre>
 CREATE FOREIGN TABLE t1(a integer, b text) SERVER sqlite_server OPTIONS (table 't1_sqlite');
 </pre>
 
+If you want to update tables, please add `OPTIONS (key 'true')` to a primary key or unique key like the following:
+<pre>
+CREATE FOREIGN TABLE t1(a integer OPTIONS (key 'true'), b text) SERVER sqlite_server OPTIONS (table 't1_sqlite');
+</pre>
 ### Import foreign schema
 <pre>
 IMPORT FOREIGN SCHEMA public FROM SERVER sqlite_server INTO public;
