@@ -11,7 +11,6 @@
  */
 
 #include "postgres.h"
-
 #include "sqlite_fdw.h"
 
 #include <sqlite3.h>
@@ -30,7 +29,6 @@
 #include "optimizer/paths.h"
 #include "optimizer/prep.h"
 #include "optimizer/restrictinfo.h"
-#include "optimizer/var.h"
 #include "optimizer/tlist.h"
 #include "funcapi.h"
 #include "utils/builtins.h"
@@ -393,10 +391,13 @@ sqliteGetForeignPaths(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntableid
 									 startup_cost,
 									 total_cost,
 									 NIL,	/* no pathkeys */
+#if (PG_VERSION_NUM >= 120000)
+									 baserel->lateral_relids,
+#else
 									 NULL,	/* no outer rel either */
+#endif
 									 NULL,	/* no extra plan */
 									 NULL));	/* no fdw_private data */
-
 }
 
 /*
@@ -1837,7 +1838,6 @@ add_foreign_grouping_paths(PlannerInfo *root, RelOptInfo *input_rel,
 	SqliteFdwRelationInfo *ifpinfo = input_rel->fdw_private;
 	SqliteFdwRelationInfo *fpinfo = grouped_rel->fdw_private;
 	ForeignPath *grouppath;
-	PathTarget *grouping_target;
 	double		rows;
 	int			width;
 	Cost		startup_cost;
@@ -1852,7 +1852,6 @@ add_foreign_grouping_paths(PlannerInfo *root, RelOptInfo *input_rel,
 	if (root->hasHavingQual && !parse->groupClause)
 		return;
 
-	grouping_target = root->upper_targets[UPPERREL_GROUP_AGG];
 
 	/* save the input_rel as outerrel in fpinfo */
 	fpinfo->outerrel = input_rel;
@@ -1879,9 +1878,20 @@ add_foreign_grouping_paths(PlannerInfo *root, RelOptInfo *input_rel,
 	fpinfo->total_cost = total_cost;
 
 	/* Create and add foreign path to the grouping relation. */
+#if (PG_VERSION_NUM >= 120000)
+	grouppath = create_foreign_upper_path(root,
+										  grouped_rel,
+										  grouped_rel->reltarget,
+										  rows,
+										  startup_cost,
+										  total_cost,
+										  NIL,	/* no pathkeys */
+										  NULL,
+										  NIL); /* no fdw_private */
+#else
 	grouppath = create_foreignscan_path(root,
 										grouped_rel,
-										grouping_target,
+										root->upper_targets[UPPERREL_GROUP_AGG],
 										rows,
 										startup_cost,
 										total_cost,
@@ -1889,6 +1899,7 @@ add_foreign_grouping_paths(PlannerInfo *root, RelOptInfo *input_rel,
 										NULL,	/* no required_outer */
 										NULL,
 										NIL);	/* no fdw_private */
+#endif
 
 	/* Add generated path into grouped_rel by add_path(). */
 	add_path(grouped_rel, (Path *) grouppath);

@@ -28,7 +28,6 @@
 #include "nodes/nodeFuncs.h"
 #include "nodes/plannodes.h"
 #include "optimizer/clauses.h"
-#include "optimizer/var.h"
 #include "optimizer/tlist.h"
 #include "parser/parsetree.h"
 #include "utils/builtins.h"
@@ -293,8 +292,8 @@ foreign_expr_walker(Node *node,
 {
 	bool		check_type = true;
 	foreign_loc_cxt inner_cxt;
-	Oid			collation;
-	FDWCollateState state;
+	Oid			collation = InvalidOid;
+	FDWCollateState state = FDW_COLLATE_NONE;
 	HeapTuple	tuple;
 	Form_pg_operator form;
 	char	   *cur_opname;
