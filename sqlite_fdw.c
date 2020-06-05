@@ -2033,9 +2033,11 @@ add_foreign_ordered_paths(PlannerInfo *root, RelOptInfo *input_rel,
 	/* Shouldn't get here unless the query has ORDER BY */
 	Assert(parse->sortClause);
 
+#if (PG_VERSION_NUM >= 100000)
 	/* We don't support cases where there are any SRFs in the targetlist */
 	if (parse->hasTargetSRFs)
 		return;
+#endif
 
 	/* Save the input_rel as outerrel in fpinfo */
 	fpinfo->outerrel = input_rel;
@@ -2192,9 +2194,11 @@ add_foreign_final_paths(PlannerInfo *root, RelOptInfo *input_rel,
 	   )
 		return;
 
+#if (PG_VERSION_NUM >= 100000)
 	/* We don't support cases where there are any SRFs in the targetlist */
 	if (parse->hasTargetSRFs)
 		return;
+#endif
 
 	/* Save the input_rel as outerrel in fpinfo */
 	fpinfo->outerrel = input_rel;
