@@ -2176,6 +2176,7 @@ add_foreign_final_paths(PlannerInfo *root, RelOptInfo *input_rel,
 	Cost		total_cost;
 	List	   *fdw_private;
 	ForeignPath *final_path;
+	bool 		has_limit = limit_needed(parse);
 
 	/*
 	 * Currently, we only support this for SELECT commands
@@ -2190,6 +2191,8 @@ add_foreign_final_paths(PlannerInfo *root, RelOptInfo *input_rel,
 	if (!parse->rowMarks
 #if (PG_VERSION_NUM >= 120000)
 			&& !extra->limit_needed
+#else
+			&& !has_limit
 #endif
 	   )
 		return;
@@ -2218,7 +2221,11 @@ add_foreign_final_paths(PlannerInfo *root, RelOptInfo *input_rel,
 	 * Note: we would already have accounted for the query's FOR UPDATE/SHARE
 	 * (if any) before we get here.
 	 */
-	if (false /*TODO: !extra->limit_needed*/)
+#if (PG_VERSION_NUM >= 120000)
+	if (!extra->limit_needed)
+#else
+	if (!has_limit)
+#endif
 	{
 		ListCell   *lc;
 
@@ -2300,7 +2307,11 @@ add_foreign_final_paths(PlannerInfo *root, RelOptInfo *input_rel,
 		return;
 	}
 
-	// TODO: Assert(extra->limit_needed);
+#if (PG_VERSION_NUM >= 120000)
+	Assert(extra->limit_needed);
+#else
+	Assert(has_limit);
+#endif
 
 	/*
 	 * If the input_rel is an ordered relation, replace the input_rel with its
@@ -2365,7 +2376,12 @@ add_foreign_final_paths(PlannerInfo *root, RelOptInfo *input_rel,
 	 * Build the fdw_private list that will be used by postgresGetForeignPlan.
 	 * Items in the list must match order in enum FdwPathPrivateIndex.
 	 */
-	fdw_private = list_make2(makeInteger(has_final_sort), makeInteger(true /* FIXME: extra->limit_needed */));
+	fdw_private = list_make2(makeInteger(has_final_sort),
+#if (PG_VERSION_NUM >= 120000)
+		makeInteger(extra->limit_needed));
+#else
+		makeInteger(has_limit));
+#endif
 
 	/*
 	 * Create foreign final path; this gets rid of a no-longer-needed outer
