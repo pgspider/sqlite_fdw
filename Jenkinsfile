@@ -3,7 +3,6 @@ def BRANCH_NAME = 'Branch [' + env.BRANCH_NAME + ']'
 def BUILD_INFO = 'Jenkins job: ' + env.BUILD_URL
 def MAIL_TO='$DEFAULT_RECIPIENTS'
 def MAIL_SUBJECT='[CI PGSpider] SQLite FDW Test FAILED ' + BRANCH_NAME
-def SQLITE_FDW_URL = 'https://github.com/pgspider/sqlite_fdw.git'
 
 def retrySh(String shCmd) {
     def MAX_RETRY = 10
@@ -43,7 +42,7 @@ pipeline {
                 '''
                 dir("postgresql/contrib") {
                     sh 'rm -rf sqlite_fdw || true'
-                    retrySh('git clone ' + SQLITE_FDW_URL)
+                    retrySh('git clone -b ' + env.GIT_BRANCH + ' ' + env.GIT_URL)
                 }
             }
             post {
