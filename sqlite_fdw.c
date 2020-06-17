@@ -217,8 +217,7 @@ static void add_foreign_final_paths(PlannerInfo *root,
 #endif
 );
 
-static void add_paths_with_pathkeys_for_rel(PlannerInfo *root, RelOptInfo *rel,
-											Path *epq_path);
+static void add_paths_with_pathkeys_for_rel(PlannerInfo *root, RelOptInfo *rel);
 static List *get_useful_pathkeys_for_relation(PlannerInfo *root,
 								 RelOptInfo *rel);
 
@@ -443,70 +442,20 @@ get_useful_pathkeys_for_relation(PlannerInfo *root, RelOptInfo *rel)
 		}
 	}
 
-	/*
-	 * Even if we're not using remote estimates, having the remote side do the
-	 * sort generally won't be any worse than doing it locally, and it might
-	 * be much better if the remote side can generate data in the right order
-	 * without needing a sort at all.  However, what we're going to do next is
-	 * try to generate pathkeys that seem promising for possible merge joins,
-	 * and that's more speculative.  A wrong choice might hurt quite a bit, so
-	 * bail out if we can't use remote estimates.
-	 */
-	if (!fpinfo->use_remote_estimate)
-		return useful_pathkeys_list;
-
-	/* Get the list of interesting EquivalenceClasses. */
-	useful_eclass_list = get_useful_ecs_for_relation(root, rel);
-
-	/* Extract unique EC for query, if any, so we don't consider it again. */
-	if (list_length(root->query_pathkeys) == 1)
-	{
-		PathKey    *query_pathkey = linitial(root->query_pathkeys);
-
-		query_ec = query_pathkey->pk_eclass;
-	}
-
-	/*
-	 * As a heuristic, the only pathkeys we consider here are those of length
-	 * one.  It's surely possible to consider more, but since each one we
-	 * choose to consider will generate a round-trip to the remote side, we
-	 * need to be a bit cautious here.  It would sure be nice to have a local
-	 * cache of information about remote index definitions...
-	 */
-	foreach(lc, useful_eclass_list)
-	{
-		EquivalenceClass *cur_ec = lfirst(lc);
-		Expr	   *em_expr;
-		PathKey    *pathkey;
-
-		/* If redundant with what we did above, skip it. */
-		if (cur_ec == query_ec)
-			continue;
-
-		/* If no pushable expression for this rel, skip it. */
-		em_expr = find_em_expr_for_rel(cur_ec, rel);
-		if (em_expr == NULL || !sqlite_is_foreign_expr(root, rel, em_expr))
-			continue;
-
-		/* Looks like we can generate a pathkey, so let's do it. */
-		pathkey = make_canonical_pathkey(root, cur_ec,
-										 linitial_oid(cur_ec->ec_opfamilies),
-										 BTLessStrategyNumber,
-										 false);
-		useful_pathkeys_list = lappend(useful_pathkeys_list,
-									   list_make1(pathkey));
-	}
-
 	return useful_pathkeys_list;
 }
 
 static void
-add_paths_with_pathkeys_for_rel(PlannerInfo *root, RelOptInfo *rel,
-								Path *epq_path)
+add_paths_with_pathkeys_for_rel(PlannerInfo *root, RelOptInfo *rel)
 {
-	SqliteFdwRelationInfo *fpinfo = (SqliteFdwRelationInfo *) rel->fdw_private;
 	List	   *useful_pathkeys_list = NIL; /* List of all pathkeys */
 	ListCell   *lc;
+	double 		rows;
+	Cost        startup_cost;
+	Cost        total_cost;
+
+	// Use small cost to avoid calculating real cost size in SQLite
+	rows = startup_cost = total_cost = 10;
 
 	useful_pathkeys_list = get_useful_pathkeys_for_relation(root, rel);
 
@@ -514,38 +463,22 @@ add_paths_with_pathkeys_for_rel(PlannerInfo *root, RelOptInfo *rel,
 	foreach(lc, useful_pathkeys_list)
 	{
 		List	   *useful_pathkeys = lfirst(lc);
-		Path	   *sorted_epq_path;
-
-		/*
-		 * The EPQ path must be at least as well sorted as the path itself, in
-		 * case it gets used as input to a mergejoin.
-		 */
-		sorted_epq_path = epq_path;
-		if (sorted_epq_path != NULL &&
-			!pathkeys_contained_in(useful_pathkeys,
-								   sorted_epq_path->pathkeys))
-			sorted_epq_path = (Path *)
-				create_sort_path(root,
-								 rel,
-								 sorted_epq_path,
-								 useful_pathkeys,
-								 -1.0);
 
 		if (rel->reloptkind == RELOPT_BASEREL ||
 			rel->reloptkind == RELOPT_OTHER_MEMBER_REL)
 			add_path(rel, (Path *)
 					 create_foreignscan_path(root, rel,
 											 NULL,
-											 fpinfo->rows,
-											 fpinfo->startup_cost,
-											 fpinfo->total_cost,
+											 rows,
+											 startup_cost,
+											 total_cost,
 											 useful_pathkeys,
 #if (PG_VERSION_NUM >= 120000)
 									 		 rel->lateral_relids,
 #else
 											 NULL,	/* no outer rel either */
 #endif
-											 sorted_epq_path,
+											 NULL,
 											 NIL));
 		else
 			elog(ERROR, "Join clauses not supported for Order..");
@@ -585,7 +518,7 @@ sqliteGetForeignPaths(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntableid
 									 NULL));	/* no fdw_private data */
 
 	/* Add paths with pathkeys */
-	add_paths_with_pathkeys_for_rel(root, baserel, NULL);
+	add_paths_with_pathkeys_for_rel(root, baserel);
 }
 
 /*
@@ -2307,10 +2240,13 @@ add_foreign_ordered_paths(PlannerInfo *root, RelOptInfo *input_rel,
 											 NULL,	/* no extra plan */
 											 fdw_private);
 #else
+	// XXX: We use root->upper_targets[UPERREL_FINAL] because until PG12, upper_targets[UPPERREL_ORDERED] is not filled.
+	// Anyways, in PG12 root->upper_targets[UPPERREL_FINAL] and root->upper_targets[UPPERREL_ORDERED] have the same value.
+	// More info: backend/optimizer/plan/planner.c (Line 2189)
 	/* Create foreign ordering path */
 	ordered_path = create_foreignscan_path(root,
 											 input_rel,
-											 root->upper_targets[UPPERREL_ORDERED],
+											 root->upper_targets[UPPERREL_FINAL],
 											 rows,
 											 startup_cost,
 											 total_cost,
