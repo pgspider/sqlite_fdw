@@ -135,7 +135,6 @@ static Node *deparseSortGroupClause(Index ref, List *tlist, bool force_colno,
 									deparse_expr_cxt *context);
 static void deparseExplicitTargetList(List *tlist, List **retrieved_attrs,
 									  deparse_expr_cxt *context);
-static Expr *find_em_expr_for_rel(EquivalenceClass *ec, RelOptInfo *rel);
 static bool is_builtin(Oid objectId);
 
 /*
@@ -2410,35 +2409,6 @@ appendAggOrderBy(List *orderList, List *targetList, deparse_expr_cxt *context)
 			appendStringInfoString(buf, " NULLS LAST");
 	}
 }
-
-/*
- * Find an equivalence class member expression, all of whose Vars, come from
- * the indicated relation.
- */
-static Expr *
-find_em_expr_for_rel(EquivalenceClass *ec, RelOptInfo *rel)
-{
-	ListCell   *lc_em;
-
-	foreach(lc_em, ec->ec_members)
-	{
-		EquivalenceMember *em = lfirst(lc_em);
-
-		if (bms_is_subset(em->em_relids, rel->relids))
-		{
-			/*
-			 * If there is more than one equivalence member whose Vars are
-			 * taken entirely from this relation, we'll be content to choose
-			 * any one of those.
-			 */
-			return em->em_expr;
-		}
-	}
-
-	/* We didn't find any suitable equivalence class expression */
-	return NULL;
-}
-
 
 /*
  * Deparse ORDER BY clause according to the given pathkeys for given base
