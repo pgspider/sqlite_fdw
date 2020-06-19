@@ -174,7 +174,8 @@ extern bool sqlite_is_foreign_expr(PlannerInfo *root,
 extern Expr *find_em_expr_for_rel(EquivalenceClass *ec, RelOptInfo *rel);
 extern Expr *find_em_expr_for_input_target(PlannerInfo *root,
 							  EquivalenceClass *ec,
-							  PathTarget *target);
+							  PathTarget *target,
+							  RelOptInfo *fallbackRel);
 
 /* in postgres_fdw.c */
 extern int	set_transmission_modes(void);

@@ -2441,7 +2441,8 @@ appendOrderByClause(List *pathkeys, bool has_final_sort, deparse_expr_cxt *conte
 			 */
 			em_expr = find_em_expr_for_input_target(context->root,
 													pathkey->pk_eclass,
-													context->foreignrel->reltarget);
+													context->foreignrel->reltarget,
+													baserel);
 		}
 		else
 			em_expr = find_em_expr_for_rel(pathkey->pk_eclass, baserel);

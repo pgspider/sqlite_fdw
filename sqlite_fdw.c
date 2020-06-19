@@ -2193,6 +2193,8 @@ add_foreign_ordered_paths(PlannerInfo *root, RelOptInfo *input_rel,
 		PathKey    *pathkey = (PathKey *) lfirst(lc);
 		EquivalenceClass *pathkey_ec = pathkey->pk_eclass;
 		Expr	   *sort_expr;
+		RelOptInfo* fallback_rel = (input_rel->reloptkind == RELOPT_UPPER_REL) ?
+			ifpinfo->outerrel : input_rel;
 
 		/*
 		 * is_foreign_expr would detect volatile expressions as well, but
@@ -2204,7 +2206,8 @@ add_foreign_ordered_paths(PlannerInfo *root, RelOptInfo *input_rel,
 		/* Get the sort expression for the pathkey_ec */
 		sort_expr = find_em_expr_for_input_target(root,
 												  pathkey_ec,
-												  input_rel->reltarget);
+												  input_rel->reltarget,
+												  fallback_rel);
 
 		/* If it's unsafe to remote, we cannot push down the final sort */
 		if (!sqlite_is_foreign_expr(root, input_rel, sort_expr))
@@ -2858,7 +2861,8 @@ find_em_expr_for_rel(EquivalenceClass *ec, RelOptInfo *rel)
 Expr *
 find_em_expr_for_input_target(PlannerInfo *root,
 							  EquivalenceClass *ec,
-							  PathTarget *target)
+							  PathTarget *target,
+							  RelOptInfo *fallbackRel)
 {
 	ListCell   *lc1;
 	int			i;
@@ -2908,6 +2912,15 @@ find_em_expr_for_input_target(PlannerInfo *root,
 
 		i++;
 	}
+
+	Expr	   *fallback_expr;
+
+	// XXX: We add this method as fallback in versions prior to PG11/12 because target->sortgrouprefs its not filled and
+	// this function always fails because cannot find sort expression.
+	fallback_expr = find_em_expr_for_rel(ec, fallbackRel);
+
+	if (fallback_expr)
+		return fallback_expr;
 
 	elog(ERROR, "could not find pathkey item to sort");
 	return NULL;				/* keep compiler quiet */
