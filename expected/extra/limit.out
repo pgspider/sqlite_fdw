@@ -223,10 +223,36 @@ select unique1, unique2, nextval('testseq')
     3043 |       9 |      10
 (10 rows)
 
+explain (verbose, costs off)
+select unique1, unique2, nextval('testseq')
+  from tenk1 order by unique2 limit 10 offset 5;
+                                                    QUERY PLAN                                                     
+-------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.tenk1
+   Output: unique1, unique2, nextval('testseq'::regclass)
+   SQLite query: SELECT `unique1`, `unique2` FROM main."tenk1" ORDER BY `unique2` ASC NULLS LAST LIMIT 10 OFFSET 5
+(3 rows)
+
+select unique1, unique2, nextval('testseq')
+  from tenk1 order by unique2 limit 10 offset 5;
+ unique1 | unique2 | nextval 
+---------+---------+---------
+    8009 |       5 |      11
+    5057 |       6 |      12
+    6701 |       7 |      13
+    4321 |       8 |      14
+    3043 |       9 |      15
+    1314 |      10 |      16
+    1504 |      11 |      17
+    5222 |      12 |      18
+    6243 |      13 |      19
+    5471 |      14 |      20
+(10 rows)
+
 select currval('testseq');
  currval 
 ---------
-      10
+      20
 (1 row)
 
 explain (verbose, costs off)
@@ -243,22 +269,48 @@ select unique1, unique2, nextval('testseq')
   from tenk1 order by unique2 desc limit 10;
  unique1 | unique2 | nextval 
 ---------+---------+---------
-    2968 |    9999 |      11
-       0 |    9998 |      12
-    2992 |    9997 |      13
-    1783 |    9996 |      14
-    5780 |    9995 |      15
-     429 |    9994 |      16
-    6093 |    9993 |      17
-    6587 |    9992 |      18
-    4093 |    9991 |      19
-    4773 |    9990 |      20
+    2968 |    9999 |      21
+       0 |    9998 |      22
+    2992 |    9997 |      23
+    1783 |    9996 |      24
+    5780 |    9995 |      25
+     429 |    9994 |      26
+    6093 |    9993 |      27
+    6587 |    9992 |      28
+    4093 |    9991 |      29
+    4773 |    9990 |      30
+(10 rows)
+
+explain (verbose, costs off)
+select unique1, unique2, nextval('testseq')
+  from tenk1 order by unique2 desc limit 10 offset 5;
+                                                     QUERY PLAN                                                      
+---------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.tenk1
+   Output: unique1, unique2, nextval('testseq'::regclass)
+   SQLite query: SELECT `unique1`, `unique2` FROM main."tenk1" ORDER BY `unique2` DESC NULLS FIRST LIMIT 10 OFFSET 5
+(3 rows)
+
+select unique1, unique2, nextval('testseq')
+  from tenk1 order by unique2 desc limit 10 offset 5;
+ unique1 | unique2 | nextval 
+---------+---------+---------
+     429 |    9994 |      31
+    6093 |    9993 |      32
+    6587 |    9992 |      33
+    4093 |    9991 |      34
+    4773 |    9990 |      35
+    8592 |    9989 |      36
+     858 |    9988 |      37
+    9194 |    9987 |      38
+    1384 |    9986 |      39
+    2406 |    9985 |      40
 (10 rows)
 
 select currval('testseq');
  currval 
 ---------
-      20
+      40
 (1 row)
 
 explain (verbose, costs off)
@@ -275,22 +327,48 @@ select unique1, unique2, nextval('testseq')
   from tenk1 order by tenthous limit 10;
  unique1 | unique2 | nextval 
 ---------+---------+---------
-       0 |    9998 |      21
-       1 |    2838 |      22
-       2 |    2716 |      23
-       3 |    5679 |      24
-       4 |    1621 |      25
-       5 |    5557 |      26
-       6 |    2855 |      27
-       7 |    8518 |      28
-       8 |    5435 |      29
-       9 |    4463 |      30
+       0 |    9998 |      41
+       1 |    2838 |      42
+       2 |    2716 |      43
+       3 |    5679 |      44
+       4 |    1621 |      45
+       5 |    5557 |      46
+       6 |    2855 |      47
+       7 |    8518 |      48
+       8 |    5435 |      49
+       9 |    4463 |      50
+(10 rows)
+
+explain (verbose, costs off)
+select unique1, unique2, nextval('testseq')
+  from tenk1 order by tenthous limit 10 offset 5;
+                                                           QUERY PLAN                                                           
+--------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.tenk1
+   Output: unique1, unique2, nextval('testseq'::regclass), tenthous
+   SQLite query: SELECT `unique1`, `unique2`, `tenthous` FROM main."tenk1" ORDER BY `tenthous` ASC NULLS LAST LIMIT 10 OFFSET 5
+(3 rows)
+
+select unique1, unique2, nextval('testseq')
+  from tenk1 order by tenthous limit 10 offset 5;
+ unique1 | unique2 | nextval 
+---------+---------+---------
+       5 |    5557 |      51
+       6 |    2855 |      52
+       7 |    8518 |      53
+       8 |    5435 |      54
+       9 |    4463 |      55
+      10 |    8788 |      56
+      11 |    8396 |      57
+      12 |    6605 |      58
+      13 |    5696 |      59
+      14 |    4341 |      60
 (10 rows)
 
 select currval('testseq');
  currval 
 ---------
-      30
+      60
 (1 row)
 
 explain (verbose, costs off)

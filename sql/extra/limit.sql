@@ -102,6 +102,13 @@ select unique1, unique2, nextval('testseq')
 select unique1, unique2, nextval('testseq')
   from tenk1 order by unique2 limit 10;
 
+explain (verbose, costs off)
+select unique1, unique2, nextval('testseq')
+  from tenk1 order by unique2 limit 10 offset 5;
+
+select unique1, unique2, nextval('testseq')
+  from tenk1 order by unique2 limit 10 offset 5;
+
 select currval('testseq');
 
 explain (verbose, costs off)
@@ -111,6 +118,14 @@ select unique1, unique2, nextval('testseq')
 select unique1, unique2, nextval('testseq')
   from tenk1 order by unique2 desc limit 10;
 
+
+explain (verbose, costs off)
+select unique1, unique2, nextval('testseq')
+  from tenk1 order by unique2 desc limit 10 offset 5;
+
+select unique1, unique2, nextval('testseq')
+  from tenk1 order by unique2 desc limit 10 offset 5;
+
 select currval('testseq');
 
 explain (verbose, costs off)
@@ -119,6 +134,13 @@ select unique1, unique2, nextval('testseq')
 
 select unique1, unique2, nextval('testseq')
   from tenk1 order by tenthous limit 10;
+
+explain (verbose, costs off)
+select unique1, unique2, nextval('testseq')
+  from tenk1 order by tenthous limit 10 offset 5;
+
+select unique1, unique2, nextval('testseq')
+  from tenk1 order by tenthous limit 10 offset 5;
 
 select currval('testseq');
 
