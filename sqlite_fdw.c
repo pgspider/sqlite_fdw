@@ -474,7 +474,7 @@ add_paths_with_pathkeys_for_rel(PlannerInfo *root, RelOptInfo *rel)
 											 total_cost,
 											 useful_pathkeys,
 #if (PG_VERSION_NUM >= 120000)
-									 		 rel->lateral_relids,
+											 rel->lateral_relids,
 #else
 											 NULL,	/* no outer rel either */
 #endif
@@ -2145,6 +2145,7 @@ add_foreign_ordered_paths(PlannerInfo *root, RelOptInfo *input_rel,
 	if (parse->hasTargetSRFs)
 		return;
 #else
+	/* We don't support cases where there are any SRFs in the targetlist (PG Version >10) */
 	if (expression_returns_set((Node *) parse->targetList))
 		return;
 #endif
@@ -2318,6 +2319,7 @@ add_foreign_final_paths(PlannerInfo *root, RelOptInfo *input_rel,
 	if (parse->hasTargetSRFs)
 		return;
 #else
+	/* We don't support cases where there are any SRFs in the targetlist (PG Version >10) */
 	if (expression_returns_set((Node *) parse->targetList))
 		return;
 #endif
