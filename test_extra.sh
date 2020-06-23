@@ -10,4 +10,4 @@ sed -i 's/REGRESS =.*/REGRESS = extra\/sqlite_fdw_post extra\/float4 extra\/floa
 make clean
 make
 mkdir -p results/extra || true
-make check | tee make_check.out
+make installcheck | tee make_check.out

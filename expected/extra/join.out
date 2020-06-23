@@ -32,7 +32,6 @@ CREATE FOREIGN TABLE tenk1 (
   stringu2  name,
   string4   name
 ) SERVER sqlite_svr;
-ALTER TABLE tenk1 SET WITH OIDS;
 CREATE FOREIGN TABLE tenk2 (
   unique1   int4,
   unique2   int4,
@@ -2244,24 +2243,14 @@ explain (costs off)
 select * from int8_tbl i1 left join (int8_tbl i2 join
   (select 123 as x) ss on i2.q1 = x) on i1.q2 = i2.q2
 order by 1, 2;
-                     QUERY PLAN                      
------------------------------------------------------
- Sort
-   Sort Key: i1.q1, i1.q2
-   ->  Merge Right Join
-         Merge Cond: (i2.q2 = i1.q2)
-         ->  Sort
-               Sort Key: i2.q2
-               ->  Hash Join
-                     Hash Cond: (i2.q1 = (123))
-                     ->  Foreign Scan on int8_tbl i2
-                     ->  Hash
-                           ->  Result
-         ->  Materialize
-               ->  Sort
-                     Sort Key: i1.q2
-                     ->  Foreign Scan on int8_tbl i1
-(15 rows)
+               QUERY PLAN                
+-----------------------------------------
+ Nested Loop Left Join
+   Join Filter: (i1.q2 = i2.q2)
+   ->  Foreign Scan on int8_tbl i1
+   ->  Materialize
+         ->  Foreign Scan on int8_tbl i2
+(5 rows)
 
 select * from int8_tbl i1 left join (int8_tbl i2 join
   (select 123 as x) ss on i2.q1 = x) on i1.q2 = i2.q2
@@ -2329,50 +2318,49 @@ where b.f1 = t.thousand and a.f1 = b.f1 and (a.f1+b.f1+999) = t.tenthous;
 --
 -- check a case where we formerly got confused by conflicting sort orders
 -- in redundant merge join path keys
+-- PS: Used ORDER BY to force SQLite and PG12 always order in the same way (NULLS FIRST/LAST default value for PG and Sqlite are different)
 --
 explain (costs off)
 select * from
   j1_tbl full join
   (select * from j2_tbl order by j2_tbl.i desc, j2_tbl.k asc) j2_tbl
-  on j1_tbl.i = j2_tbl.i and j1_tbl.i = j2_tbl.k;
-                           QUERY PLAN                            
------------------------------------------------------------------
- Merge Full Join
-   Merge Cond: ((j2_tbl.i = j1_tbl.i) AND (j2_tbl.k = j1_tbl.i))
-   ->  Sort
-         Sort Key: j2_tbl.i DESC, j2_tbl.k
-         ->  Foreign Scan on j2_tbl
-   ->  Materialize
-         ->  Sort
-               Sort Key: j1_tbl.i DESC
-               ->  Foreign Scan on j1_tbl
-(9 rows)
+  on j1_tbl.i = j2_tbl.i and j1_tbl.i = j2_tbl.k ORDER BY j1_tbl.i, j2_tbl.k;
+                              QUERY PLAN                              
+----------------------------------------------------------------------
+ Sort
+   Sort Key: j1_tbl.i, j2_tbl.k
+   ->  Hash Full Join
+         Hash Cond: ((j1_tbl.i = j2_tbl.i) AND (j1_tbl.i = j2_tbl.k))
+         ->  Foreign Scan on j1_tbl
+         ->  Hash
+               ->  Foreign Scan on j2_tbl
+(7 rows)
 
 select * from
   j1_tbl full join
   (select * from j2_tbl order by j2_tbl.i desc, j2_tbl.k asc) j2_tbl
-  on j1_tbl.i = j2_tbl.i and j1_tbl.i = j2_tbl.k;
+  on j1_tbl.i = j2_tbl.i and j1_tbl.i = j2_tbl.k ORDER BY j1_tbl.i, j2_tbl.k;
  i | j |   t   | i | k  
 ---+---+-------+---+----
+ 0 |   | zero  |   |   
+ 1 | 4 | one   |   |   
+ 2 | 3 | two   | 2 |  2
+ 3 | 2 | three |   |   
+ 4 | 1 | four  |   |   
+ 5 | 0 | five  |   |   
+ 6 | 6 | six   |   |   
+ 7 | 7 | seven |   |   
+ 8 | 8 | eight |   |   
+   |   |       | 5 | -5
+   |   |       | 5 | -5
+   |   |       | 3 | -3
+   |   |       | 1 | -1
    |   |       |   |  0
+   |   |       | 2 |  4
    |   |       |   |   
+   |   |       | 0 |   
    | 0 | zero  |   |   
    |   | null  |   |   
- 8 | 8 | eight |   |   
- 7 | 7 | seven |   |   
- 6 | 6 | six   |   |   
-   |   |       | 5 | -5
-   |   |       | 5 | -5
- 5 | 0 | five  |   |   
- 4 | 1 | four  |   |   
-   |   |       | 3 | -3
- 3 | 2 | three |   |   
- 2 | 3 | two   | 2 |  2
-   |   |       | 2 |  4
-   |   |       | 1 | -1
-   |   |       | 0 |   
- 1 | 4 | one   |   |   
- 0 |   | zero  |   |   
 (19 rows)
 
 --
@@ -2384,22 +2372,16 @@ select count(*) from
   left join
   (select * from tenk1 y order by y.unique2) y
   on x.thousand = y.unique2 and x.twothousand = y.hundred and x.fivethous = y.unique2;
-                                                  QUERY PLAN                                                  
---------------------------------------------------------------------------------------------------------------
+                                    QUERY PLAN                                    
+----------------------------------------------------------------------------------
  Aggregate
    ->  Merge Left Join
-         Merge Cond: ((x.thousand = y.unique2) AND (x.twothousand = y.hundred) AND (x.fivethous = y.unique2))
-         ->  Sort
-               Sort Key: x.thousand, x.twothousand, x.fivethous
-               ->  Foreign Scan on tenk1 x
+         Merge Cond: (x.thousand = y.unique2)
+         Join Filter: ((x.twothousand = y.hundred) AND (x.fivethous = y.unique2))
+         ->  Foreign Scan on tenk1 x
          ->  Materialize
-               ->  Sort
-                     Sort Key: y.unique2, y.hundred
-                     ->  Subquery Scan on y
-                           ->  Sort
-                                 Sort Key: y_1.unique2
-                                 ->  Foreign Scan on tenk1 y_1
-(13 rows)
+               ->  Foreign Scan on tenk1 y
+(7 rows)
 
 select count(*) from
   (select * from tenk1 x order by x.thousand, x.twothousand, x.fivethous) x
@@ -2936,22 +2918,21 @@ select * from
 where
   1 = (select 1 from int8_tbl t3 where ss.y is not null limit 1)
 order by 1,2;
-                        QUERY PLAN                         
------------------------------------------------------------
+                     QUERY PLAN                      
+-----------------------------------------------------
  Sort
    Sort Key: t1.q1, t1.q2
-   ->  Hash Left Join
-         Hash Cond: (t1.q2 = t2.q1)
+   ->  Hash Right Join
+         Hash Cond: (t2.q1 = t1.q2)
          Filter: (1 = (SubPlan 1))
-         ->  Foreign Scan on int8_tbl t1
+         ->  Foreign Scan on int8_tbl t2
          ->  Hash
-               ->  Foreign Scan on int8_tbl t2
+               ->  Foreign Scan on int8_tbl t1
          SubPlan 1
-           ->  Limit
-                 ->  Result
-                       One-Time Filter: ((42) IS NOT NULL)
-                       ->  Foreign Scan on int8_tbl t3
-(13 rows)
+           ->  Result
+                 One-Time Filter: ((42) IS NOT NULL)
+                 ->  Foreign Scan on int8_tbl t3
+(12 rows)
 
 select * from
   int8_tbl t1 left join
@@ -3116,34 +3097,22 @@ select t1.unique2, t1.stringu1, t2.unique1, t2.stringu2 from
   left join tenk1 t2
   on (subq1.y1 = t2.unique1)
 where t1.unique2 < 42 and t1.stringu1 > t2.stringu2;
-                              QUERY PLAN                              
-----------------------------------------------------------------------
+                          QUERY PLAN                          
+--------------------------------------------------------------
  Merge Join
-   Merge Cond: (i1.f1 = (0))
+   Merge Cond: (((11) = t1.unique2) AND ((3) = t2.unique1))
    ->  Sort
-         Sort Key: i1.f1
+         Sort Key: (11), (3)
          ->  Foreign Scan on int4_tbl i1
    ->  Materialize
          ->  Sort
-               Sort Key: (0)
-               ->  Merge Join
-                     Merge Cond: ((3) = t2.unique1)
+               Sort Key: t1.unique2, t2.unique1
+               ->  Nested Loop
                      Join Filter: (t1.stringu1 > t2.stringu2)
-                     ->  Sort
-                           Sort Key: (3)
-                           ->  Hash Join
-                                 Hash Cond: (t1.unique2 = (11))
-                                 ->  Foreign Scan on tenk1 t1
-                                 ->  Hash
-                                       ->  Nested Loop
-                                             Join Filter: ((1) = (1))
-                                             ->  Result
-                                             ->  Result
+                     ->  Foreign Scan on tenk1 t1
                      ->  Materialize
-                           ->  Sort
-                                 Sort Key: t2.unique1
-                                 ->  Foreign Scan on tenk1 t2
-(25 rows)
+                           ->  Foreign Scan on tenk1 t2
+(13 rows)
 
 select t1.unique2, t1.stringu1, t2.unique1, t2.stringu2 from
   tenk1 t1
@@ -3331,8 +3300,8 @@ select b.unique1 from
   join int4_tbl i1 on b.thousand = f1
   right join int4_tbl i2 on i2.f1 = b.tenthous
   order by 1;
-                                           QUERY PLAN                                            
--------------------------------------------------------------------------------------------------
+                                         QUERY PLAN                                         
+--------------------------------------------------------------------------------------------
  Sort
    Sort Key: b.unique1
    ->  Merge Left Join
@@ -3356,20 +3325,16 @@ select b.unique1 from
                                              Join Filter: (b.unique1 = 42)
                                              ->  Sort
                                                    Sort Key: a.thousand
-                                                   ->  Merge Join
-                                                         Merge Cond: (a.unique1 = b.unique2)
-                                                         ->  Sort
-                                                               Sort Key: a.unique1
-                                                               ->  Foreign Scan on tenk1 a
-                                                         ->  Materialize
-                                                               ->  Sort
-                                                                     Sort Key: b.unique2
-                                                                     ->  Foreign Scan on tenk1 b
+                                                   ->  Hash Join
+                                                         Hash Cond: (a.unique1 = b.unique2)
+                                                         ->  Foreign Scan on tenk1 a
+                                                         ->  Hash
+                                                               ->  Foreign Scan on tenk1 b
                                              ->  Materialize
                                                    ->  Sort
                                                          Sort Key: c.thousand
                                                          ->  Foreign Scan on tenk1 c
-(36 rows)
+(32 rows)
 
 select b.unique1 from
   tenk1 a join tenk1 b on a.unique1 = b.unique2
@@ -3649,7 +3614,7 @@ select t1.* from
                                        ->  Sort
                                              Output: i8.q2, (NULL::integer)
                                              Sort Key: (NULL::integer)
-                                             ->  Merge Left Join
+                                             ->  Merge Join
                                                    Output: i8.q2, (NULL::integer)
                                                    Merge Cond: (i8.q1 = i8b2.q1)
                                                    ->  Sort
@@ -3953,12 +3918,10 @@ where t1.f1 = ss.f1;
                ->  Foreign Scan on public.int8_tbl i8
                      Output: i8.q1, i8.q2
                      SQLite query: SELECT `q1`, `q2` FROM main."int8_tbl" WHERE ((`q2` = 123))
-   ->  Limit
-         Output: (i8.q1), t2.f1
-         ->  Foreign Scan on public.text_tbl t2
-               Output: i8.q1, t2.f1
-               SQLite query: SELECT `f1` FROM main."text_tbl"
-(18 rows)
+   ->  Foreign Scan on public.text_tbl t2
+         Output: i8.q1, t2.f1
+         SQLite query: SELECT `f1` FROM main."text_tbl" LIMIT 1
+(16 rows)
 
 select * from
   text_tbl t1
@@ -3996,17 +3959,13 @@ where t1.f1 = ss2.f1;
                      ->  Foreign Scan on public.int8_tbl i8
                            Output: i8.q1, i8.q2
                            SQLite query: SELECT `q1`, `q2` FROM main."int8_tbl" WHERE ((`q2` = 123))
-         ->  Limit
-               Output: (i8.q1), t2.f1
-               ->  Foreign Scan on public.text_tbl t2
-                     Output: i8.q1, t2.f1
-                     SQLite query: SELECT `f1` FROM main."text_tbl"
-   ->  Limit
-         Output: ((i8.q1)), (t2.f1)
-         ->  Foreign Scan on public.text_tbl t3
-               Output: (i8.q1), t2.f1
-               SQLite query: SELECT NULL FROM main."text_tbl"
-(25 rows)
+         ->  Foreign Scan on public.text_tbl t2
+               Output: i8.q1, t2.f1
+               SQLite query: SELECT `f1` FROM main."text_tbl" LIMIT 1
+   ->  Foreign Scan on public.text_tbl t3
+         Output: (i8.q1), t2.f1
+         SQLite query: SELECT NULL FROM main."text_tbl" LIMIT 1
+(21 rows)
 
 select * from
   text_tbl t1
@@ -4058,12 +4017,10 @@ where tt1.f1 = ss1.c0;
    ->  Subquery Scan on ss1
          Output: ss1.c0
          Filter: (ss1.c0 = 'foo'::text)
-         ->  Limit
-               Output: (tt4.f1)
-               ->  Foreign Scan on public.text_tbl tt5
-                     Output: tt4.f1
-                     SQLite query: SELECT NULL FROM main."text_tbl"
-(33 rows)
+         ->  Foreign Scan on public.text_tbl tt5
+               Output: tt4.f1
+               SQLite query: SELECT NULL FROM main."text_tbl" LIMIT 1
+(31 rows)
 
 select 1 from
   text_tbl as tt1
@@ -4122,12 +4079,10 @@ where ss1.c2 = 0;
                                        ->  Foreign Scan on public.int4_tbl i43
                                              Output: i43.f1
                                              SQLite query: SELECT `f1` FROM main."int4_tbl" WHERE ((`f1` = 0))
-         ->  Limit
-               Output: (i41.f1), (i8.q1), (i8.q2), (i42.f1), (i43.f1), ((42))
-               ->  Foreign Scan on public.text_tbl
-                     Output: i41.f1, i8.q1, i8.q2, i42.f1, i43.f1, (42)
-                     SQLite query: SELECT NULL FROM main."text_tbl"
-(36 rows)
+         ->  Foreign Scan on public.text_tbl
+               Output: i41.f1, i8.q1, i8.q2, i42.f1, i43.f1, (42)
+               SQLite query: SELECT NULL FROM main."text_tbl" LIMIT 1
+(34 rows)
 
 select ss2.* from
   int4_tbl i41
@@ -4154,10 +4109,10 @@ select * from
               QUERY PLAN               
 ---------------------------------------
  Nested Loop Left Join
-   Join Filter: ((1) = COALESCE((1)))
    ->  Result
    ->  Hash Full Join
          Hash Cond: (a1.unique1 = (1))
+         Filter: (1 = COALESCE((1)))
          ->  Foreign Scan on tenk1 a1
          ->  Hash
                ->  Result
@@ -4379,21 +4334,16 @@ select d3.* from d3 left join (select * from b3 group by b3.id, b3.c_id) s
 explain (costs off)
 select d3.* from d3 left join (select distinct * from b3) s
   on d3.a = s.id;
-                  QUERY PLAN                   
------------------------------------------------
- Merge Right Join
-   Merge Cond: (s.id = d3.a)
-   ->  Sort
-         Sort Key: s.id
+                 QUERY PLAN                 
+--------------------------------------------
+ Hash Left Join
+   Hash Cond: (d3.a = s.id)
+   ->  Foreign Scan on d3
+   ->  Hash
          ->  Subquery Scan on s
-               ->  HashAggregate
-                     Group Key: b3.id, b3.c_id
+               ->  Unique
                      ->  Foreign Scan on b3
-   ->  Materialize
-         ->  Sort
-               Sort Key: d3.a
-               ->  Foreign Scan on d3
-(12 rows)
+(7 rows)
 
 -- check join removal works when uniqueness of the join condition is enforced
 -- by a UNION
@@ -4575,25 +4525,25 @@ select t1.* from
   on t1.f1 = t2.f1
   left join uniquetbl t3
   on t2.d1 = t3.f1;
-                          QUERY PLAN                           
----------------------------------------------------------------
- Merge Right Join
-   Merge Cond: (t3.f1 = ('***'::text))
+                            QUERY PLAN                            
+------------------------------------------------------------------
+ Merge Left Join
+   Merge Cond: (t1.f1 = uniquetbl.f1)
    ->  Sort
-         Sort Key: t3.f1
-         ->  Foreign Scan on uniquetbl t3
+         Sort Key: t1.f1
+         ->  Foreign Scan on uniquetbl t1
    ->  Materialize
          ->  Sort
-               Sort Key: ('***'::text)
+               Sort Key: uniquetbl.f1
                ->  Merge Left Join
-                     Merge Cond: (t1.f1 = uniquetbl.f1)
+                     Merge Cond: (('***'::text) = t3.f1)
                      ->  Sort
-                           Sort Key: t1.f1
-                           ->  Foreign Scan on uniquetbl t1
+                           Sort Key: ('***'::text)
+                           ->  Foreign Scan on uniquetbl
                      ->  Materialize
                            ->  Sort
-                                 Sort Key: uniquetbl.f1
-                                 ->  Foreign Scan on uniquetbl
+                                 Sort Key: t3.f1
+                                 ->  Foreign Scan on uniquetbl t3
 (17 rows)
 
 explain (costs off)
@@ -4608,8 +4558,8 @@ from
      left join uniquetbl u1 ON u1.f1 = t1.string4) ss
   on t0.f1 = ss.case1
 where ss.stringu2 !~* ss.case1;
-                                                           QUERY PLAN                                                           
---------------------------------------------------------------------------------------------------------------------------------
+                                                              QUERY PLAN                                                              
+--------------------------------------------------------------------------------------------------------------------------------------
  Merge Join
    Merge Cond: (i4.f1 = t1.unique2)
    ->  Sort
@@ -4618,24 +4568,24 @@ where ss.stringu2 !~* ss.case1;
    ->  Materialize
          ->  Sort
                Sort Key: t1.unique2
-               ->  Merge Join
-                     Merge Cond: (t0.f1 = (CASE t1.ten WHEN 0 THEN 'doh!'::text ELSE NULL::text END))
+               ->  Merge Right Join
+                     Merge Cond: (u1.f1 = t1.string4)
                      ->  Sort
-                           Sort Key: t0.f1
-                           ->  Foreign Scan on text_tbl t0
+                           Sort Key: u1.f1 COLLATE "C"
+                           ->  Foreign Scan on uniquetbl u1
                      ->  Materialize
                            ->  Sort
-                                 Sort Key: (CASE t1.ten WHEN 0 THEN 'doh!'::text ELSE NULL::text END)
-                                 ->  Merge Left Join
-                                       Merge Cond: (((t1.string4)::text) = u1.f1)
+                                 Sort Key: t1.string4
+                                 ->  Merge Join
+                                       Merge Cond: (t0.f1 = (CASE t1.ten WHEN 0 THEN 'doh!'::text ELSE NULL::text END))
                                        ->  Sort
-                                             Sort Key: ((t1.string4)::text)
-                                             ->  Foreign Scan on tenk1 t1
-                                                   Filter: (stringu2 !~* CASE ten WHEN 0 THEN 'doh!'::text ELSE NULL::text END)
+                                             Sort Key: t0.f1
+                                             ->  Foreign Scan on text_tbl t0
                                        ->  Materialize
                                              ->  Sort
-                                                   Sort Key: u1.f1
-                                                   ->  Foreign Scan on uniquetbl u1
+                                                   Sort Key: (CASE t1.ten WHEN 0 THEN 'doh!'::text ELSE NULL::text END)
+                                                   ->  Foreign Scan on tenk1 t1
+                                                         Filter: (stringu2 !~* CASE ten WHEN 0 THEN 'doh!'::text ELSE NULL::text END)
 (26 rows)
 
 select t0.*
@@ -5833,8 +5783,8 @@ select * from j11 natural join j21;
 explain (verbose, costs off)
 select * from j11
 inner join (select distinct id from j31) j31 on j11.id = j31.id;
-                          QUERY PLAN                           
----------------------------------------------------------------
+                                         QUERY PLAN                                         
+--------------------------------------------------------------------------------------------
  Hash Join
    Output: j11.id, j31.id
    Inner Unique: true
@@ -5844,13 +5794,12 @@ inner join (select distinct id from j31) j31 on j11.id = j31.id;
          SQLite query: SELECT `id` FROM main."j11"
    ->  Hash
          Output: j31.id
-         ->  HashAggregate
+         ->  Unique
                Output: j31.id
-               Group Key: j31.id
                ->  Foreign Scan on public.j31
                      Output: j31.id
-                     SQLite query: SELECT `id` FROM main."j31"
-(15 rows)
+                     SQLite query: SELECT `id` FROM main."j31" ORDER BY `id` ASC NULLS LAST
+(14 rows)
 
 -- ensure group by clause allows the inner to become unique
 explain (verbose, costs off)

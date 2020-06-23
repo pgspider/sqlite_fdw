@@ -26,7 +26,7 @@ SELECT b, c FROM test_having
 
 -- HAVING is effectively equivalent to WHERE in this case
 SELECT b, c FROM test_having
-	GROUP BY b, c HAVING b = 3 ORDER BY b, c;
+	GROUP BY b, c HAVING b = 3 ORDER BY b, c collate "en_US.utf8";
  b |    c     
 ---+----------
  3 | bbbb    
@@ -45,7 +45,7 @@ SELECT lower(c), count(c) FROM test_having
 
 SELECT c, max(a) FROM test_having
 	GROUP BY c HAVING count(*) > 2 OR min(a) = max(a)
-	ORDER BY c;
+	ORDER BY c collate "en_US.utf8";
     c     | max 
 ----------+-----
  bbbb     |   5

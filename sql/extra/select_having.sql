@@ -24,7 +24,7 @@ SELECT b, c FROM test_having
 
 -- HAVING is effectively equivalent to WHERE in this case
 SELECT b, c FROM test_having
-	GROUP BY b, c HAVING b = 3 ORDER BY b, c;
+	GROUP BY b, c HAVING b = 3 ORDER BY b, c collate "en_US.utf8";
 
 SELECT lower(c), count(c) FROM test_having
 	GROUP BY lower(c) HAVING count(*) > 2 OR min(a) = max(a)
@@ -32,7 +32,7 @@ SELECT lower(c), count(c) FROM test_having
 
 SELECT c, max(a) FROM test_having
 	GROUP BY c HAVING count(*) > 2 OR min(a) = max(a)
-	ORDER BY c;
+	ORDER BY c collate "en_US.utf8";
 
 -- test degenerate cases involving HAVING without GROUP BY
 -- Per SQL spec, these should generate 0 or 1 row, even without aggregates
