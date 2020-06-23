@@ -18,13 +18,10 @@ explain (costs off, verbose) select sum(b),max(b), min(b), avg(b) from multiprim
 explain (costs off, verbose) select sum(b+5)+2 from multiprimary group by b/2 order by b/2;
                                             QUERY PLAN                                            
 --------------------------------------------------------------------------------------------------
- Sort
+ Foreign Scan
    Output: ((sum((b + 5)) + '2'::numeric)), ((b / 2))
-   Sort Key: ((multiprimary.b / 2))
-   ->  Foreign Scan
-         Output: ((sum((b + 5)) + '2'::numeric)), ((b / 2))
-         SQLite query: SELECT (sum((`b` + 5)) + 2), (`b` / 2) FROM main."multiprimary" GROUP BY 2
-(6 rows)
+   SQLite query: SELECT (sum((`b` + 5)) + 2), (`b` / 2) FROM main."multiprimary" GROUP BY 2 ORDER BY (`b` / 2) ASC
+(3 rows)
 
 explain (costs off, verbose) select sum(a) from multiprimary group by b having sum(a) > 0;
                                             QUERY PLAN                                            
@@ -37,13 +34,13 @@ explain (costs off, verbose) select sum(a) from multiprimary group by b having s
 explain (costs off, verbose) select sum(a) from multiprimary group by b having avg(a^2) > 0 and sum(a) > 0;
                                                                     QUERY PLAN                                                                    
 --------------------------------------------------------------------------------------------------------------------------------------------------
- HashAggregate
+ GroupAggregate
    Output: sum(a), b
    Group Key: multiprimary.b
    Filter: ((avg(((multiprimary.a)::double precision ^ '2'::double precision)) > '0'::double precision) AND (sum(multiprimary.a) > '0'::numeric))
    ->  Foreign Scan on public.multiprimary
          Output: a, b, c
-         SQLite query: SELECT `a`, `b` FROM main."multiprimary"
+         SQLite query: SELECT `a`, `b` FROM main."multiprimary" ORDER BY `b` ASC
 (7 rows)
 
 -- stddev and variance are not pushed down
