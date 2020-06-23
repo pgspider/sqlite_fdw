@@ -2461,7 +2461,7 @@ appendOrderByClause(List *pathkeys, bool has_final_sort, deparse_expr_cxt *conte
 		// To avoid error/problems when using ORDER DESC, we need to explicitly use NULLS LAST at query so pk_nulls_first is never true.
 		int sqliteVersion = sqlite3_libversion_number();
 
-		if (sqliteVersion >= 303000)
+		if (sqliteVersion >= 3030000)
 		{
 			if (pathkey->pk_nulls_first)
 				appendStringInfoString(buf, " NULLS FIRST");
@@ -2470,11 +2470,11 @@ appendOrderByClause(List *pathkeys, bool has_final_sort, deparse_expr_cxt *conte
 		}
 		else
 		{
-			// If we need a behaviour different than default...we throw error because NULLS FIRST/LAST is not implemented in this version
+			// If we need a different behaviour than default...we throw error because NULLS FIRST/LAST is not implemented in this version
 			if (pathkey->pk_nulls_first && pathkey->pk_strategy == BTLessStrategyNumber)
-				elog(ERROR, "NULLS FIRST not supported");
-			else if (!pathkey->pk_nulls_first && !pathkey->pk_strategy == BTLessStrategyNumber)
-				elog(ERROR, "NULLS LAST not supported");
+				elog(WARNING, "Current Sqlite Version (%d) does not support NULLS FIRST, degraded emitted query to ORDER BY ASC NULLS LAST (default sqlite behaviour).", sqliteVersion);
+			else if (!pathkey->pk_nulls_first && pathkey->pk_strategy != BTLessStrategyNumber)
+				elog(WARNING, "Current Sqlite Version (%d) does not support NULLS LAST, degraded emitted query to ORDER BY DESC NULLS FIRST (default sqlite behaviour).", sqliteVersion);
 		}
 
 		delim = ", ";
