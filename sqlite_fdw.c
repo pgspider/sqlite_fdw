@@ -2144,6 +2144,9 @@ add_foreign_ordered_paths(PlannerInfo *root, RelOptInfo *input_rel,
 	/* We don't support cases where there are any SRFs in the targetlist */
 	if (parse->hasTargetSRFs)
 		return;
+#else
+	if (expression_returns_set((Node *) parse->targetList))
+		return;
 #endif
 
 	/* Save the input_rel as outerrel in fpinfo */
@@ -2313,6 +2316,9 @@ add_foreign_final_paths(PlannerInfo *root, RelOptInfo *input_rel,
 #if (PG_VERSION_NUM >= 100000)
 	/* We don't support cases where there are any SRFs in the targetlist */
 	if (parse->hasTargetSRFs)
+		return;
+#else
+	if (expression_returns_set((Node *) parse->targetList))
 		return;
 #endif
 
