@@ -2500,6 +2500,13 @@ appendLimitClause(deparse_expr_cxt *context)
 		appendStringInfoString(buf, " LIMIT ");
 		deparseExpr((Expr *) root->parse->limitCount, context);
 	}
+	else
+	{
+		/* We add this LIMIT -1 because OFFSET by itself its not implemented/allowed in SQLite.
+		You need to provide LIMIT *always* when using OFFSET */
+		appendStringInfoString(buf, " LIMIT -1");
+	}
+
 	if (root->parse->limitOffset)
 	{
 		appendStringInfoString(buf, " OFFSET ");
