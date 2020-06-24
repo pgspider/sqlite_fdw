@@ -2471,10 +2471,10 @@ appendOrderByClause(List *pathkeys, bool has_final_sort, deparse_expr_cxt *conte
 		else
 		{
 			// If we need a different behaviour than default...we throw error because NULLS FIRST/LAST is not implemented in this version
-			if (pathkey->pk_nulls_first && pathkey->pk_strategy == BTLessStrategyNumber)
-				elog(WARNING, "Current Sqlite Version (%d) does not support NULLS FIRST, degraded emitted query to ORDER BY ASC NULLS LAST (default sqlite behaviour).", sqliteVersion);
-			else if (!pathkey->pk_nulls_first && pathkey->pk_strategy != BTLessStrategyNumber)
-				elog(WARNING, "Current Sqlite Version (%d) does not support NULLS LAST, degraded emitted query to ORDER BY DESC NULLS FIRST (default sqlite behaviour).", sqliteVersion);
+			if (!pathkey->pk_nulls_first && pathkey->pk_strategy == BTLessStrategyNumber)
+				elog(WARNING, "Current Sqlite Version (%d) does not support NULLS LAST for ORDER BY ASC, degraded emitted query to ORDER BY ASC NULLS FIRST (default sqlite behaviour).", sqliteVersion);
+			else if (pathkey->pk_nulls_first && pathkey->pk_strategy != BTLessStrategyNumber)
+				elog(WARNING, "Current Sqlite Version (%d) does not support NULLS FIRST for ORDER BY DESC, degraded emitted query to ORDER BY DESC NULLS LAST (default sqlite behaviour).", sqliteVersion);
 		}
 
 		delim = ", ";
