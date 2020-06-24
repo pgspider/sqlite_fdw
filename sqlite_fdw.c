@@ -2302,14 +2302,15 @@ add_foreign_final_paths(PlannerInfo *root, RelOptInfo *input_rel,
 		return;
 
 	/*
-	 * No work if there is no FOR UPDATE/SHARE clause and if there is no need
-	 * to add a LIMIT node
+	 * No work if there is FOR UPDATE/SHARE clause and if there is no need
+	 * to add a LIMIT node. We DONT support FOR UPDATE pushdown because SQLITE has no implemented yet,
+	 * that's why we dont do nothing.
 	 */
-	if (!parse->rowMarks
+	if (parse->rowMarks
 #if (PG_VERSION_NUM >= 120000)
-			&& !extra->limit_needed
+			|| !extra->limit_needed
 #else
-			&& !has_limit
+			|| !has_limit
 #endif
 	   )
 		return;
@@ -2335,98 +2336,6 @@ add_foreign_final_paths(PlannerInfo *root, RelOptInfo *input_rel,
 	fpinfo->server = ifpinfo->server;
 
 	fpinfo->shippable_extensions = ifpinfo->shippable_extensions;
-
-	/*
-	 * If there is no need to add a LIMIT node, there might be a ForeignPath
-	 * in the input_rel's pathlist that implements all behavior of the query.
-	 * Note: we would already have accounted for the query's FOR UPDATE/SHARE
-	 * (if any) before we get here.
-	 */
-#if (PG_VERSION_NUM >= 120000)
-	if (!extra->limit_needed)
-#else
-	if (!has_limit)
-#endif
-	{
-		ListCell   *lc;
-
-		Assert(parse->rowMarks);
-
-		/*
-		 * Grouping and aggregation are not supported with FOR UPDATE/SHARE,
-		 * so the input_rel should be a base, join, or ordered relation; and
-		 * if it's an ordered relation, its input relation should be a base
-		 * or join relation.
-		 */
-		Assert(input_rel->reloptkind == RELOPT_BASEREL ||
-			   input_rel->reloptkind == RELOPT_JOINREL ||
-			   (input_rel->reloptkind == RELOPT_UPPER_REL &&
-				ifpinfo->stage == UPPERREL_ORDERED &&
-				(ifpinfo->outerrel->reloptkind == RELOPT_BASEREL ||
-				 ifpinfo->outerrel->reloptkind == RELOPT_JOINREL)));
-
-		foreach(lc, input_rel->pathlist)
-		{
-			Path	   *path = (Path *) lfirst(lc);
-
-			/*
-			 * apply_scanjoin_target_to_paths() uses create_projection_path()
-			 * to adjust each of its input paths if needed, whereas
-			 * create_ordered_paths() uses apply_projection_to_path() to do
-			 * that.  So the former might have put a ProjectionPath on top of
-			 * the ForeignPath; look through ProjectionPath and see if the
-			 * path underneath it is ForeignPath.
-			 */
-			if (IsA(path, ForeignPath) ||
-				(IsA(path, ProjectionPath) &&
-				 IsA(((ProjectionPath *) path)->subpath, ForeignPath)))
-			{
-				/*
-				 * Create foreign final path; this gets rid of a
-				 * no-longer-needed outer plan (if any), which makes the
-				 * EXPLAIN output look cleaner
-				 */
-#if (PG_VERSION_NUM >= 120000)
-				final_path = create_foreign_upper_path(root,
-													   path->parent,
-													   path->pathtarget,
-													   path->rows,
-													   path->startup_cost,
-													   path->total_cost,
-													   path->pathkeys,
-													   NULL,	/* no extra plan */
-													   NULL);	/* no fdw_private */
-#else
-				final_path = create_foreignscan_path(root,
-													   path->parent,
-													   path->pathtarget,
-													   path->rows,
-													   path->startup_cost,
-													   path->total_cost,
-													   path->pathkeys,
-													   NULL,	/* no requred_outer */
-													   NULL,	/* no extra plan */
-													   NULL);	/* no fdw_private */
-
-#endif
-
-				/* and add it to the final_rel */
-				add_path(final_rel, (Path *) final_path);
-
-				/* Safe to push down */
-				fpinfo->pushdown_safe = true;
-
-				return;
-			}
-		}
-
-		/*
-		 * If we get here it means no ForeignPaths; since we would already
-		 * have considered pushing down all operations for the query to the
-		 * remote server, give up on it.
-		 */
-		return;
-	}
 
 #if (PG_VERSION_NUM >= 120000)
 	Assert(extra->limit_needed);
