@@ -2842,4 +2842,3 @@ find_em_expr_for_input_target(PlannerInfo *root,
 	elog(ERROR, "could not find pathkey item to sort");
 	return NULL;				/* keep compiler quiet */
 }
-
