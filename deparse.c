@@ -2458,7 +2458,6 @@ appendOrderByClause(List *pathkeys, bool has_final_sort, deparse_expr_cxt *conte
 
 		// XXX: In SQLITE3 Release v3.30.0 (2019-10-04) NULLS FIRST/LAST is supported, but not in prior versions
 		// More info: https://www.sqlite.org/changes.html https://www.sqlite.org/lang_select.html#orderby
-		// To avoid error/problems when using ORDER DESC, we need to explicitly use NULLS LAST at query so pk_nulls_first is never true.
 		int sqliteVersion = sqlite3_libversion_number();
 
 		if (sqliteVersion >= 3030000)
@@ -2470,7 +2469,7 @@ appendOrderByClause(List *pathkeys, bool has_final_sort, deparse_expr_cxt *conte
 		}
 		else
 		{
-			// If we need a different behaviour than default...we throw error because NULLS FIRST/LAST is not implemented in this version
+			// If we need a different behaviour than SQLite default...we show warning message because NULLS FIRST/LAST is not implemented in this SQLite version.
 			if (!pathkey->pk_nulls_first && pathkey->pk_strategy == BTLessStrategyNumber)
 				elog(WARNING, "Current Sqlite Version (%d) does not support NULLS LAST for ORDER BY ASC, degraded emitted query to ORDER BY ASC NULLS FIRST (default sqlite behaviour).", sqliteVersion);
 			else if (pathkey->pk_nulls_first && pathkey->pk_strategy != BTLessStrategyNumber)
