@@ -57,6 +57,7 @@ CREATE FOREIGN TABLE person (
 -- btree index
 -- awk '{if($1<10){print;}else{next;}}' onek.data | sort +0n -1
 --
+--Testcase 1:
 SELECT * FROM onek
    WHERE onek.unique1 < 10
    ORDER BY onek.unique1;
@@ -64,6 +65,7 @@ SELECT * FROM onek
 --
 -- awk '{if($1<20){print $1,$14;}else{next;}}' onek.data | sort +0nr -1
 --
+--Testcase 2:
 SELECT onek.unique1, onek.stringu1 FROM onek
    WHERE onek.unique1 < 20
    ORDER BY unique1 using >;
@@ -71,6 +73,7 @@ SELECT onek.unique1, onek.stringu1 FROM onek
 --
 -- awk '{if($1>980){print $1,$14;}else{next;}}' onek.data | sort +1d -2
 --
+--Testcase 3:
 SELECT onek.unique1, onek.stringu1 FROM onek
    WHERE onek.unique1 > 980
    ORDER BY stringu1 using <;
@@ -79,6 +82,7 @@ SELECT onek.unique1, onek.stringu1 FROM onek
 -- awk '{if($1>980){print $1,$16;}else{next;}}' onek.data |
 -- sort +1d -2 +0nr -1
 --
+--Testcase 4:
 SELECT onek.unique1, onek.string4 FROM onek
    WHERE onek.unique1 > 980
    ORDER BY string4 using <, unique1 using >;
@@ -87,6 +91,7 @@ SELECT onek.unique1, onek.string4 FROM onek
 -- awk '{if($1>980){print $1,$16;}else{next;}}' onek.data |
 -- sort +1dr -2 +0n -1
 --
+--Testcase 5:
 SELECT onek.unique1, onek.string4 FROM onek
    WHERE onek.unique1 > 980
    ORDER BY string4 using >, unique1 using <;
@@ -95,6 +100,7 @@ SELECT onek.unique1, onek.string4 FROM onek
 -- awk '{if($1<20){print $1,$16;}else{next;}}' onek.data |
 -- sort +0nr -1 +1d -2
 --
+--Testcase 6:
 SELECT onek.unique1, onek.string4 FROM onek
    WHERE onek.unique1 < 20
    ORDER BY unique1 using >, string4 using <;
@@ -103,6 +109,7 @@ SELECT onek.unique1, onek.string4 FROM onek
 -- awk '{if($1<20){print $1,$16;}else{next;}}' onek.data |
 -- sort +0n -1 +1dr -2
 --
+--Testcase 7:
 SELECT onek.unique1, onek.string4 FROM onek
    WHERE onek.unique1 < 20
    ORDER BY unique1 using <, string4 using >;
@@ -118,11 +125,13 @@ SET enable_sort TO off;
 --
 -- awk '{if($1<10){print $0;}else{next;}}' onek.data | sort +0n -1
 --
+--Testcase 8:
 SELECT onek2.* FROM onek2 WHERE onek2.unique1 < 10;
 
 --
 -- awk '{if($1<20){print $1,$14;}else{next;}}' onek.data | sort +0nr -1
 --
+--Testcase 9:
 SELECT onek2.unique1, onek2.stringu1 FROM onek2
     WHERE onek2.unique1 < 20
     ORDER BY unique1 using >;
@@ -130,6 +139,7 @@ SELECT onek2.unique1, onek2.stringu1 FROM onek2
 --
 -- awk '{if($1>980){print $1,$14;}else{next;}}' onek.data | sort +1d -2
 --
+--Testcase 10:
 SELECT onek2.unique1, onek2.stringu1 FROM onek2
    WHERE onek2.unique1 > 980;
 
@@ -138,6 +148,7 @@ RESET enable_bitmapscan;
 RESET enable_sort;
 
 
+--Testcase 11:
 SELECT two, stringu1, ten, string4
    INTO TABLE tmp
    FROM onek;
@@ -149,6 +160,7 @@ SELECT two, stringu1, ten, string4
 -- awk 'BEGIN{FS="      ";}{if(NF!=2){print $4,$5;}else{print;}}' - stud_emp.data
 --
 -- SELECT name, age FROM person*; ??? check if different
+--Testcase 12:
 SELECT p.name, p.age FROM person* p;
 
 --
@@ -158,16 +170,19 @@ SELECT p.name, p.age FROM person* p;
 -- awk 'BEGIN{FS="      ";}{if(NF!=1){print $4,$5;}else{print;}}' - stud_emp.data |
 -- sort +1nr -2
 --
+--Testcase 13:
 SELECT p.name, p.age FROM person* p ORDER BY age using >, name;
 
 --
 -- Test VALUES lists
 --
+--Testcase 14:
 select * from onek, (values(147, 'RFAAAA'), (931, 'VJAAAA')) as v (i, j)
     WHERE onek.unique1 = v.i and onek.stringu1 = v.j;
 
 -- a more complex case
 -- looks like we're coding lisp :-)
+--Testcase 15:
 select * from onek,
   (values ((select i from
     (values(10000), (2), (389), (1000), (2000), ((select 10029))) as foo(i)
@@ -175,11 +190,13 @@ select * from onek,
   where onek.unique1 = bar.i;
 
 -- try VALUES in a subquery
+--Testcase 16:
 select * from onek
     where (unique1,ten) in (values (1,1), (20,0), (99,9), (17,99))
     order by unique1;
 
 -- VALUES is also legal as a standalone query or a set-operation member
+--Testcase 17:
 VALUES (1,2), (3,4+4), (7,77.7)
 UNION ALL
 SELECT 2+2, 57
@@ -192,12 +209,18 @@ TABLE int8_tbl;
 
 CREATE FOREIGN TABLE foo (f1 int) SERVER sqlite_svr;
 
+--Testcase 18:
 INSERT INTO foo VALUES (42),(3),(10),(7),(null),(null),(1);
 
+--Testcase 19:
 SELECT * FROM foo ORDER BY f1;
+--Testcase 20:
 SELECT * FROM foo ORDER BY f1 ASC;	-- same thing
+--Testcase 21:
 SELECT * FROM foo ORDER BY f1 NULLS FIRST;
+--Testcase 22:
 SELECT * FROM foo ORDER BY f1 DESC;
+--Testcase 23:
 SELECT * FROM foo ORDER BY f1 DESC NULLS LAST;
 
 --
@@ -205,45 +228,64 @@ SELECT * FROM foo ORDER BY f1 DESC NULLS LAST;
 --
 
 -- partial index is usable
+--Testcase 24:
 explain (costs off)
 select * from onek2 where unique2 = 11 and stringu1 = 'ATAAAA';
+--Testcase 25:
 select * from onek2 where unique2 = 11 and stringu1 = 'ATAAAA';
 -- actually run the query with an analyze to use the partial index
 explain (costs off, analyze on, timing off, summary off)
+--Testcase 26:
 select * from onek2 where unique2 = 11 and stringu1 = 'ATAAAA';
+--Testcase 27:
 explain (costs off)
 select unique2 from onek2 where unique2 = 11 and stringu1 = 'ATAAAA';
+--Testcase 28:
 select unique2 from onek2 where unique2 = 11 and stringu1 = 'ATAAAA';
 -- partial index predicate implies clause, so no need for retest
+--Testcase 29:
 explain (costs off)
 select * from onek2 where unique2 = 11 and stringu1 < 'B';
+--Testcase 30:
 select * from onek2 where unique2 = 11 and stringu1 < 'B';
+--Testcase 31:
 explain (costs off)
 select unique2 from onek2 where unique2 = 11 and stringu1 < 'B';
+--Testcase 32:
 select unique2 from onek2 where unique2 = 11 and stringu1 < 'B';
 -- but if it's an update target, must retest anyway
+--Testcase 33:
 explain (costs off)
 select unique2 from onek2 where unique2 = 11 and stringu1 < 'B' for update;
+--Testcase 34:
 select unique2 from onek2 where unique2 = 11 and stringu1 < 'B' for update;
 -- partial index is not applicable
+--Testcase 35:
 explain (costs off)
 select unique2 from onek2 where unique2 = 11 and stringu1 < 'C';
+--Testcase 36:
 select unique2 from onek2 where unique2 = 11 and stringu1 < 'C';
 -- partial index implies clause, but bitmap scan must recheck predicate anyway
 SET enable_indexscan TO off;
+--Testcase 37:
 explain (costs off)
 select unique2 from onek2 where unique2 = 11 and stringu1 < 'B';
+--Testcase 38:
 select unique2 from onek2 where unique2 = 11 and stringu1 < 'B';
 RESET enable_indexscan;
 -- check multi-index cases too
+--Testcase 39:
 explain (costs off)
 select unique1, unique2 from onek2
   where (unique2 = 11 or unique1 = 0) and stringu1 < 'B';
+--Testcase 40:
 select unique1, unique2 from onek2
   where (unique2 = 11 or unique1 = 0) and stringu1 < 'B';
+--Testcase 41:
 explain (costs off)
 select unique1, unique2 from onek2
   where (unique2 = 11 and stringu1 < 'B') or unique1 = 0;
+--Testcase 42:
 select unique1, unique2 from onek2
   where (unique2 = 11 and stringu1 < 'B') or unique1 = 0;
 

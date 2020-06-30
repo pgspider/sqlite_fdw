@@ -18,12 +18,18 @@ CREATE TABLE INT8_TBL(
 );
 
 CREATE TABLE INT2_TBL(f1 int2);
+--Testcase 1:
 INSERT INTO INT2_TBL(f1) VALUES ('0   ');
+--Testcase 2:
 INSERT INTO INT2_TBL(f1) VALUES ('  1234 ');
+--Testcase 3:
 INSERT INTO INT2_TBL(f1) VALUES ('    -1234');
+--Testcase 4:
 INSERT INTO INT2_TBL(f1) VALUES ('34.5');
 -- largest and smallest values
+--Testcase 5:
 INSERT INTO INT2_TBL(f1) VALUES ('32767');
+--Testcase 6:
 INSERT INTO INT2_TBL(f1) VALUES ('-32767');
 
 CREATE TABLE test_having (a int, b int, c char(8), d char);
@@ -135,6 +141,7 @@ CREATE TABLE road (
 .import /tmp/person.data person
 .import /tmp/streets.data road
 
+--Testcase 7:
 INSERT INTO tenk2 SELECT * FROM tenk1;
 
 CREATE TABLE bitwise_test(
@@ -160,8 +167,11 @@ create table multi_arg_agg (a int, b int, c text);
 
 CREATE TABLE VARCHAR_TBL(f1 varchar(4));
 
+--Testcase 8:
 INSERT INTO VARCHAR_TBL (f1) VALUES ('a');
+--Testcase 9:
 INSERT INTO VARCHAR_TBL (f1) VALUES ('ab');
+--Testcase 10:
 INSERT INTO VARCHAR_TBL (f1) VALUES ('abcd');
 
 create table bytea_test_table(v bytea);
@@ -258,7 +268,9 @@ create table nt3 (
 
 CREATE TABLE TEXT_TBL (f1 text);
 
+--Testcase 11:
 INSERT INTO TEXT_TBL VALUES ('doh!');
+--Testcase 12:
 INSERT INTO TEXT_TBL VALUES ('hi de ho neighbor');
 
 CREATE TABLE a3 (id int PRIMARY KEY, b_id int);

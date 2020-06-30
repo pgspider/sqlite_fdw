@@ -45,45 +45,59 @@ CREATE FOREIGN TABLE tenk1 (
 	string4		name
 ) SERVER sqlite_svr;
 
+--Testcase 1:
 SELECT ''::text AS two, unique1, unique2, stringu1
 		FROM onek WHERE unique1 > 50
 		ORDER BY unique1 LIMIT 2;
+--Testcase 2:
 SELECT ''::text AS five, unique1, unique2, stringu1
 		FROM onek WHERE unique1 > 60
 		ORDER BY unique1 LIMIT 5;
+--Testcase 3:
 SELECT ''::text AS two, unique1, unique2, stringu1
 		FROM onek WHERE unique1 > 60 AND unique1 < 63
 		ORDER BY unique1 LIMIT 5;
+--Testcase 4:
 SELECT ''::text AS three, unique1, unique2, stringu1
 		FROM onek WHERE unique1 > 100
 		ORDER BY unique1 LIMIT 3 OFFSET 20;
+--Testcase 5:
 SELECT ''::text AS zero, unique1, unique2, stringu1
 		FROM onek WHERE unique1 < 50
 		ORDER BY unique1 DESC LIMIT 8 OFFSET 99;
+--Testcase 6:
 SELECT ''::text AS eleven, unique1, unique2, stringu1
 		FROM onek WHERE unique1 < 50
 		ORDER BY unique1 DESC LIMIT 20 OFFSET 39;
+--Testcase 7:
 SELECT ''::text AS ten, unique1, unique2, stringu1
 		FROM onek
 		ORDER BY unique1 OFFSET 990;
+--Testcase 8:
 SELECT ''::text AS five, unique1, unique2, stringu1
 		FROM onek
 		ORDER BY unique1 OFFSET 990 LIMIT 5;
+--Testcase 9:
 SELECT ''::text AS five, unique1, unique2, stringu1
 		FROM onek
 		ORDER BY unique1 LIMIT 5 OFFSET 900;
 
 -- Test null limit and offset.  The planner would discard a simple null
 -- constant, so to ensure executor is exercised, do this:
+--Testcase 10:
 select * from int8_tbl limit (case when random() < 0.5 then null::bigint end);
+--Testcase 11:
 select * from int8_tbl offset (case when random() < 0.5 then null::bigint end);
 
 -- Test assorted cases involving backwards fetch from a LIMIT plan node
 begin;
 
 declare c1 cursor for select * from int8_tbl limit 10;
+--Testcase 12:
 fetch all in c1;
+--Testcase 13:
 fetch 1 in c1;
+--Testcase 14:
 fetch backward 1 in c1;
 
 rollback;
@@ -95,43 +109,55 @@ rollback;
 
 create temp sequence testseq;
 
+--Testcase 15:
 explain (verbose, costs off)
 select unique1, unique2, nextval('testseq')
   from tenk1 order by unique2 limit 10;
 
+--Testcase 16:
 select unique1, unique2, nextval('testseq')
   from tenk1 order by unique2 limit 10;
 
+--Testcase 17:
 select currval('testseq');
 
+--Testcase 18:
 explain (verbose, costs off)
 select unique1, unique2, nextval('testseq')
   from tenk1 order by tenthous limit 10;
 
+--Testcase 19:
 select unique1, unique2, nextval('testseq')
   from tenk1 order by tenthous limit 10;
 
+--Testcase 20:
 select currval('testseq');
 
+--Testcase 21:
 explain (verbose, costs off)
 select unique1, unique2, generate_series(1,10)
   from tenk1 order by unique2 limit 7;
 
+--Testcase 22:
 select unique1, unique2, generate_series(1,10)
   from tenk1 order by unique2 limit 7;
 
+--Testcase 23:
 explain (verbose, costs off)
 select unique1, unique2, generate_series(1,10)
   from tenk1 order by tenthous limit 7;
 
+--Testcase 24:
 select unique1, unique2, generate_series(1,10)
   from tenk1 order by tenthous limit 7;
 
 -- test for failure to set all aggregates' aggtranstype
+--Testcase 25:
 explain (verbose, costs off)
 select sum(tenthous) as s1, sum(tenthous) + random()*0 as s2
   from tenk1 group by thousand order by thousand limit 3;
 
+--Testcase 26:
 select sum(tenthous) as s1, sum(tenthous) + random()*0 as s2
   from tenk1 group by thousand order by thousand limit 3;
 

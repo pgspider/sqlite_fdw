@@ -27,18 +27,22 @@ CREATE FOREIGN TABLE road (
 	name		text,
 	thepath 	path
 ) SERVER sqlite_svr;
+--Testcase 1:
 SELECT name, statement, parameter_types FROM pg_prepared_statements;
  name | statement | parameter_types 
 ------+-----------+-----------------
 (0 rows)
 
+--Testcase 2:
 PREPARE q1 AS SELECT * FROM road LIMIT 1;
+--Testcase 3:
 EXECUTE q1;
                 name                |                 thepath                 
 ------------------------------------+-----------------------------------------
  A                             St   | [(-122.0265,37.049),(-122.0271,37.045)]
 (1 row)
 
+--Testcase 4:
 SELECT name, statement, parameter_types FROM pg_prepared_statements;
  name |                 statement                 | parameter_types 
 ------+-------------------------------------------+-----------------
@@ -46,18 +50,23 @@ SELECT name, statement, parameter_types FROM pg_prepared_statements;
 (1 row)
 
 -- should fail
+--Testcase 5:
 PREPARE q1 AS SELECT * FROM tenk1 LIMIT 1;
 ERROR:  prepared statement "q1" already exists
 -- should succeed
 DEALLOCATE q1;
+--Testcase 6:
 PREPARE q1 AS SELECT * FROM tenk1 LIMIT 1;
+--Testcase 7:
 EXECUTE q1;
  unique1 | unique2 | two | four | ten | twenty | hundred | thousand | twothousand | fivethous | tenthous | odd | even | stringu1 | stringu2 | string4 
 ---------+---------+-----+------+-----+--------+---------+----------+-------------+-----------+----------+-----+------+----------+----------+---------
     8800 |       0 |   0 |    0 |   0 |      0 |       0 |      800 |         800 |      3800 |     8800 |   0 |    1 | MAAAAA   | AAAAAA   | AAAAxx
 (1 row)
 
+--Testcase 8:
 PREPARE q2 AS SELECT * FROM tenk1 LIMIT 1;
+--Testcase 9:
 SELECT name, statement, parameter_types FROM pg_prepared_statements;
  name |                 statement                  | parameter_types 
 ------+--------------------------------------------+-----------------
@@ -67,6 +76,7 @@ SELECT name, statement, parameter_types FROM pg_prepared_statements;
 
 -- sql92 syntax
 DEALLOCATE PREPARE q1;
+--Testcase 10:
 SELECT name, statement, parameter_types FROM pg_prepared_statements;
  name |                 statement                  | parameter_types 
 ------+--------------------------------------------+-----------------
@@ -75,25 +85,30 @@ SELECT name, statement, parameter_types FROM pg_prepared_statements;
 
 DEALLOCATE PREPARE q2;
 -- the view should return the empty set again
+--Testcase 11:
 SELECT name, statement, parameter_types FROM pg_prepared_statements;
  name | statement | parameter_types 
 ------+-----------+-----------------
 (0 rows)
 
 -- parameterized queries
+--Testcase 12:
 PREPARE q2(text) AS
 	SELECT datname, datistemplate, datallowconn
 	FROM pg_database WHERE datname = $1;
+--Testcase 13:
 EXECUTE q2('postgres');
  datname  | datistemplate | datallowconn 
 ----------+---------------+--------------
  postgres | f             | t
 (1 row)
 
+--Testcase 14:
 PREPARE q3(text, int, float, boolean, oid, smallint) AS
 	SELECT * FROM tenk1 WHERE string4 = $1 AND (four = $2 OR
 	ten = $3::bigint OR true = $4 OR oid = $5 OR odd = $6::int)
 	ORDER BY unique1;
+--Testcase 15:
 EXECUTE q3('AAAAxx', 5::smallint, 10.5::float, false, 500::oid, 4::bigint);
  unique1 | unique2 | two | four | ten | twenty | hundred | thousand | twothousand | fivethous | tenthous | odd | even | stringu1 | stringu2 | string4 
 ---------+---------+-----+------+-----+--------+---------+----------+-------------+-----------+----------+-----+------+----------+----------+---------
@@ -129,27 +144,33 @@ EXECUTE q3('AAAAxx', 5::smallint, 10.5::float, false, 500::oid, 4::bigint);
 (29 rows)
 
 -- too few params
+--Testcase 16:
 EXECUTE q3('bool');
 ERROR:  wrong number of parameters for prepared statement "q3"
 DETAIL:  Expected 6 parameters but got 1.
 -- too many params
+--Testcase 17:
 EXECUTE q3('bytea', 5::smallint, 10.5::float, false, 500::oid, 4::bigint, true);
 ERROR:  wrong number of parameters for prepared statement "q3"
 DETAIL:  Expected 6 parameters but got 7.
 -- wrong param types
+--Testcase 18:
 EXECUTE q3(5::smallint, 10.5::float, false, 500::oid, 4::bigint, 'bytea');
 ERROR:  parameter $3 of type boolean cannot be coerced to the expected type double precision
 HINT:  You will need to rewrite or cast the expression.
 -- invalid type
+--Testcase 19:
 PREPARE q4(nonexistenttype) AS SELECT * FROM road WHERE name = $1;
 ERROR:  type "nonexistenttype" does not exist
 LINE 1: PREPARE q4(nonexistenttype) AS SELECT * FROM road WHERE name...
                    ^
 -- create table as execute
+--Testcase 20:
 PREPARE q5(int, text) AS
 	SELECT * FROM tenk1 WHERE unique1 = $1 OR stringu1 = $2
 	ORDER BY unique1;
 CREATE TEMPORARY TABLE q5_prep_results AS EXECUTE q5(200, 'DTAAAA');
+--Testcase 21:
 SELECT * FROM q5_prep_results;
  unique1 | unique2 | two | four | ten | twenty | hundred | thousand | twothousand | fivethous | tenthous | odd | even | stringu1 | stringu2 | string4 
 ---------+---------+-----+------+-----+--------+---------+----------+-------------+-----------+----------+-----+------+----------+----------+---------
@@ -172,10 +193,13 @@ SELECT * FROM q5_prep_results;
 (16 rows)
 
 -- unknown or unspecified parameter types: should succeed
+--Testcase 22:
 PREPARE q6 AS
     SELECT * FROM tenk1 WHERE unique1 = $1 AND stringu1 = $2;
+--Testcase 23:
 PREPARE q7(unknown) AS
     SELECT * FROM road WHERE thepath = $1;
+--Testcase 24:
 SELECT name, statement, parameter_types FROM pg_prepared_statements
     ORDER BY name;
  name |                              statement                              |                    parameter_types                     
@@ -198,6 +222,7 @@ SELECT name, statement, parameter_types FROM pg_prepared_statements
 
 -- test DEALLOCATE ALL;
 DEALLOCATE ALL;
+--Testcase 25:
 SELECT name, statement, parameter_types FROM pg_prepared_statements
     ORDER BY name;
  name | statement | parameter_types 
