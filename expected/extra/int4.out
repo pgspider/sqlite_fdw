@@ -5,45 +5,59 @@ CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlitefdw_test_core.db');
 CREATE FOREIGN TABLE INT4_TBL(f1 int4 OPTIONS (key 'true')) SERVER sqlite_svr; 
+--Testcase 1:
 INSERT INTO INT4_TBL(f1) VALUES ('   0  ');
+--Testcase 2:
 INSERT INTO INT4_TBL(f1) VALUES ('123456     ');
+--Testcase 3:
 INSERT INTO INT4_TBL(f1) VALUES ('    -123456');
+--Testcase 4:
 INSERT INTO INT4_TBL(f1) VALUES ('34.5');
 ERROR:  invalid input syntax for integer: "34.5"
 LINE 1: INSERT INTO INT4_TBL(f1) VALUES ('34.5');
                                          ^
 -- largest and smallest values
+--Testcase 5:
 INSERT INTO INT4_TBL(f1) VALUES ('2147483647');
+--Testcase 6:
 INSERT INTO INT4_TBL(f1) VALUES ('-2147483647');
 -- bad input values -- should give errors
+--Testcase 7:
 INSERT INTO INT4_TBL(f1) VALUES ('1000000000000');
 ERROR:  value "1000000000000" is out of range for type integer
 LINE 1: INSERT INTO INT4_TBL(f1) VALUES ('1000000000000');
                                          ^
+--Testcase 8:
 INSERT INTO INT4_TBL(f1) VALUES ('asdf');
 ERROR:  invalid input syntax for integer: "asdf"
 LINE 1: INSERT INTO INT4_TBL(f1) VALUES ('asdf');
                                          ^
+--Testcase 9:
 INSERT INTO INT4_TBL(f1) VALUES ('     ');
 ERROR:  invalid input syntax for integer: "     "
 LINE 1: INSERT INTO INT4_TBL(f1) VALUES ('     ');
                                          ^
+--Testcase 10:
 INSERT INTO INT4_TBL(f1) VALUES ('   asdf   ');
 ERROR:  invalid input syntax for integer: "   asdf   "
 LINE 1: INSERT INTO INT4_TBL(f1) VALUES ('   asdf   ');
                                          ^
+--Testcase 11:
 INSERT INTO INT4_TBL(f1) VALUES ('- 1234');
 ERROR:  invalid input syntax for integer: "- 1234"
 LINE 1: INSERT INTO INT4_TBL(f1) VALUES ('- 1234');
                                          ^
+--Testcase 12:
 INSERT INTO INT4_TBL(f1) VALUES ('123       5');
 ERROR:  invalid input syntax for integer: "123       5"
 LINE 1: INSERT INTO INT4_TBL(f1) VALUES ('123       5');
                                          ^
+--Testcase 13:
 INSERT INTO INT4_TBL(f1) VALUES ('');
 ERROR:  invalid input syntax for integer: ""
 LINE 1: INSERT INTO INT4_TBL(f1) VALUES ('');
                                          ^
+--Testcase 14:
 SELECT '' AS five, * FROM INT4_TBL;
  five |     f1      
 ------+-------------
@@ -54,6 +68,7 @@ SELECT '' AS five, * FROM INT4_TBL;
       | -2147483647
 (5 rows)
 
+--Testcase 15:
 SELECT '' AS four, i.* FROM INT4_TBL i WHERE i.f1 <> int2 '0';
  four |     f1      
 ------+-------------
@@ -63,6 +78,7 @@ SELECT '' AS four, i.* FROM INT4_TBL i WHERE i.f1 <> int2 '0';
       | -2147483647
 (4 rows)
 
+--Testcase 16:
 SELECT '' AS four, i.* FROM INT4_TBL i WHERE i.f1 <> int4 '0';
  four |     f1      
 ------+-------------
@@ -72,18 +88,21 @@ SELECT '' AS four, i.* FROM INT4_TBL i WHERE i.f1 <> int4 '0';
       | -2147483647
 (4 rows)
 
+--Testcase 17:
 SELECT '' AS one, i.* FROM INT4_TBL i WHERE i.f1 = int2 '0';
  one | f1 
 -----+----
      |  0
 (1 row)
 
+--Testcase 18:
 SELECT '' AS one, i.* FROM INT4_TBL i WHERE i.f1 = int4 '0';
  one | f1 
 -----+----
      |  0
 (1 row)
 
+--Testcase 19:
 SELECT '' AS two, i.* FROM INT4_TBL i WHERE i.f1 < int2 '0';
  two |     f1      
 -----+-------------
@@ -91,6 +110,7 @@ SELECT '' AS two, i.* FROM INT4_TBL i WHERE i.f1 < int2 '0';
      | -2147483647
 (2 rows)
 
+--Testcase 20:
 SELECT '' AS two, i.* FROM INT4_TBL i WHERE i.f1 < int4 '0';
  two |     f1      
 -----+-------------
@@ -98,6 +118,7 @@ SELECT '' AS two, i.* FROM INT4_TBL i WHERE i.f1 < int4 '0';
      | -2147483647
 (2 rows)
 
+--Testcase 21:
 SELECT '' AS three, i.* FROM INT4_TBL i WHERE i.f1 <= int2 '0';
  three |     f1      
 -------+-------------
@@ -106,6 +127,7 @@ SELECT '' AS three, i.* FROM INT4_TBL i WHERE i.f1 <= int2 '0';
        | -2147483647
 (3 rows)
 
+--Testcase 22:
 SELECT '' AS three, i.* FROM INT4_TBL i WHERE i.f1 <= int4 '0';
  three |     f1      
 -------+-------------
@@ -114,6 +136,7 @@ SELECT '' AS three, i.* FROM INT4_TBL i WHERE i.f1 <= int4 '0';
        | -2147483647
 (3 rows)
 
+--Testcase 23:
 SELECT '' AS two, i.* FROM INT4_TBL i WHERE i.f1 > int2 '0';
  two |     f1     
 -----+------------
@@ -121,6 +144,7 @@ SELECT '' AS two, i.* FROM INT4_TBL i WHERE i.f1 > int2 '0';
      | 2147483647
 (2 rows)
 
+--Testcase 24:
 SELECT '' AS two, i.* FROM INT4_TBL i WHERE i.f1 > int4 '0';
  two |     f1     
 -----+------------
@@ -128,6 +152,7 @@ SELECT '' AS two, i.* FROM INT4_TBL i WHERE i.f1 > int4 '0';
      | 2147483647
 (2 rows)
 
+--Testcase 25:
 SELECT '' AS three, i.* FROM INT4_TBL i WHERE i.f1 >= int2 '0';
  three |     f1     
 -------+------------
@@ -136,6 +161,7 @@ SELECT '' AS three, i.* FROM INT4_TBL i WHERE i.f1 >= int2 '0';
        | 2147483647
 (3 rows)
 
+--Testcase 26:
 SELECT '' AS three, i.* FROM INT4_TBL i WHERE i.f1 >= int4 '0';
  three |     f1     
 -------+------------
@@ -145,6 +171,7 @@ SELECT '' AS three, i.* FROM INT4_TBL i WHERE i.f1 >= int4 '0';
 (3 rows)
 
 -- positive odds
+--Testcase 27:
 SELECT '' AS one, i.* FROM INT4_TBL i WHERE (i.f1 % int2 '2') = int2 '1';
  one |     f1     
 -----+------------
@@ -152,6 +179,7 @@ SELECT '' AS one, i.* FROM INT4_TBL i WHERE (i.f1 % int2 '2') = int2 '1';
 (1 row)
 
 -- any evens
+--Testcase 28:
 SELECT '' AS three, i.* FROM INT4_TBL i WHERE (i.f1 % int4 '2') = int2 '0';
  three |   f1    
 -------+---------
@@ -160,8 +188,10 @@ SELECT '' AS three, i.* FROM INT4_TBL i WHERE (i.f1 % int4 '2') = int2 '0';
        | -123456
 (3 rows)
 
+--Testcase 29:
 SELECT '' AS five, i.f1, i.f1 * int2 '2' AS x FROM INT4_TBL i;
 ERROR:  integer out of range
+--Testcase 30:
 SELECT '' AS five, i.f1, i.f1 * int2 '2' AS x FROM INT4_TBL i
 WHERE abs(f1) < 1073741824;
  five |   f1    |    x    
@@ -171,8 +201,10 @@ WHERE abs(f1) < 1073741824;
       | -123456 | -246912
 (3 rows)
 
+--Testcase 31:
 SELECT '' AS five, i.f1, i.f1 * int4 '2' AS x FROM INT4_TBL i;
 ERROR:  integer out of range
+--Testcase 32:
 SELECT '' AS five, i.f1, i.f1 * int4 '2' AS x FROM INT4_TBL i
 WHERE abs(f1) < 1073741824;
  five |   f1    |    x    
@@ -182,8 +214,10 @@ WHERE abs(f1) < 1073741824;
       | -123456 | -246912
 (3 rows)
 
+--Testcase 33:
 SELECT '' AS five, i.f1, i.f1 + int2 '2' AS x FROM INT4_TBL i;
 ERROR:  integer out of range
+--Testcase 34:
 SELECT '' AS five, i.f1, i.f1 + int2 '2' AS x FROM INT4_TBL i
 WHERE f1 < 2147483646;
  five |     f1      |      x      
@@ -194,8 +228,10 @@ WHERE f1 < 2147483646;
       | -2147483647 | -2147483645
 (4 rows)
 
+--Testcase 35:
 SELECT '' AS five, i.f1, i.f1 + int4 '2' AS x FROM INT4_TBL i;
 ERROR:  integer out of range
+--Testcase 36:
 SELECT '' AS five, i.f1, i.f1 + int4 '2' AS x FROM INT4_TBL i
 WHERE f1 < 2147483646;
  five |     f1      |      x      
@@ -206,8 +242,10 @@ WHERE f1 < 2147483646;
       | -2147483647 | -2147483645
 (4 rows)
 
+--Testcase 37:
 SELECT '' AS five, i.f1, i.f1 - int2 '2' AS x FROM INT4_TBL i;
 ERROR:  integer out of range
+--Testcase 38:
 SELECT '' AS five, i.f1, i.f1 - int2 '2' AS x FROM INT4_TBL i
 WHERE f1 > -2147483647;
  five |     f1     |     x      
@@ -218,8 +256,10 @@ WHERE f1 > -2147483647;
       | 2147483647 | 2147483645
 (4 rows)
 
+--Testcase 39:
 SELECT '' AS five, i.f1, i.f1 - int4 '2' AS x FROM INT4_TBL i;
 ERROR:  integer out of range
+--Testcase 40:
 SELECT '' AS five, i.f1, i.f1 - int4 '2' AS x FROM INT4_TBL i
 WHERE f1 > -2147483647;
  five |     f1     |     x      
@@ -230,6 +270,7 @@ WHERE f1 > -2147483647;
       | 2147483647 | 2147483645
 (4 rows)
 
+--Testcase 41:
 SELECT '' AS five, i.f1, i.f1 / int2 '2' AS x FROM INT4_TBL i;
  five |     f1      |      x      
 ------+-------------+-------------
@@ -240,6 +281,7 @@ SELECT '' AS five, i.f1, i.f1 / int2 '2' AS x FROM INT4_TBL i;
       | -2147483647 | -1073741823
 (5 rows)
 
+--Testcase 42:
 SELECT '' AS five, i.f1, i.f1 / int4 '2' AS x FROM INT4_TBL i;
  five |     f1      |      x      
 ------+-------------+-------------
@@ -255,16 +297,27 @@ SELECT '' AS five, i.f1, i.f1 / int4 '2' AS x FROM INT4_TBL i;
 --
 -- variations on unary minus parsing
 BEGIN;
+--Testcase 43:
 DELETE FROM INT4_TBL;
+--Testcase 44:
 INSERT INTO INT4_TBL VALUES (-2+3);
+--Testcase 45:
 INSERT INTO INT4_TBL VALUES (4-2);
+--Testcase 46:
 INSERT INTO INT4_TBL VALUES (2- -1);
+--Testcase 47:
 INSERT INTO INT4_TBL VALUES (2 - -2);
+--Testcase 48:
 INSERT INTO INT4_TBL VALUES (4!);
+--Testcase 49:
 INSERT INTO INT4_TBL VALUES (!!3);
+--Testcase 50:
 INSERT INTO INT4_TBL VALUES (1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1);
+--Testcase 51:
 INSERT INTO INT4_TBL VALUES (2 + 2 / 2);
+--Testcase 52:
 INSERT INTO INT4_TBL VALUES ((2 + 2) / 2);
+--Testcase 53:
 SELECT * FROM INT4_TBL;
  f1 
 ----
@@ -279,10 +332,14 @@ SELECT * FROM INT4_TBL;
   2
 (9 rows)
 
+--Testcase 54:
 DELETE FROM INT4_TBL;
 -- corner case
+--Testcase 55:
 INSERT INTO INT4_TBL VALUES ((-1::int4<<31));
+--Testcase 56:
 INSERT INTO INT4_TBL VALUES (((-1::int4<<31)+1));
+--Testcase 57:
 SELECT * FROM INT4_TBL;
      f1      
 -------------
@@ -292,12 +349,16 @@ SELECT * FROM INT4_TBL;
 
 ROLLBACK;
 -- check sane handling of INT_MIN overflow cases
+--Testcase 58:
 INSERT INTO INT4_TBL VALUES ((-2147483648)::int4 * (-1)::int4);
 ERROR:  integer out of range
+--Testcase 59:
 INSERT INTO INT4_TBL VALUES ((-2147483648)::int4 / (-1)::int4);
 ERROR:  integer out of range
+--Testcase 60:
 INSERT INTO INT4_TBL VALUES ((-2147483648)::int4 * (-1)::int2);
 ERROR:  integer out of range
+--Testcase 61:
 INSERT INTO INT4_TBL VALUES ((-2147483648)::int4 / (-1)::int2);
 ERROR:  integer out of range
 DROP FOREIGN TABLE INT4_TBL;

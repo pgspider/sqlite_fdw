@@ -55,7 +55,9 @@ CREATE TABLE "T 4" (
 );
 CREATE TABLE base_tbl (a int, b int);
 CREATE TABLE loc1 (f1 INTEGER PRIMARY KEY AUTOINCREMENT, f2 text);
+--Testcase 1:
 insert into loc1(f2) values('hi');
+--Testcase 2:
 insert into loc1(f2) values('bye');
 CREATE TABLE loct (aa TEXT, bb TEXT);
 CREATE TABLE loct1 (f1 int, f2 int, f3 int);

@@ -9,40 +9,53 @@ CREATE FOREIGN TABLE INT8_TBL(
 	q1 int8 OPTIONS (key 'true'),
 	q2 int8 OPTIONS (key 'true')
 ) SERVER sqlite_svr;
+--Testcase 1:
 INSERT INTO INT8_TBL VALUES('  123   ','  456');
+--Testcase 2:
 INSERT INTO INT8_TBL VALUES('123   ','4567890123456789');
+--Testcase 3:
 INSERT INTO INT8_TBL VALUES('4567890123456789','123');
+--Testcase 4:
 INSERT INTO INT8_TBL VALUES(+4567890123456789,'4567890123456789');
+--Testcase 5:
 INSERT INTO INT8_TBL VALUES('+4567890123456789','-4567890123456789');
 -- bad inputs
+--Testcase 6:
 INSERT INTO INT8_TBL(q1) VALUES ('      ');
 ERROR:  invalid input syntax for integer: "      "
 LINE 1: INSERT INTO INT8_TBL(q1) VALUES ('      ');
                                          ^
+--Testcase 7:
 INSERT INTO INT8_TBL(q1) VALUES ('xxx');
 ERROR:  invalid input syntax for integer: "xxx"
 LINE 1: INSERT INTO INT8_TBL(q1) VALUES ('xxx');
                                          ^
+--Testcase 8:
 INSERT INTO INT8_TBL(q1) VALUES ('3908203590239580293850293850329485');
 ERROR:  value "3908203590239580293850293850329485" is out of range for type bigint
 LINE 1: INSERT INTO INT8_TBL(q1) VALUES ('39082035902395802938502938...
                                          ^
+--Testcase 9:
 INSERT INTO INT8_TBL(q1) VALUES ('-1204982019841029840928340329840934');
 ERROR:  value "-1204982019841029840928340329840934" is out of range for type bigint
 LINE 1: INSERT INTO INT8_TBL(q1) VALUES ('-1204982019841029840928340...
                                          ^
+--Testcase 10:
 INSERT INTO INT8_TBL(q1) VALUES ('- 123');
 ERROR:  invalid input syntax for integer: "- 123"
 LINE 1: INSERT INTO INT8_TBL(q1) VALUES ('- 123');
                                          ^
+--Testcase 11:
 INSERT INTO INT8_TBL(q1) VALUES ('  345     5');
 ERROR:  invalid input syntax for integer: "  345     5"
 LINE 1: INSERT INTO INT8_TBL(q1) VALUES ('  345     5');
                                          ^
+--Testcase 12:
 INSERT INTO INT8_TBL(q1) VALUES ('');
 ERROR:  invalid input syntax for integer: ""
 LINE 1: INSERT INTO INT8_TBL(q1) VALUES ('');
                                          ^
+--Testcase 13:
 SELECT * FROM INT8_TBL;
         q1        |        q2         
 ------------------+-------------------
@@ -54,6 +67,7 @@ SELECT * FROM INT8_TBL;
 (5 rows)
 
 -- int8/int8 cmp
+--Testcase 14:
 SELECT * FROM INT8_TBL WHERE q2 = 4567890123456789;
         q1        |        q2        
 ------------------+------------------
@@ -61,6 +75,7 @@ SELECT * FROM INT8_TBL WHERE q2 = 4567890123456789;
  4567890123456789 | 4567890123456789
 (2 rows)
 
+--Testcase 15:
 SELECT * FROM INT8_TBL WHERE q2 <> 4567890123456789;
         q1        |        q2         
 ------------------+-------------------
@@ -69,6 +84,7 @@ SELECT * FROM INT8_TBL WHERE q2 <> 4567890123456789;
  4567890123456789 |               123
 (3 rows)
 
+--Testcase 16:
 SELECT * FROM INT8_TBL WHERE q2 < 4567890123456789;
         q1        |        q2         
 ------------------+-------------------
@@ -77,11 +93,13 @@ SELECT * FROM INT8_TBL WHERE q2 < 4567890123456789;
  4567890123456789 |               123
 (3 rows)
 
+--Testcase 17:
 SELECT * FROM INT8_TBL WHERE q2 > 4567890123456789;
  q1 | q2 
 ----+----
 (0 rows)
 
+--Testcase 18:
 SELECT * FROM INT8_TBL WHERE q2 <= 4567890123456789;
         q1        |        q2         
 ------------------+-------------------
@@ -92,6 +110,7 @@ SELECT * FROM INT8_TBL WHERE q2 <= 4567890123456789;
  4567890123456789 |  4567890123456789
 (5 rows)
 
+--Testcase 19:
 SELECT * FROM INT8_TBL WHERE q2 >= 4567890123456789;
         q1        |        q2        
 ------------------+------------------
@@ -100,12 +119,14 @@ SELECT * FROM INT8_TBL WHERE q2 >= 4567890123456789;
 (2 rows)
 
 -- int8/int4 cmp
+--Testcase 20:
 SELECT * FROM INT8_TBL WHERE q2 = 456;
  q1  | q2  
 -----+-----
  123 | 456
 (1 row)
 
+--Testcase 21:
 SELECT * FROM INT8_TBL WHERE q2 <> 456;
         q1        |        q2         
 ------------------+-------------------
@@ -115,6 +136,7 @@ SELECT * FROM INT8_TBL WHERE q2 <> 456;
  4567890123456789 |  4567890123456789
 (4 rows)
 
+--Testcase 22:
 SELECT * FROM INT8_TBL WHERE q2 < 456;
         q1        |        q2         
 ------------------+-------------------
@@ -122,6 +144,7 @@ SELECT * FROM INT8_TBL WHERE q2 < 456;
  4567890123456789 |               123
 (2 rows)
 
+--Testcase 23:
 SELECT * FROM INT8_TBL WHERE q2 > 456;
         q1        |        q2        
 ------------------+------------------
@@ -129,6 +152,7 @@ SELECT * FROM INT8_TBL WHERE q2 > 456;
  4567890123456789 | 4567890123456789
 (2 rows)
 
+--Testcase 24:
 SELECT * FROM INT8_TBL WHERE q2 <= 456;
         q1        |        q2         
 ------------------+-------------------
@@ -137,6 +161,7 @@ SELECT * FROM INT8_TBL WHERE q2 <= 456;
  4567890123456789 |               123
 (3 rows)
 
+--Testcase 25:
 SELECT * FROM INT8_TBL WHERE q2 >= 456;
         q1        |        q2        
 ------------------+------------------
@@ -146,6 +171,7 @@ SELECT * FROM INT8_TBL WHERE q2 >= 456;
 (3 rows)
 
 -- int4/int8 cmp
+--Testcase 26:
 SELECT * FROM INT8_TBL WHERE 123 = q1;
  q1  |        q2        
 -----+------------------
@@ -153,6 +179,7 @@ SELECT * FROM INT8_TBL WHERE 123 = q1;
  123 | 4567890123456789
 (2 rows)
 
+--Testcase 27:
 SELECT * FROM INT8_TBL WHERE 123 <> q1;
         q1        |        q2         
 ------------------+-------------------
@@ -161,6 +188,7 @@ SELECT * FROM INT8_TBL WHERE 123 <> q1;
  4567890123456789 |  4567890123456789
 (3 rows)
 
+--Testcase 28:
 SELECT * FROM INT8_TBL WHERE 123 < q1;
         q1        |        q2         
 ------------------+-------------------
@@ -169,11 +197,13 @@ SELECT * FROM INT8_TBL WHERE 123 < q1;
  4567890123456789 |  4567890123456789
 (3 rows)
 
+--Testcase 29:
 SELECT * FROM INT8_TBL WHERE 123 > q1;
  q1 | q2 
 ----+----
 (0 rows)
 
+--Testcase 30:
 SELECT * FROM INT8_TBL WHERE 123 <= q1;
         q1        |        q2         
 ------------------+-------------------
@@ -184,6 +214,7 @@ SELECT * FROM INT8_TBL WHERE 123 <= q1;
  4567890123456789 |  4567890123456789
 (5 rows)
 
+--Testcase 31:
 SELECT * FROM INT8_TBL WHERE 123 >= q1;
  q1  |        q2        
 -----+------------------
@@ -192,12 +223,14 @@ SELECT * FROM INT8_TBL WHERE 123 >= q1;
 (2 rows)
 
 -- int8/int2 cmp
+--Testcase 32:
 SELECT * FROM INT8_TBL WHERE q2 = '456'::int2;
  q1  | q2  
 -----+-----
  123 | 456
 (1 row)
 
+--Testcase 33:
 SELECT * FROM INT8_TBL WHERE q2 <> '456'::int2;
         q1        |        q2         
 ------------------+-------------------
@@ -207,6 +240,7 @@ SELECT * FROM INT8_TBL WHERE q2 <> '456'::int2;
  4567890123456789 |  4567890123456789
 (4 rows)
 
+--Testcase 34:
 SELECT * FROM INT8_TBL WHERE q2 < '456'::int2;
         q1        |        q2         
 ------------------+-------------------
@@ -214,6 +248,7 @@ SELECT * FROM INT8_TBL WHERE q2 < '456'::int2;
  4567890123456789 |               123
 (2 rows)
 
+--Testcase 35:
 SELECT * FROM INT8_TBL WHERE q2 > '456'::int2;
         q1        |        q2        
 ------------------+------------------
@@ -221,6 +256,7 @@ SELECT * FROM INT8_TBL WHERE q2 > '456'::int2;
  4567890123456789 | 4567890123456789
 (2 rows)
 
+--Testcase 36:
 SELECT * FROM INT8_TBL WHERE q2 <= '456'::int2;
         q1        |        q2         
 ------------------+-------------------
@@ -229,6 +265,7 @@ SELECT * FROM INT8_TBL WHERE q2 <= '456'::int2;
  4567890123456789 |               123
 (3 rows)
 
+--Testcase 37:
 SELECT * FROM INT8_TBL WHERE q2 >= '456'::int2;
         q1        |        q2        
 ------------------+------------------
@@ -238,6 +275,7 @@ SELECT * FROM INT8_TBL WHERE q2 >= '456'::int2;
 (3 rows)
 
 -- int2/int8 cmp
+--Testcase 38:
 SELECT * FROM INT8_TBL WHERE '123'::int2 = q1;
  q1  |        q2        
 -----+------------------
@@ -245,6 +283,7 @@ SELECT * FROM INT8_TBL WHERE '123'::int2 = q1;
  123 | 4567890123456789
 (2 rows)
 
+--Testcase 39:
 SELECT * FROM INT8_TBL WHERE '123'::int2 <> q1;
         q1        |        q2         
 ------------------+-------------------
@@ -253,6 +292,7 @@ SELECT * FROM INT8_TBL WHERE '123'::int2 <> q1;
  4567890123456789 |  4567890123456789
 (3 rows)
 
+--Testcase 40:
 SELECT * FROM INT8_TBL WHERE '123'::int2 < q1;
         q1        |        q2         
 ------------------+-------------------
@@ -261,11 +301,13 @@ SELECT * FROM INT8_TBL WHERE '123'::int2 < q1;
  4567890123456789 |  4567890123456789
 (3 rows)
 
+--Testcase 41:
 SELECT * FROM INT8_TBL WHERE '123'::int2 > q1;
  q1 | q2 
 ----+----
 (0 rows)
 
+--Testcase 42:
 SELECT * FROM INT8_TBL WHERE '123'::int2 <= q1;
         q1        |        q2         
 ------------------+-------------------
@@ -276,6 +318,7 @@ SELECT * FROM INT8_TBL WHERE '123'::int2 <= q1;
  4567890123456789 |  4567890123456789
 (5 rows)
 
+--Testcase 43:
 SELECT * FROM INT8_TBL WHERE '123'::int2 >= q1;
  q1  |        q2        
 -----+------------------
@@ -283,6 +326,7 @@ SELECT * FROM INT8_TBL WHERE '123'::int2 >= q1;
  123 | 4567890123456789
 (2 rows)
 
+--Testcase 44:
 SELECT '' AS five, q1 AS plus, -q1 AS minus FROM INT8_TBL;
  five |       plus       |       minus       
 ------+------------------+-------------------
@@ -293,6 +337,7 @@ SELECT '' AS five, q1 AS plus, -q1 AS minus FROM INT8_TBL;
       | 4567890123456789 | -4567890123456789
 (5 rows)
 
+--Testcase 45:
 SELECT '' AS five, q1, q2, q1 + q2 AS plus FROM INT8_TBL;
  five |        q1        |        q2         |       plus       
 ------+------------------+-------------------+------------------
@@ -303,6 +348,7 @@ SELECT '' AS five, q1, q2, q1 + q2 AS plus FROM INT8_TBL;
       | 4567890123456789 |  4567890123456789 | 9135780246913578
 (5 rows)
 
+--Testcase 46:
 SELECT '' AS five, q1, q2, q1 - q2 AS minus FROM INT8_TBL;
  five |        q1        |        q2         |       minus       
 ------+------------------+-------------------+-------------------
@@ -313,8 +359,10 @@ SELECT '' AS five, q1, q2, q1 - q2 AS minus FROM INT8_TBL;
       | 4567890123456789 |  4567890123456789 |                 0
 (5 rows)
 
+--Testcase 47:
 SELECT '' AS three, q1, q2, q1 * q2 AS multiply FROM INT8_TBL;
 ERROR:  bigint out of range
+--Testcase 48:
 SELECT '' AS three, q1, q2, q1 * q2 AS multiply FROM INT8_TBL
  WHERE q1 < 1000 or (q2 > 0 and q2 < 1000);
  three |        q1        |        q2        |      multiply      
@@ -324,6 +372,7 @@ SELECT '' AS three, q1, q2, q1 * q2 AS multiply FROM INT8_TBL
        | 4567890123456789 |              123 | 561850485185185047
 (3 rows)
 
+--Testcase 49:
 SELECT '' AS five, q1, q2, q1 / q2 AS divide, q1 % q2 AS mod FROM INT8_TBL;
  five |        q1        |        q2         |     divide     | mod 
 ------+------------------+-------------------+----------------+-----
@@ -334,6 +383,7 @@ SELECT '' AS five, q1, q2, q1 / q2 AS divide, q1 % q2 AS mod FROM INT8_TBL;
       | 4567890123456789 |  4567890123456789 |              1 |   0
 (5 rows)
 
+--Testcase 50:
 SELECT '' AS five, q1, float8(q1) FROM INT8_TBL;
  five |        q1        |        float8        
 ------+------------------+----------------------
@@ -344,6 +394,7 @@ SELECT '' AS five, q1, float8(q1) FROM INT8_TBL;
       | 4567890123456789 | 4.56789012345679e+15
 (5 rows)
 
+--Testcase 51:
 SELECT '' AS five, q2, float8(q2) FROM INT8_TBL;
  five |        q2         |        float8         
 ------+-------------------+-----------------------
@@ -354,6 +405,7 @@ SELECT '' AS five, q2, float8(q2) FROM INT8_TBL;
       |  4567890123456789 |  4.56789012345679e+15
 (5 rows)
 
+--Testcase 52:
 SELECT 37 + q1 AS plus4 FROM INT8_TBL;
       plus4       
 ------------------
@@ -364,6 +416,7 @@ SELECT 37 + q1 AS plus4 FROM INT8_TBL;
  4567890123456826
 (5 rows)
 
+--Testcase 53:
 SELECT 37 - q1 AS minus4 FROM INT8_TBL;
       minus4       
 -------------------
@@ -374,6 +427,7 @@ SELECT 37 - q1 AS minus4 FROM INT8_TBL;
  -4567890123456752
 (5 rows)
 
+--Testcase 54:
 SELECT '' AS five, 2 * q1 AS "twice int4" FROM INT8_TBL;
  five |    twice int4    
 ------+------------------
@@ -384,6 +438,7 @@ SELECT '' AS five, 2 * q1 AS "twice int4" FROM INT8_TBL;
       | 9135780246913578
 (5 rows)
 
+--Testcase 55:
 SELECT '' AS five, q1 * 2 AS "twice int4" FROM INT8_TBL;
  five |    twice int4    
 ------+------------------
@@ -395,6 +450,7 @@ SELECT '' AS five, q1 * 2 AS "twice int4" FROM INT8_TBL;
 (5 rows)
 
 -- int8 op int4
+--Testcase 56:
 SELECT q1 + 42::int4 AS "8plus4", q1 - 42::int4 AS "8minus4", q1 * 42::int4 AS "8mul4", q1 / 42::int4 AS "8div4" FROM INT8_TBL;
       8plus4      |     8minus4      |       8mul4        |      8div4      
 ------------------+------------------+--------------------+-----------------
@@ -406,6 +462,7 @@ SELECT q1 + 42::int4 AS "8plus4", q1 - 42::int4 AS "8minus4", q1 * 42::int4 AS "
 (5 rows)
 
 -- int4 op int8
+--Testcase 57:
 SELECT 246::int4 + q1 AS "4plus8", 246::int4 - q1 AS "4minus8", 246::int4 * q1 AS "4mul8", 246::int4 / q1 AS "4div8" FROM INT8_TBL;
       4plus8      |      4minus8      |        4mul8        | 4div8 
 ------------------+-------------------+---------------------+-------
@@ -417,6 +474,7 @@ SELECT 246::int4 + q1 AS "4plus8", 246::int4 - q1 AS "4minus8", 246::int4 * q1 A
 (5 rows)
 
 -- int8 op int2
+--Testcase 58:
 SELECT q1 + 42::int2 AS "8plus2", q1 - 42::int2 AS "8minus2", q1 * 42::int2 AS "8mul2", q1 / 42::int2 AS "8div2" FROM INT8_TBL;
       8plus2      |     8minus2      |       8mul2        |      8div2      
 ------------------+------------------+--------------------+-----------------
@@ -428,6 +486,7 @@ SELECT q1 + 42::int2 AS "8plus2", q1 - 42::int2 AS "8minus2", q1 * 42::int2 AS "
 (5 rows)
 
 -- int2 op int8
+--Testcase 59:
 SELECT 246::int2 + q1 AS "2plus8", 246::int2 - q1 AS "2minus8", 246::int2 * q1 AS "2mul8", 246::int2 / q1 AS "2div8" FROM INT8_TBL;
       2plus8      |      2minus8      |        2mul8        | 2div8 
 ------------------+-------------------+---------------------+-------
@@ -438,6 +497,7 @@ SELECT 246::int2 + q1 AS "2plus8", 246::int2 - q1 AS "2minus8", 246::int2 * q1 A
  4567890123457035 | -4567890123456543 | 1123700970370370094 |     0
 (5 rows)
 
+--Testcase 60:
 SELECT q2, abs(q2) FROM INT8_TBL;
         q2         |       abs        
 -------------------+------------------
@@ -448,12 +508,14 @@ SELECT q2, abs(q2) FROM INT8_TBL;
   4567890123456789 | 4567890123456789
 (5 rows)
 
+--Testcase 61:
 SELECT min(q1), min(q2) FROM INT8_TBL;
  min |        min        
 -----+-------------------
  123 | -4567890123456789
 (1 row)
 
+--Testcase 62:
 SELECT max(q1), max(q2) FROM INT8_TBL;
        max        |       max        
 ------------------+------------------
@@ -462,6 +524,7 @@ SELECT max(q1), max(q2) FROM INT8_TBL;
 
 -- TO_CHAR()
 --
+--Testcase 63:
 SELECT '' AS to_char_1, to_char(q1, '9G999G999G999G999G999'), to_char(q2, '9,999,999,999,999,999')
 	FROM INT8_TBL;
  to_char_1 |        to_char         |        to_char         
@@ -473,6 +536,7 @@ SELECT '' AS to_char_1, to_char(q1, '9G999G999G999G999G999'), to_char(q2, '9,999
            |  4,567,890,123,456,789 |  4,567,890,123,456,789
 (5 rows)
 
+--Testcase 64:
 SELECT '' AS to_char_2, to_char(q1, '9G999G999G999G999G999D999G999'), to_char(q2, '9,999,999,999,999,999.999,999')
 	FROM INT8_TBL;
  to_char_2 |            to_char             |            to_char             
@@ -484,6 +548,7 @@ SELECT '' AS to_char_2, to_char(q1, '9G999G999G999G999G999D999G999'), to_char(q2
            |  4,567,890,123,456,789.000,000 |  4,567,890,123,456,789.000,000
 (5 rows)
 
+--Testcase 65:
 SELECT '' AS to_char_3, to_char( (q1 * -1), '9999999999999999PR'), to_char( (q2 * -1), '9999999999999999.999PR')
 	FROM INT8_TBL;
  to_char_3 |      to_char       |        to_char         
@@ -495,6 +560,7 @@ SELECT '' AS to_char_3, to_char( (q1 * -1), '9999999999999999PR'), to_char( (q2 
            | <4567890123456789> | <4567890123456789.000>
 (5 rows)
 
+--Testcase 66:
 SELECT '' AS to_char_4, to_char( (q1 * -1), '9999999999999999S'), to_char( (q2 * -1), 'S9999999999999999')
 	FROM INT8_TBL;
  to_char_4 |      to_char      |      to_char      
@@ -506,6 +572,7 @@ SELECT '' AS to_char_4, to_char( (q1 * -1), '9999999999999999S'), to_char( (q2 *
            | 4567890123456789- | -4567890123456789
 (5 rows)
 
+--Testcase 67:
 SELECT '' AS to_char_5,  to_char(q2, 'MI9999999999999999')     FROM INT8_TBL;
  to_char_5 |      to_char      
 -----------+-------------------
@@ -516,6 +583,7 @@ SELECT '' AS to_char_5,  to_char(q2, 'MI9999999999999999')     FROM INT8_TBL;
            |  4567890123456789
 (5 rows)
 
+--Testcase 68:
 SELECT '' AS to_char_6,  to_char(q2, 'FMS9999999999999999')    FROM INT8_TBL;
  to_char_6 |      to_char      
 -----------+-------------------
@@ -526,6 +594,7 @@ SELECT '' AS to_char_6,  to_char(q2, 'FMS9999999999999999')    FROM INT8_TBL;
            | +4567890123456789
 (5 rows)
 
+--Testcase 69:
 SELECT '' AS to_char_7,  to_char(q2, 'FM9999999999999999THPR') FROM INT8_TBL;
  to_char_7 |      to_char       
 -----------+--------------------
@@ -536,6 +605,7 @@ SELECT '' AS to_char_7,  to_char(q2, 'FM9999999999999999THPR') FROM INT8_TBL;
            | 4567890123456789TH
 (5 rows)
 
+--Testcase 70:
 SELECT '' AS to_char_8,  to_char(q2, 'SG9999999999999999th')   FROM INT8_TBL;
  to_char_8 |       to_char       
 -----------+---------------------
@@ -546,6 +616,7 @@ SELECT '' AS to_char_8,  to_char(q2, 'SG9999999999999999th')   FROM INT8_TBL;
            | +4567890123456789th
 (5 rows)
 
+--Testcase 71:
 SELECT '' AS to_char_9,  to_char(q2, '0999999999999999')       FROM INT8_TBL;
  to_char_9 |      to_char      
 -----------+-------------------
@@ -556,6 +627,7 @@ SELECT '' AS to_char_9,  to_char(q2, '0999999999999999')       FROM INT8_TBL;
            |  4567890123456789
 (5 rows)
 
+--Testcase 72:
 SELECT '' AS to_char_10, to_char(q2, 'S0999999999999999')      FROM INT8_TBL;
  to_char_10 |      to_char      
 ------------+-------------------
@@ -566,6 +638,7 @@ SELECT '' AS to_char_10, to_char(q2, 'S0999999999999999')      FROM INT8_TBL;
             | +4567890123456789
 (5 rows)
 
+--Testcase 73:
 SELECT '' AS to_char_11, to_char(q2, 'FM0999999999999999')     FROM INT8_TBL;
  to_char_11 |      to_char      
 ------------+-------------------
@@ -576,6 +649,7 @@ SELECT '' AS to_char_11, to_char(q2, 'FM0999999999999999')     FROM INT8_TBL;
             | 4567890123456789
 (5 rows)
 
+--Testcase 74:
 SELECT '' AS to_char_12, to_char(q2, 'FM9999999999999999.000') FROM INT8_TBL;
  to_char_12 |        to_char        
 ------------+-----------------------
@@ -586,6 +660,7 @@ SELECT '' AS to_char_12, to_char(q2, 'FM9999999999999999.000') FROM INT8_TBL;
             | 4567890123456789.000
 (5 rows)
 
+--Testcase 75:
 SELECT '' AS to_char_13, to_char(q2, 'L9999999999999999.000')  FROM INT8_TBL;
  to_char_13 |        to_char         
 ------------+------------------------
@@ -596,6 +671,7 @@ SELECT '' AS to_char_13, to_char(q2, 'L9999999999999999.000')  FROM INT8_TBL;
             |   4567890123456789.000
 (5 rows)
 
+--Testcase 76:
 SELECT '' AS to_char_14, to_char(q2, 'FM9999999999999999.999') FROM INT8_TBL;
  to_char_14 |      to_char       
 ------------+--------------------
@@ -606,6 +682,7 @@ SELECT '' AS to_char_14, to_char(q2, 'FM9999999999999999.999') FROM INT8_TBL;
             | 4567890123456789.
 (5 rows)
 
+--Testcase 77:
 SELECT '' AS to_char_15, to_char(q2, 'S 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 . 9 9 9') FROM INT8_TBL;
  to_char_15 |                  to_char                  
 ------------+-------------------------------------------
@@ -616,6 +693,7 @@ SELECT '' AS to_char_15, to_char(q2, 'S 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 . 9 9 9'
             |  +4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 . 0 0 0
 (5 rows)
 
+--Testcase 78:
 SELECT '' AS to_char_16, to_char(q2, E'99999 "text" 9999 "9999" 999 "\\"text between quote marks\\"" 9999') FROM INT8_TBL;
  to_char_16 |                          to_char                          
 ------------+-----------------------------------------------------------
@@ -626,6 +704,7 @@ SELECT '' AS to_char_16, to_char(q2, E'99999 "text" 9999 "9999" 999 "\\"text bet
             |  45678 text 9012 9999 345 "text between quote marks" 6789
 (5 rows)
 
+--Testcase 79:
 SELECT '' AS to_char_17, to_char(q2, '999999SG9999999999')     FROM INT8_TBL;
  to_char_17 |      to_char      
 ------------+-------------------
@@ -637,81 +716,116 @@ SELECT '' AS to_char_17, to_char(q2, '999999SG9999999999')     FROM INT8_TBL;
 (5 rows)
 
 -- check min/max values and overflow behavior
+--Testcase 80:
 INSERT INTO INT8_TBL VALUES ('-9223372036854775808'::int8, 888);
+--Testcase 81:
 INSERT INTO INT8_TBL VALUES ('-9223372036854775809'::int8, 888);
 ERROR:  value "-9223372036854775809" is out of range for type bigint
 LINE 1: INSERT INTO INT8_TBL VALUES ('-9223372036854775809'::int8, 8...
                                      ^
+--Testcase 82:
 INSERT INTO INT8_TBL VALUES ('9223372036854775807'::int8, 888);
+--Testcase 83:
 INSERT INTO INT8_TBL VALUES ('9223372036854775808'::int8, 888);
 ERROR:  value "9223372036854775808" is out of range for type bigint
 LINE 1: INSERT INTO INT8_TBL VALUES ('9223372036854775808'::int8, 88...
                                      ^
+--Testcase 84:
 DELETE FROM INT8_TBL WHERE q2 = 888;
+--Testcase 85:
 INSERT INTO INT8_TBL VALUES (-('-9223372036854775807'::int8), 888);
+--Testcase 86:
 INSERT INTO INT8_TBL VALUES (-('-9223372036854775808'::int8), 888);
 ERROR:  bigint out of range
+--Testcase 87:
 INSERT INTO INT8_TBL VALUES ('9223372036854775800'::int8 + '9223372036854775800'::int8, 888);
 ERROR:  bigint out of range
+--Testcase 88:
 INSERT INTO INT8_TBL VALUES ('-9223372036854775800'::int8 + '-9223372036854775800'::int8, 888);
 ERROR:  bigint out of range
+--Testcase 89:
 INSERT INTO INT8_TBL VALUES ('9223372036854775800'::int8 - '-9223372036854775800'::int8, 888);
 ERROR:  bigint out of range
+--Testcase 90:
 INSERT INTO INT8_TBL VALUES ('-9223372036854775800'::int8 - '9223372036854775800'::int8, 888);
 ERROR:  bigint out of range
+--Testcase 91:
 INSERT INTO INT8_TBL VALUES ('9223372036854775800'::int8 * '9223372036854775800'::int8, 888);
 ERROR:  bigint out of range
+--Testcase 92:
 INSERT INTO INT8_TBL VALUES ('9223372036854775800'::int8 / '0'::int8, 888);
 ERROR:  division by zero
+--Testcase 93:
 INSERT INTO INT8_TBL VALUES ('9223372036854775800'::int8 % '0'::int8, 888);
 ERROR:  division by zero
+--Testcase 94:
 INSERT INTO INT8_TBL VALUES (abs('-9223372036854775808'::int8), 888);
 ERROR:  bigint out of range
+--Testcase 95:
 INSERT INTO INT8_TBL VALUES ('9223372036854775800'::int8 + '100'::int4, 888);
 ERROR:  bigint out of range
+--Testcase 96:
 INSERT INTO INT8_TBL VALUES ('-9223372036854775800'::int8 - '100'::int4, 888);
 ERROR:  bigint out of range
+--Testcase 97:
 INSERT INTO INT8_TBL VALUES ('9223372036854775800'::int8 * '100'::int4, 888);
 ERROR:  bigint out of range
+--Testcase 98:
 INSERT INTO INT8_TBL VALUES ('100'::int4 + '9223372036854775800'::int8, 888);
 ERROR:  bigint out of range
+--Testcase 99:
 INSERT INTO INT8_TBL VALUES ('-100'::int4 - '9223372036854775800'::int8, 888);
 ERROR:  bigint out of range
+--Testcase 100:
 INSERT INTO INT8_TBL VALUES ('100'::int4 * '9223372036854775800'::int8, 888);
 ERROR:  bigint out of range
+--Testcase 101:
 INSERT INTO INT8_TBL VALUES ('9223372036854775800'::int8 + '100'::int2, 888);
 ERROR:  bigint out of range
+--Testcase 102:
 INSERT INTO INT8_TBL VALUES ('-9223372036854775800'::int8 - '100'::int2, 888);
 ERROR:  bigint out of range
+--Testcase 103:
 INSERT INTO INT8_TBL VALUES ('9223372036854775800'::int8 * '100'::int2, 888);
 ERROR:  bigint out of range
+--Testcase 104:
 INSERT INTO INT8_TBL VALUES ('-9223372036854775808'::int8 / '0'::int2, 888);
 ERROR:  division by zero
+--Testcase 105:
 INSERT INTO INT8_TBL VALUES ('100'::int2 + '9223372036854775800'::int8, 888);
 ERROR:  bigint out of range
+--Testcase 106:
 INSERT INTO INT8_TBL VALUES ('-100'::int2 - '9223372036854775800'::int8, 888);
 ERROR:  bigint out of range
+--Testcase 107:
 INSERT INTO INT8_TBL VALUES ('100'::int2 * '9223372036854775800'::int8, 888);
 ERROR:  bigint out of range
+--Testcase 108:
 INSERT INTO INT8_TBL VALUES ('100'::int2 / '0'::int8, 888);
 ERROR:  division by zero
+--Testcase 109:
 DELETE FROM INT8_TBL WHERE q2 = 888;
+--Testcase 110:
 SELECT CAST(q1 AS int4) FROM int8_tbl WHERE q2 = 456;
  q1  
 -----
  123
 (1 row)
 
+--Testcase 111:
 SELECT CAST(q1 AS int4) FROM int8_tbl WHERE q2 <> 456;
 ERROR:  integer out of range
+--Testcase 112:
 SELECT CAST(q1 AS int2) FROM int8_tbl WHERE q2 = 456;
  q1  
 -----
  123
 (1 row)
 
+--Testcase 113:
 SELECT CAST(q1 AS int2) FROM int8_tbl WHERE q2 <> 456;
 ERROR:  smallint out of range
+--Testcase 114:
 SELECT CAST(q1 AS float4), CAST(q2 AS float8) FROM INT8_TBL;
      q1      |          q2           
 -------------+-----------------------
@@ -722,9 +836,11 @@ SELECT CAST(q1 AS float4), CAST(q2 AS float8) FROM INT8_TBL;
  4.56789e+15 |  4.56789012345679e+15
 (5 rows)
 
+--Testcase 115:
 SELECT CAST(q1 AS oid) FROM INT8_TBL;
 ERROR:  OID out of range
 -- bit operations
+--Testcase 116:
 SELECT q1, q2, q1 & q2 AS "and", q1 | q2 AS "or", q1 # q2 AS "xor", ~q1 AS "not" FROM INT8_TBL;
         q1        |        q2         |       and        |        or        |       xor        |        not        
 ------------------+-------------------+------------------+------------------+------------------+-------------------
@@ -735,6 +851,7 @@ SELECT q1, q2, q1 & q2 AS "and", q1 | q2 AS "or", q1 # q2 AS "xor", ~q1 AS "not"
  4567890123456789 |  4567890123456789 | 4567890123456789 | 4567890123456789 |                0 | -4567890123456790
 (5 rows)
 
+--Testcase 117:
 SELECT q1, q1 << 2 AS "shl", q1 >> 3 AS "shr" FROM INT8_TBL;
         q1        |        shl        |       shr       
 ------------------+-------------------+-----------------
@@ -746,7 +863,9 @@ SELECT q1, q1 << 2 AS "shl", q1 >> 3 AS "shr" FROM INT8_TBL;
 (5 rows)
 
 -- generate_series
+--Testcase 118:
 INSERT INTO INT8_TBL SELECT q1, 888 FROM generate_series('+4567890123456789'::int8, '+4567890123456799'::int8) q1;
+--Testcase 119:
 SELECT q1 AS generate_series FROM INT8_TBL WHERE q2 = 888;
  generate_series  
 ------------------
@@ -763,10 +882,14 @@ SELECT q1 AS generate_series FROM INT8_TBL WHERE q2 = 888;
  4567890123456799
 (11 rows)
 
+--Testcase 120:
 DELETE FROM INT8_TBL WHERE q2 = 888;
+--Testcase 121:
 INSERT INTO INT8_TBL SELECT q1, 888 FROM generate_series('+4567890123456789'::int8, '+4567890123456799'::int8, 0) q1; -- should error
 ERROR:  step size cannot equal zero
+--Testcase 122:
 INSERT INTO INT8_TBL SELECT q1, 888 FROM generate_series('+4567890123456789'::int8, '+4567890123456799'::int8, 2) q1;
+--Testcase 123:
 SELECT q1 AS generate_series FROM INT8_TBL WHERE q2 = 888;
  generate_series  
 ------------------
@@ -778,43 +901,59 @@ SELECT q1 AS generate_series FROM INT8_TBL WHERE q2 = 888;
  4567890123456799
 (6 rows)
 
+--Testcase 124:
 DELETE FROM INT8_TBL WHERE q2 = 888;
 -- check sane handling of INT64_MIN overflow cases
+--Testcase 125:
 INSERT INTO INT8_TBL VALUES ((-9223372036854775808)::int8 * (-1)::int8, 888);
 ERROR:  bigint out of range
+--Testcase 126:
 INSERT INTO INT8_TBL VALUES ((-9223372036854775808)::int8 / (-1)::int8, 888);
 ERROR:  bigint out of range
+--Testcase 127:
 INSERT INTO INT8_TBL VALUES ((-9223372036854775808)::int8 % (-1)::int8, 888);
+--Testcase 128:
 SELECT q1 FROM INT8_TBL WHERE q2 = 888;
  q1 
 ----
   0
 (1 row)
 
+--Testcase 129:
 DELETE FROM INT8_TBL WHERE q2 = 888;
+--Testcase 130:
 INSERT INTO INT8_TBL VALUES ((-9223372036854775808)::int8 * (-1)::int4, 888);
 ERROR:  bigint out of range
+--Testcase 131:
 INSERT INTO INT8_TBL VALUES ((-9223372036854775808)::int8 / (-1)::int4, 888);
 ERROR:  bigint out of range
+--Testcase 132:
 INSERT INTO INT8_TBL VALUES ((-9223372036854775808)::int8 % (-1)::int4, 888);
+--Testcase 133:
 SELECT q1 FROM INT8_TBL WHERE q2 = 888;
  q1 
 ----
   0
 (1 row)
 
+--Testcase 134:
 DELETE FROM INT8_TBL WHERE q2 = 888;
+--Testcase 135:
 INSERT INTO INT8_TBL VALUES ((-9223372036854775808)::int8 * (-1)::int2, 888);
 ERROR:  bigint out of range
+--Testcase 136:
 INSERT INTO INT8_TBL VALUES ((-9223372036854775808)::int8 / (-1)::int2, 888);
 ERROR:  bigint out of range
+--Testcase 137:
 INSERT INTO INT8_TBL VALUES ((-9223372036854775808)::int8 % (-1)::int2, 888);
+--Testcase 138:
 SELECT q1 FROM INT8_TBL WHERE q2 = 888;
  q1 
 ----
   0
 (1 row)
 
+--Testcase 139:
 DELETE FROM INT8_TBL WHERE q2 = 888;
 DROP FOREIGN TABLE INT8_TBL;
 DROP SERVER sqlite_svr;

@@ -12,34 +12,46 @@ CREATE FOREIGN TABLE update_test (
     c   TEXT
 ) SERVER sqlite_svr;
 
+--Testcase 1:
 INSERT INTO update_test VALUES (1, 5, 10, 'foo');
+--Testcase 2:
 INSERT INTO update_test(i, b, a) VALUES (2, 15, 10);
 
+--Testcase 3:
 SELECT * FROM update_test;
 
+--Testcase 4:
 UPDATE update_test SET a = DEFAULT, b = DEFAULT;
 
+--Testcase 5:
 SELECT * FROM update_test;
 
 -- aliases for the UPDATE target table
+--Testcase 6:
 UPDATE update_test AS t SET b = 10 WHERE t.a = 10;
 
+--Testcase 7:
 SELECT * FROM update_test;
 
+--Testcase 8:
 UPDATE update_test t SET b = t.b + 10 WHERE t.a = 10;
 
+--Testcase 9:
 SELECT * FROM update_test;
 
 --
 -- Test VALUES in FROM
 --
 
+--Testcase 10:
 UPDATE update_test SET a=v.i FROM (VALUES(100, 20)) AS v(i, j)
   WHERE update_test.b = v.j;
 
+--Testcase 11:
 SELECT * FROM update_test;
 
 -- fail, wrong data type:
+--Testcase 12:
 UPDATE update_test SET a = v.* FROM (VALUES(100, 20)) AS v(i, j)
   WHERE update_test.b = v.j;
 
@@ -47,45 +59,64 @@ UPDATE update_test SET a = v.* FROM (VALUES(100, 20)) AS v(i, j)
 -- Test multiple-set-clause syntax
 --
 
+--Testcase 13:
 INSERT INTO update_test SELECT i+2,a,b+1,c FROM update_test;
+--Testcase 14:
 SELECT * FROM update_test;
 
+--Testcase 15:
 UPDATE update_test SET (c,b,a) = ('bugle', b+11, DEFAULT) WHERE c = 'foo';
+--Testcase 16:
 SELECT * FROM update_test;
+--Testcase 17:
 UPDATE update_test SET (c,b) = ('car', a+b), a = a + 1 WHERE a = 10;
+--Testcase 18:
 SELECT * FROM update_test;
 -- fail, multi assignment to same column:
+--Testcase 19:
 UPDATE update_test SET (c,b) = ('car', a+b), b = a + 1 WHERE a = 10;
 
 -- uncorrelated sub-select:
+--Testcase 20:
 UPDATE update_test
   SET (b,a) = (select a,b from update_test where b = 41 and c = 'car')
   WHERE a = 100 AND b = 20;
+--Testcase 21:
 SELECT * FROM update_test;
 -- correlated sub-select:
+--Testcase 22:
 UPDATE update_test o
   SET (b,a) = (select a+1,b from update_test i
                where i.a=o.a and i.b=o.b and i.c is not distinct from o.c);
+--Testcase 23:
 SELECT * FROM update_test;
 -- fail, multiple rows supplied:
+--Testcase 24:
 UPDATE update_test SET (b,a) = (select a+1,b from update_test);
 -- set to null if no rows supplied:
+--Testcase 25:
 UPDATE update_test SET (b,a) = (select a+1,b from update_test where a = 1000)
   WHERE a = 11;
+--Testcase 26:
 SELECT * FROM update_test;
 -- *-expansion should work in this context:
+--Testcase 27:
 UPDATE update_test SET (a,b) = ROW(v.*) FROM (VALUES(21, 100)) AS v(i, j)
   WHERE update_test.a = v.i;
 -- you might expect this to work, but syntactically it's not a RowExpr:
+--Testcase 28:
 UPDATE update_test SET (a,b) = (v.*) FROM (VALUES(21, 101)) AS v(i, j)
   WHERE update_test.a = v.i;
 
 -- if an alias for the target table is specified, don't allow references
 -- to the original table name
+--Testcase 29:
 UPDATE update_test AS t SET b = update_test.b + 10 WHERE t.a = 10;
 
 -- Make sure that we can update to a TOASTed value.
+--Testcase 30:
 UPDATE update_test SET c = repeat('x', 10000) WHERE c = 'car';
+--Testcase 31:
 SELECT a, b, char_length(c) FROM update_test;
 
 --drop all foreign tables
