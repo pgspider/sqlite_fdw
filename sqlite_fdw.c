@@ -217,7 +217,9 @@ static void add_foreign_final_paths(PlannerInfo *root,
 #endif
 );
 
-static void add_paths_with_pathkeys_for_rel(PlannerInfo *root, RelOptInfo *rel);
+static bool all_baserels_are_foreign(PlannerInfo *root);
+
+static void add_paths_with_pathkeys_for_rel(PlannerInfo *root, RelOptInfo *rel, List *fdw_private);
 static List *get_useful_pathkeys_for_relation(PlannerInfo *root,
 								 RelOptInfo *rel);
 
@@ -446,7 +448,7 @@ get_useful_pathkeys_for_relation(PlannerInfo *root, RelOptInfo *rel)
 }
 
 static void
-add_paths_with_pathkeys_for_rel(PlannerInfo *root, RelOptInfo *rel)
+add_paths_with_pathkeys_for_rel(PlannerInfo *root, RelOptInfo *rel, List *fdw_private)
 {
 	List	   *useful_pathkeys_list = NIL; /* List of all pathkeys */
 	ListCell   *lc;
@@ -479,10 +481,47 @@ add_paths_with_pathkeys_for_rel(PlannerInfo *root, RelOptInfo *rel)
 											 NULL,	/* no outer rel either */
 #endif
 											 NULL,
-											 NIL));
+											 fdw_private));
 		else
 			elog(ERROR, "Join clauses not supported for Order..");
 	}
+}
+
+/*
+ * Check if any of the tables queried aren't foreign tables.
+ * We use this function to add limit pushdownm fallback to sqlite
+ * because if theres any non-foreign table, GetForeignUpperPath its not called from planner.c
+ */
+static bool
+all_baserels_are_foreign(PlannerInfo *root)
+{
+	bool		allTablesQueriedAreForeign = true;
+	ListCell	*l;
+
+	// If there is no append_rel_list, we assume we're only consulting a foreign table, so default value it's true and we dont need to do more.
+	foreach(l, root->append_rel_list)
+	{
+		AppendRelInfo *appinfo = lfirst_node(AppendRelInfo, l);
+		int				childRTindex;
+		RangeTblEntry	*childRTE;
+		RelOptInfo		*childrel;
+
+		/* Re-locate the child RTE and RelOptInfo */
+		childRTindex = appinfo->child_relid;
+		childRTE = root->simple_rte_array[childRTindex];
+		childrel = root->simple_rel_array[childRTindex];
+
+		if (!(IS_DUMMY_REL(childrel) || childRTE->inh))
+		{
+			if (!(childrel->rtekind == RTE_RELATION && childRTE->relkind == RELKIND_FOREIGN_TABLE))
+			{
+				allTablesQueriedAreForeign = false;
+				break;
+			}
+		}
+	}
+
+	return allTablesQueriedAreForeign;
 }
 
 /*
@@ -494,10 +533,21 @@ sqliteGetForeignPaths(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntableid
 {
 	Cost		startup_cost = 10;
 	Cost		total_cost = baserel->rows + startup_cost;
+	List	   *fdw_private = NIL;
 
 	elog(DEBUG1, "sqlite_fdw : %s", __func__);
 	/* Estimate costs */
 	total_cost = baserel->rows;
+
+	/* XXX: We add fdw_private with has_limit: true if these three conditions are true because we need to be able to pushdown
+	limit in this case:
+	- Query has LIMIT
+	- Query don't have OFFSET because if we pusdown OFFSET and later, we re-applying offset with the "final result", and we would be "jumping/skipping" child results
+	and losing registries that we wanted to show.
+	- Some of the baserels are not a foreign table, so PostgreSQL is not calling GetForeignUpperPaths
+	 */
+	if (limit_needed(root->parse) && !root->parse->limitOffset && !all_baserels_are_foreign(root))
+		fdw_private = list_make2(makeInteger(false), makeInteger(true));
 
 	/* Create a ForeignPath node and add it as only possible path */
 	add_path(baserel, (Path *)
@@ -515,10 +565,10 @@ sqliteGetForeignPaths(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntableid
 									 NULL,	/* no outer rel either */
 #endif
 									 NULL,	/* no extra plan */
-									 NULL));	/* no fdw_private data */
+									 fdw_private));
 
 	/* Add paths with pathkeys */
-	add_paths_with_pathkeys_for_rel(root, baserel);
+	add_paths_with_pathkeys_for_rel(root, baserel, fdw_private);
 }
 
 /*
