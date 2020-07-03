@@ -527,9 +527,9 @@ TABLE int8_tbl;
                 4 |                57
               123 |               456
               123 |  4567890123456789
- 4567890123456789 | -4567890123456789
  4567890123456789 |               123
  4567890123456789 |  4567890123456789
+ 4567890123456789 | -4567890123456789
 (9 rows)
 
 --
@@ -610,10 +610,11 @@ SELECT * FROM foo ORDER BY f1 DESC NULLS LAST;
 --Testcase 24:
 explain (costs off)
 select * from onek2 where unique2 = 11 and stringu1 = 'ATAAAA';
-      QUERY PLAN       
------------------------
+              QUERY PLAN               
+---------------------------------------
  Foreign Scan on onek2
-(1 row)
+   Filter: (stringu1 = 'ATAAAA'::name)
+(2 rows)
 
 --Testcase 25:
 select * from onek2 where unique2 = 11 and stringu1 = 'ATAAAA';
@@ -629,15 +630,17 @@ select * from onek2 where unique2 = 11 and stringu1 = 'ATAAAA';
                   QUERY PLAN                   
 -----------------------------------------------
  Foreign Scan on onek2 (actual rows=1 loops=1)
-(1 row)
+   Filter: (stringu1 = 'ATAAAA'::name)
+(2 rows)
 
 --Testcase 27:
 explain (costs off)
 select unique2 from onek2 where unique2 = 11 and stringu1 = 'ATAAAA';
-      QUERY PLAN       
------------------------
+              QUERY PLAN               
+---------------------------------------
  Foreign Scan on onek2
-(1 row)
+   Filter: (stringu1 = 'ATAAAA'::name)
+(2 rows)
 
 --Testcase 28:
 select unique2 from onek2 where unique2 = 11 and stringu1 = 'ATAAAA';
@@ -650,10 +653,11 @@ select unique2 from onek2 where unique2 = 11 and stringu1 = 'ATAAAA';
 --Testcase 29:
 explain (costs off)
 select * from onek2 where unique2 = 11 and stringu1 < 'B';
-      QUERY PLAN       
------------------------
+            QUERY PLAN            
+----------------------------------
  Foreign Scan on onek2
-(1 row)
+   Filter: (stringu1 < 'B'::name)
+(2 rows)
 
 --Testcase 30:
 select * from onek2 where unique2 = 11 and stringu1 < 'B';
@@ -665,10 +669,11 @@ select * from onek2 where unique2 = 11 and stringu1 < 'B';
 --Testcase 31:
 explain (costs off)
 select unique2 from onek2 where unique2 = 11 and stringu1 < 'B';
-      QUERY PLAN       
------------------------
+            QUERY PLAN            
+----------------------------------
  Foreign Scan on onek2
-(1 row)
+   Filter: (stringu1 < 'B'::name)
+(2 rows)
 
 --Testcase 32:
 select unique2 from onek2 where unique2 = 11 and stringu1 < 'B';
@@ -681,11 +686,12 @@ select unique2 from onek2 where unique2 = 11 and stringu1 < 'B';
 --Testcase 33:
 explain (costs off)
 select unique2 from onek2 where unique2 = 11 and stringu1 < 'B' for update;
-         QUERY PLAN          
------------------------------
+               QUERY PLAN               
+----------------------------------------
  LockRows
    ->  Foreign Scan on onek2
-(2 rows)
+         Filter: (stringu1 < 'B'::name)
+(3 rows)
 
 --Testcase 34:
 select unique2 from onek2 where unique2 = 11 and stringu1 < 'B' for update;
@@ -698,10 +704,11 @@ select unique2 from onek2 where unique2 = 11 and stringu1 < 'B' for update;
 --Testcase 35:
 explain (costs off)
 select unique2 from onek2 where unique2 = 11 and stringu1 < 'C';
-      QUERY PLAN       
------------------------
+            QUERY PLAN            
+----------------------------------
  Foreign Scan on onek2
-(1 row)
+   Filter: (stringu1 < 'C'::name)
+(2 rows)
 
 --Testcase 36:
 select unique2 from onek2 where unique2 = 11 and stringu1 < 'C';
@@ -715,10 +722,11 @@ SET enable_indexscan TO off;
 --Testcase 37:
 explain (costs off)
 select unique2 from onek2 where unique2 = 11 and stringu1 < 'B';
-      QUERY PLAN       
------------------------
+            QUERY PLAN            
+----------------------------------
  Foreign Scan on onek2
-(1 row)
+   Filter: (stringu1 < 'B'::name)
+(2 rows)
 
 --Testcase 38:
 select unique2 from onek2 where unique2 = 11 and stringu1 < 'B';
@@ -733,10 +741,11 @@ RESET enable_indexscan;
 explain (costs off)
 select unique1, unique2 from onek2
   where (unique2 = 11 or unique1 = 0) and stringu1 < 'B';
-      QUERY PLAN       
------------------------
+            QUERY PLAN            
+----------------------------------
  Foreign Scan on onek2
-(1 row)
+   Filter: (stringu1 < 'B'::name)
+(2 rows)
 
 --Testcase 40:
 select unique1, unique2 from onek2
@@ -751,10 +760,11 @@ select unique1, unique2 from onek2
 explain (costs off)
 select unique1, unique2 from onek2
   where (unique2 = 11 and stringu1 < 'B') or unique1 = 0;
-      QUERY PLAN       
------------------------
+                                QUERY PLAN                                
+--------------------------------------------------------------------------
  Foreign Scan on onek2
-(1 row)
+   Filter: (((unique2 = 11) AND (stringu1 < 'B'::name)) OR (unique1 = 0))
+(2 rows)
 
 --Testcase 42:
 select unique1, unique2 from onek2

@@ -7,7 +7,7 @@ OPTIONS (database '/tmp/sqlitefdw_test_core.db');
 CREATE FOREIGN TABLE inserttest01 (col1 int4, col2 int4 NOT NULL, col3 text default 'testing') SERVER sqlite_svr;
 --Testcase 1:
 insert into inserttest01 (col1, col2, col3) values (DEFAULT, DEFAULT, DEFAULT);
-ERROR:  failed to execute remote SQL: rc=19 inserttest01.col2 may not be NULL 
+ERROR:  failed to execute remote SQL: rc=19 NOT NULL constraint failed: inserttest01.col2 
    sql=INSERT INTO main."inserttest01"(`col1`, `col2`, `col3`) VALUES (?, ?, ?)
 --Testcase 2:
 insert into inserttest01 (col2, col3) values (3, DEFAULT);

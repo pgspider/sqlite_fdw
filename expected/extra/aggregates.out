@@ -83,9 +83,9 @@ SELECT avg(b)::numeric(10,3) AS avg_107_943 FROM aggtest;
 
 --Testcase 4:
 SELECT avg(gpa) AS avg_3_4 FROM ONLY student;
- avg_3_4 
----------
-     3.4
+      avg_3_4       
+--------------------
+ 3.4000000000000004
 (1 row)
 
 --Testcase 5:
@@ -106,14 +106,14 @@ SELECT sum(a) AS sum_198 FROM aggtest;
 SELECT sum(b) AS avg_431_773 FROM aggtest;
  avg_431_773 
 -------------
-     431.773
+    431.7726
 (1 row)
 
 --Testcase 8:
 SELECT sum(gpa) AS avg_6_8 FROM ONLY student;
- avg_6_8 
----------
-     6.8
+      avg_6_8      
+-------------------
+ 6.800000000000001
 (1 row)
 
 --Testcase 9:
@@ -146,30 +146,30 @@ SELECT max(student.gpa) AS max_3_7 FROM student;
 
 --Testcase 13:
 SELECT stddev_pop(b) FROM aggtest;
-   stddev_pop    
------------------
- 131.10703231895
+     stddev_pop     
+--------------------
+ 131.10703231895047
 (1 row)
 
 --Testcase 14:
 SELECT stddev_samp(b) FROM aggtest;
-   stddev_samp    
-------------------
- 151.389360803998
+    stddev_samp     
+--------------------
+ 151.38936080399804
 (1 row)
 
 --Testcase 15:
 SELECT var_pop(b) FROM aggtest;
-     var_pop      
-------------------
- 17189.0539234823
+      var_pop       
+--------------------
+ 17189.053923482326
 (1 row)
 
 --Testcase 16:
 SELECT var_samp(b) FROM aggtest;
-     var_samp     
-------------------
- 22918.7385646431
+      var_samp      
+--------------------
+ 22918.738564643103
 (1 row)
 
 --Testcase 17:
@@ -217,51 +217,51 @@ SELECT regr_sxx(b, a) FROM aggtest;
 
 --Testcase 23:
 SELECT regr_syy(b, a) FROM aggtest;
-     regr_syy     
-------------------
- 68756.2156939293
+     regr_syy      
+-------------------
+ 68756.21569392929
 (1 row)
 
 --Testcase 24:
 SELECT regr_sxy(b, a) FROM aggtest;
-     regr_sxy     
-------------------
- 2614.51582155004
+      regr_sxy      
+--------------------
+ 2614.5158215500414
 (1 row)
 
 --Testcase 25:
 SELECT regr_avgx(b, a), regr_avgy(b, a) FROM aggtest;
- regr_avgx |    regr_avgy     
------------+------------------
-      49.5 | 107.943152273074
+ regr_avgx |     regr_avgy      
+-----------+--------------------
+      49.5 | 107.94315227307379
 (1 row)
 
 --Testcase 26:
 SELECT regr_r2(b, a) FROM aggtest;
-      regr_r2       
---------------------
- 0.0194977982031803
+       regr_r2        
+----------------------
+ 0.019497798203180264
 (1 row)
 
 --Testcase 27:
 SELECT regr_slope(b, a), regr_intercept(b, a) FROM aggtest;
-    regr_slope     |  regr_intercept  
--------------------+------------------
- 0.512750700441271 | 82.5619926012309
+     regr_slope     |  regr_intercept   
+--------------------+-------------------
+ 0.5127507004412711 | 82.56199260123087
 (1 row)
 
 --Testcase 28:
 SELECT covar_pop(b, a), covar_samp(b, a) FROM aggtest;
-    covar_pop    |    covar_samp    
------------------+------------------
- 653.62895538751 | 871.505273850014
+     covar_pop     |    covar_samp     
+-------------------+-------------------
+ 653.6289553875104 | 871.5052738500139
 (1 row)
 
 --Testcase 29:
 SELECT corr(b, a) FROM aggtest;
-       corr        
--------------------
- 0.139634516517873
+        corr        
+--------------------
+ 0.1396345165178734
 (1 row)
 
 --Testcase 30:
@@ -1485,16 +1485,16 @@ LINE 1: select f1, percentile_cont(f1,f1)
 rollback;
 --Testcase 179:
 select percentile_cont(0.5) within group (order by b) from aggtest;
- percentile_cont  
-------------------
- 53.4485001564026
+  percentile_cont  
+-------------------
+ 53.44850015640259
 (1 row)
 
 --Testcase 180:
 select percentile_cont(0.5) within group (order by b), sum(b) from aggtest;
- percentile_cont  |   sum   
-------------------+---------
- 53.4485001564026 | 431.773
+  percentile_cont  |   sum    
+-------------------+----------
+ 53.44850015640259 | 431.7726
 (1 row)
 
 --Testcase 181:
@@ -1532,9 +1532,9 @@ select cume_dist(3) within group (order by f1) from INT4_TBL;
 
 --Testcase 187:
 select percent_rank(3) within group (order by f1) from INT4_TBL;
-   percent_rank    
--------------------
- 0.571428571428571
+    percent_rank    
+--------------------
+ 0.5714285714285714
 (1 row)
 
 --Testcase 188:
