@@ -2288,34 +2288,31 @@ SELECT t1.c1, t2.c1 FROM ft1 t1 JOIN ft2 t2 ON (t1.c1 = t2.c1) ORDER BY t1.c3, t
 --Testcase 119:
 EXPLAIN (VERBOSE, COSTS OFF)
 WITH t (c1_1, c1_3, c2_1) AS (SELECT t1.c1, t1.c3, t2.c1 FROM ft1 t1 JOIN ft2 t2 ON (t1.c1 = t2.c1)) SELECT c1_1, c2_1 FROM t ORDER BY c1_3, c1_1 OFFSET 100 LIMIT 10;
-                               QUERY PLAN                               
-------------------------------------------------------------------------
+                                 QUERY PLAN                                 
+----------------------------------------------------------------------------
  Limit
-   Output: t.c1_1, t.c2_1, t.c1_3
-   CTE t
-     ->  Merge Join
-           Output: t1.c1, t1.c3, t2.c1
-           Merge Cond: (t1.c1 = t2.c1)
-           ->  Sort
-                 Output: t1.c1, t1.c3
-                 Sort Key: t1.c1
-                 ->  Foreign Scan on public.ft1 t1
-                       Output: t1.c1, t1.c3
-                       SQLite query: SELECT `C 1`, `c3` FROM main."T 1"
-           ->  Materialize
-                 Output: t2.c1
-                 ->  Sort
-                       Output: t2.c1
-                       Sort Key: t2.c1
-                       ->  Foreign Scan on public.ft2 t2
-                             Output: t2.c1
-                             SQLite query: SELECT `C 1` FROM main."T 1"
+   Output: t1.c1, t2.c1, t1.c3
    ->  Sort
-         Output: t.c1_1, t.c2_1, t.c1_3
-         Sort Key: t.c1_3, t.c1_1
-         ->  CTE Scan on t
-               Output: t.c1_1, t.c2_1, t.c1_3
-(25 rows)
+         Output: t1.c1, t2.c1, t1.c3
+         Sort Key: t1.c3, t1.c1
+         ->  Merge Join
+               Output: t1.c1, t2.c1, t1.c3
+               Merge Cond: (t1.c1 = t2.c1)
+               ->  Sort
+                     Output: t1.c1, t1.c3
+                     Sort Key: t1.c1
+                     ->  Foreign Scan on public.ft1 t1
+                           Output: t1.c1, t1.c3
+                           SQLite query: SELECT `C 1`, `c3` FROM main."T 1"
+               ->  Materialize
+                     Output: t2.c1
+                     ->  Sort
+                           Output: t2.c1
+                           Sort Key: t2.c1
+                           ->  Foreign Scan on public.ft2 t2
+                                 Output: t2.c1
+                                 SQLite query: SELECT `C 1` FROM main."T 1"
+(22 rows)
 
 --Testcase 120:
 WITH t (c1_1, c1_3, c2_1) AS (SELECT t1.c1, t1.c3, t2.c1 FROM ft1 t1 JOIN ft2 t2 ON (t1.c1 = t2.c1)) SELECT c1_1, c2_1 FROM t ORDER BY c1_3, c1_1 OFFSET 100 LIMIT 10;
@@ -6160,7 +6157,7 @@ SELECT * FROM ft2 WHERE c1 % 10 = 8 AND c1 < 1200;
 -- Test errors thrown on remote side during update
 --Testcase 319:
 INSERT INTO ft1(c1, c2) VALUES(11, 12);  -- duplicate key
-ERROR:  failed to execute remote SQL: rc=19 column C 1 is not unique 
+ERROR:  failed to execute remote SQL: rc=19 UNIQUE constraint failed: T 1.C 1 
    sql=INSERT INTO main."T 1"(`C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 --Testcase 320:
 INSERT INTO ft1(c1, c2) VALUES(11, 12) ON CONFLICT (c1, c2) DO NOTHING; -- unsupported
@@ -7342,9 +7339,9 @@ select * from bar where f1 in (select f1 from foo) for update;
                                           QUERY PLAN                                          
 ----------------------------------------------------------------------------------------------
  LockRows
-   Output: bar.f1, bar.f2, bar.ctid, bar.*, bar.tableoid, foo.ctid, foo.*, foo.tableoid
+   Output: bar.f1, bar.f2, bar.ctid, foo.ctid, bar.*, bar.tableoid, foo.*, foo.tableoid
    ->  Hash Join
-         Output: bar.f1, bar.f2, bar.ctid, bar.*, bar.tableoid, foo.ctid, foo.*, foo.tableoid
+         Output: bar.f1, bar.f2, bar.ctid, foo.ctid, bar.*, bar.tableoid, foo.*, foo.tableoid
          Inner Unique: true
          Hash Cond: (bar.f1 = foo.f1)
          ->  Append
@@ -7354,15 +7351,15 @@ select * from bar where f1 in (select f1 from foo) for update;
                      Output: bar2.f1, bar2.f2, bar2.ctid, bar2.*, bar2.tableoid
                      SQLite query: SELECT `f1`, `f2`, `f3` FROM main."loct2"
          ->  Hash
-               Output: foo.ctid, foo.*, foo.tableoid, foo.f1
+               Output: foo.ctid, foo.f1, foo.*, foo.tableoid
                ->  HashAggregate
-                     Output: foo.ctid, foo.*, foo.tableoid, foo.f1
+                     Output: foo.ctid, foo.f1, foo.*, foo.tableoid
                      Group Key: foo.f1
                      ->  Append
                            ->  Seq Scan on public.foo
-                                 Output: foo.ctid, foo.*, foo.tableoid, foo.f1
+                                 Output: foo.ctid, foo.f1, foo.*, foo.tableoid
                            ->  Foreign Scan on public.foo2
-                                 Output: foo2.ctid, foo2.*, foo2.tableoid, foo2.f1
+                                 Output: foo2.ctid, foo2.f1, foo2.*, foo2.tableoid
                                  SQLite query: SELECT `f1`, `f2`, `f3` FROM main."loct1"
 (23 rows)
 
@@ -7382,9 +7379,9 @@ select * from bar where f1 in (select f1 from foo) for share;
                                           QUERY PLAN                                          
 ----------------------------------------------------------------------------------------------
  LockRows
-   Output: bar.f1, bar.f2, bar.ctid, bar.*, bar.tableoid, foo.ctid, foo.*, foo.tableoid
+   Output: bar.f1, bar.f2, bar.ctid, foo.ctid, bar.*, bar.tableoid, foo.*, foo.tableoid
    ->  Hash Join
-         Output: bar.f1, bar.f2, bar.ctid, bar.*, bar.tableoid, foo.ctid, foo.*, foo.tableoid
+         Output: bar.f1, bar.f2, bar.ctid, foo.ctid, bar.*, bar.tableoid, foo.*, foo.tableoid
          Inner Unique: true
          Hash Cond: (bar.f1 = foo.f1)
          ->  Append
@@ -7394,15 +7391,15 @@ select * from bar where f1 in (select f1 from foo) for share;
                      Output: bar2.f1, bar2.f2, bar2.ctid, bar2.*, bar2.tableoid
                      SQLite query: SELECT `f1`, `f2`, `f3` FROM main."loct2"
          ->  Hash
-               Output: foo.ctid, foo.*, foo.tableoid, foo.f1
+               Output: foo.ctid, foo.f1, foo.*, foo.tableoid
                ->  HashAggregate
-                     Output: foo.ctid, foo.*, foo.tableoid, foo.f1
+                     Output: foo.ctid, foo.f1, foo.*, foo.tableoid
                      Group Key: foo.f1
                      ->  Append
                            ->  Seq Scan on public.foo
-                                 Output: foo.ctid, foo.*, foo.tableoid, foo.f1
+                                 Output: foo.ctid, foo.f1, foo.*, foo.tableoid
                            ->  Foreign Scan on public.foo2
-                                 Output: foo2.ctid, foo2.*, foo2.tableoid, foo2.f1
+                                 Output: foo2.ctid, foo2.f1, foo2.*, foo2.tableoid
                                  SQLite query: SELECT `f1`, `f2`, `f3` FROM main."loct1"
 (23 rows)
 
@@ -7432,15 +7429,15 @@ update bar set f2 = f2 + 100 where f1 in (select f1 from foo);
          ->  Seq Scan on public.bar
                Output: bar.f1, bar.f2, bar.ctid
          ->  Hash
-               Output: foo.ctid, foo.*, foo.tableoid, foo.f1
+               Output: foo.ctid, foo.f1, foo.*, foo.tableoid
                ->  HashAggregate
-                     Output: foo.ctid, foo.*, foo.tableoid, foo.f1
+                     Output: foo.ctid, foo.f1, foo.*, foo.tableoid
                      Group Key: foo.f1
                      ->  Append
                            ->  Seq Scan on public.foo
-                                 Output: foo.ctid, foo.*, foo.tableoid, foo.f1
+                                 Output: foo.ctid, foo.f1, foo.*, foo.tableoid
                            ->  Foreign Scan on public.foo2
-                                 Output: foo2.ctid, foo2.*, foo2.tableoid, foo2.f1
+                                 Output: foo2.ctid, foo2.f1, foo2.*, foo2.tableoid
                                  SQLite query: SELECT `f1`, `f2`, `f3` FROM main."loct1"
    ->  Hash Join
          Output: bar2.f1, (bar2.f2 + 100), bar2.f3, bar2.f3, foo.ctid, foo.*, foo.tableoid
@@ -7450,15 +7447,15 @@ update bar set f2 = f2 + 100 where f1 in (select f1 from foo);
                Output: bar2.f1, bar2.f2, bar2.f3
                SQLite query: SELECT `f1`, `f2`, `f3` FROM main."loct2"
          ->  Hash
-               Output: foo.ctid, foo.*, foo.tableoid, foo.f1
+               Output: foo.ctid, foo.f1, foo.*, foo.tableoid
                ->  HashAggregate
-                     Output: foo.ctid, foo.*, foo.tableoid, foo.f1
+                     Output: foo.ctid, foo.f1, foo.*, foo.tableoid
                      Group Key: foo.f1
                      ->  Append
                            ->  Seq Scan on public.foo
-                                 Output: foo.ctid, foo.*, foo.tableoid, foo.f1
+                                 Output: foo.ctid, foo.f1, foo.*, foo.tableoid
                            ->  Foreign Scan on public.foo2
-                                 Output: foo2.ctid, foo2.*, foo2.tableoid, foo2.f1
+                                 Output: foo2.ctid, foo2.f1, foo2.*, foo2.tableoid
                                  SQLite query: SELECT `f1`, `f2`, `f3` FROM main."loct1"
 (38 rows)
 

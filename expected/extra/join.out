@@ -33,6 +33,9 @@ CREATE FOREIGN TABLE tenk1 (
   string4   name
 ) SERVER sqlite_svr;
 ALTER TABLE tenk1 SET WITH OIDS;
+ERROR:  syntax error at or near "WITH"
+LINE 1: ALTER TABLE tenk1 SET WITH OIDS;
+                              ^
 CREATE FOREIGN TABLE tenk2 (
   unique1   int4,
   unique2   int4,
@@ -2342,20 +2345,16 @@ order by 1, 2;
 -----------------------------------------------------
  Sort
    Sort Key: i1.q1, i1.q2
-   ->  Merge Right Join
-         Merge Cond: (i2.q2 = i1.q2)
+   ->  Merge Left Join
+         Merge Cond: (i1.q2 = i2.q2)
          ->  Sort
-               Sort Key: i2.q2
-               ->  Hash Join
-                     Hash Cond: (i2.q1 = (123))
-                     ->  Foreign Scan on int8_tbl i2
-                     ->  Hash
-                           ->  Result
+               Sort Key: i1.q2
+               ->  Foreign Scan on int8_tbl i1
          ->  Materialize
                ->  Sort
-                     Sort Key: i1.q2
-                     ->  Foreign Scan on int8_tbl i1
-(15 rows)
+                     Sort Key: i2.q2
+                     ->  Foreign Scan on int8_tbl i2
+(11 rows)
 
 --Testcase 95:
 select * from int8_tbl i1 left join (int8_tbl i2 join
@@ -3303,34 +3302,22 @@ select t1.unique2, t1.stringu1, t2.unique1, t2.stringu2 from
   left join tenk1 t2
   on (subq1.y1 = t2.unique1)
 where t1.unique2 < 42 and t1.stringu1 > t2.stringu2;
-                              QUERY PLAN                              
-----------------------------------------------------------------------
+                          QUERY PLAN                          
+--------------------------------------------------------------
  Merge Join
-   Merge Cond: (i1.f1 = (0))
+   Merge Cond: (((11) = t1.unique2) AND ((3) = t2.unique1))
    ->  Sort
-         Sort Key: i1.f1
+         Sort Key: (11), (3)
          ->  Foreign Scan on int4_tbl i1
    ->  Materialize
          ->  Sort
-               Sort Key: (0)
-               ->  Merge Join
-                     Merge Cond: ((3) = t2.unique1)
+               Sort Key: t1.unique2, t2.unique1
+               ->  Nested Loop
                      Join Filter: (t1.stringu1 > t2.stringu2)
-                     ->  Sort
-                           Sort Key: (3)
-                           ->  Hash Join
-                                 Hash Cond: (t1.unique2 = (11))
-                                 ->  Foreign Scan on tenk1 t1
-                                 ->  Hash
-                                       ->  Nested Loop
-                                             Join Filter: ((1) = (1))
-                                             ->  Result
-                                             ->  Result
+                     ->  Foreign Scan on tenk1 t1
                      ->  Materialize
-                           ->  Sort
-                                 Sort Key: t2.unique1
-                                 ->  Foreign Scan on tenk1 t2
-(25 rows)
+                           ->  Foreign Scan on tenk1 t2
+(13 rows)
 
 --Testcase 188:
 select t1.unique2, t1.stringu1, t2.unique1, t2.stringu2 from
@@ -3860,7 +3847,7 @@ select t1.* from
                                        ->  Sort
                                              Output: i8.q2, (NULL::integer)
                                              Sort Key: (NULL::integer)
-                                             ->  Merge Left Join
+                                             ->  Merge Join
                                                    Output: i8.q2, (NULL::integer)
                                                    Merge Cond: (i8.q1 = i8b2.q1)
                                                    ->  Sort
@@ -4381,10 +4368,10 @@ select * from
               QUERY PLAN               
 ---------------------------------------
  Nested Loop Left Join
-   Join Filter: ((1) = COALESCE((1)))
    ->  Result
    ->  Hash Full Join
          Hash Cond: (a1.unique1 = (1))
+         Filter: (1 = COALESCE((1)))
          ->  Foreign Scan on tenk1 a1
          ->  Hash
                ->  Result
@@ -4839,25 +4826,25 @@ select t1.* from
   on t1.f1 = t2.f1
   left join uniquetbl t3
   on t2.d1 = t3.f1;
-                          QUERY PLAN                           
----------------------------------------------------------------
- Merge Right Join
-   Merge Cond: (t3.f1 = ('***'::text))
+                            QUERY PLAN                            
+------------------------------------------------------------------
+ Merge Left Join
+   Merge Cond: (t1.f1 = uniquetbl.f1)
    ->  Sort
-         Sort Key: t3.f1
-         ->  Foreign Scan on uniquetbl t3
+         Sort Key: t1.f1
+         ->  Foreign Scan on uniquetbl t1
    ->  Materialize
          ->  Sort
-               Sort Key: ('***'::text)
+               Sort Key: uniquetbl.f1
                ->  Merge Left Join
-                     Merge Cond: (t1.f1 = uniquetbl.f1)
+                     Merge Cond: (('***'::text) = t3.f1)
                      ->  Sort
-                           Sort Key: t1.f1
-                           ->  Foreign Scan on uniquetbl t1
+                           Sort Key: ('***'::text)
+                           ->  Foreign Scan on uniquetbl
                      ->  Materialize
                            ->  Sort
-                                 Sort Key: uniquetbl.f1
-                                 ->  Foreign Scan on uniquetbl
+                                 Sort Key: t3.f1
+                                 ->  Foreign Scan on uniquetbl t3
 (17 rows)
 
 --Testcase 265:
@@ -4873,8 +4860,8 @@ from
      left join uniquetbl u1 ON u1.f1 = t1.string4) ss
   on t0.f1 = ss.case1
 where ss.stringu2 !~* ss.case1;
-                                                           QUERY PLAN                                                           
---------------------------------------------------------------------------------------------------------------------------------
+                                                              QUERY PLAN                                                              
+--------------------------------------------------------------------------------------------------------------------------------------
  Merge Join
    Merge Cond: (i4.f1 = t1.unique2)
    ->  Sort
@@ -4883,24 +4870,24 @@ where ss.stringu2 !~* ss.case1;
    ->  Materialize
          ->  Sort
                Sort Key: t1.unique2
-               ->  Merge Join
-                     Merge Cond: (t0.f1 = (CASE t1.ten WHEN 0 THEN 'doh!'::text ELSE NULL::text END))
+               ->  Merge Right Join
+                     Merge Cond: (u1.f1 = t1.string4)
                      ->  Sort
-                           Sort Key: t0.f1
-                           ->  Foreign Scan on text_tbl t0
+                           Sort Key: u1.f1 COLLATE "C"
+                           ->  Foreign Scan on uniquetbl u1
                      ->  Materialize
                            ->  Sort
-                                 Sort Key: (CASE t1.ten WHEN 0 THEN 'doh!'::text ELSE NULL::text END)
-                                 ->  Merge Left Join
-                                       Merge Cond: (((t1.string4)::text) = u1.f1)
+                                 Sort Key: t1.string4
+                                 ->  Merge Join
+                                       Merge Cond: (t0.f1 = (CASE t1.ten WHEN 0 THEN 'doh!'::text ELSE NULL::text END))
                                        ->  Sort
-                                             Sort Key: ((t1.string4)::text)
-                                             ->  Foreign Scan on tenk1 t1
-                                                   Filter: (stringu2 !~* CASE ten WHEN 0 THEN 'doh!'::text ELSE NULL::text END)
+                                             Sort Key: t0.f1
+                                             ->  Foreign Scan on text_tbl t0
                                        ->  Materialize
                                              ->  Sort
-                                                   Sort Key: u1.f1
-                                                   ->  Foreign Scan on uniquetbl u1
+                                                   Sort Key: (CASE t1.ten WHEN 0 THEN 'doh!'::text ELSE NULL::text END)
+                                                   ->  Foreign Scan on tenk1 t1
+                                                         Filter: (stringu2 !~* CASE ten WHEN 0 THEN 'doh!'::text ELSE NULL::text END)
 (26 rows)
 
 --Testcase 266:
@@ -5073,9 +5060,9 @@ select *, (select r from (select q1 as q2) x, (select q2 as r) y) from int8_tbl;
 ------------------+-------------------+-------------------
               123 |               456 |               456
               123 |  4567890123456789 |  4567890123456789
- 4567890123456789 | -4567890123456789 | -4567890123456789
  4567890123456789 |               123 |               123
  4567890123456789 |  4567890123456789 |  4567890123456789
+ 4567890123456789 | -4567890123456789 | -4567890123456789
 (5 rows)
 
 --Testcase 281:
@@ -5084,9 +5071,9 @@ select *, (select r from (select q1 as q2) x, lateral (select q2 as r) y) from i
 ------------------+-------------------+------------------
               123 |               456 |              123
               123 |  4567890123456789 |              123
- 4567890123456789 | -4567890123456789 | 4567890123456789
  4567890123456789 |               123 | 4567890123456789
  4567890123456789 |  4567890123456789 | 4567890123456789
+ 4567890123456789 | -4567890123456789 | 4567890123456789
 (5 rows)
 
 -- lateral with function in FROM
@@ -5406,12 +5393,12 @@ select * from
  4567890123456789 |               123 |              123 |               456 | 4567890123456789 |              123 |               456
  4567890123456789 |               123 |              123 |  4567890123456789 | 4567890123456789 |              123 |  4567890123456789
               123 |               456 |                  |                   |              123 |                  |                  
-              123 |  4567890123456789 | 4567890123456789 | -4567890123456789 |              123 | 4567890123456789 | -4567890123456789
               123 |  4567890123456789 | 4567890123456789 |               123 |              123 | 4567890123456789 |               123
               123 |  4567890123456789 | 4567890123456789 |  4567890123456789 |              123 | 4567890123456789 |  4567890123456789
- 4567890123456789 |  4567890123456789 | 4567890123456789 | -4567890123456789 | 4567890123456789 | 4567890123456789 | -4567890123456789
+              123 |  4567890123456789 | 4567890123456789 | -4567890123456789 |              123 | 4567890123456789 | -4567890123456789
  4567890123456789 |  4567890123456789 | 4567890123456789 |               123 | 4567890123456789 | 4567890123456789 |               123
  4567890123456789 |  4567890123456789 | 4567890123456789 |  4567890123456789 | 4567890123456789 | 4567890123456789 |  4567890123456789
+ 4567890123456789 |  4567890123456789 | 4567890123456789 | -4567890123456789 | 4567890123456789 | 4567890123456789 | -4567890123456789
 (10 rows)
 
 --Testcase 302:
@@ -5424,12 +5411,12 @@ select * from
  4567890123456789 |               123 |              123 |               456 | 4567890123456789 |              123 |               456
  4567890123456789 |               123 |              123 |  4567890123456789 | 4567890123456789 |              123 |  4567890123456789
               123 |               456 |                  |                   |              123 |                  |                  
-              123 |  4567890123456789 | 4567890123456789 | -4567890123456789 |              123 | 4567890123456789 | -4567890123456789
               123 |  4567890123456789 | 4567890123456789 |               123 |              123 | 4567890123456789 |               123
               123 |  4567890123456789 | 4567890123456789 |  4567890123456789 |              123 | 4567890123456789 |  4567890123456789
- 4567890123456789 |  4567890123456789 | 4567890123456789 | -4567890123456789 | 4567890123456789 | 4567890123456789 | -4567890123456789
+              123 |  4567890123456789 | 4567890123456789 | -4567890123456789 |              123 | 4567890123456789 | -4567890123456789
  4567890123456789 |  4567890123456789 | 4567890123456789 |               123 | 4567890123456789 | 4567890123456789 |               123
  4567890123456789 |  4567890123456789 | 4567890123456789 |  4567890123456789 | 4567890123456789 | 4567890123456789 |  4567890123456789
+ 4567890123456789 |  4567890123456789 | 4567890123456789 | -4567890123456789 | 4567890123456789 | 4567890123456789 | -4567890123456789
 (10 rows)
 
 --Testcase 303:
@@ -5466,17 +5453,17 @@ select v.* from
                123 |                  
                456 |                  
                123 |  4567890123456789
-  4567890123456789 | -4567890123456789
-               123 |  4567890123456789
   4567890123456789 |               123
                123 |  4567890123456789
   4567890123456789 |  4567890123456789
-  4567890123456789 |  4567890123456789
+               123 |  4567890123456789
   4567890123456789 | -4567890123456789
   4567890123456789 |  4567890123456789
   4567890123456789 |               123
   4567890123456789 |  4567890123456789
   4567890123456789 |  4567890123456789
+  4567890123456789 |  4567890123456789
+  4567890123456789 | -4567890123456789
 (20 rows)
 
 --Testcase 305:
@@ -5495,17 +5482,17 @@ select v.* from
                123 |                  
                456 |                  
                123 |  4567890123456789
-  4567890123456789 | -4567890123456789
-               123 |  4567890123456789
   4567890123456789 |               123
                123 |  4567890123456789
   4567890123456789 |  4567890123456789
-  4567890123456789 |  4567890123456789
+               123 |  4567890123456789
   4567890123456789 | -4567890123456789
   4567890123456789 |  4567890123456789
   4567890123456789 |               123
   4567890123456789 |  4567890123456789
   4567890123456789 |  4567890123456789
+  4567890123456789 |  4567890123456789
+  4567890123456789 | -4567890123456789
 (20 rows)
 
 create temp table dual();
@@ -5528,17 +5515,17 @@ select v.* from
                123 |                  
                456 |                  
                123 |  4567890123456789
-  4567890123456789 | -4567890123456789
-               123 |  4567890123456789
   4567890123456789 |               123
                123 |  4567890123456789
   4567890123456789 |  4567890123456789
-  4567890123456789 |  4567890123456789
+               123 |  4567890123456789
   4567890123456789 | -4567890123456789
   4567890123456789 |  4567890123456789
   4567890123456789 |               123
   4567890123456789 |  4567890123456789
   4567890123456789 |  4567890123456789
+  4567890123456789 |  4567890123456789
+  4567890123456789 | -4567890123456789
 (20 rows)
 
 -- Error when using sub-query with multi instances of table, this issue is fixed on PostgreSQL-12
@@ -5831,9 +5818,9 @@ lateral (select * from int8_tbl t1,
          where t1.q1 = ss.q2) ss0;
  id |        q1        |        q2         |        q1        |        q2        
 ----+------------------+-------------------+------------------+------------------
-  0 | 4567890123456789 | -4567890123456789 | 4567890123456789 | 4567890123456789
   0 | 4567890123456789 |               123 | 4567890123456789 | 4567890123456789
   0 | 4567890123456789 |  4567890123456789 | 4567890123456789 | 4567890123456789
+  0 | 4567890123456789 | -4567890123456789 | 4567890123456789 | 4567890123456789
 (3 rows)
 
 -- test some error cases where LATERAL should have been used but wasn't

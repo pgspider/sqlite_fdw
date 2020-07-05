@@ -23,6 +23,9 @@ CREATE FOREIGN TABLE tenk1 (
 	string4		name
 ) SERVER sqlite_svr;
 ALTER TABLE tenk1 SET WITH OIDS;
+ERROR:  syntax error at or near "WITH"
+LINE 1: ALTER TABLE tenk1 SET WITH OIDS;
+                              ^
 CREATE FOREIGN TABLE road (
 	name		text,
 	thepath 	path
@@ -108,56 +111,25 @@ PREPARE q3(text, int, float, boolean, oid, smallint) AS
 	SELECT * FROM tenk1 WHERE string4 = $1 AND (four = $2 OR
 	ten = $3::bigint OR true = $4 OR oid = $5 OR odd = $6::int)
 	ORDER BY unique1;
+ERROR:  column "oid" does not exist
+LINE 3:  ten = $3::bigint OR true = $4 OR oid = $5 OR odd = $6::int)
+                                          ^
+HINT:  Perhaps you meant to reference the column "tenk1.odd".
 --Testcase 15:
 EXECUTE q3('AAAAxx', 5::smallint, 10.5::float, false, 500::oid, 4::bigint);
- unique1 | unique2 | two | four | ten | twenty | hundred | thousand | twothousand | fivethous | tenthous | odd | even | stringu1 | stringu2 | string4 
----------+---------+-----+------+-----+--------+---------+----------+-------------+-----------+----------+-----+------+----------+----------+---------
-       2 |    2716 |   0 |    2 |   2 |      2 |       2 |        2 |           2 |         2 |        2 |   4 |    5 | CAAAAA   | MAEAAA   | AAAAxx
-     102 |     612 |   0 |    2 |   2 |      2 |       2 |      102 |         102 |       102 |      102 |   4 |    5 | YDAAAA   | OXAAAA   | AAAAxx
-     802 |    2908 |   0 |    2 |   2 |      2 |       2 |      802 |         802 |       802 |      802 |   4 |    5 | WEAAAA   | WHEAAA   | AAAAxx
-     902 |    1104 |   0 |    2 |   2 |      2 |       2 |      902 |         902 |       902 |      902 |   4 |    5 | SIAAAA   | MQBAAA   | AAAAxx
-    1002 |    2580 |   0 |    2 |   2 |      2 |       2 |        2 |        1002 |      1002 |     1002 |   4 |    5 | OMAAAA   | GVDAAA   | AAAAxx
-    1602 |    8148 |   0 |    2 |   2 |      2 |       2 |      602 |        1602 |      1602 |     1602 |   4 |    5 | QJAAAA   | KBMAAA   | AAAAxx
-    1702 |    7940 |   0 |    2 |   2 |      2 |       2 |      702 |        1702 |      1702 |     1702 |   4 |    5 | MNAAAA   | KTLAAA   | AAAAxx
-    2102 |    6184 |   0 |    2 |   2 |      2 |       2 |      102 |         102 |      2102 |     2102 |   4 |    5 | WCAAAA   | WDJAAA   | AAAAxx
-    2202 |    8028 |   0 |    2 |   2 |      2 |       2 |      202 |         202 |      2202 |     2202 |   4 |    5 | SGAAAA   | UWLAAA   | AAAAxx
-    2302 |    7112 |   0 |    2 |   2 |      2 |       2 |      302 |         302 |      2302 |     2302 |   4 |    5 | OKAAAA   | ONKAAA   | AAAAxx
-    2902 |    6816 |   0 |    2 |   2 |      2 |       2 |      902 |         902 |      2902 |     2902 |   4 |    5 | QHAAAA   | ECKAAA   | AAAAxx
-    3202 |    7128 |   0 |    2 |   2 |      2 |       2 |      202 |        1202 |      3202 |     3202 |   4 |    5 | ETAAAA   | EOKAAA   | AAAAxx
-    3902 |    9224 |   0 |    2 |   2 |      2 |       2 |      902 |        1902 |      3902 |     3902 |   4 |    5 | CUAAAA   | UQNAAA   | AAAAxx
-    4102 |    7676 |   0 |    2 |   2 |      2 |       2 |      102 |         102 |      4102 |     4102 |   4 |    5 | UBAAAA   | GJLAAA   | AAAAxx
-    4202 |    6628 |   0 |    2 |   2 |      2 |       2 |      202 |         202 |      4202 |     4202 |   4 |    5 | QFAAAA   | YUJAAA   | AAAAxx
-    4502 |     412 |   0 |    2 |   2 |      2 |       2 |      502 |         502 |      4502 |     4502 |   4 |    5 | ERAAAA   | WPAAAA   | AAAAxx
-    4702 |    2520 |   0 |    2 |   2 |      2 |       2 |      702 |         702 |      4702 |     4702 |   4 |    5 | WYAAAA   | YSDAAA   | AAAAxx
-    4902 |    1600 |   0 |    2 |   2 |      2 |       2 |      902 |         902 |      4902 |     4902 |   4 |    5 | OGAAAA   | OJCAAA   | AAAAxx
-    5602 |    8796 |   0 |    2 |   2 |      2 |       2 |      602 |        1602 |       602 |     5602 |   4 |    5 | MHAAAA   | IANAAA   | AAAAxx
-    6002 |    8932 |   0 |    2 |   2 |      2 |       2 |        2 |           2 |      1002 |     6002 |   4 |    5 | WWAAAA   | OFNAAA   | AAAAxx
-    6402 |    3808 |   0 |    2 |   2 |      2 |       2 |      402 |         402 |      1402 |     6402 |   4 |    5 | GMAAAA   | MQFAAA   | AAAAxx
-    7602 |    1040 |   0 |    2 |   2 |      2 |       2 |      602 |        1602 |      2602 |     7602 |   4 |    5 | KGAAAA   | AOBAAA   | AAAAxx
-    7802 |    7508 |   0 |    2 |   2 |      2 |       2 |      802 |        1802 |      2802 |     7802 |   4 |    5 | COAAAA   | UCLAAA   | AAAAxx
-    8002 |    9980 |   0 |    2 |   2 |      2 |       2 |        2 |           2 |      3002 |     8002 |   4 |    5 | UVAAAA   | WTOAAA   | AAAAxx
-    8302 |    7800 |   0 |    2 |   2 |      2 |       2 |      302 |         302 |      3302 |     8302 |   4 |    5 | IHAAAA   | AOLAAA   | AAAAxx
-    8402 |    5708 |   0 |    2 |   2 |      2 |       2 |      402 |         402 |      3402 |     8402 |   4 |    5 | ELAAAA   | OLIAAA   | AAAAxx
-    8602 |    5440 |   0 |    2 |   2 |      2 |       2 |      602 |         602 |      3602 |     8602 |   4 |    5 | WSAAAA   | GBIAAA   | AAAAxx
-    9502 |    1812 |   0 |    2 |   2 |      2 |       2 |      502 |        1502 |      4502 |     9502 |   4 |    5 | MBAAAA   | SRCAAA   | AAAAxx
-    9602 |    9972 |   0 |    2 |   2 |      2 |       2 |      602 |        1602 |      4602 |     9602 |   4 |    5 | IFAAAA   | OTOAAA   | AAAAxx
-(29 rows)
-
+ERROR:  prepared statement "q3" does not exist
 -- too few params
 --Testcase 16:
 EXECUTE q3('bool');
-ERROR:  wrong number of parameters for prepared statement "q3"
-DETAIL:  Expected 6 parameters but got 1.
+ERROR:  prepared statement "q3" does not exist
 -- too many params
 --Testcase 17:
 EXECUTE q3('bytea', 5::smallint, 10.5::float, false, 500::oid, 4::bigint, true);
-ERROR:  wrong number of parameters for prepared statement "q3"
-DETAIL:  Expected 6 parameters but got 7.
+ERROR:  prepared statement "q3" does not exist
 -- wrong param types
 --Testcase 18:
 EXECUTE q3(5::smallint, 10.5::float, false, 500::oid, 4::bigint, 'bytea');
-ERROR:  parameter $3 of type boolean cannot be coerced to the expected type double precision
-HINT:  You will need to rewrite or cast the expression.
+ERROR:  prepared statement "q3" does not exist
 -- invalid type
 --Testcase 19:
 PREPARE q4(nonexistenttype) AS SELECT * FROM road WHERE name = $1;
@@ -202,23 +174,19 @@ PREPARE q7(unknown) AS
 --Testcase 24:
 SELECT name, statement, parameter_types FROM pg_prepared_statements
     ORDER BY name;
- name |                              statement                              |                    parameter_types                     
-------+---------------------------------------------------------------------+--------------------------------------------------------
- q2   | PREPARE q2(text) AS                                                +| {text}
-      |         SELECT datname, datistemplate, datallowconn                +| 
-      |         FROM pg_database WHERE datname = $1;                        | 
- q3   | PREPARE q3(text, int, float, boolean, oid, smallint) AS            +| {text,integer,"double precision",boolean,oid,smallint}
-      |         SELECT * FROM tenk1 WHERE string4 = $1 AND (four = $2 OR   +| 
-      |         ten = $3::bigint OR true = $4 OR oid = $5 OR odd = $6::int)+| 
-      |         ORDER BY unique1;                                           | 
- q5   | PREPARE q5(int, text) AS                                           +| {integer,text}
-      |         SELECT * FROM tenk1 WHERE unique1 = $1 OR stringu1 = $2    +| 
-      |         ORDER BY unique1;                                           | 
- q6   | PREPARE q6 AS                                                      +| {integer,name}
-      |     SELECT * FROM tenk1 WHERE unique1 = $1 AND stringu1 = $2;       | 
- q7   | PREPARE q7(unknown) AS                                             +| {path}
-      |     SELECT * FROM road WHERE thepath = $1;                          | 
-(5 rows)
+ name |                            statement                            | parameter_types 
+------+-----------------------------------------------------------------+-----------------
+ q2   | PREPARE q2(text) AS                                            +| {text}
+      |         SELECT datname, datistemplate, datallowconn            +| 
+      |         FROM pg_database WHERE datname = $1;                    | 
+ q5   | PREPARE q5(int, text) AS                                       +| {integer,text}
+      |         SELECT * FROM tenk1 WHERE unique1 = $1 OR stringu1 = $2+| 
+      |         ORDER BY unique1;                                       | 
+ q6   | PREPARE q6 AS                                                  +| {integer,name}
+      |     SELECT * FROM tenk1 WHERE unique1 = $1 AND stringu1 = $2;   | 
+ q7   | PREPARE q7(unknown) AS                                         +| {path}
+      |     SELECT * FROM road WHERE thepath = $1;                      | 
+(4 rows)
 
 -- test DEALLOCATE ALL;
 DEALLOCATE ALL;
