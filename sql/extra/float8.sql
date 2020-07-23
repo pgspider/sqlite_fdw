@@ -359,6 +359,8 @@ SELECT f1,
           FROM FLOAT8_TBL;
 
 --Testcase 110:
+ROLLBACK;
+BEGIN;
 DELETE FROM FLOAT8_TBL;
 --Testcase 111:
 INSERT INTO FLOAT8_TBL SELECT * FROM generate_series(0, 360, 90);

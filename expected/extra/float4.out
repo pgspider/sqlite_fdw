@@ -93,15 +93,7 @@ INSERT INTO FLOAT4_TBL(f1) VALUES ('infinity'::float4);
 INSERT INTO FLOAT4_TBL(f1) VALUES ('          -INFINiTY   '::float4);
 --Testcase 24:
 SELECT * FROM FLOAT4_TBL;
-    f1     
------------
-          
-          
-          
-  Infinity
- -Infinity
-(5 rows)
-
+ERROR:  value out of range: overflow
 ROLLBACK;
 -- bad special inputs
 --Testcase 25:
@@ -132,14 +124,7 @@ INSERT INTO FLOAT4_TBL(f1) VALUES ('nan'::float4 / 'nan'::float4);
 INSERT INTO FLOAT4_TBL(f1) VALUES ('nan'::numeric::float4);
 --Testcase 33:
 SELECT * FROM FLOAT4_TBL;
-    f1    
-----------
- Infinity
-         
-         
-         
-(4 rows)
-
+ERROR:  value out of range: overflow
 ROLLBACK;
 --Testcase 34:
 SELECT '' AS five, * FROM FLOAT4_TBL;
