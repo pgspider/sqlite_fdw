@@ -7,7 +7,7 @@ sqlite3 /tmp/sqlitefdw_test_core.db < sql/extra/init_core.sql
 
 export USE_PGXS=1
 
-sed -i 's/REGRESS =.*/REGRESS = extra\/sqlite_fdw_post extra\/float4 extra\/float8 extra\/int4 extra\/int8 extra\/numeric extra\/join extra\/limit extra\/aggregates extra\/prepare extra\/select_having extra\/select extra\/insert extra\/update /' Makefile.extra
+sed -i 's/REGRESS =.*/REGRESS = extra\/sqlite_fdw_post extra\/float4 extra\/float8 extra\/int4 extra\/int8 extra\/numeric extra\/join extra\/limit extra\/aggregates extra\/prepare extra\/select_having extra\/select extra\/insert extra\/update extra\/timestamp /' Makefile.extra
 
 make -f Makefile.extra clean
 make -f Makefile.extra
