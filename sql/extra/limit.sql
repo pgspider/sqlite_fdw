@@ -45,6 +45,29 @@ CREATE FOREIGN TABLE tenk1 (
 	string4		name
 ) SERVER sqlite_svr;
 
+CREATE TABLE parent_table (
+	unique1		int4 PRIMARY KEY,
+	unique2		int4,
+	two 		int4,
+	four		int4,
+	ten 		int4,
+	twenty		int4,
+	hundred		int4,
+	thousand	int4,
+	twothousand	int4,
+	fivethous	int4,
+	tenthous	int4,
+	odd			int4,
+	even		int4,
+	stringu1	name,
+	stringu2	name,
+	string4		name
+);
+
+CREATE FOREIGN table inherited_table ()
+INHERITS (parent_table)
+SERVER sqlite_svr options (table 'tenk1');
+
 SELECT ''::text AS two, unique1, unique2, stringu1
 		FROM onek WHERE unique1 > 50
 		ORDER BY unique1 LIMIT 2;
@@ -144,6 +167,24 @@ select unique1, unique2, nextval('testseq')
 
 select currval('testseq');
 
+-- test for limit and offset when querying table and foreign table inherited
+explain (verbose, costs off)
+select unique1, unique2, nextval('testseq')
+  from parent_table order by tenthous limit 10;
+
+select unique1, unique2, nextval('testseq')
+  from parent_table order by tenthous limit 10;
+
+-- when querying regular tables with inherited tables, only limit is pushed-down when no offset is specified
+explain (verbose, costs off)
+select unique1, unique2, nextval('testseq')
+  from parent_table order by tenthous limit 10 offset 5;
+
+select unique1, unique2, nextval('testseq')
+  from parent_table order by tenthous limit 10 offset 5;
+
+select currval('testseq');
+
 explain (verbose, costs off)
 select unique1, unique2, generate_series(1,10)
   from tenk1 order by unique2 limit 7;
@@ -168,6 +209,8 @@ select sum(tenthous) as s1, sum(tenthous) + random()*0 as s2
 
 DROP FOREIGN TABLE onek;
 DROP FOREIGN TABLE int8_tbl;
+DROP FOREIGN TABLE inherited_table;
+DROP TABLE parent_table;
 DROP FOREIGN TABLE tenk1;
 DROP SERVER sqlite_svr;
 DROP EXTENSION sqlite_fdw CASCADE;

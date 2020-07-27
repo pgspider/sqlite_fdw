@@ -42,6 +42,27 @@ CREATE FOREIGN TABLE tenk1 (
 	stringu2	name,
 	string4		name
 ) SERVER sqlite_svr;
+CREATE TABLE parent_table (
+	unique1		int4 PRIMARY KEY,
+	unique2		int4,
+	two 		int4,
+	four		int4,
+	ten 		int4,
+	twenty		int4,
+	hundred		int4,
+	thousand	int4,
+	twothousand	int4,
+	fivethous	int4,
+	tenthous	int4,
+	odd			int4,
+	even		int4,
+	stringu1	name,
+	stringu2	name,
+	string4		name
+);
+CREATE FOREIGN table inherited_table ()
+INHERITS (parent_table)
+SERVER sqlite_svr options (table 'tenk1');
 SELECT ''::text AS two, unique1, unique2, stringu1
 		FROM onek WHERE unique1 > 50
 		ORDER BY unique1 LIMIT 2;
@@ -371,6 +392,88 @@ select currval('testseq');
       60
 (1 row)
 
+-- test for limit and offset when querying table and foreign table inherited
+explain (verbose, costs off)
+select unique1, unique2, nextval('testseq')
+  from parent_table order by tenthous limit 10;
+                                                               QUERY PLAN                                                                
+-----------------------------------------------------------------------------------------------------------------------------------------
+ Limit
+   Output: parent_table.unique1, parent_table.unique2, (nextval('testseq'::regclass)), parent_table.tenthous
+   ->  Result
+         Output: parent_table.unique1, parent_table.unique2, nextval('testseq'::regclass), parent_table.tenthous
+         ->  Merge Append
+               Sort Key: parent_table.tenthous
+               ->  Sort
+                     Output: parent_table.unique1, parent_table.unique2, parent_table.tenthous
+                     Sort Key: parent_table.tenthous
+                     ->  Seq Scan on public.parent_table
+                           Output: parent_table.unique1, parent_table.unique2, parent_table.tenthous
+               ->  Foreign Scan on public.inherited_table
+                     Output: inherited_table.unique1, inherited_table.unique2, inherited_table.tenthous
+                     SQLite query: SELECT `unique1`, `unique2`, `tenthous` FROM main."tenk1" ORDER BY `tenthous` ASC NULLS LAST LIMIT 10
+(14 rows)
+
+select unique1, unique2, nextval('testseq')
+  from parent_table order by tenthous limit 10;
+ unique1 | unique2 | nextval 
+---------+---------+---------
+       0 |    9998 |      61
+       1 |    2838 |      62
+       2 |    2716 |      63
+       3 |    5679 |      64
+       4 |    1621 |      65
+       5 |    5557 |      66
+       6 |    2855 |      67
+       7 |    8518 |      68
+       8 |    5435 |      69
+       9 |    4463 |      70
+(10 rows)
+
+-- when querying regular tables with inherited tables, only limit is pushed-down when no offset is specified
+explain (verbose, costs off)
+select unique1, unique2, nextval('testseq')
+  from parent_table order by tenthous limit 10 offset 5;
+                                                           QUERY PLAN                                                           
+--------------------------------------------------------------------------------------------------------------------------------
+ Limit
+   Output: parent_table.unique1, parent_table.unique2, (nextval('testseq'::regclass)), parent_table.tenthous
+   ->  Result
+         Output: parent_table.unique1, parent_table.unique2, nextval('testseq'::regclass), parent_table.tenthous
+         ->  Merge Append
+               Sort Key: parent_table.tenthous
+               ->  Sort
+                     Output: parent_table.unique1, parent_table.unique2, parent_table.tenthous
+                     Sort Key: parent_table.tenthous
+                     ->  Seq Scan on public.parent_table
+                           Output: parent_table.unique1, parent_table.unique2, parent_table.tenthous
+               ->  Foreign Scan on public.inherited_table
+                     Output: inherited_table.unique1, inherited_table.unique2, inherited_table.tenthous
+                     SQLite query: SELECT `unique1`, `unique2`, `tenthous` FROM main."tenk1" ORDER BY `tenthous` ASC NULLS LAST
+(14 rows)
+
+select unique1, unique2, nextval('testseq')
+  from parent_table order by tenthous limit 10 offset 5;
+ unique1 | unique2 | nextval 
+---------+---------+---------
+       5 |    5557 |      76
+       6 |    2855 |      77
+       7 |    8518 |      78
+       8 |    5435 |      79
+       9 |    4463 |      80
+      10 |    8788 |      81
+      11 |    8396 |      82
+      12 |    6605 |      83
+      13 |    5696 |      84
+      14 |    4341 |      85
+(10 rows)
+
+select currval('testseq');
+ currval 
+---------
+      85
+(1 row)
+
 explain (verbose, costs off)
 select unique1, unique2, generate_series(1,10)
   from tenk1 order by unique2 limit 7;
@@ -449,6 +552,8 @@ select sum(tenthous) as s1, sum(tenthous) + random()*0 as s2
 
 DROP FOREIGN TABLE onek;
 DROP FOREIGN TABLE int8_tbl;
+DROP FOREIGN TABLE inherited_table;
+DROP TABLE parent_table;
 DROP FOREIGN TABLE tenk1;
 DROP SERVER sqlite_svr;
 DROP EXTENSION sqlite_fdw CASCADE;
