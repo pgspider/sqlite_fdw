@@ -64,7 +64,8 @@ SELECT * FROM t1;
 - Support update to foreign table  
 - WHERE clauses are pushdowned  
 - Aggregate function are pushdowned
-- Order By and Limit are pushdowned
+- Order By is pushdowned.
+- Limit and Offset are pushdowned (*when all tables queried are fdw)
 - Transactions  
 
 ## Limitations
