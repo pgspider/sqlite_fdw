@@ -871,56 +871,6 @@ sqliteBeginForeignScan(ForeignScanState *node, int eflags)
 							 &festate->param_types);
 }
 
-/*
- * Force assorted GUC parameters to settings that ensure that we'll output
- * data values in a form that is unambiguous to the remote server.
- *
- * This is rather expensive and annoying to do once per row, but there's
- * little choice if we want to be sure values are transmitted accurately;
- * we can't leave the settings in place between rows for fear of affecting
- * user-visible computations.
- *
- * We use the equivalent of a function SET option to allow the settings to
- * persist only until the caller calls reset_transmission_modes().  If an
- * error is thrown in between, guc.c will take care of undoing the settings.
- *
- * The return value is the nestlevel that must be passed to
- * reset_transmission_modes() to undo things.
- */
-int
-set_transmission_modes(void)
-{
-	int			nestlevel = NewGUCNestLevel();
-
-	/*
-	 * The values set here should match what pg_dump does.  See also
-	 * configure_remote_session in connection.c.
-	 */
-	if (DateStyle != USE_ISO_DATES)
-		(void) set_config_option("datestyle", "ISO",
-								 PGC_USERSET, PGC_S_SESSION,
-								 GUC_ACTION_SAVE, true, 0, false);
-	if (IntervalStyle != INTSTYLE_POSTGRES)
-		(void) set_config_option("intervalstyle", "postgres",
-								 PGC_USERSET, PGC_S_SESSION,
-								 GUC_ACTION_SAVE, true, 0, false);
-	if (extra_float_digits < 3)
-		(void) set_config_option("extra_float_digits", "3",
-								 PGC_USERSET, PGC_S_SESSION,
-								 GUC_ACTION_SAVE, true, 0, false);
-
-	return nestlevel;
-}
-
-/*
- * Undo the effects of set_transmission_modes().
- */
-void
-reset_transmission_modes(int nestlevel)
-{
-	AtEOXact_GUC(true, nestlevel);
-}
-
 static void
 make_tuple_from_result_row(sqlite3_stmt * stmt,
 						   TupleDesc tupleDescriptor,
@@ -2453,7 +2403,7 @@ add_foreign_final_paths(PlannerInfo *root, RelOptInfo *input_rel,
 	fpinfo->total_cost = total_cost;
 
 	/*
-	 * Build the fdw_private list that will be used by postgresGetForeignPlan.
+	 * Build the fdw_private list that will be used by sqliteGetForeignPlan.
 	 * Items in the list must match order in enum FdwPathPrivateIndex.
 	 */
 	fdw_private = list_make2(makeInteger(has_final_sort),

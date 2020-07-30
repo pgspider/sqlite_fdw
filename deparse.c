@@ -2492,7 +2492,7 @@ appendLimitClause(deparse_expr_cxt *context)
 	int			nestlevel;
 
 	/* Make sure any constants in the exprs are printed portably */
-	nestlevel = set_transmission_modes();
+	nestlevel = sqlite_set_transmission_modes();
 
 	if (root->parse->limitCount)
 	{
@@ -2512,7 +2512,7 @@ appendLimitClause(deparse_expr_cxt *context)
 		deparseExpr((Expr *) root->parse->limitOffset, context);
 	}
 
-	reset_transmission_modes(nestlevel);
+	sqlite_reset_transmission_modes(nestlevel);
 }
 
 /*
