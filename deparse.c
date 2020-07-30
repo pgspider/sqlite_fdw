@@ -135,7 +135,6 @@ static Node *deparseSortGroupClause(Index ref, List *tlist, bool force_colno,
 									deparse_expr_cxt *context);
 static void deparseExplicitTargetList(List *tlist, List **retrieved_attrs,
 									  deparse_expr_cxt *context);
-static Expr *find_em_expr_for_rel(EquivalenceClass *ec, RelOptInfo *rel);
 static bool is_builtin(Oid objectId);
 
 /*
@@ -2412,35 +2411,6 @@ appendAggOrderBy(List *orderList, List *targetList, deparse_expr_cxt *context)
 }
 
 /*
- * Find an equivalence class member expression, all of whose Vars, come from
- * the indicated relation.
- */
-static Expr *
-find_em_expr_for_rel(EquivalenceClass *ec, RelOptInfo *rel)
-{
-	ListCell   *lc_em;
-
-	foreach(lc_em, ec->ec_members)
-	{
-		EquivalenceMember *em = lfirst(lc_em);
-
-		if (bms_is_subset(em->em_relids, rel->relids))
-		{
-			/*
-			 * If there is more than one equivalence member whose Vars are
-			 * taken entirely from this relation, we'll be content to choose
-			 * any one of those.
-			 */
-			return em->em_expr;
-		}
-	}
-
-	/* We didn't find any suitable equivalence class expression */
-	return NULL;
-}
-
-
-/*
  * Deparse ORDER BY clause according to the given pathkeys for given base
  * relation. From given pathkeys expressions belonging entirely to the given
  * base relation are obtained and deparsed.
@@ -2471,7 +2441,8 @@ appendOrderByClause(List *pathkeys, bool has_final_sort, deparse_expr_cxt *conte
 			 */
 			em_expr = find_em_expr_for_input_target(context->root,
 													pathkey->pk_eclass,
-													context->foreignrel->reltarget);
+													context->foreignrel->reltarget,
+													baserel);
 		}
 		else
 			em_expr = find_em_expr_for_rel(pathkey->pk_eclass, baserel);
@@ -2485,8 +2456,26 @@ appendOrderByClause(List *pathkeys, bool has_final_sort, deparse_expr_cxt *conte
 		else
 			appendStringInfoString(buf, " DESC");
 
-		if (pathkey->pk_nulls_first)
-			elog(ERROR, "NULLS FIRST not supported");
+		// XXX: In SQLITE3 Release v3.30.0 (2019-10-04) NULLS FIRST/LAST is supported, but not in prior versions
+		// More info: https://www.sqlite.org/changes.html https://www.sqlite.org/lang_select.html#orderby
+		int sqliteVersion = sqlite3_libversion_number();
+
+		if (sqliteVersion >= 3030000)
+		{
+			if (pathkey->pk_nulls_first)
+				appendStringInfoString(buf, " NULLS FIRST");
+			else
+				appendStringInfoString(buf, " NULLS LAST");
+		}
+		else
+		{
+			// If we need a different behaviour than SQLite default...we show warning message because NULLS FIRST/LAST is not implemented in this SQLite version.
+			if (!pathkey->pk_nulls_first && pathkey->pk_strategy == BTLessStrategyNumber)
+				elog(WARNING, "Current Sqlite Version (%d) does not support NULLS LAST for ORDER BY ASC, degraded emitted query to ORDER BY ASC NULLS FIRST (default sqlite behaviour).", sqliteVersion);
+			else if (pathkey->pk_nulls_first && pathkey->pk_strategy != BTLessStrategyNumber)
+				elog(WARNING, "Current Sqlite Version (%d) does not support NULLS FIRST for ORDER BY DESC, degraded emitted query to ORDER BY DESC NULLS LAST (default sqlite behaviour).", sqliteVersion);
+		}
+
 		delim = ", ";
 	}
 	sqlite_reset_transmission_modes(nestlevel);
@@ -2503,20 +2492,27 @@ appendLimitClause(deparse_expr_cxt *context)
 	int			nestlevel;
 
 	/* Make sure any constants in the exprs are printed portably */
-	nestlevel = set_transmission_modes();
+	nestlevel = sqlite_set_transmission_modes();
 
 	if (root->parse->limitCount)
 	{
 		appendStringInfoString(buf, " LIMIT ");
 		deparseExpr((Expr *) root->parse->limitCount, context);
 	}
+	else
+	{
+		/* We add this LIMIT -1 because OFFSET by itself its not implemented/allowed in SQLite.
+		You need to provide LIMIT *always* when using OFFSET */
+		appendStringInfoString(buf, " LIMIT -1");
+	}
+
 	if (root->parse->limitOffset)
 	{
 		appendStringInfoString(buf, " OFFSET ");
 		deparseExpr((Expr *) root->parse->limitOffset, context);
 	}
 
-	reset_transmission_modes(nestlevel);
+	sqlite_reset_transmission_modes(nestlevel);
 }
 
 /*

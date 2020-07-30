@@ -217,6 +217,12 @@ static void add_foreign_final_paths(PlannerInfo *root,
 #endif
 );
 
+static bool all_baserels_are_foreign(PlannerInfo *root);
+
+static void add_paths_with_pathkeys_for_rel(PlannerInfo *root, RelOptInfo *rel, List *fdw_private);
+static List *get_useful_pathkeys_for_relation(PlannerInfo *root,
+								 RelOptInfo *rel);
+
 /*
  * Library load-time initialization, sets on_proc_exit() callback for
  * backend shutdown.
@@ -379,7 +385,144 @@ sqliteGetForeignRelSize(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntable
 						 quote_identifier(rte->eref->aliasname));
 }
 
+/*
+ * get_useful_pathkeys_for_relation
+ *		Determine which orderings of a relation might be useful.
+ *
+ * Getting data in sorted order can be useful either because the requested
+ * order matches the final output ordering for the overall query we're
+ * planning, or because it enables an efficient merge join.  Here, we try
+ * to figure out which pathkeys to consider.
+ */
+static List *
+get_useful_pathkeys_for_relation(PlannerInfo *root, RelOptInfo *rel)
+{
+	List	   *useful_pathkeys_list = NIL;
+	List	   *useful_eclass_list;
+	SqliteFdwRelationInfo *fpinfo = (SqliteFdwRelationInfo *) rel->fdw_private;
+	EquivalenceClass *query_ec = NULL;
+	ListCell   *lc;
 
+	/*
+	 * Pushing the query_pathkeys to the remote server is always worth
+	 * considering, because it might let us avoid a local sort.
+	 */
+	fpinfo->qp_is_pushdown_safe = false;
+	if (root->query_pathkeys)
+	{
+		bool		query_pathkeys_ok = true;
+
+		foreach(lc, root->query_pathkeys)
+		{
+			PathKey    *pathkey = (PathKey *) lfirst(lc);
+			EquivalenceClass *pathkey_ec = pathkey->pk_eclass;
+			Expr	   *em_expr;
+
+			/*
+			 * The planner and executor don't have any clever strategy for
+			 * taking data sorted by a prefix of the query's pathkeys and
+			 * getting it to be sorted by all of those pathkeys. We'll just
+			 * end up resorting the entire data set.  So, unless we can push
+			 * down all of the query pathkeys, forget it.
+			 *
+			 * is_foreign_expr would detect volatile expressions as well, but
+			 * checking ec_has_volatile here saves some cycles.
+			 */
+			if (pathkey_ec->ec_has_volatile ||
+				!(em_expr = find_em_expr_for_rel(pathkey_ec, rel)) ||
+				!sqlite_is_foreign_expr(root, rel, em_expr))
+			{
+				query_pathkeys_ok = false;
+				break;
+			}
+		}
+
+		if (query_pathkeys_ok)
+		{
+			useful_pathkeys_list = list_make1(list_copy(root->query_pathkeys));
+			fpinfo->qp_is_pushdown_safe = true;
+		}
+	}
+
+	return useful_pathkeys_list;
+}
+
+static void
+add_paths_with_pathkeys_for_rel(PlannerInfo *root, RelOptInfo *rel, List *fdw_private)
+{
+	List	   *useful_pathkeys_list = NIL; /* List of all pathkeys */
+	ListCell   *lc;
+	double 		rows;
+	Cost        startup_cost;
+	Cost        total_cost;
+
+	// Use small cost to avoid calculating real cost size in SQLite
+	rows = startup_cost = total_cost = 10;
+
+	useful_pathkeys_list = get_useful_pathkeys_for_relation(root, rel);
+
+	/* Create one path for each set of pathkeys we found above. */
+	foreach(lc, useful_pathkeys_list)
+	{
+		List	   *useful_pathkeys = lfirst(lc);
+
+		if (rel->reloptkind == RELOPT_BASEREL ||
+			rel->reloptkind == RELOPT_OTHER_MEMBER_REL)
+			add_path(rel, (Path *)
+					 create_foreignscan_path(root, rel,
+											 NULL,
+											 rows,
+											 startup_cost,
+											 total_cost,
+											 useful_pathkeys,
+#if (PG_VERSION_NUM >= 120000)
+											 rel->lateral_relids,
+#else
+											 NULL,	/* no outer rel either */
+#endif
+											 NULL,
+											 fdw_private));
+		else
+			elog(ERROR, "Join clauses not supported for Order..");
+	}
+}
+
+/*
+ * Check if any of the tables queried aren't foreign tables.
+ * We use this function to add limit pushdownm fallback to sqlite
+ * because if theres any non-foreign table, GetForeignUpperPath its not called from planner.c
+ */
+static bool
+all_baserels_are_foreign(PlannerInfo *root)
+{
+	bool		allTablesQueriedAreForeign = true;
+	ListCell	*l;
+
+	// If there is no append_rel_list, we assume we're only consulting a foreign table, so default value it's true and we dont need to do more.
+	foreach(l, root->append_rel_list)
+	{
+		AppendRelInfo *appinfo = lfirst_node(AppendRelInfo, l);
+		int				childRTindex;
+		RangeTblEntry	*childRTE;
+		RelOptInfo		*childrel;
+
+		/* Re-locate the child RTE and RelOptInfo */
+		childRTindex = appinfo->child_relid;
+		childRTE = root->simple_rte_array[childRTindex];
+		childrel = root->simple_rel_array[childRTindex];
+
+		if (!(IS_DUMMY_REL(childrel) || childRTE->inh))
+		{
+			if (!(childrel->rtekind == RTE_RELATION && childRTE->relkind == RELKIND_FOREIGN_TABLE))
+			{
+				allTablesQueriedAreForeign = false;
+				break;
+			}
+		}
+	}
+
+	return allTablesQueriedAreForeign;
+}
 
 /*
  * sqliteGetForeignPaths
@@ -390,10 +533,21 @@ sqliteGetForeignPaths(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntableid
 {
 	Cost		startup_cost = 10;
 	Cost		total_cost = baserel->rows + startup_cost;
+	List	   *fdw_private = NIL;
 
 	elog(DEBUG1, "sqlite_fdw : %s", __func__);
 	/* Estimate costs */
 	total_cost = baserel->rows;
+
+	/* XXX: We add fdw_private with has_limit: true if these three conditions are true because we need to be able to pushdown
+	limit in this case:
+	- Query has LIMIT
+	- Query don't have OFFSET because if we pusdown OFFSET and later, we re-applying offset with the "final result", and we would be "jumping/skipping" child results
+	and losing registries that we wanted to show.
+	- Some of the baserels are not a foreign table, so PostgreSQL is not calling GetForeignUpperPaths
+	 */
+	if (limit_needed(root->parse) && !root->parse->limitOffset && !all_baserels_are_foreign(root))
+		fdw_private = list_make2(makeInteger(false), makeInteger(true));
 
 	/* Create a ForeignPath node and add it as only possible path */
 	add_path(baserel, (Path *)
@@ -411,7 +565,10 @@ sqliteGetForeignPaths(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntableid
 									 NULL,	/* no outer rel either */
 #endif
 									 NULL,	/* no extra plan */
-									 NULL));	/* no fdw_private data */
+									 fdw_private));
+
+	/* Add paths with pathkeys */
+	add_paths_with_pathkeys_for_rel(root, baserel, fdw_private);
 }
 
 /*
@@ -712,56 +869,6 @@ sqliteBeginForeignScan(ForeignScanState *node, int eflags)
 							 &festate->param_exprs,
 							 &festate->param_values,
 							 &festate->param_types);
-}
-
-/*
- * Force assorted GUC parameters to settings that ensure that we'll output
- * data values in a form that is unambiguous to the remote server.
- *
- * This is rather expensive and annoying to do once per row, but there's
- * little choice if we want to be sure values are transmitted accurately;
- * we can't leave the settings in place between rows for fear of affecting
- * user-visible computations.
- *
- * We use the equivalent of a function SET option to allow the settings to
- * persist only until the caller calls reset_transmission_modes().  If an
- * error is thrown in between, guc.c will take care of undoing the settings.
- *
- * The return value is the nestlevel that must be passed to
- * reset_transmission_modes() to undo things.
- */
-int
-set_transmission_modes(void)
-{
-	int			nestlevel = NewGUCNestLevel();
-
-	/*
-	 * The values set here should match what pg_dump does.  See also
-	 * configure_remote_session in connection.c.
-	 */
-	if (DateStyle != USE_ISO_DATES)
-		(void) set_config_option("datestyle", "ISO",
-								 PGC_USERSET, PGC_S_SESSION,
-								 GUC_ACTION_SAVE, true, 0, false);
-	if (IntervalStyle != INTSTYLE_POSTGRES)
-		(void) set_config_option("intervalstyle", "postgres",
-								 PGC_USERSET, PGC_S_SESSION,
-								 GUC_ACTION_SAVE, true, 0, false);
-	if (extra_float_digits < 3)
-		(void) set_config_option("extra_float_digits", "3",
-								 PGC_USERSET, PGC_S_SESSION,
-								 GUC_ACTION_SAVE, true, 0, false);
-
-	return nestlevel;
-}
-
-/*
- * Undo the effects of set_transmission_modes().
- */
-void
-reset_transmission_modes(int nestlevel)
-{
-	AtEOXact_GUC(true, nestlevel);
 }
 
 static void
@@ -2033,9 +2140,15 @@ add_foreign_ordered_paths(PlannerInfo *root, RelOptInfo *input_rel,
 	/* Shouldn't get here unless the query has ORDER BY */
 	Assert(parse->sortClause);
 
+#if (PG_VERSION_NUM >= 100000)
 	/* We don't support cases where there are any SRFs in the targetlist */
 	if (parse->hasTargetSRFs)
 		return;
+#else
+	/* We don't support cases where there are any SRFs in the targetlist (PG Version >10) */
+	if (expression_returns_set((Node *) parse->targetList))
+		return;
+#endif
 
 	/* Save the input_rel as outerrel in fpinfo */
 	fpinfo->outerrel = input_rel;
@@ -2084,6 +2197,8 @@ add_foreign_ordered_paths(PlannerInfo *root, RelOptInfo *input_rel,
 		PathKey    *pathkey = (PathKey *) lfirst(lc);
 		EquivalenceClass *pathkey_ec = pathkey->pk_eclass;
 		Expr	   *sort_expr;
+		RelOptInfo* fallback_rel = (input_rel->reloptkind == RELOPT_UPPER_REL) ?
+			ifpinfo->outerrel : input_rel;
 
 		/*
 		 * is_foreign_expr would detect volatile expressions as well, but
@@ -2095,7 +2210,8 @@ add_foreign_ordered_paths(PlannerInfo *root, RelOptInfo *input_rel,
 		/* Get the sort expression for the pathkey_ec */
 		sort_expr = find_em_expr_for_input_target(root,
 												  pathkey_ec,
-												  input_rel->reltarget);
+												  input_rel->reltarget,
+												  fallback_rel);
 
 		/* If it's unsafe to remote, we cannot push down the final sort */
 		if (!sqlite_is_foreign_expr(root, input_rel, sort_expr))
@@ -2131,10 +2247,13 @@ add_foreign_ordered_paths(PlannerInfo *root, RelOptInfo *input_rel,
 											 NULL,	/* no extra plan */
 											 fdw_private);
 #else
+	// XXX: We use root->upper_targets[UPERREL_FINAL] because until PG12, upper_targets[UPPERREL_ORDERED] is not filled.
+	// Anyways, in PG12 root->upper_targets[UPPERREL_FINAL] and root->upper_targets[UPPERREL_ORDERED] have the same value.
+	// More info: backend/optimizer/plan/planner.c (Line 2189)
 	/* Create foreign ordering path */
 	ordered_path = create_foreignscan_path(root,
 											 input_rel,
-											 root->upper_targets[UPPERREL_ORDERED],
+											 root->upper_targets[UPPERREL_FINAL],
 											 rows,
 											 startup_cost,
 											 total_cost,
@@ -2174,6 +2293,7 @@ add_foreign_final_paths(PlannerInfo *root, RelOptInfo *input_rel,
 	Cost		total_cost;
 	List	   *fdw_private;
 	ForeignPath *final_path;
+	bool 		has_limit = limit_needed(parse);
 
 	/*
 	 * Currently, we only support this for SELECT commands
@@ -2182,19 +2302,28 @@ add_foreign_final_paths(PlannerInfo *root, RelOptInfo *input_rel,
 		return;
 
 	/*
-	 * No work if there is no FOR UPDATE/SHARE clause and if there is no need
-	 * to add a LIMIT node
+	 * No work if there is FOR UPDATE/SHARE clause and if there is no need
+	 * to add a LIMIT node. We DONT support FOR UPDATE pushdown because SQLITE has no implemented yet,
+	 * that's why we dont do nothing.
 	 */
-	if (!parse->rowMarks
+	if (parse->rowMarks
 #if (PG_VERSION_NUM >= 120000)
-			&& !extra->limit_needed
+			|| !extra->limit_needed
+#else
+			|| !has_limit
 #endif
 	   )
 		return;
 
+#if (PG_VERSION_NUM >= 100000)
 	/* We don't support cases where there are any SRFs in the targetlist */
 	if (parse->hasTargetSRFs)
 		return;
+#else
+	/* We don't support cases where there are any SRFs in the targetlist (PG Version >10) */
+	if (expression_returns_set((Node *) parse->targetList))
+		return;
+#endif
 
 	/* Save the input_rel as outerrel in fpinfo */
 	fpinfo->outerrel = input_rel;
@@ -2208,95 +2337,11 @@ add_foreign_final_paths(PlannerInfo *root, RelOptInfo *input_rel,
 
 	fpinfo->shippable_extensions = ifpinfo->shippable_extensions;
 
-	/*
-	 * If there is no need to add a LIMIT node, there might be a ForeignPath
-	 * in the input_rel's pathlist that implements all behavior of the query.
-	 * Note: we would already have accounted for the query's FOR UPDATE/SHARE
-	 * (if any) before we get here.
-	 */
-	if (false /*TODO: !extra->limit_needed*/)
-	{
-		ListCell   *lc;
-
-		Assert(parse->rowMarks);
-
-		/*
-		 * Grouping and aggregation are not supported with FOR UPDATE/SHARE,
-		 * so the input_rel should be a base, join, or ordered relation; and
-		 * if it's an ordered relation, its input relation should be a base
-		 * or join relation.
-		 */
-		Assert(input_rel->reloptkind == RELOPT_BASEREL ||
-			   input_rel->reloptkind == RELOPT_JOINREL ||
-			   (input_rel->reloptkind == RELOPT_UPPER_REL &&
-				ifpinfo->stage == UPPERREL_ORDERED &&
-				(ifpinfo->outerrel->reloptkind == RELOPT_BASEREL ||
-				 ifpinfo->outerrel->reloptkind == RELOPT_JOINREL)));
-
-		foreach(lc, input_rel->pathlist)
-		{
-			Path	   *path = (Path *) lfirst(lc);
-
-			/*
-			 * apply_scanjoin_target_to_paths() uses create_projection_path()
-			 * to adjust each of its input paths if needed, whereas
-			 * create_ordered_paths() uses apply_projection_to_path() to do
-			 * that.  So the former might have put a ProjectionPath on top of
-			 * the ForeignPath; look through ProjectionPath and see if the
-			 * path underneath it is ForeignPath.
-			 */
-			if (IsA(path, ForeignPath) ||
-				(IsA(path, ProjectionPath) &&
-				 IsA(((ProjectionPath *) path)->subpath, ForeignPath)))
-			{
-				/*
-				 * Create foreign final path; this gets rid of a
-				 * no-longer-needed outer plan (if any), which makes the
-				 * EXPLAIN output look cleaner
-				 */
 #if (PG_VERSION_NUM >= 120000)
-				final_path = create_foreign_upper_path(root,
-													   path->parent,
-													   path->pathtarget,
-													   path->rows,
-													   path->startup_cost,
-													   path->total_cost,
-													   path->pathkeys,
-													   NULL,	/* no extra plan */
-													   NULL);	/* no fdw_private */
+	Assert(extra->limit_needed);
 #else
-				final_path = create_foreignscan_path(root,
-													   path->parent,
-													   path->pathtarget,
-													   path->rows,
-													   path->startup_cost,
-													   path->total_cost,
-													   path->pathkeys,
-													   NULL,	/* no requred_outer */
-													   NULL,	/* no extra plan */
-													   NULL);	/* no fdw_private */
-
+	Assert(has_limit);
 #endif
-
-				/* and add it to the final_rel */
-				add_path(final_rel, (Path *) final_path);
-
-				/* Safe to push down */
-				fpinfo->pushdown_safe = true;
-
-				return;
-			}
-		}
-
-		/*
-		 * If we get here it means no ForeignPaths; since we would already
-		 * have considered pushing down all operations for the query to the
-		 * remote server, give up on it.
-		 */
-		return;
-	}
-
-	// TODO: Assert(extra->limit_needed);
 
 	/*
 	 * If the input_rel is an ordered relation, replace the input_rel with its
@@ -2358,10 +2403,15 @@ add_foreign_final_paths(PlannerInfo *root, RelOptInfo *input_rel,
 	fpinfo->total_cost = total_cost;
 
 	/*
-	 * Build the fdw_private list that will be used by postgresGetForeignPlan.
+	 * Build the fdw_private list that will be used by sqliteGetForeignPlan.
 	 * Items in the list must match order in enum FdwPathPrivateIndex.
 	 */
-	fdw_private = list_make2(makeInteger(has_final_sort), makeInteger(true /* FIXME: extra->limit_needed */));
+	fdw_private = list_make2(makeInteger(has_final_sort),
+#if (PG_VERSION_NUM >= 120000)
+		makeInteger(extra->limit_needed));
+#else
+		makeInteger(has_limit));
+#endif
 
 	/*
 	 * Create foreign final path; this gets rid of a no-longer-needed outer
@@ -2693,13 +2743,43 @@ create_cursor(ForeignScanState *node)
 }
 
 /*
+ * Find an equivalence class member expression, all of whose Vars, come from
+ * the indicated relation.
+ */
+Expr *
+find_em_expr_for_rel(EquivalenceClass *ec, RelOptInfo *rel)
+{
+	ListCell   *lc_em;
+
+	foreach(lc_em, ec->ec_members)
+	{
+		EquivalenceMember *em = lfirst(lc_em);
+
+		if (bms_is_subset(em->em_relids, rel->relids) &&
+			!bms_is_empty(em->em_relids))
+		{
+			/*
+			 * If there is more than one equivalence member whose Vars are
+			 * taken entirely from this relation, we'll be content to choose
+			 * any one of those.
+			 */
+			return em->em_expr;
+		}
+	}
+
+	/* We didn't find any suitable equivalence class expression */
+	return NULL;
+}
+
+/*
  * Find an equivalence class member expression to be computed as a sort column
  * in the given target.
  */
 Expr *
 find_em_expr_for_input_target(PlannerInfo *root,
 							  EquivalenceClass *ec,
-							  PathTarget *target)
+							  PathTarget *target,
+							  RelOptInfo *fallbackRel)
 {
 	ListCell   *lc1;
 	int			i;
@@ -2750,7 +2830,15 @@ find_em_expr_for_input_target(PlannerInfo *root,
 		i++;
 	}
 
+	Expr	   *fallback_expr;
+
+	// XXX: We add this method as fallback in versions prior to PG11/12 because target->sortgrouprefs its not filled and
+	// this function always fails because cannot find sort expression.
+	fallback_expr = find_em_expr_for_rel(ec, fallbackRel);
+
+	if (fallback_expr)
+		return fallback_expr;
+
 	elog(ERROR, "could not find pathkey item to sort");
 	return NULL;				/* keep compiler quiet */
 }
-

@@ -55,7 +55,7 @@ CREATE FOREIGN TABLE t1(a integer OPTIONS (key 'true'), b text) SERVER sqlite_se
 IMPORT FOREIGN SCHEMA public FROM SERVER sqlite_server INTO public;
 </pre>
 
-### Access foregin table
+### Access foreign table
 <pre>
 SELECT * FROM t1;
 </pre>
@@ -64,6 +64,8 @@ SELECT * FROM t1;
 - Support update to foreign table  
 - WHERE clauses are pushdowned  
 - Aggregate function are pushdowned
+- Order By is pushdowned.
+- Limit and Offset are pushdowned (*when all tables queried are fdw)
 - Transactions  
 
 ## Limitations

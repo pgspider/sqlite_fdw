@@ -126,6 +126,12 @@ CREATE TABLE road (
 	thepath 	path
 );
 
+CREATE TABLE dates (
+	name			TEXT,
+	date_as_text	TEXT,
+	date_as_number	FLOAT8
+);
+
 .separator "\t"
 .import /tmp/onek.data onek
 .import /tmp/onek.data onek2
@@ -134,6 +140,7 @@ CREATE TABLE road (
 .import /tmp/student.data student
 .import /tmp/person.data person
 .import /tmp/streets.data road
+.import /tmp/datetimes.data dates
 
 INSERT INTO tenk2 SELECT * FROM tenk1;
 

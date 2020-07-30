@@ -37,7 +37,7 @@ EXPLAIN (COSTS FALSE) SELECT * FROM department d, employee e WHERE d.department_
 EXPLAIN (COSTS FALSE) SELECT * FROM department d, employee e WHERE d.department_id IN (SELECT department_id FROM department) LIMIT 10;
 
 SELECT * FROM department d, employee e WHERE d.department_id = e.emp_dept_id LIMIT 10;
-SELECT * FROM department d, employee e WHERE d.department_id IN (SELECT department_id FROM department) LIMIT 10;
+SELECT * FROM department d, employee e WHERE d.department_id IN (SELECT department_id FROM department) ORDER BY d.department_id LIMIT 10;
 SELECT * FROM empdata;
 
 DELETE FROM employee WHERE emp_id = 10;

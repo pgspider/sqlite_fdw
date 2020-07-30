@@ -21,10 +21,9 @@ CREATE FOREIGN TABLE tenk1 (
 	even		int4,
 	stringu1	name,
 	stringu2	name,
-	string4		name
+	string4		name,
+    oid         oid
 ) SERVER sqlite_svr;
-
-ALTER TABLE tenk1 SET WITH OIDS;
 
 CREATE FOREIGN TABLE road (
 	name		text,
