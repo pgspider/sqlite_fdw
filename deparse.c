@@ -2432,6 +2432,7 @@ appendOrderByClause(List *pathkeys, bool has_final_sort, deparse_expr_cxt *conte
 	{
 		PathKey    *pathkey = lfirst(lcell);
 		Expr	   *em_expr;
+		int sqliteVersion = sqlite3_libversion_number();
 
 		if (has_final_sort)
 		{
@@ -2439,13 +2440,13 @@ appendOrderByClause(List *pathkeys, bool has_final_sort, deparse_expr_cxt *conte
 			 * By construction, context->foreignrel is the input relation to
 			 * the final sort.
 			 */
-			em_expr = find_em_expr_for_input_target(context->root,
+			em_expr = sqlite_find_em_expr_for_input_target(context->root,
 													pathkey->pk_eclass,
 													context->foreignrel->reltarget,
 													baserel);
 		}
 		else
-			em_expr = find_em_expr_for_rel(pathkey->pk_eclass, baserel);
+			em_expr = sqlite_find_em_expr_for_rel(pathkey->pk_eclass, baserel);
 
 		Assert(em_expr != NULL);
 
@@ -2456,10 +2457,12 @@ appendOrderByClause(List *pathkeys, bool has_final_sort, deparse_expr_cxt *conte
 		else
 			appendStringInfoString(buf, " DESC");
 
-		// XXX: In SQLITE3 Release v3.30.0 (2019-10-04) NULLS FIRST/LAST is supported, but not in prior versions
-		// More info: https://www.sqlite.org/changes.html https://www.sqlite.org/lang_select.html#orderby
-		int sqliteVersion = sqlite3_libversion_number();
-
+		/*
+		 * In SQLITE3 Release v3.30.0 (2019-10-04) NULLS FIRST/LAST is supported, but not in prior versions
+		 * More info: 
+		 *    https://www.sqlite.org/changes.html
+		 *    https://www.sqlite.org/lang_select.html#orderby
+		 */
 		if (sqliteVersion >= 3030000)
 		{
 			if (pathkey->pk_nulls_first)
@@ -2469,7 +2472,7 @@ appendOrderByClause(List *pathkeys, bool has_final_sort, deparse_expr_cxt *conte
 		}
 		else
 		{
-			// If we need a different behaviour than SQLite default...we show warning message because NULLS FIRST/LAST is not implemented in this SQLite version.
+			/* If we need a different behaviour than SQLite default...we show warning message because NULLS FIRST/LAST is not implemented in this SQLite version. */
 			if (!pathkey->pk_nulls_first && pathkey->pk_strategy == BTLessStrategyNumber)
 				elog(WARNING, "Current Sqlite Version (%d) does not support NULLS LAST for ORDER BY ASC, degraded emitted query to ORDER BY ASC NULLS FIRST (default sqlite behaviour).", sqliteVersion);
 			else if (pathkey->pk_nulls_first && pathkey->pk_strategy != BTLessStrategyNumber)
