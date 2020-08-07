@@ -134,18 +134,12 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum)
 			{
 				double		value = sqlite3_column_double(stmt, attnum);
 
-				/* If the value is Inf or -Inf, the error message is returned */
-				check_float4_val((float4) value, false, true);
-
 				return Float4GetDatum((float4) value);
 				break;
 			}
 		case FLOAT8OID:
 			{
 				double		value = sqlite3_column_double(stmt, attnum);
-
-				/* If the value is Inf or -Inf, the error message is returned */
-				check_float8_val((float8) value, false, true);
 
 				return Float8GetDatum((float8) value);
 				break;

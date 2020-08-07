@@ -93,7 +93,15 @@ INSERT INTO FLOAT8_TBL VALUES ('infinity'::float8);
 INSERT INTO FLOAT8_TBL VALUES ('          -INFINiTY   '::float8);
 --Testcase 24:
 SELECT * FROM FLOAT8_TBL;
-ERROR:  value out of range: overflow
+    f1     
+-----------
+          
+          
+          
+  Infinity
+ -Infinity
+(5 rows)
+
 ROLLBACK;
 -- bad special inputs
 --Testcase 25:
@@ -124,7 +132,14 @@ INSERT INTO FLOAT8_TBL VALUES ('nan'::float8 / 'nan'::float8);
 INSERT INTO FLOAT8_TBL VALUES ('nan'::numeric::float8);
 --Testcase 33:
 SELECT * FROM FLOAT8_TBL;
-ERROR:  value out of range: overflow
+    f1    
+----------
+ Infinity
+         
+         
+         
+(4 rows)
+
 ROLLBACK;
 --Testcase 34:
 SELECT '' AS five, * FROM FLOAT8_TBL;
@@ -636,10 +651,16 @@ SELECT f1,
        atand(f1),
        atand(f1) IN (-90,-45,0,45,90) AS atand_exact
           FROM FLOAT8_TBL;
-ERROR:  value out of range: overflow
+    f1     | atand | atand_exact 
+-----------+-------+-------------
+ -Infinity |   -90 | t
+        -1 |   -45 | t
+         0 |     0 | t
+         1 |    45 | t
+  Infinity |    90 | t
+(5 rows)
+
 --Testcase 110:
-ROLLBACK;
-BEGIN;
 DELETE FROM FLOAT8_TBL;
 --Testcase 111:
 INSERT INTO FLOAT8_TBL SELECT * FROM generate_series(0, 360, 90);
