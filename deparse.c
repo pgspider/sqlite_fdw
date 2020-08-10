@@ -79,6 +79,10 @@ typedef struct deparse_expr_cxt
 								 * a base relation. */
 	StringInfo	buf;			/* output buffer to append to */
 	List	  **params_list;	/* exprs that will become remote Params */
+	Expr 		*complementarynode; /* variable where we can store, only if needed,
+									 * a complementary node to obtain info for processing actual node.
+									 * Created mostly for sqlite_deparse_op_expr to have both nodes accesible
+									 * during each node deparse. */
 } deparse_expr_cxt;
 
 /*
@@ -1403,6 +1407,39 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 	appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
 }
 
+static char *
+sqlite_deparse_column_option(int varno, int varattno, PlannerInfo *root, char *optionname)
+{
+	RangeTblEntry *rte;
+	char	   *coloptionvalue = NULL;
+	List	   *options;
+	ListCell   *lc;
+
+	/* varno must not be any of OUTER_VAR, INNER_VAR and INDEX_VAR. */
+	Assert(!IS_SPECIAL_VARNO(varno));
+
+	/* Get RangeTblEntry from array in PlannerInfo. */
+	rte = planner_rt_fetch(varno, root);
+
+	/*
+	 * If it's a column of a foreign table, and it has the column_name FDW
+	 * option, use that value.
+	 */
+	options = GetForeignColumnOptions(rte->relid, varattno);
+	foreach(lc, options)
+	{
+		DefElem    *def = (DefElem *) lfirst(lc);
+
+		if (strcmp(def->defname, optionname) == 0)
+		{
+			coloptionvalue = defGetString(def);
+			break;
+		}
+	}
+
+	return coloptionvalue;
+}
+
 
 static void
 sqlite_deparse_string(StringInfo buf, const char *val, bool isstr)
@@ -1660,6 +1697,28 @@ sqlite_deparse_var(Var *node, deparse_expr_cxt *context)
 }
 
 /*
+ * With this function, we try to obtain complementary node for operation to be able
+ * to obtain column name and column type to whom const value its compared to.
+ * If we obtain type, we know if we need to use datetime convert expressions
+ * or not depending if sqlite column is TEXT or INT */
+static Var *
+get_complementary_var_node(Expr *node)
+{
+	if (node == NULL)
+		return NULL;
+
+	switch (nodeTag(node))
+	{
+		/* Only supported case by now is T_Var complementary node */
+		case T_Var:
+			return (Var *) node;
+			break;
+		default:
+			return NULL;
+	}
+}
+
+/*
  * Deparse given constant value into context->buf.
  *
  * This function has to be kept in sync with ruleutils.c's get_const_expr.
@@ -1673,7 +1732,10 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 	StringInfo	buf = context->buf;
 	Oid			typoutput;
 	bool		typIsVarlena;
-	char	   *extval;
+	char		*extval;
+	char		*sqlitecolumntype;
+	bool		convert_timestamp_tounixepoch;
+	Var			*varnode;
 
 	if (node->constisnull)
 	{
@@ -1735,6 +1797,28 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 			 */
 			extval = OidOutputFunctionCall(typoutput, node->constvalue);
 			appendStringInfo(buf, "X\'%s\'", extval + 2);
+			break;
+		case TIMESTAMPOID:
+			convert_timestamp_tounixepoch = false;
+			extval = OidOutputFunctionCall(typoutput, node->constvalue);
+
+			if (context->complementarynode != NULL)
+			{
+				varnode = get_complementary_var_node(context->complementarynode);
+				if (varnode != NULL)
+				{
+					sqlitecolumntype = sqlite_deparse_column_option(varnode->varno, varnode->varattno, context->root, "column_type");
+
+					if (sqlitecolumntype != NULL && strcmp(sqlitecolumntype, "INT") == 0)
+						convert_timestamp_tounixepoch = true;
+				}
+			}
+
+			if (convert_timestamp_tounixepoch)
+				appendStringInfo(buf, "strftime('%%s', '%s')", extval);
+			else
+				sqlite_deparse_string_literal(buf, extval);
+
 			break;
 		default:
 			extval = OidOutputFunctionCall(typoutput, node->constvalue);
@@ -1846,7 +1930,8 @@ sqlite_deparse_op_expr(OpExpr *node, deparse_expr_cxt *context)
 	HeapTuple	tuple;
 	Form_pg_operator form;
 	char		oprkind;
-	ListCell   *arg;
+	ListCell   *leftarg = NULL;
+	ListCell   *rightarg = NULL;
 
 	/* Retrieve information about the operator from system catalog. */
 	tuple = SearchSysCache1(OPEROID, ObjectIdGetDatum(node->opno));
@@ -1863,11 +1948,18 @@ sqlite_deparse_op_expr(OpExpr *node, deparse_expr_cxt *context)
 	/* Always parenthesize the expression. */
 	appendStringInfoChar(buf, '(');
 
+	if (oprkind == 'r' || oprkind == 'b')
+		leftarg = list_head(node->args);
+	if (oprkind == 'l' || oprkind == 'b')
+		rightarg = list_tail(node->args);
+
 	/* Deparse left operand. */
 	if (oprkind == 'r' || oprkind == 'b')
 	{
-		arg = list_head(node->args);
-		deparseExpr(lfirst(arg), context);
+		if (oprkind == 'b')
+			context->complementarynode = lfirst(rightarg);
+
+		deparseExpr(lfirst(leftarg), context);
 		appendStringInfoChar(buf, ' ');
 	}
 
@@ -1877,9 +1969,11 @@ sqlite_deparse_op_expr(OpExpr *node, deparse_expr_cxt *context)
 	/* Deparse right operand. */
 	if (oprkind == 'l' || oprkind == 'b')
 	{
-		arg = list_tail(node->args);
 		appendStringInfoChar(buf, ' ');
-		deparseExpr(lfirst(arg), context);
+		if (oprkind == 'b')
+			context->complementarynode = lfirst(leftarg);
+
+		deparseExpr(lfirst(rightarg), context);
 	}
 
 	appendStringInfoChar(buf, ')');

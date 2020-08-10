@@ -7,7 +7,7 @@ OPTIONS (database '/tmp/sqlitefdw_test_core.db');
 CREATE FOREIGN TABLE dates1 (
 	name varchar(20),
 	date_as_text timestamp without time zone,
-	date_as_number timestamp without time zone)
+	date_as_number timestamp without time zone OPTIONS (column_type 'INT'))
 SERVER sqlite_svr
 OPTIONS (table 'dates');
 CREATE FOREIGN TABLE dates2 (
@@ -23,17 +23,17 @@ SELECT name,
 FROM dates1;
     name    |      date_as_text       |     date_as_number      
 ------------+-------------------------+-------------------------
- FirstDate  | 2020-05-12 11:45:31.414 | 2020-05-12 11:45:31.414
- SecondDate | 2020-05-12 13:32:31.500 | 2020-05-12 13:32:31.500
+ FirstDate  | 2020-05-12 11:45:31.000 | 2020-05-12 11:45:31.000
+ SecondDate | 2020-05-12 13:32:31.000 | 2020-05-12 13:32:31.000
  ThirdDate  | 2020-05-10 10:45:29.000 | 2020-05-10 10:45:29.000
 (3 rows)
 
 SELECT * FROM dates2;
-    name    |          date_as_text           |  date_as_number  
-------------+---------------------------------+------------------
- FirstDate  | Tue May 12 11:45:31.414014 2020 | 1589283931.41401
- SecondDate | Tue May 12 13:32:31.500274 2020 | 1589290351.50027
- ThirdDate  | Sun May 10 10:45:29 2020        |       1589107529
+    name    |       date_as_text       | date_as_number 
+------------+--------------------------+----------------
+ FirstDate  | Tue May 12 11:45:31 2020 |     1589283931
+ SecondDate | Tue May 12 13:32:31 2020 |     1589290351
+ ThirdDate  | Sun May 10 10:45:29 2020 |     1589107529
 (3 rows)
 
 -- Comparing exact values showing same results even comparing to a text source sqlite column or numerical source sqlite column
@@ -68,35 +68,221 @@ WHERE date_as_number = to_timestamp('2020-05-10 10:45:29', 'YYYY-MM-DD HH24:MI:S
 -- Comparing greater values showing same results even comparing to a text source sqlite column or numerical source sqlite column
 SELECT * FROM dates1
 WHERE date_as_text > to_timestamp('2020-05-10 10:45:29.000', 'YYYY-MM-DD HH24:MI:SS.MS');
-    name    |          date_as_text           |         date_as_number         
-------------+---------------------------------+--------------------------------
- FirstDate  | Tue May 12 11:45:31.414014 2020 | Tue May 12 11:45:31.41401 2020
- SecondDate | Tue May 12 13:32:31.500274 2020 | Tue May 12 13:32:31.50027 2020
+    name    |       date_as_text       |      date_as_number      
+------------+--------------------------+--------------------------
+ FirstDate  | Tue May 12 11:45:31 2020 | Tue May 12 11:45:31 2020
+ SecondDate | Tue May 12 13:32:31 2020 | Tue May 12 13:32:31 2020
 (2 rows)
+
+explain (verbose, costs off)
+SELECT * FROM dates1
+WHERE date_as_text > to_timestamp('2020-05-10 10:45:29.000', 'YYYY-MM-DD HH24:MI:SS.MS');
+                                                    QUERY PLAN                                                     
+-------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.dates1
+   Output: name, date_as_text, date_as_number
+   Filter: (dates1.date_as_text > to_timestamp('2020-05-10 10:45:29.000'::text, 'YYYY-MM-DD HH24:MI:SS.MS'::text))
+   SQLite query: SELECT `name`, `date_as_text`, `date_as_number` FROM main."dates"
+(4 rows)
 
 SELECT * FROM dates1
 WHERE date_as_number > to_timestamp('2020-05-10 10:45:29.000', 'YYYY-MM-DD HH24:MI:SS.MS');
-    name    |          date_as_text           |         date_as_number         
-------------+---------------------------------+--------------------------------
- FirstDate  | Tue May 12 11:45:31.414014 2020 | Tue May 12 11:45:31.41401 2020
- SecondDate | Tue May 12 13:32:31.500274 2020 | Tue May 12 13:32:31.50027 2020
+    name    |       date_as_text       |      date_as_number      
+------------+--------------------------+--------------------------
+ FirstDate  | Tue May 12 11:45:31 2020 | Tue May 12 11:45:31 2020
+ SecondDate | Tue May 12 13:32:31 2020 | Tue May 12 13:32:31 2020
 (2 rows)
+
+explain (verbose, costs off)
+SELECT * FROM dates1
+WHERE date_as_number > to_timestamp('2020-05-10 10:45:29.000', 'YYYY-MM-DD HH24:MI:SS.MS');
+                                                     QUERY PLAN                                                      
+---------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.dates1
+   Output: name, date_as_text, date_as_number
+   Filter: (dates1.date_as_number > to_timestamp('2020-05-10 10:45:29.000'::text, 'YYYY-MM-DD HH24:MI:SS.MS'::text))
+   SQLite query: SELECT `name`, `date_as_text`, `date_as_number` FROM main."dates"
+(4 rows)
 
 SELECT * FROM dates1
 WHERE date_as_text > to_timestamp('2020-05-10 10:45:29', 'YYYY-MM-DD HH24:MI:SS.MS');
-    name    |          date_as_text           |         date_as_number         
-------------+---------------------------------+--------------------------------
- FirstDate  | Tue May 12 11:45:31.414014 2020 | Tue May 12 11:45:31.41401 2020
- SecondDate | Tue May 12 13:32:31.500274 2020 | Tue May 12 13:32:31.50027 2020
+    name    |       date_as_text       |      date_as_number      
+------------+--------------------------+--------------------------
+ FirstDate  | Tue May 12 11:45:31 2020 | Tue May 12 11:45:31 2020
+ SecondDate | Tue May 12 13:32:31 2020 | Tue May 12 13:32:31 2020
 (2 rows)
+
+explain (verbose, costs off)
+SELECT * FROM dates1
+WHERE date_as_text > to_timestamp('2020-05-10 10:45:29', 'YYYY-MM-DD HH24:MI:SS.MS');
+                                                  QUERY PLAN                                                   
+---------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.dates1
+   Output: name, date_as_text, date_as_number
+   Filter: (dates1.date_as_text > to_timestamp('2020-05-10 10:45:29'::text, 'YYYY-MM-DD HH24:MI:SS.MS'::text))
+   SQLite query: SELECT `name`, `date_as_text`, `date_as_number` FROM main."dates"
+(4 rows)
 
 SELECT * FROM dates1
 WHERE date_as_number > to_timestamp('2020-05-10 10:45:29', 'YYYY-MM-DD HH24:MI:SS.MS');
-    name    |          date_as_text           |         date_as_number         
-------------+---------------------------------+--------------------------------
- FirstDate  | Tue May 12 11:45:31.414014 2020 | Tue May 12 11:45:31.41401 2020
- SecondDate | Tue May 12 13:32:31.500274 2020 | Tue May 12 13:32:31.50027 2020
+    name    |       date_as_text       |      date_as_number      
+------------+--------------------------+--------------------------
+ FirstDate  | Tue May 12 11:45:31 2020 | Tue May 12 11:45:31 2020
+ SecondDate | Tue May 12 13:32:31 2020 | Tue May 12 13:32:31 2020
 (2 rows)
+
+explain (verbose, costs off)
+SELECT * FROM dates1
+WHERE date_as_number > to_timestamp('2020-05-10 10:45:29', 'YYYY-MM-DD HH24:MI:SS.MS');
+                                                   QUERY PLAN                                                    
+-----------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.dates1
+   Output: name, date_as_text, date_as_number
+   Filter: (dates1.date_as_number > to_timestamp('2020-05-10 10:45:29'::text, 'YYYY-MM-DD HH24:MI:SS.MS'::text))
+   SQLite query: SELECT `name`, `date_as_text`, `date_as_number` FROM main."dates"
+(4 rows)
+
+--- Comparing without using to_timestamp
+SELECT * FROM dates1
+WHERE date_as_text = (('2020-05-10 10:45:29.000')::timestamp);
+   name    |       date_as_text       |      date_as_number      
+-----------+--------------------------+--------------------------
+ ThirdDate | Sun May 10 10:45:29 2020 | Sun May 10 10:45:29 2020
+(1 row)
+
+explain (verbose, costs off)
+SELECT * FROM dates1
+WHERE date_as_text = (('2020-05-10 10:45:29.000')::timestamp);
+                                                             QUERY PLAN                                                             
+------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.dates1
+   Output: name, date_as_text, date_as_number
+   SQLite query: SELECT `name`, `date_as_text`, `date_as_number` FROM main."dates" WHERE ((`date_as_text` = '2020-05-10 10:45:29'))
+(3 rows)
+
+SELECT * FROM dates1
+WHERE date_as_number = (('2020-05-10 10:45:29.000')::timestamp);
+   name    |       date_as_text       |      date_as_number      
+-----------+--------------------------+--------------------------
+ ThirdDate | Sun May 10 10:45:29 2020 | Sun May 10 10:45:29 2020
+(1 row)
+
+explain (verbose, costs off)
+SELECT * FROM dates1
+WHERE date_as_number = (('2020-05-10 10:45:29.000')::timestamp);
+                                                                      QUERY PLAN                                                                      
+------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.dates1
+   Output: name, date_as_text, date_as_number
+   SQLite query: SELECT `name`, `date_as_text`, `date_as_number` FROM main."dates" WHERE ((`date_as_number` = strftime('%s', '2020-05-10 10:45:29')))
+(3 rows)
+
+SELECT * FROM dates1
+WHERE date_as_text = (('2020-05-10 10:45:29')::timestamp);
+   name    |       date_as_text       |      date_as_number      
+-----------+--------------------------+--------------------------
+ ThirdDate | Sun May 10 10:45:29 2020 | Sun May 10 10:45:29 2020
+(1 row)
+
+explain (verbose, costs off)
+SELECT * FROM dates1
+WHERE date_as_text = (('2020-05-10 10:45:29')::timestamp);
+                                                             QUERY PLAN                                                             
+------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.dates1
+   Output: name, date_as_text, date_as_number
+   SQLite query: SELECT `name`, `date_as_text`, `date_as_number` FROM main."dates" WHERE ((`date_as_text` = '2020-05-10 10:45:29'))
+(3 rows)
+
+SELECT * FROM dates1
+WHERE date_as_number = (('2020-05-10 10:45:29')::timestamp);
+   name    |       date_as_text       |      date_as_number      
+-----------+--------------------------+--------------------------
+ ThirdDate | Sun May 10 10:45:29 2020 | Sun May 10 10:45:29 2020
+(1 row)
+
+explain (verbose, costs off)
+SELECT * FROM dates1
+WHERE date_as_number = (('2020-05-10 10:45:29')::timestamp);
+                                                                      QUERY PLAN                                                                      
+------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.dates1
+   Output: name, date_as_text, date_as_number
+   SQLite query: SELECT `name`, `date_as_text`, `date_as_number` FROM main."dates" WHERE ((`date_as_number` = strftime('%s', '2020-05-10 10:45:29')))
+(3 rows)
+
+-- Comparing greater values  without using to_timestamp
+SELECT * FROM dates1
+WHERE date_as_text > (('2020-05-10 10:45:29.000')::timestamp);
+    name    |       date_as_text       |      date_as_number      
+------------+--------------------------+--------------------------
+ FirstDate  | Tue May 12 11:45:31 2020 | Tue May 12 11:45:31 2020
+ SecondDate | Tue May 12 13:32:31 2020 | Tue May 12 13:32:31 2020
+(2 rows)
+
+explain (verbose, costs off)
+SELECT * FROM dates1
+WHERE date_as_text > (('2020-05-10 10:45:29.000')::timestamp);
+                                                             QUERY PLAN                                                             
+------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.dates1
+   Output: name, date_as_text, date_as_number
+   SQLite query: SELECT `name`, `date_as_text`, `date_as_number` FROM main."dates" WHERE ((`date_as_text` > '2020-05-10 10:45:29'))
+(3 rows)
+
+SELECT * FROM dates1
+WHERE date_as_number > (('2020-05-10 10:45:29.000')::timestamp);
+    name    |       date_as_text       |      date_as_number      
+------------+--------------------------+--------------------------
+ FirstDate  | Tue May 12 11:45:31 2020 | Tue May 12 11:45:31 2020
+ SecondDate | Tue May 12 13:32:31 2020 | Tue May 12 13:32:31 2020
+(2 rows)
+
+explain (verbose, costs off)
+SELECT * FROM dates1
+WHERE date_as_number > (('2020-05-10 10:45:29.000')::timestamp);
+                                                                      QUERY PLAN                                                                      
+------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.dates1
+   Output: name, date_as_text, date_as_number
+   SQLite query: SELECT `name`, `date_as_text`, `date_as_number` FROM main."dates" WHERE ((`date_as_number` > strftime('%s', '2020-05-10 10:45:29')))
+(3 rows)
+
+SELECT * FROM dates1
+WHERE date_as_text > (('2020-05-10 10:45:29')::timestamp);
+    name    |       date_as_text       |      date_as_number      
+------------+--------------------------+--------------------------
+ FirstDate  | Tue May 12 11:45:31 2020 | Tue May 12 11:45:31 2020
+ SecondDate | Tue May 12 13:32:31 2020 | Tue May 12 13:32:31 2020
+(2 rows)
+
+explain (verbose, costs off)
+SELECT * FROM dates1
+WHERE date_as_text > (('2020-05-10 10:45:29')::timestamp);
+                                                             QUERY PLAN                                                             
+------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.dates1
+   Output: name, date_as_text, date_as_number
+   SQLite query: SELECT `name`, `date_as_text`, `date_as_number` FROM main."dates" WHERE ((`date_as_text` > '2020-05-10 10:45:29'))
+(3 rows)
+
+SELECT * FROM dates1
+WHERE date_as_number > (('2020-05-10 10:45:29')::timestamp);
+    name    |       date_as_text       |      date_as_number      
+------------+--------------------------+--------------------------
+ FirstDate  | Tue May 12 11:45:31 2020 | Tue May 12 11:45:31 2020
+ SecondDate | Tue May 12 13:32:31 2020 | Tue May 12 13:32:31 2020
+(2 rows)
+
+explain (verbose, costs off)
+SELECT * FROM dates1
+WHERE date_as_number > (('2020-05-10 10:45:29')::timestamp);
+                                                                      QUERY PLAN                                                                      
+------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.dates1
+   Output: name, date_as_text, date_as_number
+   SQLite query: SELECT `name`, `date_as_text`, `date_as_number` FROM main."dates" WHERE ((`date_as_number` > strftime('%s', '2020-05-10 10:45:29')))
+(3 rows)
 
 DROP FOREIGN TABLE dates1;
 DROP FOREIGN TABLE dates2;
