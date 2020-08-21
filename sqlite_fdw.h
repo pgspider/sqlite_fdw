@@ -152,34 +152,19 @@ typedef struct SqliteFdwRelationInfo
 	List	   *grouped_tlist;
 }			SqliteFdwRelationInfo;
 
-/*
- * This enum describes what's kept in the fdw_private list for a ForeignPath.
- * We store:
- *
- * 1) Boolean flag showing if the remote query has the final sort
- * 2) Boolean flag showing if the remote query has the LIMIT clause
- */
-enum FdwPathPrivateIndex
-{
-	/* has-final-sort flag (as an integer Value node) */
-	FdwPathPrivateHasFinalSort,
-	/* has-limit flag (as an integer Value node) */
-	FdwPathPrivateHasLimit
-};
-
 extern bool sqlite_is_foreign_expr(PlannerInfo *root,
 								   RelOptInfo *baserel,
 								   Expr *expr);
 
-extern Expr *find_em_expr_for_rel(EquivalenceClass *ec, RelOptInfo *rel);
-extern Expr *find_em_expr_for_input_target(PlannerInfo *root,
+extern Expr *sqlite_find_em_expr_for_rel(EquivalenceClass *ec, RelOptInfo *rel);
+extern Expr *sqlite_find_em_expr_for_input_target(PlannerInfo *root,
 							  EquivalenceClass *ec,
 							  PathTarget *target,
 							  RelOptInfo *fallbackRel);
 
-/* in postgres_fdw.c */
-extern int	set_transmission_modes(void);
-extern void reset_transmission_modes(int nestlevel);
+/* in sqlite_fdw.c */
+extern int sqlite_set_transmission_modes(void);
+extern void sqlite_reset_transmission_modes(int nestlevel);
 
 /* option.c headers */
 extern sqlite_opt * sqlite_get_options(Oid foreigntableid);
