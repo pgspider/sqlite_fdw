@@ -397,7 +397,7 @@ sqlitefdw_xact_callback(XactEvent event, void *arg)
 						elog(DEBUG3, "abort transaction");
 
 						/* Finalize all prepared statements */
-						while ((cur = sqlite3_next_stmt(entry->conn, cur)) != NULL)
+						while ((cur = sqlite3_next_stmt(entry->conn, NULL)) != NULL)
 						{
 							sqlite3_finalize(cur);
 						}
