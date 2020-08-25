@@ -1167,7 +1167,7 @@ sqlitePlanForeignModify(PlannerInfo *root,
 	 * Core code already has some lock on each rel being planned, so we can
 	 * use NoLock here.
 	 */
-	rel = heap_open(rte->relid, NoLock);
+	rel = table_open(rte->relid, NoLock);
 
 	foreignTableId = RelationGetRelid(rel);
 	tupdesc = RelationGetDescr(rel);
@@ -1253,7 +1253,7 @@ sqlitePlanForeignModify(PlannerInfo *root,
 			elog(ERROR, "unexpected operation: %d", (int) operation);
 			break;
 	}
-	heap_close(rel, NoLock);
+	table_close(rel, NoLock);
 	return list_make2(makeString(sql.data), targetAttrs);
 }
 

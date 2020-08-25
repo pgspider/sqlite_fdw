@@ -20,9 +20,15 @@
 #include "access/table.h"
 #include "utils/float.h"
 #include "optimizer/optimizer.h"
+#if PG_VERSION_NUM >= 130000
+#include "fmgr.h"
+#endif
 #else
 #include "nodes/relation.h"
 #include "optimizer/var.h"
+#include "access/heapam.h"
+#define table_open heap_open
+#define table_close heap_close
 #endif
 
 #include "foreign/foreign.h"
