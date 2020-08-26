@@ -124,11 +124,18 @@ typedef struct SqliteFdwRelationInfo
 	List	   *shippable_extensions;	/* OIDs of whitelisted extensions */
 	/* Bitmap of attr numbers we need to fetch from the remote server. */
 	Bitmapset  *attrs_used;
+
+	/* True means that the query_pathkeys is safe to push down */
+	bool		qp_is_pushdown_safe;
+
 	/* Join information */
 	RelOptInfo *outerrel;
 	RelOptInfo *innerrel;
 	JoinType	jointype;
 	List	   *joinclauses;
+
+	/* Upper relation information */
+	UpperRelationKind stage;
 
 	/* Cached catalog information. */
 	ForeignTable *table;
@@ -145,11 +152,19 @@ typedef struct SqliteFdwRelationInfo
 	List	   *grouped_tlist;
 }			SqliteFdwRelationInfo;
 
-
 extern bool sqlite_is_foreign_expr(PlannerInfo *root,
 								   RelOptInfo *baserel,
 								   Expr *expr);
 
+extern Expr *sqlite_find_em_expr_for_rel(EquivalenceClass *ec, RelOptInfo *rel);
+extern Expr *sqlite_find_em_expr_for_input_target(PlannerInfo *root,
+							  EquivalenceClass *ec,
+							  PathTarget *target,
+							  RelOptInfo *fallbackRel);
+
+/* in sqlite_fdw.c */
+extern int sqlite_set_transmission_modes(void);
+extern void sqlite_reset_transmission_modes(int nestlevel);
 
 /* option.c headers */
 extern sqlite_opt * sqlite_get_options(Oid foreigntableid);
@@ -157,8 +172,8 @@ extern sqlite_opt * sqlite_get_options(Oid foreigntableid);
 /* depare.c headers */
 extern void sqliteDeparseSelectStmtForRel(StringInfo buf, PlannerInfo *root, RelOptInfo *rel,
 										  List *tlist, List *remote_conds, List *pathkeys,
-										  bool is_subquery, List **retrieved_attrs,
-										  List **params_list);
+										  bool has_final_sort, bool has_limit, bool is_subquery,
+										  List **retrieved_attrs, List **params_list);
 extern void sqlite_deparse_insert(StringInfo buf, PlannerInfo *root, Index rtindex, Relation rel, List *targetAttrs);
 extern void sqlite_deparse_update(StringInfo buf, PlannerInfo *root, Index rtindex, Relation rel, List *targetAttrs, List *attname);
 extern void sqlite_deparse_delete(StringInfo buf, PlannerInfo *root, Index rtindex, Relation rel, List *name);

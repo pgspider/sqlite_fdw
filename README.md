@@ -50,12 +50,18 @@ If you want to update tables, please add `OPTIONS (key 'true')` to a primary key
 <pre>
 CREATE FOREIGN TABLE t1(a integer OPTIONS (key 'true'), b text) SERVER sqlite_server OPTIONS (table 't1_sqlite');
 </pre>
+
+If you need to convert INT SQLite column (epoch Unix Time) to be treated/visualized as TIMESTAMP in PostgreSQL, please add `OPTIONS (column_type 'INT')` when
+defining FOREIGN table at PostgreSQL like the following:
+<pre>
+CREATE FOREIGN TABLE t1(a integer, b text, c timestamp without time zone OPTIONS (column_type 'INT')) SERVER sqlite_server OPTIONS (table 't1_sqlite');
+</pre>
 ### Import foreign schema
 <pre>
 IMPORT FOREIGN SCHEMA public FROM SERVER sqlite_server INTO public;
 </pre>
 
-### Access foregin table
+### Access foreign table
 <pre>
 SELECT * FROM t1;
 </pre>
@@ -64,6 +70,8 @@ SELECT * FROM t1;
 - Support update to foreign table  
 - WHERE clauses are pushdowned  
 - Aggregate function are pushdowned
+- Order By is pushdowned.
+- Limit and Offset are pushdowned (*when all tables queried are fdw)
 - Transactions  
 
 ## Limitations

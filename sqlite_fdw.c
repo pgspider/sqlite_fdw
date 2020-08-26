@@ -23,6 +23,7 @@
 #include "foreign/foreign.h"
 #include "optimizer/pathnode.h"
 #include "optimizer/planmain.h"
+#include "optimizer/planner.h"
 #include "optimizer/cost.h"
 #include "optimizer/clauses.h"
 #include "optimizer/restrictinfo.h"
@@ -73,6 +74,21 @@ PG_MODULE_MAGIC;
 #define DEFAULTE_NUM_ROWS    1000
 #define IS_KEY_COLUMN(A)	((strcmp(A->defname, "key") == 0) && \
 							 (strcmp(((Value *)(A->arg))->val.str, "true") == 0))
+
+/*
+ * This enum describes what's kept in the fdw_private list for a ForeignPath.
+ * We store:
+ *
+ * 1) Boolean flag showing if the remote query has the final sort
+ * 2) Boolean flag showing if the remote query has the LIMIT clause
+ */
+enum FdwPathPrivateIndex
+{
+	/* has-final-sort flag (as an integer Value node) */
+	FdwPathPrivateHasFinalSort,
+	/* has-limit flag (as an integer Value node) */
+	FdwPathPrivateHasLimit
+};
 
 extern Datum sqlite_fdw_handler(PG_FUNCTION_ARGS);
 extern Datum sqlite_fdw_validator(PG_FUNCTION_ARGS);
@@ -201,7 +217,27 @@ static void create_cursor(ForeignScanState *node);
 static bool foreign_grouping_ok(PlannerInfo *root, RelOptInfo *grouped_rel);
 static void add_foreign_grouping_paths(PlannerInfo *root,
 									   RelOptInfo *input_rel,
-									   RelOptInfo *grouped_rel);
+									   RelOptInfo *grouped_rel
+#if (PG_VERSION_NUM >= 110000)
+									   ,GroupPathExtraData *extra
+#endif
+);
+static void add_foreign_ordered_paths(PlannerInfo *root,
+						  RelOptInfo *input_rel,
+						  RelOptInfo *ordered_rel);
+static void add_foreign_final_paths(PlannerInfo *root,
+						RelOptInfo *input_rel,
+						RelOptInfo *final_rel
+#if (PG_VERSION_NUM >= 120000)
+						,FinalPathExtraData *extra
+#endif
+);
+
+static bool all_baserels_are_foreign(PlannerInfo *root);
+
+static void add_paths_with_pathkeys_for_rel(PlannerInfo *root, RelOptInfo *rel, List *fdw_private);
+static List *get_useful_pathkeys_for_relation(PlannerInfo *root,
+								 RelOptInfo *rel);
 
 /*
  * Library load-time initialization, sets on_proc_exit() callback for
@@ -365,7 +401,142 @@ sqliteGetForeignRelSize(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntable
 						 quote_identifier(rte->eref->aliasname));
 }
 
+/*
+ * get_useful_pathkeys_for_relation
+ *		Determine which orderings of a relation might be useful.
+ *
+ * Getting data in sorted order can be useful either because the requested
+ * order matches the final output ordering for the overall query we're
+ * planning, or because it enables an efficient merge join.  Here, we try
+ * to figure out which pathkeys to consider.
+ */
+static List *
+get_useful_pathkeys_for_relation(PlannerInfo *root, RelOptInfo *rel)
+{
+	List	   *useful_pathkeys_list = NIL;
+	SqliteFdwRelationInfo *fpinfo = (SqliteFdwRelationInfo *) rel->fdw_private;
+	ListCell   *lc;
 
+	/*
+	 * Pushing the query_pathkeys to the remote server is always worth
+	 * considering, because it might let us avoid a local sort.
+	 */
+	fpinfo->qp_is_pushdown_safe = false;
+	if (root->query_pathkeys)
+	{
+		bool		query_pathkeys_ok = true;
+
+		foreach(lc, root->query_pathkeys)
+		{
+			PathKey    *pathkey = (PathKey *) lfirst(lc);
+			EquivalenceClass *pathkey_ec = pathkey->pk_eclass;
+			Expr	   *em_expr;
+
+			/*
+			 * The planner and executor don't have any clever strategy for
+			 * taking data sorted by a prefix of the query's pathkeys and
+			 * getting it to be sorted by all of those pathkeys. We'll just
+			 * end up resorting the entire data set.  So, unless we can push
+			 * down all of the query pathkeys, forget it.
+			 *
+			 * is_foreign_expr would detect volatile expressions as well, but
+			 * checking ec_has_volatile here saves some cycles.
+			 */
+			if (pathkey_ec->ec_has_volatile ||
+				!(em_expr = sqlite_find_em_expr_for_rel(pathkey_ec, rel)) ||
+				!sqlite_is_foreign_expr(root, rel, em_expr))
+			{
+				query_pathkeys_ok = false;
+				break;
+			}
+		}
+
+		if (query_pathkeys_ok)
+		{
+			useful_pathkeys_list = list_make1(list_copy(root->query_pathkeys));
+			fpinfo->qp_is_pushdown_safe = true;
+		}
+	}
+
+	return useful_pathkeys_list;
+}
+
+static void
+add_paths_with_pathkeys_for_rel(PlannerInfo *root, RelOptInfo *rel, List *fdw_private)
+{
+	List	   *useful_pathkeys_list = NIL; /* List of all pathkeys */
+	ListCell   *lc;
+	double 		rows;
+	Cost        startup_cost;
+	Cost        total_cost;
+
+	/* Use small cost to avoid calculating real cost size in SQLite */
+	rows = startup_cost = total_cost = 10;
+
+	useful_pathkeys_list = get_useful_pathkeys_for_relation(root, rel);
+
+	/* Create one path for each set of pathkeys we found above. */
+	foreach(lc, useful_pathkeys_list)
+	{
+		List	   *useful_pathkeys = lfirst(lc);
+
+		if (rel->reloptkind == RELOPT_BASEREL ||
+			rel->reloptkind == RELOPT_OTHER_MEMBER_REL)
+			add_path(rel, (Path *)
+					 create_foreignscan_path(root, rel,
+											 NULL,
+											 rows,
+											 startup_cost,
+											 total_cost,
+											 useful_pathkeys,
+#if (PG_VERSION_NUM >= 120000)
+											 rel->lateral_relids,
+#else
+											 NULL,	/* no outer rel either */
+#endif
+											 NULL,
+											 fdw_private));
+		else
+			elog(ERROR, "Join clauses not supported for Order..");
+	}
+}
+
+/*
+ * Check if any of the tables queried aren't foreign tables.
+ * We use this function to add limit pushdownm fallback to sqlite
+ * because if theres any non-foreign table, GetForeignUpperPath its not called from planner.c
+ */
+static bool
+all_baserels_are_foreign(PlannerInfo *root)
+{
+	bool		allTablesQueriedAreForeign = true;
+	ListCell	*l;
+
+	/* If there is no append_rel_list, we assume we're only consulting a foreign table, so default value it's true and we dont need to do more. */
+	foreach(l, root->append_rel_list)
+	{
+		AppendRelInfo *appinfo = lfirst_node(AppendRelInfo, l);
+		int				childRTindex;
+		RangeTblEntry	*childRTE;
+		RelOptInfo		*childrel;
+
+		/* Re-locate the child RTE and RelOptInfo */
+		childRTindex = appinfo->child_relid;
+		childRTE = root->simple_rte_array[childRTindex];
+		childrel = root->simple_rel_array[childRTindex];
+
+		if (!(IS_DUMMY_REL(childrel) || childRTE->inh))
+		{
+			if (!(childrel->rtekind == RTE_RELATION && childRTE->relkind == RELKIND_FOREIGN_TABLE))
+			{
+				allTablesQueriedAreForeign = false;
+				break;
+			}
+		}
+	}
+
+	return allTablesQueriedAreForeign;
+}
 
 /*
  * sqliteGetForeignPaths
@@ -376,10 +547,22 @@ sqliteGetForeignPaths(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntableid
 {
 	Cost		startup_cost = 10;
 	Cost		total_cost = baserel->rows + startup_cost;
+	List	   *fdw_private = NIL;
 
 	elog(DEBUG1, "sqlite_fdw : %s", __func__);
 	/* Estimate costs */
 	total_cost = baserel->rows;
+
+	/*
+	 * We add fdw_private with has_limit: true if these three conditions are true because we need to be able to pushdown
+	 * limit in this case:
+	 *   - Query has LIMIT
+	 *   - Query don't have OFFSET because if we pusdown OFFSET and later, we re-applying offset with the "final result", and we would be "jumping/skipping" child results
+	 *   and losing registries that we wanted to show.
+	 *   - Some of the baserels are not a foreign table, so PostgreSQL is not calling GetForeignUpperPaths
+	 */
+	if (limit_needed(root->parse) && !root->parse->limitOffset && !all_baserels_are_foreign(root))
+		fdw_private = list_make2(makeInteger(false), makeInteger(true));
 
 	/* Create a ForeignPath node and add it as only possible path */
 	add_path(baserel, (Path *)
@@ -397,7 +580,10 @@ sqliteGetForeignPaths(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntableid
 									 NULL,	/* no outer rel either */
 #endif
 									 NULL,	/* no extra plan */
-									 NULL));	/* no fdw_private data */
+									 fdw_private));
+
+	/* Add paths with pathkeys */
+	add_paths_with_pathkeys_for_rel(root, baserel, fdw_private);
 }
 
 /*
@@ -417,12 +603,23 @@ sqliteGetForeignPlan(
 	List	   *remote_conds = NIL;
 
 	StringInfoData sql;
+	bool	   has_final_sort = false;
+	bool	   has_limit = false;
 	List	   *retrieved_attrs;
 	ListCell   *lc;
 	List	   *fdw_recheck_quals = NIL;
 	int			for_update;
 
 	elog(DEBUG1, "sqlite_fdw : %s", __func__);
+
+	/*
+	 * Get FDW private data created by sqliteGetForeignUpperPaths(), if any.
+	 */
+	if (best_path->fdw_private)
+	{
+		has_final_sort = intVal(list_nth(best_path->fdw_private, FdwPathPrivateHasFinalSort));
+		has_limit = intVal(list_nth(best_path->fdw_private, FdwPathPrivateHasLimit));
+	}
 
 	/*
 	 * Build the query string to be sent for execution, and identify
@@ -566,7 +763,8 @@ sqliteGetForeignPlan(
 	initStringInfo(&sql);
 	sqliteDeparseSelectStmtForRel(&sql, root, baserel, fdw_scan_tlist,
 								  remote_exprs, best_path->path.pathkeys,
-								  false, &retrieved_attrs, &params_list);
+								  has_final_sort, has_limit, false,
+								  &retrieved_attrs, &params_list);
 
 	for_update = false;
 	if (root->parse->commandType == CMD_UPDATE ||
@@ -687,7 +885,6 @@ sqliteBeginForeignScan(ForeignScanState *node, int eflags)
 							 &festate->param_values,
 							 &festate->param_types);
 }
-
 
 static void
 make_tuple_from_result_row(sqlite3_stmt * stmt,
@@ -1813,14 +2010,37 @@ sqliteGetForeignUpperPaths(PlannerInfo *root, UpperRelationKind stage,
 		return;
 
 	/* Ignore stages we don't support; and skip any duplicate calls. */
-	if (stage != UPPERREL_GROUP_AGG || output_rel->fdw_private)
+	if ((stage != UPPERREL_GROUP_AGG && stage != UPPERREL_ORDERED && stage != UPPERREL_FINAL) || output_rel->fdw_private)
 		return;
 
 	fpinfo = (SqliteFdwRelationInfo *) palloc0(sizeof(SqliteFdwRelationInfo));
 	fpinfo->pushdown_safe = false;
+	fpinfo->stage = stage;
 	output_rel->fdw_private = fpinfo;
 
-	add_foreign_grouping_paths(root, input_rel, output_rel);
+	switch (stage)
+	{
+		case UPPERREL_GROUP_AGG:
+			add_foreign_grouping_paths(root, input_rel, output_rel
+#if (PG_VERSION_NUM >= 110000)
+									   , (GroupPathExtraData *) extra
+#endif
+									   );
+			break;
+		case UPPERREL_ORDERED:
+			add_foreign_ordered_paths(root, input_rel, output_rel);
+			break;
+		case UPPERREL_FINAL:
+			add_foreign_final_paths(root, input_rel, output_rel
+#if (PG_VERSION_NUM >= 120000)
+									   , (FinalPathExtraData *) extra
+#endif
+									   );
+			break;
+		default:
+			elog(ERROR, "unexpected upper relation: %d", (int) stage);
+			break;
+	}
 }
 
 /*
@@ -1832,7 +2052,11 @@ sqliteGetForeignUpperPaths(PlannerInfo *root, UpperRelationKind stage,
  */
 static void
 add_foreign_grouping_paths(PlannerInfo *root, RelOptInfo *input_rel,
-						   RelOptInfo *grouped_rel)
+						   RelOptInfo *grouped_rel
+#if (PG_VERSION_NUM >= 110000)
+						   , GroupPathExtraData *extra
+#endif
+						   )
 {
 	Query	   *parse = root->parse;
 	SqliteFdwRelationInfo *ifpinfo = input_rel->fdw_private;
@@ -1905,6 +2129,339 @@ add_foreign_grouping_paths(PlannerInfo *root, RelOptInfo *input_rel,
 	add_path(grouped_rel, (Path *) grouppath);
 }
 
+
+/*
+ * add_foreign_ordered_paths
+ *		Add foreign paths for performing the final sort remotely.
+ *
+ * Given input_rel contains the source-data Paths.  The paths are added to the
+ * given ordered_rel.
+ */
+static void
+add_foreign_ordered_paths(PlannerInfo *root, RelOptInfo *input_rel,
+						  RelOptInfo *ordered_rel)
+{
+	Query	   *parse = root->parse;
+	SqliteFdwRelationInfo *ifpinfo = input_rel->fdw_private;
+	SqliteFdwRelationInfo *fpinfo = ordered_rel->fdw_private;
+	double		rows;
+	int			width;
+	Cost		startup_cost;
+	Cost		total_cost;
+	List	   *fdw_private;
+	ForeignPath *ordered_path;
+	ListCell   *lc;
+
+	/* Shouldn't get here unless the query has ORDER BY */
+	Assert(parse->sortClause);
+
+#if (PG_VERSION_NUM >= 100000)
+	/* We don't support cases where there are any SRFs in the targetlist */
+	if (parse->hasTargetSRFs)
+		return;
+#else
+	/* We don't support cases where there are any SRFs in the targetlist (PG Version >10) */
+	if (expression_returns_set((Node *) parse->targetList))
+		return;
+#endif
+
+	/* Save the input_rel as outerrel in fpinfo */
+	fpinfo->outerrel = input_rel;
+
+	/*
+	 * Copy foreign table, foreign server, user mapping, FDW options etc.
+	 * details from the input relation's fpinfo.
+	 */
+	fpinfo->table = ifpinfo->table;
+	fpinfo->server = ifpinfo->server;
+
+	fpinfo->shippable_extensions = ifpinfo->shippable_extensions;
+
+
+	/*
+	 * If the input_rel is a base or join relation, we would already have
+	 * considered pushing down the final sort to the remote server when
+	 * creating pre-sorted foreign paths for that relation, because the
+	 * query_pathkeys is set to the root->sort_pathkeys in that case (see
+	 * standard_qp_callback()).
+	 */
+	if (input_rel->reloptkind == RELOPT_BASEREL ||
+		input_rel->reloptkind == RELOPT_JOINREL)
+	{
+		Assert(root->query_pathkeys == root->sort_pathkeys);
+
+		/* Safe to push down if the query_pathkeys is safe to push down */
+		fpinfo->pushdown_safe = ifpinfo->qp_is_pushdown_safe;
+
+		return;
+	}
+
+	/* The input_rel should be a grouping relation */
+	Assert(input_rel->reloptkind == RELOPT_UPPER_REL &&
+		   ifpinfo->stage == UPPERREL_GROUP_AGG);
+
+	/*
+	 * We try to create a path below by extending a simple foreign path for
+	 * the underlying grouping relation to perform the final sort remotely,
+	 * which is stored into the fdw_private list of the resulting path.
+	 */
+
+	/* Assess if it is safe to push down the final sort */
+	foreach(lc, root->sort_pathkeys)
+	{
+		PathKey    *pathkey = (PathKey *) lfirst(lc);
+		EquivalenceClass *pathkey_ec = pathkey->pk_eclass;
+		Expr	   *sort_expr;
+		RelOptInfo* fallback_rel = (input_rel->reloptkind == RELOPT_UPPER_REL) ?
+			ifpinfo->outerrel : input_rel;
+
+		/*
+		 * is_foreign_expr would detect volatile expressions as well, but
+		 * checking ec_has_volatile here saves some cycles.
+		 */
+		if (pathkey_ec->ec_has_volatile)
+			return;
+
+		/* Get the sort expression for the pathkey_ec */
+		sort_expr = sqlite_find_em_expr_for_input_target(root,
+												  pathkey_ec,
+												  input_rel->reltarget,
+												  fallback_rel);
+
+		/* If it's unsafe to remote, we cannot push down the final sort */
+		if (!sqlite_is_foreign_expr(root, input_rel, sort_expr))
+			return;
+	}
+
+	/* Safe to push down */
+	fpinfo->pushdown_safe = true;
+
+	/* Use small cost to push down aggregate always */
+	rows = width = startup_cost = total_cost = 1;
+	/* Now update this information in the fpinfo */
+	fpinfo->rows = rows;
+	fpinfo->width = width;
+	fpinfo->startup_cost = startup_cost;
+	fpinfo->total_cost = total_cost;
+
+	/*
+	 * Build the fdw_private list that will be used by sqliteGetForeignPlan.
+	 * Items in the list must match order in enum FdwPathPrivateIndex.
+	 */
+	fdw_private = list_make2(makeInteger(true), makeInteger(false));
+
+#if (PG_VERSION_NUM >= 120000)
+	/* Create foreign ordering path */
+	ordered_path = create_foreign_upper_path(root,
+											 input_rel,
+											 root->upper_targets[UPPERREL_ORDERED],
+											 rows,
+											 startup_cost,
+											 total_cost,
+											 root->sort_pathkeys,
+											 NULL,	/* no extra plan */
+											 fdw_private);
+#else
+	/*
+	 * We use root->upper_targets[UPERREL_FINAL] because until PG12, upper_targets[UPPERREL_ORDERED] is not filled.
+	 * Anyways, in PG12 root->upper_targets[UPPERREL_FINAL] and root->upper_targets[UPPERREL_ORDERED] have the same value.
+	 * More info: backend/optimizer/plan/planner.c (Line 2189)
+	 */
+
+	/* Create foreign ordering path */
+	ordered_path = create_foreignscan_path(root,
+											 input_rel,
+											 root->upper_targets[UPPERREL_FINAL],
+											 rows,
+											 startup_cost,
+											 total_cost,
+											 root->sort_pathkeys,
+											 NULL,
+											 NULL,	/* no extra plan */
+											 fdw_private);
+#endif
+
+	/* and add it to the ordered_rel */
+	add_path(ordered_rel, (Path *) ordered_path);
+}
+
+/*
+ * add_foreign_final_paths
+ *		Add foreign paths for performing the final processing remotely.
+ *
+ * Given input_rel contains the source-data Paths.  The paths are added to the
+ * given final_rel.
+ */
+static void
+add_foreign_final_paths(PlannerInfo *root, RelOptInfo *input_rel,
+						RelOptInfo *final_rel
+#if (PG_VERSION_NUM >= 120000)
+						, FinalPathExtraData *extra
+#endif
+)
+{
+	Query	   *parse = root->parse;
+	SqliteFdwRelationInfo *ifpinfo = (SqliteFdwRelationInfo *) input_rel->fdw_private;
+	SqliteFdwRelationInfo *fpinfo = (SqliteFdwRelationInfo *) final_rel->fdw_private;
+	bool		has_final_sort = false;
+	List	   *pathkeys = NIL;
+	double		rows;
+	int			width;
+	Cost		startup_cost;
+	Cost		total_cost;
+	List	   *fdw_private;
+	ForeignPath *final_path;
+#if (PG_VERSION_NUM < 120000)
+	bool 		has_limit = limit_needed(parse);
+#endif
+
+	/*
+	 * Currently, we only support this for SELECT commands
+	 */
+	if (parse->commandType != CMD_SELECT)
+		return;
+
+	/*
+	 * No work if there is FOR UPDATE/SHARE clause and if there is no need
+	 * to add a LIMIT node. We DONT support FOR UPDATE pushdown because SQLITE has no implemented yet,
+	 * that's why we dont do nothing.
+	 */
+	if (parse->rowMarks
+#if (PG_VERSION_NUM >= 120000)
+			|| !extra->limit_needed
+#else
+			|| !has_limit
+#endif
+	   )
+		return;
+
+#if (PG_VERSION_NUM >= 100000)
+	/* We don't support cases where there are any SRFs in the targetlist */
+	if (parse->hasTargetSRFs)
+		return;
+#else
+	/* We don't support cases where there are any SRFs in the targetlist (PG Version >10) */
+	if (expression_returns_set((Node *) parse->targetList))
+		return;
+#endif
+
+	/* Save the input_rel as outerrel in fpinfo */
+	fpinfo->outerrel = input_rel;
+
+	/*
+	 * Copy foreign table, foreign server, user mapping, FDW options etc.
+	 * details from the input relation's fpinfo.
+	 */
+	fpinfo->table = ifpinfo->table;
+	fpinfo->server = ifpinfo->server;
+
+	fpinfo->shippable_extensions = ifpinfo->shippable_extensions;
+
+#if (PG_VERSION_NUM >= 120000)
+	Assert(extra->limit_needed);
+#else
+	Assert(has_limit);
+#endif
+
+	/*
+	 * If the input_rel is an ordered relation, replace the input_rel with its
+	 * input relation
+	 */
+	if (input_rel->reloptkind == RELOPT_UPPER_REL &&
+		ifpinfo->stage == UPPERREL_ORDERED)
+	{
+		input_rel = ifpinfo->outerrel;
+		ifpinfo = (SqliteFdwRelationInfo *) input_rel->fdw_private;
+		has_final_sort = true;
+		pathkeys = root->sort_pathkeys;
+	}
+
+	/* The input_rel should be a base, join, or grouping relation */
+	Assert(input_rel->reloptkind == RELOPT_BASEREL ||
+		   input_rel->reloptkind == RELOPT_JOINREL ||
+		   (input_rel->reloptkind == RELOPT_UPPER_REL &&
+			ifpinfo->stage == UPPERREL_GROUP_AGG));
+
+	/*
+	 * We try to create a path below by extending a simple foreign path for
+	 * the underlying base, join, or grouping relation to perform the final
+	 * sort (if has_final_sort) and the LIMIT restriction remotely, which is
+	 * stored into the fdw_private list of the resulting path.  (We
+	 * re-estimate the costs of sorting the underlying relation, if
+	 * has_final_sort.)
+	 */
+
+	/*
+	 * Assess if it is safe to push down the LIMIT and OFFSET to the remote
+	 * server
+	 */
+
+	/*
+	 * If the underlying relation has any local conditions, the LIMIT/OFFSET
+	 * cannot be pushed down.
+	 */
+	if (ifpinfo->local_conds)
+		return;
+
+	/*
+	 * Also, the LIMIT/OFFSET cannot be pushed down, if their expressions are
+	 * not safe to remote.
+	 */
+	if (!sqlite_is_foreign_expr(root, input_rel, (Expr *) parse->limitOffset) ||
+		!sqlite_is_foreign_expr(root, input_rel, (Expr *) parse->limitCount))
+		return;
+
+	/* Safe to push down */
+	fpinfo->pushdown_safe = true;
+
+	/* Use small cost to push down limit always */
+	rows = width = startup_cost = total_cost = 1;
+	/* Now update this information in the fpinfo */
+	fpinfo->rows = rows;
+	fpinfo->width = width;
+	fpinfo->startup_cost = startup_cost;
+	fpinfo->total_cost = total_cost;
+
+	/*
+	 * Build the fdw_private list that will be used by sqliteGetForeignPlan.
+	 * Items in the list must match order in enum FdwPathPrivateIndex.
+	 */
+	fdw_private = list_make2(makeInteger(has_final_sort),
+#if (PG_VERSION_NUM >= 120000)
+		makeInteger(extra->limit_needed));
+#else
+		makeInteger(has_limit));
+#endif
+
+	/*
+	 * Create foreign final path; this gets rid of a no-longer-needed outer
+	 * plan (if any), which makes the EXPLAIN output look cleaner
+	 */
+#if (PG_VERSION_NUM >= 120000)
+	final_path = create_foreign_upper_path(root,
+										   input_rel,
+										   root->upper_targets[UPPERREL_FINAL],
+										   rows,
+										   startup_cost,
+										   total_cost,
+										   pathkeys,
+										   NULL,	/* no extra plan */
+										   fdw_private);
+#else
+	final_path = create_foreignscan_path(root,
+										   input_rel,
+										   root->upper_targets[UPPERREL_FINAL],
+										   rows,
+										   startup_cost,
+										   total_cost,
+										   pathkeys,
+										   NULL, 	/* no required_outer */
+										   NULL,	/* no extra plan */
+										   fdw_private);
+#endif
+	/* and add it to the final_rel */
+	add_path(final_rel, (Path *) final_path);
+}
 
 static int
 get_estimate(Oid foreigntableid)
@@ -2203,4 +2760,106 @@ create_cursor(ForeignScanState *node)
 
 	/* Mark the cursor as created, and show no tuples have been retrieved */
 	festate->cursor_exists = true;
+}
+
+/*
+ * Find an equivalence class member expression, all of whose Vars, come from
+ * the indicated relation.
+ */
+Expr *
+sqlite_find_em_expr_for_rel(EquivalenceClass *ec, RelOptInfo *rel)
+{
+	ListCell   *lc_em;
+
+	foreach(lc_em, ec->ec_members)
+	{
+		EquivalenceMember *em = lfirst(lc_em);
+
+		if (bms_is_subset(em->em_relids, rel->relids) &&
+			!bms_is_empty(em->em_relids))
+		{
+			/*
+			 * If there is more than one equivalence member whose Vars are
+			 * taken entirely from this relation, we'll be content to choose
+			 * any one of those.
+			 */
+			return em->em_expr;
+		}
+	}
+
+	/* We didn't find any suitable equivalence class expression */
+	return NULL;
+}
+
+/*
+ * Find an equivalence class member expression to be computed as a sort column
+ * in the given target.
+ */
+Expr *
+sqlite_find_em_expr_for_input_target(PlannerInfo *root,
+							  EquivalenceClass *ec,
+							  PathTarget *target,
+							  RelOptInfo *fallbackRel)
+{
+	ListCell   *lc1;
+	int			i;
+	Expr	   *fallback_expr;
+
+	i = 0;
+	foreach(lc1, target->exprs)
+	{
+		Expr	   *expr = (Expr *) lfirst(lc1);
+		Index		sgref = get_pathtarget_sortgroupref(target, i);
+		ListCell   *lc2;
+
+		/* Ignore non-sort expressions */
+		if (sgref == 0 ||
+			get_sortgroupref_clause_noerr(sgref,
+										  root->parse->sortClause) == NULL)
+		{
+			i++;
+			continue;
+		}
+
+		/* We ignore binary-compatible relabeling on both ends */
+		while (expr && IsA(expr, RelabelType))
+			expr = ((RelabelType *) expr)->arg;
+
+		/* Locate an EquivalenceClass member matching this expr, if any */
+		foreach(lc2, ec->ec_members)
+		{
+			EquivalenceMember *em = (EquivalenceMember *) lfirst(lc2);
+			Expr	   *em_expr;
+
+			/* Don't match constants */
+			if (em->em_is_const)
+				continue;
+
+			/* Ignore child members */
+			if (em->em_is_child)
+				continue;
+
+			/* Match if same expression (after stripping relabel) */
+			em_expr = em->em_expr;
+			while (em_expr && IsA(em_expr, RelabelType))
+				em_expr = ((RelabelType *) em_expr)->arg;
+
+			if (equal(em_expr, expr))
+				return em->em_expr;
+		}
+
+		i++;
+	}
+
+	/* 
+	 * We add this method as fallback in versions prior to PG11/12 because target->sortgrouprefs its not filled and
+	 * this function always fails because cannot find sort expression.
+	 */
+	fallback_expr = sqlite_find_em_expr_for_rel(ec, fallbackRel);
+
+	if (fallback_expr)
+		return fallback_expr;
+
+	elog(ERROR, "could not find pathkey item to sort");
+	return NULL;				/* keep compiler quiet */
 }

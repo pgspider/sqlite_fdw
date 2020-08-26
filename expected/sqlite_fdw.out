@@ -94,7 +94,7 @@ SELECT * FROM department d, employee e WHERE d.department_id = e.emp_dept_id LIM
             10 | dept - 10       |     10 | emp - 10 |          10
 (10 rows)
 
-SELECT * FROM department d, employee e WHERE d.department_id IN (SELECT department_id FROM department) LIMIT 10;
+SELECT * FROM department d, employee e WHERE d.department_id IN (SELECT department_id FROM department) ORDER BY d.department_id LIMIT 10;
  department_id | department_name | emp_id | emp_name | emp_dept_id 
 ---------------+-----------------+--------+----------+-------------
              1 | dept - 1        |      1 | emp - 1  |           1

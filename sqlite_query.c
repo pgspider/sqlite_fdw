@@ -130,7 +130,6 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum)
 				return Int64GetDatum(value);
 			}
 		case FLOAT4OID:
-
 			{
 				double		value = sqlite3_column_double(stmt, attnum);
 
@@ -142,6 +141,27 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum)
 				double		value = sqlite3_column_double(stmt, attnum);
 
 				return Float8GetDatum((float8) value);
+				break;
+			}
+		case TIMESTAMPOID:
+			{
+				/* 
+				 * We add this conversion to allow add INTEGER/FLOAT SQLite Columns be added as TimeStamp in PostgreSQL.
+				 * We just calling PostgreSQL function "to_timestamp(double value)"" to convert each registry returned
+				 * from INT/FLOAT value to TimeStamp string, so PosgtreSQL can handle/show without problems.
+				 * If it's a TEXT SQLite column...we let them to the "regular" process because its already implemented and
+				 * working properly.
+				 */
+				int sqlitetype = sqlite3_column_type(stmt, attnum);
+				if (sqlitetype == SQLITE_INTEGER || sqlitetype == SQLITE_FLOAT)
+				{
+						double value = sqlite3_column_double(stmt, attnum);
+						return DirectFunctionCall1(float8_timestamptz, Float8GetDatum((float8) value));
+				}
+				else
+				{
+						valueDatum = CStringGetDatum((char *) sqlite3_column_text(stmt, attnum));
+				}
 				break;
 			}
 		default:

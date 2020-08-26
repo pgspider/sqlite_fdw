@@ -79,6 +79,10 @@ typedef struct deparse_expr_cxt
 								 * a base relation. */
 	StringInfo	buf;			/* output buffer to append to */
 	List	  **params_list;	/* exprs that will become remote Params */
+	Expr 		*complementarynode; /* variable where we can store, only if needed,
+									 * a complementary node to obtain info for processing actual node.
+									 * Created mostly for sqlite_deparse_op_expr to have both nodes accesible
+									 * during each node deparse. */
 } deparse_expr_cxt;
 
 /*
@@ -123,18 +127,18 @@ static void deparseFromExprForRel(StringInfo buf, PlannerInfo *root,
 								  bool use_alias, List **params_list);
 static void deparseFromExpr(List *quals, deparse_expr_cxt *context);
 static void deparseAggref(Aggref *node, deparse_expr_cxt *context);
+static void appendLimitClause(deparse_expr_cxt *context);
 static void appendConditions(List *exprs, deparse_expr_cxt *context);
 static void appendGroupByClause(List *tlist, deparse_expr_cxt *context);
 static void appendAggOrderBy(List *orderList, List *targetList,
 							 deparse_expr_cxt *context);
-static void appendOrderByClause(List *pathkeys, deparse_expr_cxt *context);
+static void appendOrderByClause(List *pathkeys, bool has_final_sort, deparse_expr_cxt *context);
 static void appendFunctionName(Oid funcid, deparse_expr_cxt *context);
 
 static Node *deparseSortGroupClause(Index ref, List *tlist, bool force_colno,
 									deparse_expr_cxt *context);
 static void deparseExplicitTargetList(List *tlist, List **retrieved_attrs,
 									  deparse_expr_cxt *context);
-static Expr *find_em_expr_for_rel(EquivalenceClass *ec, RelOptInfo *rel);
 static bool is_builtin(Oid objectId);
 
 /*
@@ -932,7 +936,8 @@ sqlite_build_tlist_to_deparse(RelOptInfo *foreignrel)
 void
 sqliteDeparseSelectStmtForRel(StringInfo buf, PlannerInfo *root, RelOptInfo *rel,
 							  List *tlist, List *remote_conds, List *pathkeys,
-							  bool is_subquery, List **retrieved_attrs,
+							  bool has_final_sort, bool has_limit, bool is_subquery,
+							  List **retrieved_attrs,
 							  List **params_list)
 {
 	deparse_expr_cxt context;
@@ -991,7 +996,11 @@ sqliteDeparseSelectStmtForRel(StringInfo buf, PlannerInfo *root, RelOptInfo *rel
 
 	/* Add ORDER BY clause if we found any useful pathkeys */
 	if (pathkeys)
-		appendOrderByClause(pathkeys, &context);
+		appendOrderByClause(pathkeys, has_final_sort, &context);
+
+	/* Add LIMIT clause if necessary */
+	if (has_limit)
+		appendLimitClause(&context);
 
 }
 
@@ -1398,6 +1407,39 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 	appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
 }
 
+static char *
+sqlite_deparse_column_option(int varno, int varattno, PlannerInfo *root, char *optionname)
+{
+	RangeTblEntry *rte;
+	char	   *coloptionvalue = NULL;
+	List	   *options;
+	ListCell   *lc;
+
+	/* varno must not be any of OUTER_VAR, INNER_VAR and INDEX_VAR. */
+	Assert(!IS_SPECIAL_VARNO(varno));
+
+	/* Get RangeTblEntry from array in PlannerInfo. */
+	rte = planner_rt_fetch(varno, root);
+
+	/*
+	 * If it's a column of a foreign table, and it has the column_name FDW
+	 * option, use that value.
+	 */
+	options = GetForeignColumnOptions(rte->relid, varattno);
+	foreach(lc, options)
+	{
+		DefElem    *def = (DefElem *) lfirst(lc);
+
+		if (strcmp(def->defname, optionname) == 0)
+		{
+			coloptionvalue = defGetString(def);
+			break;
+		}
+	}
+
+	return coloptionvalue;
+}
+
 
 static void
 sqlite_deparse_string(StringInfo buf, const char *val, bool isstr)
@@ -1655,6 +1697,28 @@ sqlite_deparse_var(Var *node, deparse_expr_cxt *context)
 }
 
 /*
+ * With this function, we try to obtain complementary node for operation to be able
+ * to obtain column name and column type to whom const value its compared to.
+ * If we obtain type, we know if we need to use datetime convert expressions
+ * or not depending if sqlite column is TEXT or INT */
+static Var *
+get_complementary_var_node(Expr *node)
+{
+	if (node == NULL)
+		return NULL;
+
+	switch (nodeTag(node))
+	{
+		/* Only supported case by now is T_Var complementary node */
+		case T_Var:
+			return (Var *) node;
+			break;
+		default:
+			return NULL;
+	}
+}
+
+/*
  * Deparse given constant value into context->buf.
  *
  * This function has to be kept in sync with ruleutils.c's get_const_expr.
@@ -1668,7 +1732,10 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 	StringInfo	buf = context->buf;
 	Oid			typoutput;
 	bool		typIsVarlena;
-	char	   *extval;
+	char		*extval;
+	char		*sqlitecolumntype;
+	bool		convert_timestamp_tounixepoch;
+	Var			*varnode;
 
 	if (node->constisnull)
 	{
@@ -1730,6 +1797,28 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 			 */
 			extval = OidOutputFunctionCall(typoutput, node->constvalue);
 			appendStringInfo(buf, "X\'%s\'", extval + 2);
+			break;
+		case TIMESTAMPOID:
+			convert_timestamp_tounixepoch = false;
+			extval = OidOutputFunctionCall(typoutput, node->constvalue);
+
+			if (context->complementarynode != NULL)
+			{
+				varnode = get_complementary_var_node(context->complementarynode);
+				if (varnode != NULL)
+				{
+					sqlitecolumntype = sqlite_deparse_column_option(varnode->varno, varnode->varattno, context->root, "column_type");
+
+					if (sqlitecolumntype != NULL && strcmp(sqlitecolumntype, "INT") == 0)
+						convert_timestamp_tounixepoch = true;
+				}
+			}
+
+			if (convert_timestamp_tounixepoch)
+				appendStringInfo(buf, "strftime('%%s', '%s')", extval);
+			else
+				sqlite_deparse_string_literal(buf, extval);
+
 			break;
 		default:
 			extval = OidOutputFunctionCall(typoutput, node->constvalue);
@@ -1841,7 +1930,8 @@ sqlite_deparse_op_expr(OpExpr *node, deparse_expr_cxt *context)
 	HeapTuple	tuple;
 	Form_pg_operator form;
 	char		oprkind;
-	ListCell   *arg;
+	ListCell   *leftarg = NULL;
+	ListCell   *rightarg = NULL;
 
 	/* Retrieve information about the operator from system catalog. */
 	tuple = SearchSysCache1(OPEROID, ObjectIdGetDatum(node->opno));
@@ -1858,11 +1948,18 @@ sqlite_deparse_op_expr(OpExpr *node, deparse_expr_cxt *context)
 	/* Always parenthesize the expression. */
 	appendStringInfoChar(buf, '(');
 
+	if (oprkind == 'r' || oprkind == 'b')
+		leftarg = list_head(node->args);
+	if (oprkind == 'l' || oprkind == 'b')
+		rightarg = list_tail(node->args);
+
 	/* Deparse left operand. */
 	if (oprkind == 'r' || oprkind == 'b')
 	{
-		arg = list_head(node->args);
-		deparseExpr(lfirst(arg), context);
+		if (oprkind == 'b')
+			context->complementarynode = lfirst(rightarg);
+
+		deparseExpr(lfirst(leftarg), context);
 		appendStringInfoChar(buf, ' ');
 	}
 
@@ -1872,9 +1969,11 @@ sqlite_deparse_op_expr(OpExpr *node, deparse_expr_cxt *context)
 	/* Deparse right operand. */
 	if (oprkind == 'l' || oprkind == 'b')
 	{
-		arg = list_tail(node->args);
 		appendStringInfoChar(buf, ' ');
-		deparseExpr(lfirst(arg), context);
+		if (oprkind == 'b')
+			context->complementarynode = lfirst(leftarg);
+
+		deparseExpr(lfirst(rightarg), context);
 	}
 
 	appendStringInfoChar(buf, ')');
@@ -2406,41 +2505,12 @@ appendAggOrderBy(List *orderList, List *targetList, deparse_expr_cxt *context)
 }
 
 /*
- * Find an equivalence class member expression, all of whose Vars, come from
- * the indicated relation.
- */
-static Expr *
-find_em_expr_for_rel(EquivalenceClass *ec, RelOptInfo *rel)
-{
-	ListCell   *lc_em;
-
-	foreach(lc_em, ec->ec_members)
-	{
-		EquivalenceMember *em = lfirst(lc_em);
-
-		if (bms_is_subset(em->em_relids, rel->relids))
-		{
-			/*
-			 * If there is more than one equivalence member whose Vars are
-			 * taken entirely from this relation, we'll be content to choose
-			 * any one of those.
-			 */
-			return em->em_expr;
-		}
-	}
-
-	/* We didn't find any suitable equivalence class expression */
-	return NULL;
-}
-
-
-/*
  * Deparse ORDER BY clause according to the given pathkeys for given base
  * relation. From given pathkeys expressions belonging entirely to the given
  * base relation are obtained and deparsed.
  */
 static void
-appendOrderByClause(List *pathkeys, deparse_expr_cxt *context)
+appendOrderByClause(List *pathkeys, bool has_final_sort, deparse_expr_cxt *context)
 {
 	ListCell   *lcell;
 	int			nestlevel;
@@ -2456,8 +2526,22 @@ appendOrderByClause(List *pathkeys, deparse_expr_cxt *context)
 	{
 		PathKey    *pathkey = lfirst(lcell);
 		Expr	   *em_expr;
+		int sqliteVersion = sqlite3_libversion_number();
 
-		em_expr = find_em_expr_for_rel(pathkey->pk_eclass, baserel);
+		if (has_final_sort)
+		{
+			/*
+			 * By construction, context->foreignrel is the input relation to
+			 * the final sort.
+			 */
+			em_expr = sqlite_find_em_expr_for_input_target(context->root,
+													pathkey->pk_eclass,
+													context->foreignrel->reltarget,
+													baserel);
+		}
+		else
+			em_expr = sqlite_find_em_expr_for_rel(pathkey->pk_eclass, baserel);
+
 		Assert(em_expr != NULL);
 
 		appendStringInfoString(buf, delim);
@@ -2467,10 +2551,64 @@ appendOrderByClause(List *pathkeys, deparse_expr_cxt *context)
 		else
 			appendStringInfoString(buf, " DESC");
 
-		if (pathkey->pk_nulls_first)
-			elog(ERROR, "NULLS FIRST not supported");
+		/*
+		 * In SQLITE3 Release v3.30.0 (2019-10-04) NULLS FIRST/LAST is supported, but not in prior versions
+		 * More info: 
+		 *    https://www.sqlite.org/changes.html
+		 *    https://www.sqlite.org/lang_select.html#orderby
+		 */
+		if (sqliteVersion >= 3030000)
+		{
+			if (pathkey->pk_nulls_first)
+				appendStringInfoString(buf, " NULLS FIRST");
+			else
+				appendStringInfoString(buf, " NULLS LAST");
+		}
+		else
+		{
+			/* If we need a different behaviour than SQLite default...we show warning message because NULLS FIRST/LAST is not implemented in this SQLite version. */
+			if (!pathkey->pk_nulls_first && pathkey->pk_strategy == BTLessStrategyNumber)
+				elog(WARNING, "Current Sqlite Version (%d) does not support NULLS LAST for ORDER BY ASC, degraded emitted query to ORDER BY ASC NULLS FIRST (default sqlite behaviour).", sqliteVersion);
+			else if (pathkey->pk_nulls_first && pathkey->pk_strategy != BTLessStrategyNumber)
+				elog(WARNING, "Current Sqlite Version (%d) does not support NULLS FIRST for ORDER BY DESC, degraded emitted query to ORDER BY DESC NULLS LAST (default sqlite behaviour).", sqliteVersion);
+		}
+
 		delim = ", ";
 	}
+	sqlite_reset_transmission_modes(nestlevel);
+}
+
+/*
+ * Deparse LIMIT/OFFSET clause.
+ */
+static void
+appendLimitClause(deparse_expr_cxt *context)
+{
+	PlannerInfo *root = context->root;
+	StringInfo	buf = context->buf;
+	int			nestlevel;
+
+	/* Make sure any constants in the exprs are printed portably */
+	nestlevel = sqlite_set_transmission_modes();
+
+	if (root->parse->limitCount)
+	{
+		appendStringInfoString(buf, " LIMIT ");
+		deparseExpr((Expr *) root->parse->limitCount, context);
+	}
+	else
+	{
+		/* We add this LIMIT -1 because OFFSET by itself its not implemented/allowed in SQLite.
+		You need to provide LIMIT *always* when using OFFSET */
+		appendStringInfoString(buf, " LIMIT -1");
+	}
+
+	if (root->parse->limitOffset)
+	{
+		appendStringInfoString(buf, " OFFSET ");
+		deparseExpr((Expr *) root->parse->limitOffset, context);
+	}
+
 	sqlite_reset_transmission_modes(nestlevel);
 }
 
