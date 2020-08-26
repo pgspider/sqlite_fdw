@@ -2426,10 +2426,11 @@ add_foreign_final_paths(PlannerInfo *root, RelOptInfo *input_rel,
 	 * Build the fdw_private list that will be used by sqliteGetForeignPlan.
 	 * Items in the list must match order in enum FdwPathPrivateIndex.
 	 */
-	fdw_private = list_make2(makeInteger(has_final_sort),
 #if (PG_VERSION_NUM >= 120000)
+	fdw_private = list_make2(makeInteger(has_final_sort),
 		makeInteger(extra->limit_needed));
 #else
+	fdw_private = list_make2(makeInteger(has_final_sort),
 		makeInteger(has_limit));
 #endif
 
