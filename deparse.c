@@ -1043,11 +1043,11 @@ sqlite_deparse_select(List *tlist, List **retrieved_attrs, deparse_expr_cxt *con
 		 * Core code already has some lock on each rel being planned, so we
 		 * can use NoLock here.
 		 */
-		Relation	rel = heap_open(rte->relid, NoLock);
+		Relation	rel = table_open(rte->relid, NoLock);
 
 		sqlite_deparse_target_list(buf, root, foreignrel->relid, rel, fpinfo->attrs_used, retrieved_attrs);
 
-		heap_close(rel, NoLock);
+		table_close(rel, NoLock);
 	}
 }
 
@@ -1184,11 +1184,11 @@ deparseFromExprForRel(StringInfo buf, PlannerInfo *root, RelOptInfo *foreignrel,
 		 * Core code already has some lock on each rel being planned, so we
 		 * can use NoLock here.
 		 */
-		Relation	rel = heap_open(rte->relid, NoLock);
+                Relation        rel = table_open(rte->relid, NoLock);
 
 		sqlite_deparse_relation(buf, rel);
 
-		heap_close(rel, NoLock);
+                table_close(rel, NoLock);
 	}
 }
 
@@ -2389,7 +2389,11 @@ deparseAggref(Aggref *node, deparse_expr_cxt *context)
 				first = false;
 
 				/* Add VARIADIC */
+#if PG_VERSION_NUM < 130000
 				if (use_variadic && lnext(arg) == NULL)
+#else
+				if (use_variadic && lnext(node->args, arg) == NULL)
+#endif
 					appendStringInfoString(buf, "VARIADIC ");
 
 				deparseExpr((Expr *) n, context);
