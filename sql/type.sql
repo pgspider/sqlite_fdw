@@ -65,4 +65,4 @@ SELECT * FROM  "type_TIMESTAMP" WHERE col > b - interval '1 hour';
 EXPLAIN (VERBOSE, COSTS OFF) SELECT * FROM  "type_TIMESTAMP" WHERE col > b;
 SELECT * FROM  "type_TIMESTAMP" WHERE col > b;
 
-
+DROP EXTENSION sqlite_fdw CASCADE;
