@@ -54,9 +54,7 @@ CREATE TABLE "T 4" (
 	CONSTRAINT t4_pkey PRIMARY KEY (c1)
 );
 CREATE TABLE base_tbl (a int, b int);
-CREATE TABLE loc1 (f1 INTEGER PRIMARY KEY AUTOINCREMENT, f2 text);
-insert into loc1(f2) values('hi');
-insert into loc1(f2) values('bye');
+CREATE TABLE loc1 (f1 INTEGER, f2 text, id integer primary key autoincrement);
 CREATE TABLE loct (aa TEXT, bb TEXT);
 CREATE TABLE loct1 (f1 int, f2 int, f3 int);
 CREATE TABLE loct2 (f1 int, f2 int, f3 int);
@@ -65,5 +63,11 @@ create table loct4 (a int, b text);
 create table loct5 (a int check (a in (1)), b text);
 create table loct6 (a int check (a in (2)), b text);
 create table loct7 (a int check (a in (1)), b text);
+
+create table local_tbl (c1 int primary key, c2 int, c3 text);
+create table ft3 (f1 text, f2 text, f3 text, primary key (f1, f2, f3));
+
+create table foreign_tbl (a int primary key, b int);
+create table grem1 (a int primary key, b int);
 
 analyze;

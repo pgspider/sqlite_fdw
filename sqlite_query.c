@@ -61,6 +61,8 @@
 #include "storage/fd.h"
 #include "catalog/pg_type.h"
 
+static int32
+sqlite_from_pgtyp(Oid pgtyp);
 
 /*
  * convert_sqlite_to_pg: Convert Sqlite data into PostgreSQL's compatible data types
@@ -72,7 +74,9 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum)
 	Datum		valueDatum = 0;
 	regproc		typeinput;
 	HeapTuple	tuple;
-	int			typemod;
+	int		typemod;
+	int		col_type;
+	int		sqlite_type;
 
 	/* get the type's output function */
 	tuple = SearchSysCache1(TYPEOID, ObjectIdGetDatum(pgtyp));
@@ -82,6 +86,12 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum)
 	typeinput = ((Form_pg_type) GETSTRUCT(tuple))->typinput;
 	typemod = ((Form_pg_type) GETSTRUCT(tuple))->typtypmod;
 	ReleaseSysCache(tuple);
+
+	sqlite_type = sqlite_from_pgtyp(pgtyp);
+	col_type = sqlite3_column_type(stmt, attnum);
+
+	if (sqlite_type != col_type && col_type == SQLITE3_TEXT)
+		elog(ERROR,"invalid input syntax for type =%d, column type =%d", sqlite_type, col_type);
 
 	switch (pgtyp)
 	{
@@ -303,3 +313,43 @@ sqlite_bind_sql_var(Oid type, int attnum, Datum value, sqlite3_stmt * stmt, bool
 						errhint("Constant value data type: %u", type)));
 
 }
+
+/*
+ * Give SQLite data type from PG type
+ */
+static int32
+sqlite_from_pgtyp(Oid type)
+{
+	switch(type)
+	{
+		case INT2OID:
+		case INT4OID:
+		case INT8OID:
+		case BOOLOID:
+			return SQLITE_INTEGER;
+		case FLOAT4OID:
+		case FLOAT8OID:
+		case NUMERICOID:
+			return SQLITE_FLOAT;
+		case BPCHAROID:
+		case VARCHAROID:
+		case TEXTOID:
+		case JSONOID:
+		case NAMEOID:
+		case DATEOID:
+		case TIMEOID:
+		case TIMESTAMPOID:
+		case TIMESTAMPTZOID:
+			return SQLITE3_TEXT;
+		case BYTEAOID:
+			return SQLITE_BLOB;
+		default:
+		{
+			ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+							errmsg("Cannot detect sqlite data type"),
+							errhint("Constant value data type: %u", type)));
+			break;
+		}
+	}
+}
+

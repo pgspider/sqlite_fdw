@@ -2,9 +2,12 @@
 -- LIMIT
 -- Check the LIMIT/OFFSET feature of SELECT
 --
+--Testcase 27:
 CREATE EXTENSION sqlite_fdw;
+--Testcase 28:
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlitefdw_test_core.db');
+--Testcase 29:
 CREATE FOREIGN TABLE onek(
 	unique1		int4 OPTIONS (key 'true'),
 	unique2		int4,
@@ -23,7 +26,18 @@ CREATE FOREIGN TABLE onek(
 	stringu2	name,
 	string4		name
 ) SERVER sqlite_svr;
+--Testcase 30:
 CREATE FOREIGN TABLE int8_tbl(q1 int8 OPTIONS (key 'true'), q2 int8) SERVER sqlite_svr;
+--Testcase 31:
+CREATE FOREIGN TABLE INT8_TMP(
+        q1 int8,
+        q2 int8,
+        q3 int4,
+        q4 int2,
+        q5 text,
+        id int options (key 'true')
+) SERVER sqlite_svr;
+--Testcase 32:
 CREATE FOREIGN TABLE tenk1 (
 	unique1		int4 OPTIONS (key 'true'),
 	unique2		int4,
@@ -63,6 +77,7 @@ CREATE TABLE parent_table (
 CREATE FOREIGN table inherited_table ()
 INHERITS (parent_table)
 SERVER sqlite_svr options (table 'tenk1');
+--Testcase 1:
 SELECT ''::text AS two, unique1, unique2, stringu1
 		FROM onek WHERE unique1 > 50
 		ORDER BY unique1 LIMIT 2;
@@ -72,6 +87,7 @@ SELECT ''::text AS two, unique1, unique2, stringu1
      |      52 |     985 | ACAAAA
 (2 rows)
 
+--Testcase 2:
 SELECT ''::text AS five, unique1, unique2, stringu1
 		FROM onek WHERE unique1 > 60
 		ORDER BY unique1 LIMIT 5;
@@ -84,6 +100,7 @@ SELECT ''::text AS five, unique1, unique2, stringu1
       |      65 |      64 | NCAAAA
 (5 rows)
 
+--Testcase 3:
 SELECT ''::text AS two, unique1, unique2, stringu1
 		FROM onek WHERE unique1 > 60 AND unique1 < 63
 		ORDER BY unique1 LIMIT 5;
@@ -93,6 +110,7 @@ SELECT ''::text AS two, unique1, unique2, stringu1
      |      62 |     633 | KCAAAA
 (2 rows)
 
+--Testcase 4:
 SELECT ''::text AS three, unique1, unique2, stringu1
 		FROM onek WHERE unique1 > 100
 		ORDER BY unique1 LIMIT 3 OFFSET 20;
@@ -103,6 +121,7 @@ SELECT ''::text AS three, unique1, unique2, stringu1
        |     123 |     777 | TEAAAA
 (3 rows)
 
+--Testcase 5:
 SELECT ''::text AS zero, unique1, unique2, stringu1
 		FROM onek WHERE unique1 < 50
 		ORDER BY unique1 DESC LIMIT 8 OFFSET 99;
@@ -110,6 +129,7 @@ SELECT ''::text AS zero, unique1, unique2, stringu1
 ------+---------+---------+----------
 (0 rows)
 
+--Testcase 6:
 SELECT ''::text AS eleven, unique1, unique2, stringu1
 		FROM onek WHERE unique1 < 50
 		ORDER BY unique1 DESC LIMIT 20 OFFSET 39;
@@ -128,6 +148,7 @@ SELECT ''::text AS eleven, unique1, unique2, stringu1
         |       0 |     998 | AAAAAA
 (11 rows)
 
+--Testcase 7:
 SELECT ''::text AS ten, unique1, unique2, stringu1
 		FROM onek
 		ORDER BY unique1 OFFSET 990;
@@ -145,6 +166,7 @@ SELECT ''::text AS ten, unique1, unique2, stringu1
      |     999 |     152 | LMAAAA
 (10 rows)
 
+--Testcase 8:
 SELECT ''::text AS five, unique1, unique2, stringu1
 		FROM onek
 		ORDER BY unique1 OFFSET 990 LIMIT 5;
@@ -157,6 +179,7 @@ SELECT ''::text AS five, unique1, unique2, stringu1
       |     994 |     695 | GMAAAA
 (5 rows)
 
+--Testcase 9:
 SELECT ''::text AS five, unique1, unique2, stringu1
 		FROM onek
 		ORDER BY unique1 LIMIT 5 OFFSET 900;
@@ -171,29 +194,32 @@ SELECT ''::text AS five, unique1, unique2, stringu1
 
 -- Test null limit and offset.  The planner would discard a simple null
 -- constant, so to ensure executor is exercised, do this:
+--Testcase 10:
 select * from int8_tbl limit (case when random() < 0.5 then null::bigint end);
         q1        |        q2         
 ------------------+-------------------
               123 |               456
               123 |  4567890123456789
- 4567890123456789 | -4567890123456789
  4567890123456789 |               123
  4567890123456789 |  4567890123456789
+ 4567890123456789 | -4567890123456789
 (5 rows)
 
+--Testcase 11:
 select * from int8_tbl offset (case when random() < 0.5 then null::bigint end);
         q1        |        q2         
 ------------------+-------------------
               123 |               456
               123 |  4567890123456789
- 4567890123456789 | -4567890123456789
  4567890123456789 |               123
  4567890123456789 |  4567890123456789
+ 4567890123456789 | -4567890123456789
 (5 rows)
 
 -- Test assorted cases involving backwards fetch from a LIMIT plan node
 begin;
-declare c1 cursor for select * from int8_tbl limit 10;
+declare c1 scroll cursor for select * from int8_tbl order by q1 limit 10;
+--Testcase 12:
 fetch all in c1;
         q1        |        q2         
 ------------------+-------------------
@@ -204,20 +230,266 @@ fetch all in c1;
  4567890123456789 |  4567890123456789
 (5 rows)
 
+--Testcase 13:
 fetch 1 in c1;
  q1 | q2 
 ----+----
 (0 rows)
 
+--Testcase 14:
 fetch backward 1 in c1;
-ERROR:  cursor can only scan forward
-HINT:  Declare it with SCROLL option to enable backward scan.
+        q1        |        q2        
+------------------+------------------
+ 4567890123456789 | 4567890123456789
+(1 row)
+
+--Testcase 33:
+fetch backward all in c1;
+        q1        |        q2         
+------------------+-------------------
+ 4567890123456789 |               123
+ 4567890123456789 | -4567890123456789
+              123 |  4567890123456789
+              123 |               456
+(4 rows)
+
+--Testcase 34:
+fetch backward 1 in c1;
+ q1 | q2 
+----+----
+(0 rows)
+
+--Testcase 35:
+fetch all in c1;
+        q1        |        q2         
+------------------+-------------------
+              123 |               456
+              123 |  4567890123456789
+ 4567890123456789 | -4567890123456789
+ 4567890123456789 |               123
+ 4567890123456789 |  4567890123456789
+(5 rows)
+
+declare c2 scroll cursor for select * from int8_tbl limit 3;
+--Testcase 36:
+fetch all in c2;
+        q1        |        q2        
+------------------+------------------
+              123 |              456
+              123 | 4567890123456789
+ 4567890123456789 |              123
+(3 rows)
+
+--Testcase 37:
+fetch 1 in c2;
+ q1 | q2 
+----+----
+(0 rows)
+
+--Testcase 38:
+fetch backward 1 in c2;
+        q1        | q2  
+------------------+-----
+ 4567890123456789 | 123
+(1 row)
+
+--Testcase 39:
+fetch backward all in c2;
+ q1  |        q2        
+-----+------------------
+ 123 | 4567890123456789
+ 123 |              456
+(2 rows)
+
+--Testcase 40:
+fetch backward 1 in c2;
+ q1 | q2 
+----+----
+(0 rows)
+
+--Testcase 41:
+fetch all in c2;
+        q1        |        q2        
+------------------+------------------
+              123 |              456
+              123 | 4567890123456789
+ 4567890123456789 |              123
+(3 rows)
+
+declare c3 scroll cursor for select * from int8_tbl offset 3;
+--Testcase 42:
+fetch all in c3;
+        q1        |        q2         
+------------------+-------------------
+ 4567890123456789 |  4567890123456789
+ 4567890123456789 | -4567890123456789
+(2 rows)
+
+--Testcase 43:
+fetch 1 in c3;
+ q1 | q2 
+----+----
+(0 rows)
+
+--Testcase 44:
+fetch backward 1 in c3;
+        q1        |        q2         
+------------------+-------------------
+ 4567890123456789 | -4567890123456789
+(1 row)
+
+--Testcase 45:
+fetch backward all in c3;
+        q1        |        q2        
+------------------+------------------
+ 4567890123456789 | 4567890123456789
+(1 row)
+
+--Testcase 46:
+fetch backward 1 in c3;
+ q1 | q2 
+----+----
+(0 rows)
+
+--Testcase 47:
+fetch all in c3;
+        q1        |        q2         
+------------------+-------------------
+ 4567890123456789 |  4567890123456789
+ 4567890123456789 | -4567890123456789
+(2 rows)
+
+declare c4 scroll cursor for select * from int8_tbl offset 10;
+--Testcase 48:
+fetch all in c4;
+ q1 | q2 
+----+----
+(0 rows)
+
+--Testcase 49:
+fetch 1 in c4;
+ q1 | q2 
+----+----
+(0 rows)
+
+--Testcase 50:
+fetch backward 1 in c4;
+ q1 | q2 
+----+----
+(0 rows)
+
+--Testcase 51:
+fetch backward all in c4;
+ q1 | q2 
+----+----
+(0 rows)
+
+--Testcase 52:
+fetch backward 1 in c4;
+ q1 | q2 
+----+----
+(0 rows)
+
+--Testcase 53:
+fetch all in c4;
+ q1 | q2 
+----+----
+(0 rows)
+
+declare c5 scroll cursor for select * from int8_tbl order by q1 fetch first 2 rows with ties;
+--Testcase 54:
+fetch all in c5;
+ q1  |        q2        
+-----+------------------
+ 123 |              456
+ 123 | 4567890123456789
+(2 rows)
+
+--Testcase 55:
+fetch 1 in c5;
+ q1 | q2 
+----+----
+(0 rows)
+
+--Testcase 56:
+fetch backward 1 in c5;
+ q1  |        q2        
+-----+------------------
+ 123 | 4567890123456789
+(1 row)
+
+--Testcase 57:
+fetch backward 1 in c5;
+ q1  | q2  
+-----+-----
+ 123 | 456
+(1 row)
+
+--Testcase 58:
+fetch all in c5;
+ q1  |        q2        
+-----+------------------
+ 123 | 4567890123456789
+(1 row)
+
+--Testcase 59:
+fetch backward all in c5;
+ q1  |        q2        
+-----+------------------
+ 123 | 4567890123456789
+ 123 |              456
+(2 rows)
+
+--Testcase 60:
+fetch all in c5;
+ q1  |        q2        
+-----+------------------
+ 123 |              456
+ 123 | 4567890123456789
+(2 rows)
+
+--Testcase 61:
+fetch backward all in c5;
+ q1  |        q2        
+-----+------------------
+ 123 | 4567890123456789
+ 123 |              456
+(2 rows)
+
 rollback;
+-- Stress test for variable LIMIT in conjunction with bounded-heap sorting
+--Testcase 62:
+DELETE FROM INT8_TMP;
+--Testcase 63:
+INSERT INTO INT8_TMP SELECT q1 FROM generate_series(1,10) q1;
+--Testcase 64:
+SELECT
+  (SELECT s.q1 
+     FROM (VALUES (1)) AS x,
+          (SELECT q1 FROM INT8_TMP as n 
+             ORDER BY q1 LIMIT 1 OFFSET s.q1-1) AS y) AS z
+  FROM INT8_TMP AS s;
+ z  
+----
+  1
+  2
+  3
+  4
+  5
+  6
+  7
+  8
+  9
+ 10
+(10 rows)
+
 --
 -- Test behavior of volatile and set-returning functions in conjunction
 -- with ORDER BY and LIMIT.
 --
+--Testcase 65:
 create temp sequence testseq;
+--Testcase 15:
 explain (verbose, costs off)
 select unique1, unique2, nextval('testseq')
   from tenk1 order by unique2 limit 10;
@@ -228,6 +500,7 @@ select unique1, unique2, nextval('testseq')
    SQLite query: SELECT `unique1`, `unique2` FROM main."tenk1" ORDER BY `unique2` ASC NULLS LAST LIMIT 10
 (3 rows)
 
+--Testcase 16:
 select unique1, unique2, nextval('testseq')
   from tenk1 order by unique2 limit 10;
  unique1 | unique2 | nextval 
@@ -270,6 +543,7 @@ select unique1, unique2, nextval('testseq')
     5471 |      14 |      20
 (10 rows)
 
+--Testcase 17:
 select currval('testseq');
  currval 
 ---------
@@ -334,6 +608,7 @@ select currval('testseq');
       40
 (1 row)
 
+--Testcase 18:
 explain (verbose, costs off)
 select unique1, unique2, nextval('testseq')
   from tenk1 order by tenthous limit 10;
@@ -344,6 +619,7 @@ select unique1, unique2, nextval('testseq')
    SQLite query: SELECT `unique1`, `unique2`, `tenthous` FROM main."tenk1" ORDER BY `tenthous` ASC NULLS LAST LIMIT 10
 (3 rows)
 
+--Testcase 19:
 select unique1, unique2, nextval('testseq')
   from tenk1 order by tenthous limit 10;
  unique1 | unique2 | nextval 
@@ -386,6 +662,7 @@ select unique1, unique2, nextval('testseq')
       14 |    4341 |      60
 (10 rows)
 
+--Testcase 20:
 select currval('testseq');
  currval 
 ---------
@@ -405,12 +682,12 @@ select unique1, unique2, nextval('testseq')
          ->  Merge Append
                Sort Key: parent_table.tenthous
                ->  Sort
-                     Output: parent_table.unique1, parent_table.unique2, parent_table.tenthous
-                     Sort Key: parent_table.tenthous
-                     ->  Seq Scan on public.parent_table
-                           Output: parent_table.unique1, parent_table.unique2, parent_table.tenthous
-               ->  Foreign Scan on public.inherited_table
-                     Output: inherited_table.unique1, inherited_table.unique2, inherited_table.tenthous
+                     Output: parent_table_1.unique1, parent_table_1.unique2, parent_table_1.tenthous
+                     Sort Key: parent_table_1.tenthous
+                     ->  Seq Scan on public.parent_table parent_table_1
+                           Output: parent_table_1.unique1, parent_table_1.unique2, parent_table_1.tenthous
+               ->  Foreign Scan on public.inherited_table parent_table_2
+                     Output: parent_table_2.unique1, parent_table_2.unique2, parent_table_2.tenthous
                      SQLite query: SELECT `unique1`, `unique2`, `tenthous` FROM main."tenk1" ORDER BY `tenthous` ASC NULLS LAST LIMIT 10
 (14 rows)
 
@@ -443,12 +720,12 @@ select unique1, unique2, nextval('testseq')
          ->  Merge Append
                Sort Key: parent_table.tenthous
                ->  Sort
-                     Output: parent_table.unique1, parent_table.unique2, parent_table.tenthous
-                     Sort Key: parent_table.tenthous
-                     ->  Seq Scan on public.parent_table
-                           Output: parent_table.unique1, parent_table.unique2, parent_table.tenthous
-               ->  Foreign Scan on public.inherited_table
-                     Output: inherited_table.unique1, inherited_table.unique2, inherited_table.tenthous
+                     Output: parent_table_1.unique1, parent_table_1.unique2, parent_table_1.tenthous
+                     Sort Key: parent_table_1.tenthous
+                     ->  Seq Scan on public.parent_table parent_table_1
+                           Output: parent_table_1.unique1, parent_table_1.unique2, parent_table_1.tenthous
+               ->  Foreign Scan on public.inherited_table parent_table_2
+                     Output: parent_table_2.unique1, parent_table_2.unique2, parent_table_2.tenthous
                      SQLite query: SELECT `unique1`, `unique2`, `tenthous` FROM main."tenk1" ORDER BY `tenthous` ASC NULLS LAST
 (14 rows)
 
@@ -474,6 +751,7 @@ select currval('testseq');
       85
 (1 row)
 
+--Testcase 21:
 explain (verbose, costs off)
 select unique1, unique2, generate_series(1,10)
   from tenk1 order by unique2 limit 7;
@@ -488,6 +766,7 @@ select unique1, unique2, generate_series(1,10)
                SQLite query: SELECT `unique1`, `unique2` FROM main."tenk1" ORDER BY `unique2` ASC NULLS LAST
 (7 rows)
 
+--Testcase 22:
 select unique1, unique2, generate_series(1,10)
   from tenk1 order by unique2 limit 7;
  unique1 | unique2 | generate_series 
@@ -501,6 +780,7 @@ select unique1, unique2, generate_series(1,10)
     8800 |       0 |               7
 (7 rows)
 
+--Testcase 23:
 explain (verbose, costs off)
 select unique1, unique2, generate_series(1,10)
   from tenk1 order by tenthous limit 7;
@@ -515,6 +795,7 @@ select unique1, unique2, generate_series(1,10)
                SQLite query: SELECT `unique1`, `unique2`, `tenthous` FROM main."tenk1" ORDER BY `tenthous` ASC NULLS LAST
 (7 rows)
 
+--Testcase 24:
 select unique1, unique2, generate_series(1,10)
   from tenk1 order by tenthous limit 7;
  unique1 | unique2 | generate_series 
@@ -528,7 +809,51 @@ select unique1, unique2, generate_series(1,10)
        0 |    9998 |               7
 (7 rows)
 
+-- use of random() is to keep planner from folding the expressions together
+--Testcase 66:
+DELETE FROM INT8_TMP;
+--Testcase 67:
+INSERT INTO INT8_TMP VALUES (generate_series(0,2), generate_series((random()*.1)::int,2));
+--Testcase 68:
+explain (verbose, costs off)
+select q1, q2 from int8_tmp;
+                       QUERY PLAN                       
+--------------------------------------------------------
+ Foreign Scan on public.int8_tmp
+   Output: q1, q2
+   SQLite query: SELECT `q1`, `q2` FROM main."int8_tmp"
+(3 rows)
+
+--Testcase 69:
+select q1, q2 from int8_tmp;
+ q1 | q2 
+----+----
+  0 |  0
+  1 |  1
+  2 |  2
+(3 rows)
+
+--Testcase 70:
+explain (verbose, costs off)
+select q1, q2 from int8_tmp order by q2 desc;
+                                      QUERY PLAN                                       
+---------------------------------------------------------------------------------------
+ Foreign Scan on public.int8_tmp
+   Output: q1, q2
+   SQLite query: SELECT `q1`, `q2` FROM main."int8_tmp" ORDER BY `q2` DESC NULLS FIRST
+(3 rows)
+
+--Testcase 71:
+select q1, q2 from int8_tmp order by q2 desc;
+ q1 | q2 
+----+----
+  2 |  2
+  1 |  1
+  0 |  0
+(3 rows)
+
 -- test for failure to set all aggregates' aggtranstype
+--Testcase 25:
 explain (verbose, costs off)
 select sum(tenthous) as s1, sum(tenthous) + random()*0 as s2
   from tenk1 group by thousand order by thousand limit 3;
@@ -541,6 +866,7 @@ select sum(tenthous) as s1, sum(tenthous) + random()*0 as s2
          SQLite query: SELECT sum(`tenthous`), `thousand` FROM main."tenk1" GROUP BY 2 ORDER BY `thousand` ASC NULLS LAST
 (5 rows)
 
+--Testcase 26:
 select sum(tenthous) as s1, sum(tenthous) + random()*0 as s2
   from tenk1 group by thousand order by thousand limit 3;
   s1   |  s2   
@@ -550,10 +876,143 @@ select sum(tenthous) as s1, sum(tenthous) + random()*0 as s2
  45020 | 45020
 (3 rows)
 
-DROP FOREIGN TABLE onek;
-DROP FOREIGN TABLE int8_tbl;
-DROP FOREIGN TABLE inherited_table;
-DROP TABLE parent_table;
-DROP FOREIGN TABLE tenk1;
+--
+-- FETCH FIRST
+-- Check the WITH TIES clause
+--
+--Testcase 72:
+SELECT  thousand
+		FROM onek WHERE thousand < 5
+		ORDER BY thousand FETCH FIRST 2 ROW WITH TIES;
+ thousand 
+----------
+        0
+        0
+(2 rows)
+
+--Testcase 73:
+SELECT  thousand
+		FROM onek WHERE thousand < 5
+		ORDER BY thousand FETCH FIRST ROWS WITH TIES;
+ thousand 
+----------
+        0
+(1 row)
+
+--Testcase 74:
+SELECT  thousand
+		FROM onek WHERE thousand < 5
+		ORDER BY thousand FETCH FIRST 1 ROW WITH TIES;
+ thousand 
+----------
+        0
+(1 row)
+
+--Testcase 75:
+SELECT  thousand
+		FROM onek WHERE thousand < 5
+		ORDER BY thousand FETCH FIRST 2 ROW ONLY;
+ thousand 
+----------
+        0
+        0
+(2 rows)
+
+-- should fail
+--Testcase 76:
+SELECT ''::text AS two, unique1, unique2, stringu1
+		FROM onek WHERE unique1 > 50
+		FETCH FIRST 2 ROW WITH TIES;
+ERROR:  WITH TIES options can not be specified without ORDER BY clause
+-- test ruleutils
+--Testcase 77:
+CREATE VIEW limit_thousand_v_1 AS SELECT thousand FROM onek WHERE thousand < 995
+		ORDER BY thousand FETCH FIRST 5 ROWS WITH TIES OFFSET 10;
+--Testcase 78:
+\d+ limit_thousand_v_1
+                      View "public.limit_thousand_v_1"
+  Column  |  Type   | Collation | Nullable | Default | Storage | Description 
+----------+---------+-----------+----------+---------+---------+-------------
+ thousand | integer |           |          |         | plain   | 
+View definition:
+ SELECT onek.thousand
+   FROM onek
+  WHERE onek.thousand < 995
+  ORDER BY onek.thousand
+ OFFSET 10
+ FETCH FIRST 5 ROWS WITH TIES;
+
+--Testcase 79:
+CREATE VIEW limit_thousand_v_2 AS SELECT thousand FROM onek WHERE thousand < 995
+		ORDER BY thousand OFFSET 10 FETCH FIRST 5 ROWS ONLY;
+--Testcase 80:
+\d+ limit_thousand_v_2
+                      View "public.limit_thousand_v_2"
+  Column  |  Type   | Collation | Nullable | Default | Storage | Description 
+----------+---------+-----------+----------+---------+---------+-------------
+ thousand | integer |           |          |         | plain   | 
+View definition:
+ SELECT onek.thousand
+   FROM onek
+  WHERE onek.thousand < 995
+  ORDER BY onek.thousand
+ OFFSET 10
+ LIMIT 5;
+
+--Testcase 81:
+CREATE VIEW limit_thousand_v_3 AS SELECT thousand FROM onek WHERE thousand < 995
+		ORDER BY thousand FETCH FIRST NULL ROWS WITH TIES;		-- fails
+ERROR:  row count cannot be NULL in FETCH FIRST ... WITH TIES clause
+--Testcase 82:
+CREATE VIEW limit_thousand_v_3 AS SELECT thousand FROM onek WHERE thousand < 995
+		ORDER BY thousand FETCH FIRST (NULL+1) ROWS WITH TIES;
+--Testcase 83:
+\d+ limit_thousand_v_3
+                      View "public.limit_thousand_v_3"
+  Column  |  Type   | Collation | Nullable | Default | Storage | Description 
+----------+---------+-----------+----------+---------+---------+-------------
+ thousand | integer |           |          |         | plain   | 
+View definition:
+ SELECT onek.thousand
+   FROM onek
+  WHERE onek.thousand < 995
+  ORDER BY onek.thousand
+ FETCH FIRST (NULL::integer + 1) ROWS WITH TIES;
+
+--Testcase 84:
+CREATE VIEW limit_thousand_v_4 AS SELECT thousand FROM onek WHERE thousand < 995
+		ORDER BY thousand FETCH FIRST NULL ROWS ONLY;
+--Testcase 85:
+\d+ limit_thousand_v_4
+                      View "public.limit_thousand_v_4"
+  Column  |  Type   | Collation | Nullable | Default | Storage | Description 
+----------+---------+-----------+----------+---------+---------+-------------
+ thousand | integer |           |          |         | plain   | 
+View definition:
+ SELECT onek.thousand
+   FROM onek
+  WHERE onek.thousand < 995
+  ORDER BY onek.thousand
+ LIMIT ALL;
+
+-- leave these views
+-- Clean up
+DO $d$
+declare
+  l_rec record;
+begin
+  for l_rec in (select foreign_table_schema, foreign_table_name
+                from information_schema.foreign_tables) loop
+     execute format('drop foreign table %I.%I cascade;', l_rec.foreign_table_schema, l_rec.foreign_table_name);
+  end loop;
+end;
+$d$;
+NOTICE:  drop cascades to 4 other objects
+DETAIL:  drop cascades to view limit_thousand_v_1
+drop cascades to view limit_thousand_v_2
+drop cascades to view limit_thousand_v_3
+drop cascades to view limit_thousand_v_4
+--Testcase 86:
 DROP SERVER sqlite_svr;
+--Testcase 87:
 DROP EXTENSION sqlite_fdw CASCADE;
