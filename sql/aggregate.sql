@@ -1,4 +1,17 @@
 -- test for aggregate pushdown
+--Testcase 8:
+DROP SERVER IF EXISTS sqlite_svr CASCADE;
+--Testcase 9:
+DROP EXTENSION IF EXISTS sqlite_fdw CASCADE;
+
+--Testcase 10:
+CREATE EXTENSION sqlite_fdw;
+--Testcase 11:
+CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
+OPTIONS (database '/tmp/sqlitefdw_test.db');
+--Testcase 12:
+CREATE FOREIGN TABLE multiprimary(a int, b int OPTIONS (key 'true'), c int OPTIONS(key 'true')) SERVER sqlite_svr;
+
 --Testcase 1:
 explain (costs off, verbose) select count(distinct a) from multiprimary;
 
@@ -19,3 +32,12 @@ explain (costs off, verbose) select sum(a) from multiprimary group by b having a
 explain (costs off, verbose) select stddev(a) from multiprimary;
 --Testcase 7:
 explain (costs off, verbose) select sum(a) from multiprimary group by b having variance(a) > 0;
+
+--Testcase 13:
+DROP FOREIGN TABLE multiprimary;
+
+--Testcase 14:
+DROP SERVER sqlite_svr;
+--Testcase 15:
+DROP EXTENSION sqlite_fdw CASCADE;
+
