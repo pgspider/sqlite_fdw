@@ -2,9 +2,12 @@
 -- LIMIT
 -- Check the LIMIT/OFFSET feature of SELECT
 --
+--Testcase 27:
 CREATE EXTENSION sqlite_fdw;
+--Testcase 28:
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlitefdw_test_core.db');
+--Testcase 29:
 CREATE FOREIGN TABLE onek(
 	unique1		int4 OPTIONS (key 'true'),
 	unique2		int4,
@@ -24,8 +27,19 @@ CREATE FOREIGN TABLE onek(
 	string4		name
 ) SERVER sqlite_svr;
 
+--Testcase 30:
 CREATE FOREIGN TABLE int8_tbl(q1 int8 OPTIONS (key 'true'), q2 int8) SERVER sqlite_svr;
+--Testcase 31:
+CREATE FOREIGN TABLE INT8_TMP(
+        q1 int8,
+        q2 int8,
+        q3 int4,
+        q4 int2,
+        q5 text,
+        id int options (key 'true')
+) SERVER sqlite_svr;
 
+--Testcase 32:
 CREATE FOREIGN TABLE tenk1 (
 	unique1		int4 OPTIONS (key 'true'),
 	unique2		int4,
@@ -92,21 +106,102 @@ select * from int8_tbl offset (case when random() < 0.5 then null::bigint end);
 -- Test assorted cases involving backwards fetch from a LIMIT plan node
 begin;
 
-declare c1 cursor for select * from int8_tbl limit 10;
+declare c1 scroll cursor for select * from int8_tbl order by q1 limit 10;
 --Testcase 12:
 fetch all in c1;
 --Testcase 13:
 fetch 1 in c1;
 --Testcase 14:
 fetch backward 1 in c1;
+--Testcase 33:
+fetch backward all in c1;
+--Testcase 34:
+fetch backward 1 in c1;
+--Testcase 35:
+fetch all in c1;
+
+declare c2 scroll cursor for select * from int8_tbl limit 3;
+--Testcase 36:
+fetch all in c2;
+--Testcase 37:
+fetch 1 in c2;
+--Testcase 38:
+fetch backward 1 in c2;
+--Testcase 39:
+fetch backward all in c2;
+--Testcase 40:
+fetch backward 1 in c2;
+--Testcase 41:
+fetch all in c2;
+
+declare c3 scroll cursor for select * from int8_tbl offset 3;
+--Testcase 42:
+fetch all in c3;
+--Testcase 43:
+fetch 1 in c3;
+--Testcase 44:
+fetch backward 1 in c3;
+--Testcase 45:
+fetch backward all in c3;
+--Testcase 46:
+fetch backward 1 in c3;
+--Testcase 47:
+fetch all in c3;
+
+declare c4 scroll cursor for select * from int8_tbl offset 10;
+--Testcase 48:
+fetch all in c4;
+--Testcase 49:
+fetch 1 in c4;
+--Testcase 50:
+fetch backward 1 in c4;
+--Testcase 51:
+fetch backward all in c4;
+--Testcase 52:
+fetch backward 1 in c4;
+--Testcase 53:
+fetch all in c4;
+
+declare c5 scroll cursor for select * from int8_tbl order by q1 fetch first 2 rows with ties;
+--Testcase 54:
+fetch all in c5;
+--Testcase 55:
+fetch 1 in c5;
+--Testcase 56:
+fetch backward 1 in c5;
+--Testcase 57:
+fetch backward 1 in c5;
+--Testcase 58:
+fetch all in c5;
+--Testcase 59:
+fetch backward all in c5;
+--Testcase 60:
+fetch all in c5;
+--Testcase 61:
+fetch backward all in c5;
 
 rollback;
+
+-- Stress test for variable LIMIT in conjunction with bounded-heap sorting
+--Testcase 62:
+DELETE FROM INT8_TMP;
+--Testcase 63:
+INSERT INTO INT8_TMP SELECT q1 FROM generate_series(1,10) q1;
+
+--Testcase 64:
+SELECT
+  (SELECT s.q1 
+     FROM (VALUES (1)) AS x,
+          (SELECT q1 FROM INT8_TMP as n 
+             ORDER BY q1 LIMIT 1 OFFSET s.q1-1) AS y) AS z
+  FROM INT8_TMP AS s;
 
 --
 -- Test behavior of volatile and set-returning functions in conjunction
 -- with ORDER BY and LIMIT.
 --
 
+--Testcase 65:
 create temp sequence testseq;
 
 --Testcase 15:
@@ -151,6 +246,25 @@ select unique1, unique2, generate_series(1,10)
 select unique1, unique2, generate_series(1,10)
   from tenk1 order by tenthous limit 7;
 
+-- use of random() is to keep planner from folding the expressions together
+--Testcase 66:
+DELETE FROM INT8_TMP;
+--Testcase 67:
+INSERT INTO INT8_TMP VALUES (generate_series(0,2), generate_series((random()*.1)::int,2));
+--Testcase 68:
+explain (verbose, costs off)
+select q1, q2 from int8_tmp;
+
+--Testcase 69:
+select q1, q2 from int8_tmp;
+
+--Testcase 70:
+explain (verbose, costs off)
+select q1, q2 from int8_tmp order by q2 desc;
+
+--Testcase 71:
+select q1, q2 from int8_tmp order by q2 desc;
+
 -- test for failure to set all aggregates' aggtranstype
 --Testcase 25:
 explain (verbose, costs off)
@@ -161,8 +275,76 @@ select sum(tenthous) as s1, sum(tenthous) + random()*0 as s2
 select sum(tenthous) as s1, sum(tenthous) + random()*0 as s2
   from tenk1 group by thousand order by thousand limit 3;
 
-DROP FOREIGN TABLE onek;
-DROP FOREIGN TABLE int8_tbl;
-DROP FOREIGN TABLE tenk1;
+--
+-- FETCH FIRST
+-- Check the WITH TIES clause
+--
+
+--Testcase 72:
+SELECT  thousand
+		FROM onek WHERE thousand < 5
+		ORDER BY thousand FETCH FIRST 2 ROW WITH TIES;
+
+--Testcase 73:
+SELECT  thousand
+		FROM onek WHERE thousand < 5
+		ORDER BY thousand FETCH FIRST ROWS WITH TIES;
+
+--Testcase 74:
+SELECT  thousand
+		FROM onek WHERE thousand < 5
+		ORDER BY thousand FETCH FIRST 1 ROW WITH TIES;
+
+--Testcase 75:
+SELECT  thousand
+		FROM onek WHERE thousand < 5
+		ORDER BY thousand FETCH FIRST 2 ROW ONLY;
+
+-- should fail
+--Testcase 76:
+SELECT ''::text AS two, unique1, unique2, stringu1
+		FROM onek WHERE unique1 > 50
+		FETCH FIRST 2 ROW WITH TIES;
+
+-- test ruleutils
+--Testcase 77:
+CREATE VIEW limit_thousand_v_1 AS SELECT thousand FROM onek WHERE thousand < 995
+		ORDER BY thousand FETCH FIRST 5 ROWS WITH TIES OFFSET 10;
+--Testcase 78:
+\d+ limit_thousand_v_1
+--Testcase 79:
+CREATE VIEW limit_thousand_v_2 AS SELECT thousand FROM onek WHERE thousand < 995
+		ORDER BY thousand OFFSET 10 FETCH FIRST 5 ROWS ONLY;
+--Testcase 80:
+\d+ limit_thousand_v_2
+--Testcase 81:
+CREATE VIEW limit_thousand_v_3 AS SELECT thousand FROM onek WHERE thousand < 995
+		ORDER BY thousand FETCH FIRST NULL ROWS WITH TIES;		-- fails
+--Testcase 82:
+CREATE VIEW limit_thousand_v_3 AS SELECT thousand FROM onek WHERE thousand < 995
+		ORDER BY thousand FETCH FIRST (NULL+1) ROWS WITH TIES;
+--Testcase 83:
+\d+ limit_thousand_v_3
+--Testcase 84:
+CREATE VIEW limit_thousand_v_4 AS SELECT thousand FROM onek WHERE thousand < 995
+		ORDER BY thousand FETCH FIRST NULL ROWS ONLY;
+--Testcase 85:
+\d+ limit_thousand_v_4
+-- leave these views
+
+-- Clean up
+DO $d$
+declare
+  l_rec record;
+begin
+  for l_rec in (select foreign_table_schema, foreign_table_name
+                from information_schema.foreign_tables) loop
+     execute format('drop foreign table %I.%I cascade;', l_rec.foreign_table_schema, l_rec.foreign_table_name);
+  end loop;
+end;
+$d$;
+
+--Testcase 86:
 DROP SERVER sqlite_svr;
+--Testcase 87:
 DROP EXTENSION sqlite_fdw CASCADE;

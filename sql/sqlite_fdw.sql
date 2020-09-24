@@ -1,14 +1,22 @@
 --SET log_min_messages  TO DEBUG1;
 --SET client_min_messages  TO DEBUG1;
+--Testcase 129:
 CREATE EXTENSION sqlite_fdw;
+--Testcase 130:
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlitefdw_test.db');
+--Testcase 131:
 CREATE FOREIGN TABLE department(department_id int OPTIONS (key 'true'), department_name text) SERVER sqlite_svr; 
+--Testcase 132:
 CREATE FOREIGN TABLE employee(emp_id int OPTIONS (key 'true'), emp_name text, emp_dept_id int) SERVER sqlite_svr;
+--Testcase 133:
 CREATE FOREIGN TABLE empdata(emp_id int OPTIONS (key 'true'), emp_dat bytea) SERVER sqlite_svr;
+--Testcase 134:
 CREATE FOREIGN TABLE numbers(a int OPTIONS (key 'true'), b varchar(255)) SERVER sqlite_svr;
+--Testcase 135:
 CREATE FOREIGN TABLE multiprimary(a int, b int OPTIONS (key 'true'), c int OPTIONS(key 'true')) SERVER sqlite_svr;
-CREATE FOREIGN TABLE noprimary(a int, b int) SERVER sqlite_svr;
+--Testcase 136:
+CREATE FOREIGN TABLE noprimary(a int, b text) SERVER sqlite_svr;
 
 --Testcase 1:
 SELECT * FROM department LIMIT 10;
@@ -109,11 +117,13 @@ SELECT * FROM numbers WHERE (CASE WHEN a % 2 = 0 THEN 1 WHEN a % 5 = 0 THEN 1 EL
 --Testcase 42:
 SELECT * FROM numbers WHERE (CASE b WHEN 'Two' THEN 1 WHEN 'Six' THEN 1 ELSE 0 END) = 1;
 
+--Testcase 137:
 create or replace function test_param_WHERE() returns void as $$
 DECLARE
   n varchar;
 BEGIN
   FOR x IN 1..9 LOOP
+--Testcase 138:
     SELECT b INTO n from numbers WHERE a=x;
     raise notice 'Found number %', n;
   end loop;
@@ -317,6 +327,7 @@ INSERT INTO multiprimary (b,c) VALUES (99, 100);
 SELECT c FROM multiprimary WHERE COALESCE(a,b,c) = 99;
 
 
+--Testcase 139:
 CREATE FOREIGN TABLE multiprimary2(a int, b int, c int OPTIONS(column_name 'b')) SERVER sqlite_svr OPTIONS (table 'multiprimary');
 --Testcase 117:
 SELECT * FROM multiprimary2;
@@ -326,11 +337,13 @@ SELECT * FROM multiprimary2;
 ALTER FOREIGN TABLE multiprimary2 ALTER COLUMN b OPTIONS (column_name 'nosuch column');
 --Testcase 119:
 SELECT * FROM multiprimary2;
+--Testcase 140:
 EXPLAIN (VERBOSE) SELECT * FROM multiprimary2;
 --Testcase 120:
 SELECT a FROM multiprimary2 WHERE b = 1;
 
 
+--Testcase 141:
 CREATE FOREIGN TABLE columntest(a int OPTIONS(column_name 'a a', key 'true'), "b b" int  OPTIONS(key 'true'), c int OPTIONS(column_name 'c c')) SERVER sqlite_svr;
 --Testcase 121:
 INSERT INTO columntest VALUES(1,2,3);
@@ -343,22 +356,33 @@ UPDATE columntest SET a=100 WHERE c = 10;
 --Testcase 125:
 SELECT * FROM columntest;
 --Testcase 126:
-INSERT INTO noprimary VALUES(1,2);
+INSERT INTO noprimary VALUES(1,'2');
 --Testcase 127:
 INSERT INTO noprimary SELECT * FROM noprimary;
 --Testcase 128:
 SELECT * FROM noprimary;
 
+--Testcase 142:
 DROP FUNCTION test_param_WHERE();
+--Testcase 143:
 DROP FOREIGN TABLE numbers;
+--Testcase 144:
 DROP FOREIGN TABLE department;
+--Testcase 145:
 DROP FOREIGN TABLE employee;
+--Testcase 146:
 DROP FOREIGN TABLE empdata;
+--Testcase 147:
 DROP FOREIGN TABLE multiprimary;
+--Testcase 148:
 DROP FOREIGN TABLE multiprimary2;
+--Testcase 149:
 DROP FOREIGN TABLE columntest;
+--Testcase 150:
 DROP FOREIGN TABLE noprimary;
 
+--Testcase 151:
 DROP SERVER sqlite_svr;
+--Testcase 152:
 DROP EXTENSION sqlite_fdw CASCADE;
 

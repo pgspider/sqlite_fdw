@@ -1,8 +1,11 @@
 --SET log_min_messages  TO DEBUG1;
 --SET client_min_messages  TO DEBUG1;
+--Testcase 44:
 CREATE EXTENSION sqlite_fdw;
+--Testcase 45:
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlitefdw_test.db');
+--Testcase 46:
 CREATE SERVER sqlite2 FOREIGN DATA WRAPPER sqlite_fdw;
 IMPORT FOREIGN SCHEMA public FROM SERVER sqlite_svr INTO public;
 --Testcase 1:

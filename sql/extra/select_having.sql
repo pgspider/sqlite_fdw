@@ -2,9 +2,12 @@
 -- SELECT_HAVING
 --
 
+--Testcase 22:
 CREATE EXTENSION sqlite_fdw;
+--Testcase 23:
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlitefdw_test_core.db');
+--Testcase 24:
 CREATE FOREIGN TABLE test_having(a int OPTIONS (key 'true'), b int, c char(8), d char) SERVER sqlite_svr;
 
 -- load test data
@@ -72,6 +75,9 @@ SELECT 1 AS one FROM test_having HAVING 1 < 2;
 --Testcase 21:
 SELECT 1 AS one FROM test_having WHERE 1/a = 1 HAVING 1 < 2;
 
+--Testcase 25:
 DROP FOREIGN TABLE test_having;
+--Testcase 26:
 DROP SERVER sqlite_svr;
+--Testcase 27:
 DROP EXTENSION sqlite_fdw CASCADE;

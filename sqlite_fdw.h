@@ -25,6 +25,7 @@
 #include "optimizer/var.h"
 #endif
 
+#include "fmgr.h"
 #include "foreign/foreign.h"
 #include "lib/stringinfo.h"
 #include "utils/rel.h"
@@ -39,6 +40,11 @@
 
 
 #define CR_NO_ERROR 0
+
+#if (PG_VERSION_NUM < 120000)
+#define table_close(rel, lock)	heap_close(rel, lock)
+#define table_open(rel, lock)	heap_open(rel, lock)
+#endif
 
 /*
  * Options structure to store the Sqlite
