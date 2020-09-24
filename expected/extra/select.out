@@ -1,9 +1,12 @@
 --
 -- SELECT
 --
+--Testcase 43:
 CREATE EXTENSION sqlite_fdw;
+--Testcase 44:
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlitefdw_test_core.db');
+--Testcase 45:
 CREATE FOREIGN TABLE onek (
   unique1   int4,
   unique2   int4,
@@ -22,6 +25,7 @@ CREATE FOREIGN TABLE onek (
   stringu2  name,
   string4   name
 ) SERVER sqlite_svr;
+--Testcase 46:
 CREATE FOREIGN TABLE onek2 (
   unique1   int4,
   unique2   int4,
@@ -40,10 +44,12 @@ CREATE FOREIGN TABLE onek2 (
   stringu2  name,
   string4   name
 ) SERVER sqlite_svr;
+--Testcase 47:
 CREATE FOREIGN TABLE INT8_TBL(
   q1 int8 OPTIONS (key 'true'),
   q2 int8 OPTIONS (key 'true')
 ) SERVER sqlite_svr;
+--Testcase 48:
 CREATE FOREIGN TABLE person (
   name    text,
   age     int4,
@@ -52,6 +58,7 @@ CREATE FOREIGN TABLE person (
 -- btree index
 -- awk '{if($1<10){print;}else{next;}}' onek.data | sort +0n -1
 --
+--Testcase 1:
 SELECT * FROM onek
    WHERE onek.unique1 < 10
    ORDER BY onek.unique1;
@@ -72,6 +79,7 @@ SELECT * FROM onek
 --
 -- awk '{if($1<20){print $1,$14;}else{next;}}' onek.data | sort +0nr -1
 --
+--Testcase 2:
 SELECT onek.unique1, onek.stringu1 FROM onek
    WHERE onek.unique1 < 20
    ORDER BY unique1 using >;
@@ -102,6 +110,7 @@ SELECT onek.unique1, onek.stringu1 FROM onek
 --
 -- awk '{if($1>980){print $1,$14;}else{next;}}' onek.data | sort +1d -2
 --
+--Testcase 3:
 SELECT onek.unique1, onek.stringu1 FROM onek
    WHERE onek.unique1 > 980
    ORDER BY stringu1 using <;
@@ -132,6 +141,7 @@ SELECT onek.unique1, onek.stringu1 FROM onek
 -- awk '{if($1>980){print $1,$16;}else{next;}}' onek.data |
 -- sort +1d -2 +0nr -1
 --
+--Testcase 4:
 SELECT onek.unique1, onek.string4 FROM onek
    WHERE onek.unique1 > 980
    ORDER BY string4 using <, unique1 using >;
@@ -162,6 +172,7 @@ SELECT onek.unique1, onek.string4 FROM onek
 -- awk '{if($1>980){print $1,$16;}else{next;}}' onek.data |
 -- sort +1dr -2 +0n -1
 --
+--Testcase 5:
 SELECT onek.unique1, onek.string4 FROM onek
    WHERE onek.unique1 > 980
    ORDER BY string4 using >, unique1 using <;
@@ -192,6 +203,7 @@ SELECT onek.unique1, onek.string4 FROM onek
 -- awk '{if($1<20){print $1,$16;}else{next;}}' onek.data |
 -- sort +0nr -1 +1d -2
 --
+--Testcase 6:
 SELECT onek.unique1, onek.string4 FROM onek
    WHERE onek.unique1 < 20
    ORDER BY unique1 using >, string4 using <;
@@ -223,6 +235,7 @@ SELECT onek.unique1, onek.string4 FROM onek
 -- awk '{if($1<20){print $1,$16;}else{next;}}' onek.data |
 -- sort +0n -1 +1dr -2
 --
+--Testcase 7:
 SELECT onek.unique1, onek.string4 FROM onek
    WHERE onek.unique1 < 20
    ORDER BY unique1 using <, string4 using >;
@@ -253,30 +266,37 @@ SELECT onek.unique1, onek.string4 FROM onek
 --
 -- test partial btree indexes
 --
+-- As of 7.2, planner probably won't pick an indexscan without stats,
+-- so ANALYZE first.  Also, we want to prevent it from picking a bitmapscan
+-- followed by sort, because that could hide index ordering problems.
+--
+--ANALYZE onek2;
 SET enable_seqscan TO off;
 SET enable_bitmapscan TO off;
 SET enable_sort TO off;
 --
 -- awk '{if($1<10){print $0;}else{next;}}' onek.data | sort +0n -1
 --
-SELECT onek2.* FROM onek2 WHERE onek2.unique1 < 10;
+--Testcase 8:
+SELECT onek2.* FROM onek2 WHERE onek2.unique1 < 10 order by onek2.unique1;
  unique1 | unique2 | two | four | ten | twenty | hundred | thousand | twothousand | fivethous | tenthous | odd | even | stringu1 | stringu2 | string4 
 ---------+---------+-----+------+-----+--------+---------+----------+-------------+-----------+----------+-----+------+----------+----------+---------
-       9 |      49 |   1 |    1 |   9 |      9 |       9 |        9 |           9 |         9 |        9 |  18 |   19 | JAAAAA   | XBAAAA   | HHHHxx
+       0 |     998 |   0 |    0 |   0 |      0 |       0 |        0 |           0 |         0 |        0 |   0 |    1 | AAAAAA   | KMBAAA   | OOOOxx
        1 |     214 |   1 |    1 |   1 |      1 |       1 |        1 |           1 |         1 |        1 |   2 |    3 | BAAAAA   | GIAAAA   | OOOOxx
        2 |     326 |   0 |    2 |   2 |      2 |       2 |        2 |           2 |         2 |        2 |   4 |    5 | CAAAAA   | OMAAAA   | OOOOxx
        3 |     431 |   1 |    3 |   3 |      3 |       3 |        3 |           3 |         3 |        3 |   6 |    7 | DAAAAA   | PQAAAA   | VVVVxx
+       4 |     833 |   0 |    0 |   4 |      4 |       4 |        4 |           4 |         4 |        4 |   8 |    9 | EAAAAA   | BGBAAA   | HHHHxx
        5 |     541 |   1 |    1 |   5 |      5 |       5 |        5 |           5 |         5 |        5 |  10 |   11 | FAAAAA   | VUAAAA   | HHHHxx
+       6 |     978 |   0 |    2 |   6 |      6 |       6 |        6 |           6 |         6 |        6 |  12 |   13 | GAAAAA   | QLBAAA   | OOOOxx
        7 |     647 |   1 |    3 |   7 |      7 |       7 |        7 |           7 |         7 |        7 |  14 |   15 | HAAAAA   | XYAAAA   | VVVVxx
        8 |     653 |   0 |    0 |   8 |      8 |       8 |        8 |           8 |         8 |        8 |  16 |   17 | IAAAAA   | DZAAAA   | HHHHxx
-       4 |     833 |   0 |    0 |   4 |      4 |       4 |        4 |           4 |         4 |        4 |   8 |    9 | EAAAAA   | BGBAAA   | HHHHxx
-       6 |     978 |   0 |    2 |   6 |      6 |       6 |        6 |           6 |         6 |        6 |  12 |   13 | GAAAAA   | QLBAAA   | OOOOxx
-       0 |     998 |   0 |    0 |   0 |      0 |       0 |        0 |           0 |         0 |        0 |   0 |    1 | AAAAAA   | KMBAAA   | OOOOxx
+       9 |      49 |   1 |    1 |   9 |      9 |       9 |        9 |           9 |         9 |        9 |  18 |   19 | JAAAAA   | XBAAAA   | HHHHxx
 (10 rows)
 
 --
 -- awk '{if($1<20){print $1,$14;}else{next;}}' onek.data | sort +0nr -1
 --
+--Testcase 9:
 SELECT onek2.unique1, onek2.stringu1 FROM onek2
     WHERE onek2.unique1 < 20
     ORDER BY unique1 using >;
@@ -307,34 +327,36 @@ SELECT onek2.unique1, onek2.stringu1 FROM onek2
 --
 -- awk '{if($1>980){print $1,$14;}else{next;}}' onek.data | sort +1d -2
 --
+--Testcase 10:
 SELECT onek2.unique1, onek2.stringu1 FROM onek2
-   WHERE onek2.unique1 > 980;
+   WHERE onek2.unique1 > 980 ORDER BY onek2.unique1;
  unique1 | stringu1 
 ---------+----------
-     997 | JMAAAA
-     995 | HMAAAA
-     999 | LMAAAA
-     983 | VLAAAA
-     989 | BMAAAA
-     986 | YLAAAA
-     996 | IMAAAA
+     981 | TLAAAA
      982 | ULAAAA
-     992 | EMAAAA
+     983 | VLAAAA
+     984 | WLAAAA
+     985 | XLAAAA
+     986 | YLAAAA
+     987 | ZLAAAA
+     988 | AMAAAA
+     989 | BMAAAA
      990 | CMAAAA
      991 | DMAAAA
-     984 | WLAAAA
-     981 | TLAAAA
-     998 | KMAAAA
+     992 | EMAAAA
      993 | FMAAAA
      994 | GMAAAA
-     988 | AMAAAA
-     987 | ZLAAAA
-     985 | XLAAAA
+     995 | HMAAAA
+     996 | IMAAAA
+     997 | JMAAAA
+     998 | KMAAAA
+     999 | LMAAAA
 (19 rows)
 
 RESET enable_seqscan;
 RESET enable_bitmapscan;
 RESET enable_sort;
+--Testcase 11:
 SELECT two, stringu1, ten, string4
    INTO TABLE tmp
    FROM onek;
@@ -345,6 +367,7 @@ SELECT two, stringu1, ten, string4
 -- awk 'BEGIN{FS="      ";}{if(NF!=2){print $4,$5;}else{print;}}' - stud_emp.data
 --
 -- SELECT name, age FROM person*; ??? check if different
+--Testcase 12:
 SELECT p.name, p.age FROM person* p;
   name   | age 
 ---------+-----
@@ -407,6 +430,7 @@ SELECT p.name, p.age FROM person* p;
 -- awk 'BEGIN{FS="      ";}{if(NF!=1){print $4,$5;}else{print;}}' - stud_emp.data |
 -- sort +1nr -2
 --
+--Testcase 13:
 SELECT p.name, p.age FROM person* p ORDER BY age using >, name;
   name   | age 
 ---------+-----
@@ -463,8 +487,33 @@ SELECT p.name, p.age FROM person* p ORDER BY age using >, name;
 (50 rows)
 
 --
+-- Test some cases involving whole-row Var referencing a subquery
+--
+--Testcase 49:
+select foo from (select 1 offset 0) as foo;
+ foo 
+-----
+ (1)
+(1 row)
+
+--Testcase 50:
+select foo from (select null offset 0) as foo;
+ foo 
+-----
+ ()
+(1 row)
+
+--Testcase 51:
+select foo from (select 'xyzzy',1,null offset 0) as foo;
+    foo     
+------------
+ (xyzzy,1,)
+(1 row)
+
+--
 -- Test VALUES lists
 --
+--Testcase 14:
 select * from onek, (values(147, 'RFAAAA'), (931, 'VJAAAA')) as v (i, j)
     WHERE onek.unique1 = v.i and onek.stringu1 = v.j;
  unique1 | unique2 | two | four | ten | twenty | hundred | thousand | twothousand | fivethous | tenthous | odd | even | stringu1 | stringu2 | string4 |  i  |   j    
@@ -475,6 +524,7 @@ select * from onek, (values(147, 'RFAAAA'), (931, 'VJAAAA')) as v (i, j)
 
 -- a more complex case
 -- looks like we're coding lisp :-)
+--Testcase 15:
 select * from onek,
   (values ((select i from
     (values(10000), (2), (389), (1000), (2000), ((select 10029))) as foo(i)
@@ -486,6 +536,7 @@ select * from onek,
 (1 row)
 
 -- try VALUES in a subquery
+--Testcase 16:
 select * from onek
     where (unique1,ten) in (values (1,1), (20,0), (99,9), (17,99))
     order by unique1;
@@ -497,6 +548,16 @@ select * from onek
 (3 rows)
 
 -- VALUES is also legal as a standalone query or a set-operation member
+--Testcase 17:
+VALUES (1,2), (3,4+4), (7,77.7);
+ column1 | column2 
+---------+---------
+       1 |       2
+       3 |       8
+       7 |    77.7
+(3 rows)
+
+--Testcase 52:
 VALUES (1,2), (3,4+4), (7,77.7)
 UNION ALL
 SELECT 2+2, 57
@@ -510,16 +571,19 @@ TABLE int8_tbl;
                 4 |                57
               123 |               456
               123 |  4567890123456789
- 4567890123456789 | -4567890123456789
  4567890123456789 |               123
  4567890123456789 |  4567890123456789
+ 4567890123456789 | -4567890123456789
 (9 rows)
 
 --
 -- Test ORDER BY options
 --
-CREATE FOREIGN TABLE foo (f1 int) SERVER sqlite_svr;
+--Testcase 53:
+CREATE FOREIGN TABLE foo (f1 int options (key 'true')) SERVER sqlite_svr;
+--Testcase 18:
 INSERT INTO foo VALUES (42),(3),(10),(7),(null),(null),(1);
+--Testcase 19:
 SELECT * FROM foo ORDER BY f1;
  f1 
 ----
@@ -532,6 +596,7 @@ SELECT * FROM foo ORDER BY f1;
    
 (7 rows)
 
+--Testcase 20:
 SELECT * FROM foo ORDER BY f1 ASC;	-- same thing
  f1 
 ----
@@ -544,6 +609,7 @@ SELECT * FROM foo ORDER BY f1 ASC;	-- same thing
    
 (7 rows)
 
+--Testcase 21:
 SELECT * FROM foo ORDER BY f1 NULLS FIRST;
  f1 
 ----
@@ -556,6 +622,7 @@ SELECT * FROM foo ORDER BY f1 NULLS FIRST;
  42
 (7 rows)
 
+--Testcase 22:
 SELECT * FROM foo ORDER BY f1 DESC;
  f1 
 ----
@@ -568,6 +635,7 @@ SELECT * FROM foo ORDER BY f1 DESC;
   1
 (7 rows)
 
+--Testcase 23:
 SELECT * FROM foo ORDER BY f1 DESC NULLS LAST;
  f1 
 ----
@@ -580,10 +648,31 @@ SELECT * FROM foo ORDER BY f1 DESC NULLS LAST;
    
 (7 rows)
 
+-- Skip, cannot create index on foreign table
+-- check if indexscans do the right things
+--CREATE INDEX fooi ON foo (f1);
+--SET enable_sort = false;
+--SELECT * FROM foo ORDER BY f1;
+--SELECT * FROM foo ORDER BY f1 NULLS FIRST;
+--SELECT * FROM foo ORDER BY f1 DESC;
+--SELECT * FROM foo ORDER BY f1 DESC NULLS LAST;
+--DROP INDEX fooi;
+--CREATE INDEX fooi ON foo (f1 DESC);
+--SELECT * FROM foo ORDER BY f1;
+--SELECT * FROM foo ORDER BY f1 NULLS FIRST;
+--SELECT * FROM foo ORDER BY f1 DESC;
+--SELECT * FROM foo ORDER BY f1 DESC NULLS LAST;
+--DROP INDEX fooi;
+--CREATE INDEX fooi ON foo (f1 DESC NULLS LAST);
+--SELECT * FROM foo ORDER BY f1;
+--SELECT * FROM foo ORDER BY f1 NULLS FIRST;
+--SELECT * FROM foo ORDER BY f1 DESC;
+--SELECT * FROM foo ORDER BY f1 DESC NULLS LAST;
 --
 -- Test planning of some cases with partial indexes
 --
 -- partial index is usable
+--Testcase 24:
 explain (costs off)
 select * from onek2 where unique2 = 11 and stringu1 = 'ATAAAA';
               QUERY PLAN               
@@ -592,6 +681,7 @@ select * from onek2 where unique2 = 11 and stringu1 = 'ATAAAA';
    Filter: (stringu1 = 'ATAAAA'::name)
 (2 rows)
 
+--Testcase 25:
 select * from onek2 where unique2 = 11 and stringu1 = 'ATAAAA';
  unique1 | unique2 | two | four | ten | twenty | hundred | thousand | twothousand | fivethous | tenthous | odd | even | stringu1 | stringu2 | string4 
 ---------+---------+-----+------+-----+--------+---------+----------+-------------+-----------+----------+-----+------+----------+----------+---------
@@ -599,6 +689,7 @@ select * from onek2 where unique2 = 11 and stringu1 = 'ATAAAA';
 (1 row)
 
 -- actually run the query with an analyze to use the partial index
+--Testcase 54:
 explain (costs off, analyze on, timing off, summary off)
 select * from onek2 where unique2 = 11 and stringu1 = 'ATAAAA';
                   QUERY PLAN                   
@@ -607,6 +698,7 @@ select * from onek2 where unique2 = 11 and stringu1 = 'ATAAAA';
    Filter: (stringu1 = 'ATAAAA'::name)
 (2 rows)
 
+--Testcase 27:
 explain (costs off)
 select unique2 from onek2 where unique2 = 11 and stringu1 = 'ATAAAA';
               QUERY PLAN               
@@ -615,6 +707,7 @@ select unique2 from onek2 where unique2 = 11 and stringu1 = 'ATAAAA';
    Filter: (stringu1 = 'ATAAAA'::name)
 (2 rows)
 
+--Testcase 28:
 select unique2 from onek2 where unique2 = 11 and stringu1 = 'ATAAAA';
  unique2 
 ---------
@@ -622,6 +715,7 @@ select unique2 from onek2 where unique2 = 11 and stringu1 = 'ATAAAA';
 (1 row)
 
 -- partial index predicate implies clause, so no need for retest
+--Testcase 29:
 explain (costs off)
 select * from onek2 where unique2 = 11 and stringu1 < 'B';
             QUERY PLAN            
@@ -630,12 +724,14 @@ select * from onek2 where unique2 = 11 and stringu1 < 'B';
    Filter: (stringu1 < 'B'::name)
 (2 rows)
 
+--Testcase 30:
 select * from onek2 where unique2 = 11 and stringu1 < 'B';
  unique1 | unique2 | two | four | ten | twenty | hundred | thousand | twothousand | fivethous | tenthous | odd | even | stringu1 | stringu2 | string4 
 ---------+---------+-----+------+-----+--------+---------+----------+-------------+-----------+----------+-----+------+----------+----------+---------
      494 |      11 |   0 |    2 |   4 |     14 |       4 |       94 |          94 |       494 |      494 |   8 |    9 | ATAAAA   | LAAAAA   | VVVVxx
 (1 row)
 
+--Testcase 31:
 explain (costs off)
 select unique2 from onek2 where unique2 = 11 and stringu1 < 'B';
             QUERY PLAN            
@@ -644,6 +740,7 @@ select unique2 from onek2 where unique2 = 11 and stringu1 < 'B';
    Filter: (stringu1 < 'B'::name)
 (2 rows)
 
+--Testcase 32:
 select unique2 from onek2 where unique2 = 11 and stringu1 < 'B';
  unique2 
 ---------
@@ -651,6 +748,7 @@ select unique2 from onek2 where unique2 = 11 and stringu1 < 'B';
 (1 row)
 
 -- but if it's an update target, must retest anyway
+--Testcase 33:
 explain (costs off)
 select unique2 from onek2 where unique2 = 11 and stringu1 < 'B' for update;
                QUERY PLAN               
@@ -660,6 +758,7 @@ select unique2 from onek2 where unique2 = 11 and stringu1 < 'B' for update;
          Filter: (stringu1 < 'B'::name)
 (3 rows)
 
+--Testcase 34:
 select unique2 from onek2 where unique2 = 11 and stringu1 < 'B' for update;
  unique2 
 ---------
@@ -667,6 +766,7 @@ select unique2 from onek2 where unique2 = 11 and stringu1 < 'B' for update;
 (1 row)
 
 -- partial index is not applicable
+--Testcase 35:
 explain (costs off)
 select unique2 from onek2 where unique2 = 11 and stringu1 < 'C';
             QUERY PLAN            
@@ -675,6 +775,7 @@ select unique2 from onek2 where unique2 = 11 and stringu1 < 'C';
    Filter: (stringu1 < 'C'::name)
 (2 rows)
 
+--Testcase 36:
 select unique2 from onek2 where unique2 = 11 and stringu1 < 'C';
  unique2 
 ---------
@@ -683,6 +784,7 @@ select unique2 from onek2 where unique2 = 11 and stringu1 < 'C';
 
 -- partial index implies clause, but bitmap scan must recheck predicate anyway
 SET enable_indexscan TO off;
+--Testcase 37:
 explain (costs off)
 select unique2 from onek2 where unique2 = 11 and stringu1 < 'B';
             QUERY PLAN            
@@ -691,6 +793,7 @@ select unique2 from onek2 where unique2 = 11 and stringu1 < 'B';
    Filter: (stringu1 < 'B'::name)
 (2 rows)
 
+--Testcase 38:
 select unique2 from onek2 where unique2 = 11 and stringu1 < 'B';
  unique2 
 ---------
@@ -699,6 +802,7 @@ select unique2 from onek2 where unique2 = 11 and stringu1 < 'B';
 
 RESET enable_indexscan;
 -- check multi-index cases too
+--Testcase 39:
 explain (costs off)
 select unique1, unique2 from onek2
   where (unique2 = 11 or unique1 = 0) and stringu1 < 'B';
@@ -708,6 +812,7 @@ select unique1, unique2 from onek2
    Filter: (stringu1 < 'B'::name)
 (2 rows)
 
+--Testcase 40:
 select unique1, unique2 from onek2
   where (unique2 = 11 or unique1 = 0) and stringu1 < 'B';
  unique1 | unique2 
@@ -716,6 +821,7 @@ select unique1, unique2 from onek2
        0 |     998
 (2 rows)
 
+--Testcase 41:
 explain (costs off)
 select unique1, unique2 from onek2
   where (unique2 = 11 and stringu1 < 'B') or unique1 = 0;
@@ -725,6 +831,7 @@ select unique1, unique2 from onek2
    Filter: (((unique2 = 11) AND (stringu1 < 'B'::name)) OR (unique1 = 0))
 (2 rows)
 
+--Testcase 42:
 select unique1, unique2 from onek2
   where (unique2 = 11 and stringu1 < 'B') or unique1 = 0;
  unique1 | unique2 
@@ -733,10 +840,89 @@ select unique1, unique2 from onek2
        0 |     998
 (2 rows)
 
+--
+-- Test some corner cases that have been known to confuse the planner
+--
+-- ORDER BY on a constant doesn't really need any sorting
+--Testcase 55:
+SELECT 1 AS x ORDER BY x;
+ x 
+---
+ 1
+(1 row)
+
+-- But ORDER BY on a set-valued expression does
+--Testcase 56:
+create function sillysrf(int) returns setof int as
+  'values (1),(10),(2),($1)' language sql immutable;
+--Testcase 57:
+select sillysrf(42);
+ sillysrf 
+----------
+        1
+       10
+        2
+       42
+(4 rows)
+
+--Testcase 58:
+select sillysrf(-1) order by 1;
+ sillysrf 
+----------
+       -1
+        1
+        2
+       10
+(4 rows)
+
+--Testcase 59:
+drop function sillysrf(int);
+-- X = X isn't a no-op, it's effectively X IS NOT NULL assuming = is strict
+-- (see bug #5084)
+--Testcase 60:
+select * from (values (2),(null),(1)) v(k) where k = k order by k;
+ k 
+---
+ 1
+ 2
+(2 rows)
+
+--Testcase 61:
+select * from (values (2),(null),(1)) v(k) where k = k;
+ k 
+---
+ 2
+ 1
+(2 rows)
+
+-- Test partitioned tables with no partitions, which should be handled the
+-- same as the non-inheritance case when expanding its RTE.
+--Testcase 62:
+create table list_parted_tbl (a int,b int) partition by list (a);
+--Testcase 63:
+create table list_parted_tbl1 partition of list_parted_tbl
+  for values in (1) partition by list(b);
+--Testcase 64:
+explain (costs off) select * from list_parted_tbl;
+        QUERY PLAN        
+--------------------------
+ Result
+   One-Time Filter: false
+(2 rows)
+
+--Testcase 65:
+drop table list_parted_tbl;
+--Testcase 66:
 DROP FOREIGN TABLE onek;
+--Testcase 67:
 DROP FOREIGN TABLE onek2;
+--Testcase 68:
 DROP FOREIGN TABLE int8_tbl;
+--Testcase 69:
 DROP FOREIGN TABLE person;
+--Testcase 70:
 DROP FOREIGN TABLE foo;
+--Testcase 71:
 DROP SERVER sqlite_svr;
+--Testcase 72:
 DROP EXTENSION sqlite_fdw CASCADE;

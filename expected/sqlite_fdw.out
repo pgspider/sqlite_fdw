@@ -1,59 +1,86 @@
 --SET log_min_messages  TO DEBUG1;
 --SET client_min_messages  TO DEBUG1;
+--Testcase 129:
 CREATE EXTENSION sqlite_fdw;
+--Testcase 130:
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlitefdw_test.db');
+--Testcase 131:
 CREATE FOREIGN TABLE department(department_id int OPTIONS (key 'true'), department_name text) SERVER sqlite_svr; 
+--Testcase 132:
 CREATE FOREIGN TABLE employee(emp_id int OPTIONS (key 'true'), emp_name text, emp_dept_id int) SERVER sqlite_svr;
+--Testcase 133:
 CREATE FOREIGN TABLE empdata(emp_id int OPTIONS (key 'true'), emp_dat bytea) SERVER sqlite_svr;
+--Testcase 134:
 CREATE FOREIGN TABLE numbers(a int OPTIONS (key 'true'), b varchar(255)) SERVER sqlite_svr;
+--Testcase 135:
 CREATE FOREIGN TABLE multiprimary(a int, b int OPTIONS (key 'true'), c int OPTIONS(key 'true')) SERVER sqlite_svr;
-CREATE FOREIGN TABLE noprimary(a int, b int) SERVER sqlite_svr;
+--Testcase 136:
+CREATE FOREIGN TABLE noprimary(a int, b text) SERVER sqlite_svr;
+--Testcase 1:
 SELECT * FROM department LIMIT 10;
  department_id | department_name 
 ---------------+-----------------
 (0 rows)
 
+--Testcase 2:
 SELECT * FROM employee LIMIT 10;
  emp_id | emp_name | emp_dept_id 
 --------+----------+-------------
 (0 rows)
 
+--Testcase 3:
 SELECT * FROM empdata LIMIT 10;
  emp_id | emp_dat 
 --------+---------
 (0 rows)
 
+--Testcase 4:
 INSERT INTO department VALUES(generate_series(1,100), 'dept - ' || generate_series(1,100));
+--Testcase 5:
 INSERT INTO employee VALUES(generate_series(1,100), 'emp - ' || generate_series(1,100), generate_series(1,100));
+--Testcase 6:
 INSERT INTO empdata  VALUES(1, decode ('01234567', 'hex'));
+--Testcase 7:
 INSERT INTO numbers VALUES(1, 'One');
+--Testcase 8:
 INSERT INTO numbers VALUES(2, 'Two');
+--Testcase 9:
 INSERT INTO numbers VALUES(3, 'Three');
+--Testcase 10:
 INSERT INTO numbers VALUES(4, 'Four');
+--Testcase 11:
 INSERT INTO numbers VALUES(5, 'Five');
+--Testcase 12:
 INSERT INTO numbers VALUES(6, 'Six');
+--Testcase 13:
 INSERT INTO numbers VALUES(7, 'Seven');
+--Testcase 14:
 INSERT INTO numbers VALUES(8, 'Eight');
+--Testcase 15:
 INSERT INTO numbers VALUES(9, 'Nine');
+--Testcase 16:
 SELECT count(*) FROM department;
  count 
 -------
    100
 (1 row)
 
+--Testcase 17:
 SELECT count(*) FROM employee;
  count 
 -------
    100
 (1 row)
 
+--Testcase 18:
 SELECT count(*) FROM empdata;
  count 
 -------
      1
 (1 row)
 
+--Testcase 19:
 EXPLAIN (COSTS FALSE) SELECT * FROM department d, employee e WHERE d.department_id = e.emp_dept_id LIMIT 10;
                        QUERY PLAN                       
 --------------------------------------------------------
@@ -65,6 +92,7 @@ EXPLAIN (COSTS FALSE) SELECT * FROM department d, employee e WHERE d.department_
                ->  Foreign Scan on employee e
 (6 rows)
 
+--Testcase 20:
 EXPLAIN (COSTS FALSE) SELECT * FROM department d, employee e WHERE d.department_id IN (SELECT department_id FROM department) LIMIT 10;
                                QUERY PLAN                                
 -------------------------------------------------------------------------
@@ -79,6 +107,7 @@ EXPLAIN (COSTS FALSE) SELECT * FROM department d, employee e WHERE d.department_
                ->  Foreign Scan on employee e
 (9 rows)
 
+--Testcase 21:
 SELECT * FROM department d, employee e WHERE d.department_id = e.emp_dept_id LIMIT 10;
  department_id | department_name | emp_id | emp_name | emp_dept_id 
 ---------------+-----------------+--------+----------+-------------
@@ -94,6 +123,7 @@ SELECT * FROM department d, employee e WHERE d.department_id = e.emp_dept_id LIM
             10 | dept - 10       |     10 | emp - 10 |          10
 (10 rows)
 
+--Testcase 22:
 SELECT * FROM department d, employee e WHERE d.department_id IN (SELECT department_id FROM department) ORDER BY d.department_id LIMIT 10;
  department_id | department_name | emp_id | emp_name | emp_dept_id 
 ---------------+-----------------+--------+----------+-------------
@@ -109,39 +139,48 @@ SELECT * FROM department d, employee e WHERE d.department_id IN (SELECT departme
              1 | dept - 1        |     10 | emp - 10 |          10
 (10 rows)
 
+--Testcase 23:
 SELECT * FROM empdata;
  emp_id |  emp_dat   
 --------+------------
       1 | \x01234567
 (1 row)
 
+--Testcase 24:
 DELETE FROM employee WHERE emp_id = 10;
+--Testcase 25:
 SELECT COUNT(*) FROM department LIMIT 10;
  count 
 -------
    100
 (1 row)
 
+--Testcase 26:
 SELECT COUNT(*) FROM employee WHERE emp_id = 10;
  count 
 -------
      0
 (1 row)
 
+--Testcase 27:
 UPDATE employee SET emp_name = 'UPDATEd emp' WHERE emp_id = 20;
+--Testcase 28:
 SELECT emp_id, emp_name FROM employee WHERE emp_name like 'UPDATEd emp';
  emp_id |  emp_name   
 --------+-------------
      20 | UPDATEd emp
 (1 row)
 
+--Testcase 29:
 UPDATE empdata SET emp_dat = decode ('0123', 'hex');
+--Testcase 30:
 SELECT * FROM empdata;
  emp_id | emp_dat 
 --------+---------
       1 | \x0123
 (1 row)
 
+--Testcase 31:
 SELECT * FROM employee LIMIT 10;
  emp_id | emp_name | emp_dept_id 
 --------+----------+-------------
@@ -157,12 +196,14 @@ SELECT * FROM employee LIMIT 10;
      11 | emp - 11 |          11
 (10 rows)
 
+--Testcase 32:
 SELECT * FROM employee WHERE emp_id IN (1);
  emp_id | emp_name | emp_dept_id 
 --------+----------+-------------
       1 | emp - 1  |           1
 (1 row)
 
+--Testcase 33:
 SELECT * FROM employee WHERE emp_id IN (1,3,4,5);
  emp_id | emp_name | emp_dept_id 
 --------+----------+-------------
@@ -172,11 +213,13 @@ SELECT * FROM employee WHERE emp_id IN (1,3,4,5);
       5 | emp - 5  |           5
 (4 rows)
 
+--Testcase 34:
 SELECT * FROM employee WHERE emp_id IN (10000,1000);
  emp_id | emp_name | emp_dept_id 
 --------+----------+-------------
 (0 rows)
 
+--Testcase 35:
 SELECT * FROM employee WHERE emp_id NOT IN (1) LIMIT 5;
  emp_id | emp_name | emp_dept_id 
 --------+----------+-------------
@@ -187,6 +230,7 @@ SELECT * FROM employee WHERE emp_id NOT IN (1) LIMIT 5;
       6 | emp - 6  |           6
 (5 rows)
 
+--Testcase 36:
 SELECT * FROM employee WHERE emp_id NOT IN (1,3,4,5) LIMIT 5;
  emp_id | emp_name | emp_dept_id 
 --------+----------+-------------
@@ -197,6 +241,7 @@ SELECT * FROM employee WHERE emp_id NOT IN (1,3,4,5) LIMIT 5;
       9 | emp - 9  |           9
 (5 rows)
 
+--Testcase 37:
 SELECT * FROM employee WHERE emp_id NOT IN (10000,1000) LIMIT 5;
  emp_id | emp_name | emp_dept_id 
 --------+----------+-------------
@@ -207,6 +252,7 @@ SELECT * FROM employee WHERE emp_id NOT IN (10000,1000) LIMIT 5;
       5 | emp - 5  |           5
 (5 rows)
 
+--Testcase 38:
 SELECT * FROM employee WHERE emp_id NOT IN (SELECT emp_id FROM employee WHERE emp_id IN (1,10));
  emp_id |  emp_name   | emp_dept_id 
 --------+-------------+-------------
@@ -310,6 +356,7 @@ SELECT * FROM employee WHERE emp_id NOT IN (SELECT emp_id FROM employee WHERE em
     100 | emp - 100   |         100
 (98 rows)
 
+--Testcase 39:
 SELECT * FROM employee WHERE emp_name NOT IN ('emp - 1', 'emp - 2') LIMIT 5;
  emp_id | emp_name | emp_dept_id 
 --------+----------+-------------
@@ -320,6 +367,7 @@ SELECT * FROM employee WHERE emp_name NOT IN ('emp - 1', 'emp - 2') LIMIT 5;
       7 | emp - 7  |           7
 (5 rows)
 
+--Testcase 40:
 SELECT * FROM employee WHERE emp_name NOT IN ('emp - 10') LIMIT 5;
  emp_id | emp_name | emp_dept_id 
 --------+----------+-------------
@@ -330,6 +378,7 @@ SELECT * FROM employee WHERE emp_name NOT IN ('emp - 10') LIMIT 5;
       5 | emp - 5  |           5
 (5 rows)
 
+--Testcase 41:
 SELECT * FROM numbers WHERE (CASE WHEN a % 2 = 0 THEN 1 WHEN a % 5 = 0 THEN 1 ELSE 0 END) = 1;
  a |   b   
 ---+-------
@@ -340,6 +389,7 @@ SELECT * FROM numbers WHERE (CASE WHEN a % 2 = 0 THEN 1 WHEN a % 5 = 0 THEN 1 EL
  8 | Eight
 (5 rows)
 
+--Testcase 42:
 SELECT * FROM numbers WHERE (CASE b WHEN 'Two' THEN 1 WHEN 'Six' THEN 1 ELSE 0 END) = 1;
  a |  b  
 ---+-----
@@ -347,17 +397,20 @@ SELECT * FROM numbers WHERE (CASE b WHEN 'Two' THEN 1 WHEN 'Six' THEN 1 ELSE 0 E
  6 | Six
 (2 rows)
 
+--Testcase 137:
 create or replace function test_param_WHERE() returns void as $$
 DECLARE
   n varchar;
 BEGIN
   FOR x IN 1..9 LOOP
+--Testcase 138:
     SELECT b INTO n from numbers WHERE a=x;
     raise notice 'Found number %', n;
   end loop;
   return;
 END
 $$ LANGUAGE plpgsql;
+--Testcase 43:
 SELECT test_param_WHERE();
 NOTICE:  Found number One
 NOTICE:  Found number Two
@@ -373,25 +426,30 @@ NOTICE:  Found number Nine
  
 (1 row)
 
+--Testcase 44:
 SELECT b from numbers WHERE a=1;
   b  
 -----
  One
 (1 row)
 
+--Testcase 45:
 EXPLAIN(COSTS OFF) SELECT b from numbers WHERE a=1;
        QUERY PLAN        
 -------------------------
  Foreign Scan on numbers
 (1 row)
 
+--Testcase 46:
 SELECT a FROM numbers WHERE b = (SELECT NULL::text);
  a 
 ---
 (0 rows)
 
+--Testcase 47:
 PREPARE stmt1 (int, int) AS
   SELECT * FROM numbers WHERE a=$1 or a=$2;
+--Testcase 48:
 EXECUTE stmt1(1,2);
  a |  b  
 ---+-----
@@ -399,12 +457,14 @@ EXECUTE stmt1(1,2);
  2 | Two
 (2 rows)
 
+--Testcase 49:
 EXECUTE stmt1(2,2); 
  a |  b  
 ---+-----
  2 | Two
 (1 row)
 
+--Testcase 50:
 EXECUTE stmt1(3,2); 
  a |   b   
 ---+-------
@@ -412,6 +472,7 @@ EXECUTE stmt1(3,2);
  3 | Three
 (2 rows)
 
+--Testcase 51:
 EXECUTE stmt1(4,2);
  a |  b   
 ---+------
@@ -420,6 +481,7 @@ EXECUTE stmt1(4,2);
 (2 rows)
 
 -- generic plan
+--Testcase 52:
 EXECUTE stmt1(5,2); 
  a |  b   
 ---+------
@@ -427,6 +489,7 @@ EXECUTE stmt1(5,2);
  5 | Five
 (2 rows)
 
+--Testcase 53:
 EXECUTE stmt1(6,2); 
  a |  b  
 ---+-----
@@ -434,6 +497,7 @@ EXECUTE stmt1(6,2);
  6 | Six
 (2 rows)
 
+--Testcase 54:
 EXECUTE stmt1(7,2); 
  a |   b   
 ---+-------
@@ -441,14 +505,21 @@ EXECUTE stmt1(7,2);
  7 | Seven
 (2 rows)
 
+--Testcase 55:
 DELETE FROM employee;
+--Testcase 56:
 DELETE FROM department;
+--Testcase 57:
 DELETE FROM empdata;
+--Testcase 58:
 DELETE FROM numbers;
 BEGIN;
+--Testcase 59:
 INSERT INTO numbers VALUES(1, 'One');
+--Testcase 60:
 INSERT INTO numbers VALUES(2, 'Two');
 COMMIT;
+--Testcase 61:
 SELECT * from numbers;
  a |  b  
 ---+-----
@@ -457,8 +528,10 @@ SELECT * from numbers;
 (2 rows)
 
 BEGIN;
+--Testcase 62:
 INSERT INTO numbers VALUES(3, 'Three');
 ROLLBACK;
+--Testcase 63:
 SELECT * from numbers;
  a |  b  
 ---+-----
@@ -467,12 +540,16 @@ SELECT * from numbers;
 (2 rows)
 
 BEGIN;
+--Testcase 64:
 INSERT INTO numbers VALUES(4, 'Four');
 SAVEPOINT my_savepoint;
+--Testcase 65:
 INSERT INTO numbers VALUES(5, 'Five');
 ROLLBACK TO SAVEPOINT my_savepoint;
+--Testcase 66:
 INSERT INTO numbers VALUES(6, 'Six');
 COMMIT;
+--Testcase 67:
 SELECT * from numbers;
  a |  b   
 ---+------
@@ -483,18 +560,24 @@ SELECT * from numbers;
 (4 rows)
 
 -- duplicate key
+--Testcase 68:
 INSERT INTO numbers VALUES(1, 'One');
 ERROR:  failed to execute remote SQL: rc=19 UNIQUE constraint failed: numbers.b 
    sql=INSERT INTO main."numbers"(`a`, `b`) VALUES (?, ?)
+--Testcase 69:
 DELETE from numbers;
 BEGIN;
+--Testcase 70:
 INSERT INTO numbers VALUES(1, 'One');
+--Testcase 71:
 INSERT INTO numbers VALUES(2, 'Two');
 COMMIT;
 -- violate unique constraint
+--Testcase 72:
 UPDATE numbers SET b='Two' WHERE a = 1; 
 ERROR:  failed to execute remote SQL: rc=19 UNIQUE constraint failed: numbers.b 
    sql=UPDATE main."numbers" SET `b` = ? WHERE `a`=?
+--Testcase 73:
 SELECT * from numbers;
  a |  b  
 ---+-----
@@ -503,6 +586,7 @@ SELECT * from numbers;
 (2 rows)
 
 -- push down
+--Testcase 74:
 explain (costs off) SELECT * from numbers WHERE  a = any(ARRAY[2,3,4,5]::int[]);
        QUERY PLAN        
 -------------------------
@@ -510,6 +594,7 @@ explain (costs off) SELECT * from numbers WHERE  a = any(ARRAY[2,3,4,5]::int[]);
 (1 row)
 
 -- (1,2,3) is pushed down
+--Testcase 75:
 explain (costs off) SELECT * from numbers WHERE a in (1,2,3) AND (1,2) < (a,5);
             QUERY PLAN             
 -----------------------------------
@@ -518,6 +603,7 @@ explain (costs off) SELECT * from numbers WHERE a in (1,2,3) AND (1,2) < (a,5);
 (2 rows)
 
 -- not push down
+--Testcase 76:
 explain (costs off) SELECT * from numbers WHERE a in (a+2*a,5);
        QUERY PLAN        
 -------------------------
@@ -525,6 +611,7 @@ explain (costs off) SELECT * from numbers WHERE a in (a+2*a,5);
 (1 row)
 
 -- not push down
+--Testcase 77:
 explain (costs off) SELECT * from numbers WHERE  a = any(ARRAY[1,2,a]::int[]);
               QUERY PLAN              
 --------------------------------------
@@ -532,12 +619,14 @@ explain (costs off) SELECT * from numbers WHERE  a = any(ARRAY[1,2,a]::int[]);
    Filter: (a = ANY (ARRAY[1, 2, a]))
 (2 rows)
 
+--Testcase 78:
 SELECT * from numbers WHERE  a = any(ARRAY[2,3,4,5]::int[]);
  a |  b  
 ---+-----
  2 | Two
 (1 row)
 
+--Testcase 79:
 SELECT * from numbers WHERE  a = any(ARRAY[1,2,a]::int[]);
  a |  b  
 ---+-----
@@ -545,9 +634,13 @@ SELECT * from numbers WHERE  a = any(ARRAY[1,2,a]::int[]);
  2 | Two
 (2 rows)
 
+--Testcase 80:
 INSERT INTO multiprimary VALUES(1,2,3);
+--Testcase 81:
 INSERT INTO multiprimary VALUES(1,2,4);
+--Testcase 82:
 UPDATE multiprimary SET b = 10 WHERE c = 3;
+--Testcase 83:
 SELECT * from multiprimary;
  a | b  | c 
 ---+----+---
@@ -555,7 +648,9 @@ SELECT * from multiprimary;
  1 |  2 | 4
 (2 rows)
 
+--Testcase 84:
 UPDATE multiprimary SET a = 10 WHERE a = 1;
+--Testcase 85:
 SELECT * from multiprimary;
  a  | b  | c 
 ----+----+---
@@ -563,7 +658,9 @@ SELECT * from multiprimary;
  10 |  2 | 4
 (2 rows)
 
+--Testcase 86:
 UPDATE multiprimary SET a = 100, b=200, c=300 WHERE a=10 AND b=10;
+--Testcase 87:
 SELECT * from multiprimary;
   a  |  b  |  c  
 -----+-----+-----
@@ -571,7 +668,9 @@ SELECT * from multiprimary;
   10 |   2 |   4
 (2 rows)
 
+--Testcase 88:
 UPDATE multiprimary SET a = 1234;
+--Testcase 89:
 SELECT * from multiprimary;
   a   |  b  |  c  
 ------+-----+-----
@@ -579,7 +678,9 @@ SELECT * from multiprimary;
  1234 |   2 |   4
 (2 rows)
 
+--Testcase 90:
 UPDATE multiprimary SET a = a+1, b=b+1 WHERE b=200 AND c=300;
+--Testcase 91:
 SELECT * from multiprimary;
   a   |  b  |  c  
 ------+-----+-----
@@ -587,35 +688,46 @@ SELECT * from multiprimary;
  1234 |   2 |   4
 (2 rows)
 
+--Testcase 92:
 DELETE from multiprimary WHERE a = 1235;
+--Testcase 93:
 SELECT * from multiprimary;
   a   | b | c 
 ------+---+---
  1234 | 2 | 4
 (1 row)
 
+--Testcase 94:
 DELETE from multiprimary WHERE b = 2;
+--Testcase 95:
 SELECT * from multiprimary;
  a | b | c 
 ---+---+---
 (0 rows)
 
+--Testcase 96:
 INSERT INTO multiprimary VALUES(1,2,3);
+--Testcase 97:
 INSERT INTO multiprimary VALUES(1,2,4);
+--Testcase 98:
 INSERT INTO multiprimary VALUES(1,10,20);
+--Testcase 99:
 INSERT INTO multiprimary VALUES(2,20,40);
+--Testcase 100:
 SELECT count(distinct a) from multiprimary;
  count 
 -------
      2
 (1 row)
 
+--Testcase 101:
 SELECT sum(b),max(b), min(b) from multiprimary;
  sum | max | min 
 -----+-----+-----
   34 |  20 |   2
 (1 row)
 
+--Testcase 102:
 SELECT sum(b+5)+2 from multiprimary group by b/2 order by b/2;
  ?column? 
 ----------
@@ -624,6 +736,7 @@ SELECT sum(b+5)+2 from multiprimary group by b/2 order by b/2;
        27
 (3 rows)
 
+--Testcase 103:
 SELECT sum(a) from multiprimary group by b having sum(a) > 0 order by sum(a);
  sum 
 -----
@@ -632,6 +745,7 @@ SELECT sum(a) from multiprimary group by b having sum(a) > 0 order by sum(a);
    2
 (3 rows)
 
+--Testcase 104:
 SELECT sum(a) A from multiprimary group by b having avg(abs(a)) > 0 AND sum(a) > 0 order by A;
  a 
 ---
@@ -640,12 +754,14 @@ SELECT sum(a) A from multiprimary group by b having avg(abs(a)) > 0 AND sum(a) >
  2
 (3 rows)
 
+--Testcase 105:
 SELECT count(nullif(a, 1)) FROM multiprimary;
  count 
 -------
      1
 (1 row)
 
+--Testcase 106:
 SELECT a,a FROM multiprimary group by 1,2;
  a | a 
 ---+---
@@ -653,6 +769,7 @@ SELECT a,a FROM multiprimary group by 1,2;
  2 | 2
 (2 rows)
 
+--Testcase 107:
 SELECT * from multiprimary, numbers WHERE multiprimary.a=numbers.a;
  a | b  | c  | a |  b  
 ---+----+----+---+-----
@@ -662,6 +779,7 @@ SELECT * from multiprimary, numbers WHERE multiprimary.a=numbers.a;
  2 | 20 | 40 | 2 | Two
 (4 rows)
 
+--Testcase 108:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT sum(a) FROM multiprimary HAVING sum(a) > 0;
                         QUERY PLAN                         
@@ -674,20 +792,24 @@ SELECT sum(a) FROM multiprimary HAVING sum(a) > 0;
          SQLite query: SELECT `a` FROM main."multiprimary"
 (6 rows)
 
+--Testcase 109:
 SELECT sum(a) FROM multiprimary HAVING sum(a) > 0;
  sum 
 -----
    5
 (1 row)
 
+--Testcase 110:
 INSERT INTO numbers VALUES(4, 'Four');
 -- All where clauses are pushed down
+--Testcase 111:
 SELECT * FROM numbers WHERE abs(a) = 4 AND upper(b) = 'FOUR' AND lower(b) = 'four';
  a |  b   
 ---+------
  4 | Four
 (1 row)
 
+--Testcase 112:
 EXPLAIN (verbose, costs off)  SELECT b, length(b) FROM numbers WHERE abs(a) = 4 AND upper(b) = 'FOUR' AND lower(b) = 'four';
                                                           QUERY PLAN                                                           
 -------------------------------------------------------------------------------------------------------------------------------
@@ -697,12 +819,14 @@ EXPLAIN (verbose, costs off)  SELECT b, length(b) FROM numbers WHERE abs(a) = 4 
 (3 rows)
 
 -- Only "length(b) = 4" are pushed down
+--Testcase 113:
 SELECT b, length(b) FROM numbers WHERE length(b) = 4 AND power(1, a) != 0 AND length(reverse(b)) = 4;
   b   | length 
 ------+--------
  Four |      4
 (1 row)
 
+--Testcase 114:
 EXPLAIN (verbose, costs off) SELECT b, length(b) FROM numbers WHERE length(b) = 4 AND power(1, a) != 0 AND length(reverse(b)) = 4;
                                                                    QUERY PLAN                                                                    
 -------------------------------------------------------------------------------------------------------------------------------------------------
@@ -712,14 +836,18 @@ EXPLAIN (verbose, costs off) SELECT b, length(b) FROM numbers WHERE length(b) = 
    SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE ((length(`b`) = 4))
 (4 rows)
 
+--Testcase 115:
 INSERT INTO multiprimary (b,c) VALUES (99, 100);
+--Testcase 116:
 SELECT c FROM multiprimary WHERE COALESCE(a,b,c) = 99;
   c  
 -----
  100
 (1 row)
 
+--Testcase 139:
 CREATE FOREIGN TABLE multiprimary2(a int, b int, c int OPTIONS(column_name 'b')) SERVER sqlite_svr OPTIONS (table 'multiprimary');
+--Testcase 117:
 SELECT * FROM multiprimary2;
  a | b  | c  
 ---+----+----
@@ -731,6 +859,7 @@ SELECT * FROM multiprimary2;
 (5 rows)
 
 ALTER FOREIGN TABLE multiprimary2 ALTER COLUMN a OPTIONS(ADD column_name 'b');
+--Testcase 118:
 SELECT * FROM multiprimary2;
  a  | b  | c  
 ----+----+----
@@ -742,30 +871,42 @@ SELECT * FROM multiprimary2;
 (5 rows)
 
 ALTER FOREIGN TABLE multiprimary2 ALTER COLUMN b OPTIONS (column_name 'nosuch column');
+--Testcase 119:
 SELECT * FROM multiprimary2;
 ERROR:  SQL error during prepare: no such column: nosuch column SELECT `b`, `nosuch column`, `b` FROM main."multiprimary"
+--Testcase 140:
 EXPLAIN (VERBOSE) SELECT * FROM multiprimary2;
 ERROR:  SQL error during prepare: no such column: nosuch column SELECT `b`, `nosuch column`, `b` FROM main."multiprimary"
+--Testcase 120:
 SELECT a FROM multiprimary2 WHERE b = 1;
 ERROR:  SQL error during prepare: no such column: nosuch column SELECT `b` FROM main."multiprimary" WHERE ((`nosuch column` = 1))
+--Testcase 141:
 CREATE FOREIGN TABLE columntest(a int OPTIONS(column_name 'a a', key 'true'), "b b" int  OPTIONS(key 'true'), c int OPTIONS(column_name 'c c')) SERVER sqlite_svr;
+--Testcase 121:
 INSERT INTO columntest VALUES(1,2,3);
+--Testcase 122:
 UPDATE columntest SET c=10 WHERE a = 1;
+--Testcase 123:
 SELECT * FROM columntest;
  a | b b | c  
 ---+-----+----
  1 |   2 | 10
 (1 row)
 
+--Testcase 124:
 UPDATE columntest SET a=100 WHERE c = 10;
+--Testcase 125:
 SELECT * FROM columntest;
   a  | b b | c  
 -----+-----+----
  100 |   2 | 10
 (1 row)
 
-INSERT INTO noprimary VALUES(1,2);
+--Testcase 126:
+INSERT INTO noprimary VALUES(1,'2');
+--Testcase 127:
 INSERT INTO noprimary SELECT * FROM noprimary;
+--Testcase 128:
 SELECT * FROM noprimary;
  a | b 
 ---+---
@@ -773,14 +914,25 @@ SELECT * FROM noprimary;
  1 | 2
 (2 rows)
 
+--Testcase 142:
 DROP FUNCTION test_param_WHERE();
+--Testcase 143:
 DROP FOREIGN TABLE numbers;
+--Testcase 144:
 DROP FOREIGN TABLE department;
+--Testcase 145:
 DROP FOREIGN TABLE employee;
+--Testcase 146:
 DROP FOREIGN TABLE empdata;
+--Testcase 147:
 DROP FOREIGN TABLE multiprimary;
+--Testcase 148:
 DROP FOREIGN TABLE multiprimary2;
+--Testcase 149:
 DROP FOREIGN TABLE columntest;
+--Testcase 150:
 DROP FOREIGN TABLE noprimary;
+--Testcase 151:
 DROP SERVER sqlite_svr;
+--Testcase 152:
 DROP EXTENSION sqlite_fdw CASCADE;

@@ -1061,11 +1061,10 @@ static void
 deparseFromExpr(List *quals, deparse_expr_cxt *context)
 {
 	StringInfo	buf = context->buf;
-	RelOptInfo *foreignrel = context->foreignrel;
 	RelOptInfo *scanrel = context->scanrel;
 
 	/* For upper relations, scanrel must be either a joinrel or a baserel */
-	Assert(foreignrel->reloptkind != RELOPT_UPPER_REL ||
+	Assert(context->foreignrel->reloptkind != RELOPT_UPPER_REL ||
 		   scanrel->reloptkind == RELOPT_JOINREL ||
 		   scanrel->reloptkind == RELOPT_BASEREL);
 
@@ -1770,20 +1769,20 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 						appendStringInfoString(buf, extval);
 				}
 				else
-					appendStringInfo(buf, "'%s'", extval);
+					appendStringInfo(buf, "\'%s\'", extval);
 			}
 			break;
 		case BITOID:
 		case VARBITOID:
 			extval = OidOutputFunctionCall(typoutput, node->constvalue);
-			appendStringInfo(buf, "B'%s'", extval);
+			appendStringInfo(buf, "B\'%s\'", extval);
 			break;
 		case BOOLOID:
 			extval = OidOutputFunctionCall(typoutput, node->constvalue);
 			if (strcmp(extval, "t") == 0)
-				appendStringInfoString(buf, "true");
+				appendStringInfoString(buf, "1");
 			else
-				appendStringInfoString(buf, "false");
+				appendStringInfoString(buf, "0");
 			break;
 
 		case BYTEAOID:

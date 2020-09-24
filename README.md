@@ -1,7 +1,7 @@
 # SQLite Foreign Data Wrapper for PostgreSQL
 This PostgreSQL extension is a Foreign Data Wrapper for [SQLite][1].
 
-The current version can work with PostgreSQL 9.6, 10, 11 and 12.
+The current version can work with PostgreSQL 9.6, 10, 11, 12 and 13.
 
 ## Installation
 ### 1. Install SQLite library
@@ -81,7 +81,7 @@ SELECT * FROM t1;
 Opening issues and pull requests on GitHub are welcome.
 
 ## License
-Copyright (c) 2017 - 2019, TOSHIBA Corporation  
+Copyright (c) 2017 - 2020, TOSHIBA Corporation  
 Copyright (c) 2011 - 2016, EnterpriseDB Corporation  
 
 Permission to use, copy, modify, and distribute this software and its documentation for any purpose, without fee, and without a written agreement is hereby granted, provided that the above copyright notice and this paragraph and the following two paragraphs appear in all copies.
