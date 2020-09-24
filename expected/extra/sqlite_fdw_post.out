@@ -8775,13 +8775,19 @@ select foo.f1, foo2.f1 from foo join foo2 on (foo.f1 = foo2.f1) order by foo.f2 
 --Testcase 716:
 explain (verbose, costs off)
 	select foo.f1, foo2.f1 from foo left join foo2 on (foo.f1 = foo2.f1) order by foo.f2 offset 10 limit 10;
+<<<<<<< HEAD
                                                    QUERY PLAN                                                   
 ----------------------------------------------------------------------------------------------------------------
+=======
+                                    QUERY PLAN                                     
+-----------------------------------------------------------------------------------
+>>>>>>> Support Postgres 13b2
  Limit
    Output: foo.f1, foo2.f1, foo.f2
    ->  Sort
          Output: foo.f1, foo2.f1, foo.f2
          Sort Key: foo.f2
+<<<<<<< HEAD
          ->  Merge Right Join
                Output: foo.f1, foo2.f1, foo.f2
                Merge Cond: (foo2.f1 = foo.f1)
@@ -8791,6 +8797,11 @@ explain (verbose, costs off)
                      ->  Foreign Scan on public.foo2
                            Output: foo2.f1
                            SQLite query: SELECT `f1` FROM main."loct1"
+=======
+         ->  Merge Left Join
+               Output: foo.f1, foo2.f1, foo.f2
+               Merge Cond: (foo.f1 = foo2.f1)
+>>>>>>> Support Postgres 13b2
                ->  Sort
                      Output: foo.f1, foo.f2
                      Sort Key: foo.f1
@@ -8799,8 +8810,21 @@ explain (verbose, costs off)
                                  Output: foo_1.f1, foo_1.f2
                            ->  Foreign Scan on public.foo2 foo_2
                                  Output: foo_2.f1, foo_2.f2
+<<<<<<< HEAD
                                  SQLite query: SELECT `f1`, `f2` FROM main."loct1" ORDER BY `f2` ASC NULLS LAST
 (23 rows)
+=======
+                                 SQLite query: SELECT `f1`, `f2` FROM main."loct1"
+               ->  Materialize
+                     Output: foo2.f1
+                     ->  Sort
+                           Output: foo2.f1
+                           Sort Key: foo2.f1
+                           ->  Foreign Scan on public.foo2
+                                 Output: foo2.f1
+                                 SQLite query: SELECT `f1` FROM main."loct1"
+(25 rows)
+>>>>>>> Support Postgres 13b2
 
 --Testcase 717:
 select foo.f1, foo2.f1 from foo left join foo2 on (foo.f1 = foo2.f1) order by foo.f2 offset 10 limit 10;

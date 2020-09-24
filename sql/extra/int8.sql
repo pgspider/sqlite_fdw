@@ -21,7 +21,6 @@ CREATE FOREIGN TABLE INT8_TMP(
 	q5 text,
 	id int options (key 'true')
 ) SERVER sqlite_svr;
-
 --Testcase 1:
 INSERT INTO INT8_TBL VALUES('  123   ','  456');
 --Testcase 2:

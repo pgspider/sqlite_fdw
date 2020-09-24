@@ -888,7 +888,15 @@ SELECT  thousand
 ----------
         0
         0
-(2 rows)
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+(10 rows)
 
 --Testcase 73:
 SELECT  thousand
@@ -897,7 +905,16 @@ SELECT  thousand
  thousand 
 ----------
         0
-(1 row)
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+(10 rows)
 
 --Testcase 74:
 SELECT  thousand
@@ -906,7 +923,16 @@ SELECT  thousand
  thousand 
 ----------
         0
-(1 row)
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+(10 rows)
 
 --Testcase 75:
 SELECT  thousand

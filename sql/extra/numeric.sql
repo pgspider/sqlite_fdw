@@ -1324,6 +1324,91 @@ INSERT INTO width_bucket_tbl VALUES (0, 'NaN'::numeric, 4.0, 888);
 --Testcase 630:
 SELECT width_bucket(id1::float8, id2, id3::float8, id4) FROM width_bucket_tbl;
 
+-- Check rounding, it should round ties away from zero.
+--Testcase 602:
+CREATE FOREIGN TABLE INT4_TMP(f1 int4, f2 int4, id int OPTIONS (key 'true')) SERVER sqlite_svr;
+--Testcase 603:
+DELETE FROM INT4_TMP;
+--Testcase 604:
+INSERT INTO INT4_TMP SELECT a FROM generate_series(-5,5) a;
+--Testcase 605:
+SELECT f1 as pow,
+	round((-2.5 * 10 ^ f1)::numeric, -f1),
+	round((-1.5 * 10 ^ f1)::numeric, -f1),
+	round((-0.5 * 10 ^ f1)::numeric, -f1),
+	round((0.5 * 10 ^ f1)::numeric, -f1),
+	round((1.5 * 10 ^ f1)::numeric, -f1),
+	round((2.5 * 10 ^ f1)::numeric, -f1)
+FROM INT4_TMP;
+
+-- Testing for width_bucket(). For convenience, we test both the
+-- numeric and float8 versions of the function in this file.
+-- errors
+--Testcase 606:
+CREATE FOREIGN TABLE width_bucket_tbl (
+	id1 numeric,
+	id2 numeric,
+	id3 numeric,
+	id4 int,
+	id int OPTIONS (key 'true')
+) SERVER sqlite_svr;
+
+--Testcase 607:
+DELETE FROM width_bucket_tbl;
+--Testcase 608:
+INSERT INTO width_bucket_tbl VALUES (5.0, 3.0, 4.0, 0);
+--Testcase 609:
+SELECT width_bucket(id1, id2, id3, id4) FROM width_bucket_tbl;
+
+--Testcase 610:
+DELETE FROM width_bucket_tbl;
+--Testcase 611:
+INSERT INTO width_bucket_tbl VALUES (5.0, 3.0, 4.0, -5);
+--Testcase 612:
+SELECT width_bucket(id1, id2, id3, id4) FROM width_bucket_tbl;
+
+--Testcase 613:
+DELETE FROM width_bucket_tbl;
+--Testcase 614:
+INSERT INTO width_bucket_tbl VALUES (3.5, 3.0, 3.0, 888);
+--Testcase 615:
+SELECT width_bucket(id1, id2, id3, id4) FROM width_bucket_tbl;
+
+--Testcase 616:
+DELETE FROM width_bucket_tbl;
+--Testcase 617:
+INSERT INTO width_bucket_tbl VALUES (5.0, 3.0, 4.0, 0);
+--Testcase 618:
+SELECT width_bucket(id1::float8, id2::float8, id3::float8, id4) FROM width_bucket_tbl;
+
+--Testcase 619:
+DELETE FROM width_bucket_tbl;
+--Testcase 620:
+INSERT INTO width_bucket_tbl VALUES (5.0, 3.0, 4.0, -5);
+--Testcase 621:
+SELECT width_bucket(id1::float8, id2::float8, id3::float8, id4) FROM width_bucket_tbl;
+
+--Testcase 622:
+DELETE FROM width_bucket_tbl;
+--Testcase 623:
+INSERT INTO width_bucket_tbl VALUES (3.5, 3.0, 3.0, 888);
+--Testcase 624:
+SELECT width_bucket(id1::float8, id2::float8, id3::float8, id4) FROM width_bucket_tbl;
+
+--Testcase 625:
+DELETE FROM width_bucket_tbl;
+--Testcase 626:
+INSERT INTO width_bucket_tbl VALUES ('NaN'::numeric, 3.0, 4.0, 888);
+--Testcase 627:
+SELECT width_bucket(id1, id2, id3, id4) FROM width_bucket_tbl;
+
+--Testcase 628:
+DELETE FROM width_bucket_tbl;
+--Testcase 629:
+INSERT INTO width_bucket_tbl VALUES (0, 'NaN'::numeric, 4.0, 888);
+--Testcase 630:
+SELECT width_bucket(id1::float8, id2, id3::float8, id4) FROM width_bucket_tbl;
+
 -- normal operation
 --Testcase 631:
 CREATE FOREIGN TABLE width_bucket_test (
