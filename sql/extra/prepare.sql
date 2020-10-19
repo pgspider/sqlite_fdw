@@ -27,8 +27,6 @@ CREATE FOREIGN TABLE tenk1 (
 	string4		name
 ) SERVER sqlite_svr;
 
-ALTER TABLE tenk1 SET WITH OIDS;
-
 --Testcase 29:
 CREATE FOREIGN TABLE road (
 	name		text,

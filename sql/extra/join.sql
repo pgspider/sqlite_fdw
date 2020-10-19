@@ -41,8 +41,6 @@ CREATE FOREIGN TABLE tenk1 (
   string4   name
 ) SERVER sqlite_svr;
 
-ALTER TABLE tenk1 SET WITH OIDS;
-
 --Testcase 365:
 CREATE FOREIGN TABLE tenk2 (
   unique1   int4,
@@ -602,19 +600,20 @@ where b.f1 = t.thousand and a.f1 = b.f1 and (a.f1+b.f1+999) = t.tenthous;
 --
 -- check a case where we formerly got confused by conflicting sort orders
 -- in redundant merge join path keys
+-- PS: Used ORDER BY to force SQLite and PG12 always order in the same way (NULLS FIRST/LAST default value for PG and Sqlite are different)
 --
 --Testcase 99:
 explain (costs off)
 select * from
   j1_tbl full join
   (select * from j2_tbl order by j2_tbl.i desc, j2_tbl.k asc) j2_tbl
-  on j1_tbl.i = j2_tbl.i and j1_tbl.i = j2_tbl.k;
+  on j1_tbl.i = j2_tbl.i and j1_tbl.i = j2_tbl.k ORDER BY j1_tbl.i, j2_tbl.k;
 
 --Testcase 100:
 select * from
   j1_tbl full join
   (select * from j2_tbl order by j2_tbl.i desc, j2_tbl.k asc) j2_tbl
-  on j1_tbl.i = j2_tbl.i and j1_tbl.i = j2_tbl.k;
+  on j1_tbl.i = j2_tbl.i and j1_tbl.i = j2_tbl.k ORDER BY j1_tbl.i, j2_tbl.k;
 
 --
 -- a different check for handling of redundant sort keys in merge joins

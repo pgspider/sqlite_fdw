@@ -150,6 +150,11 @@ CREATE TABLE road (
 
 create table road_tmp (a int, b int, id integer primary key autoincrement);
 
+CREATE TABLE dates (
+	name			TEXT,
+	date_as_text	TEXT,
+	date_as_number	FLOAT8
+);
 
 .separator "\t"
 .import /tmp/onek.data onek
@@ -159,6 +164,7 @@ create table road_tmp (a int, b int, id integer primary key autoincrement);
 .import /tmp/student.data student
 .import /tmp/person.data person
 .import /tmp/streets.data road
+.import /tmp/datetimes.data dates
 
 --Testcase 7:
 INSERT INTO tenk2 SELECT * FROM tenk1;

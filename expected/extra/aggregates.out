@@ -86,8 +86,8 @@ SELECT avg(a) AS avg_32 FROM aggtest WHERE a < 100;
 (1 row)
 
 -- In 7.1, avg(float4) is computed using float8 arithmetic.
--- Round the result to 3 digits to avoid platform-specific results.
 --Testcase 3:
+-- Round the result to limited digits to avoid platform-specific results.
 SELECT avg(b)::numeric(10,3) AS avg_107_943 FROM aggtest;
  avg_107_943 
 -------------
@@ -95,10 +95,11 @@ SELECT avg(b)::numeric(10,3) AS avg_107_943 FROM aggtest;
 (1 row)
 
 --Testcase 4:
-SELECT avg(gpa) AS avg_3_4 FROM ONLY student;
+-- Round the result to limited digits to avoid platform-specific results.
+SELECT avg(gpa)::numeric(10,3) AS avg_3_4 FROM ONLY student;
  avg_3_4 
 ---------
-     3.4
+   3.400
 (1 row)
 
 --Testcase 5:
@@ -116,17 +117,19 @@ SELECT sum(a) AS sum_198 FROM aggtest;
 (1 row)
 
 --Testcase 7:
-SELECT sum(b) AS avg_431_773 FROM aggtest;
+-- Round the result to limited digits to avoid platform-specific results.
+SELECT sum(b)::numeric(10,3) AS avg_431_773 FROM aggtest;
  avg_431_773 
 -------------
      431.773
 (1 row)
 
 --Testcase 8:
-SELECT sum(gpa) AS avg_6_8 FROM ONLY student;
+-- Round the result to limited digits to avoid platform-specific results.
+SELECT sum(gpa)::numeric(10,3) AS avg_6_8 FROM ONLY student;
  avg_6_8 
 ---------
-     6.8
+   6.800
 (1 row)
 
 --Testcase 9:
@@ -158,28 +161,32 @@ SELECT max(student.gpa) AS max_3_7 FROM student;
 (1 row)
 
 --Testcase 13:
-SELECT stddev_pop(b) FROM aggtest;
-   stddev_pop    
------------------
- 131.10703231895
+-- Round the result to limited digits to avoid platform-specific results.
+SELECT stddev_pop(b)::numeric(20,10) FROM aggtest;
+   stddev_pop   
+----------------
+ 131.1070323190
 (1 row)
 
 --Testcase 14:
-SELECT stddev_samp(b) FROM aggtest;
-   stddev_samp    
-------------------
- 151.389360803998
+-- Round the result to limited digits to avoid platform-specific results.
+SELECT stddev_samp(b)::numeric(20,10) FROM aggtest;
+  stddev_samp   
+----------------
+ 151.3893608040
 (1 row)
 
 --Testcase 15:
-SELECT var_pop(b) FROM aggtest;
+-- Round the result to limited digits to avoid platform-specific results.
+SELECT var_pop(b)::numeric(20,10) FROM aggtest;
      var_pop      
 ------------------
  17189.0539234823
 (1 row)
 
 --Testcase 16:
-SELECT var_samp(b) FROM aggtest;
+-- Round the result to limited digits to avoid platform-specific results.
+SELECT var_samp(b)::numeric(20,10) FROM aggtest;
      var_samp     
 ------------------
  22918.7385646431
@@ -540,52 +547,59 @@ SELECT regr_sxx(b, a) FROM aggtest;
 (1 row)
 
 --Testcase 23:
-SELECT regr_syy(b, a) FROM aggtest;
+-- Round the result to limited digits to avoid platform-specific results.
+SELECT regr_syy(b, a)::numeric(20,10) FROM aggtest;
      regr_syy     
 ------------------
  68756.2156939293
 (1 row)
 
 --Testcase 24:
-SELECT regr_sxy(b, a) FROM aggtest;
-     regr_sxy     
-------------------
- 2614.51582155004
+-- Round the result to limited digits to avoid platform-specific results.
+SELECT regr_sxy(b, a)::numeric(20,10) FROM aggtest;
+    regr_sxy     
+-----------------
+ 2614.5158215500
 (1 row)
 
 --Testcase 25:
-SELECT regr_avgx(b, a), regr_avgy(b, a) FROM aggtest;
- regr_avgx |    regr_avgy     
------------+------------------
-      49.5 | 107.943152273074
+-- Round the result to limited digits to avoid platform-specific results.
+SELECT regr_avgx(b, a), regr_avgy(b, a)::numeric(20,10) FROM aggtest;
+ regr_avgx |   regr_avgy    
+-----------+----------------
+      49.5 | 107.9431522731
 (1 row)
 
 --Testcase 26:
-SELECT regr_r2(b, a) FROM aggtest;
-      regr_r2       
---------------------
- 0.0194977982031803
+-- Round the result to limited digits to avoid platform-specific results.
+SELECT regr_r2(b, a)::numeric(20,10) FROM aggtest;
+   regr_r2    
+--------------
+ 0.0194977982
 (1 row)
 
 --Testcase 27:
-SELECT regr_slope(b, a), regr_intercept(b, a) FROM aggtest;
-    regr_slope     |  regr_intercept  
--------------------+------------------
- 0.512750700441271 | 82.5619926012309
+-- Round the result to limited digits to avoid platform-specific results.
+SELECT regr_slope(b, a)::numeric(20,10), regr_intercept(b, a)::numeric(20,10) FROM aggtest;
+  regr_slope  | regr_intercept 
+--------------+----------------
+ 0.5127507004 |  82.5619926012
 (1 row)
 
 --Testcase 28:
-SELECT covar_pop(b, a), covar_samp(b, a) FROM aggtest;
-    covar_pop    |    covar_samp    
------------------+------------------
- 653.62895538751 | 871.505273850014
+-- Round the result to limited digits to avoid platform-specific results.
+SELECT covar_pop(b, a)::numeric(20,10), covar_samp(b, a)::numeric(20,10) FROM aggtest;
+   covar_pop    |   covar_samp   
+----------------+----------------
+ 653.6289553875 | 871.5052738500
 (1 row)
 
 --Testcase 29:
-SELECT corr(b, a) FROM aggtest;
-       corr        
--------------------
- 0.139634516517873
+-- Round the result to limited digits to avoid platform-specific results.
+SELECT corr(b, a)::numeric(20,10) FROM aggtest;
+     corr     
+--------------
+ 0.1396345165
 (1 row)
 
 -- check single-tuple behavior
@@ -1350,12 +1364,10 @@ select distinct max(unique2) from tenk1;
 --Testcase 69:
 explain (costs off)
   select max(unique2) from tenk1 order by 1;
-         QUERY PLAN         
-----------------------------
- Sort
-   Sort Key: (max(unique2))
-   ->  Foreign Scan
-(3 rows)
+  QUERY PLAN  
+--------------
+ Foreign Scan
+(1 row)
 
 --Testcase 70:
 select max(unique2) from tenk1 order by 1;
@@ -1367,12 +1379,10 @@ select max(unique2) from tenk1 order by 1;
 --Testcase 71:
 explain (costs off)
   select max(unique2) from tenk1 order by max(unique2);
-         QUERY PLAN         
-----------------------------
- Sort
-   Sort Key: (max(unique2))
-   ->  Foreign Scan
-(3 rows)
+  QUERY PLAN  
+--------------
+ Foreign Scan
+(1 row)
 
 --Testcase 72:
 select max(unique2) from tenk1 order by max(unique2);
@@ -1384,12 +1394,10 @@ select max(unique2) from tenk1 order by max(unique2);
 --Testcase 73:
 explain (costs off)
   select max(unique2) from tenk1 order by max(unique2)+1;
-            QUERY PLAN            
-----------------------------------
- Sort
-   Sort Key: ((max(unique2) + 1))
-   ->  Foreign Scan
-(3 rows)
+  QUERY PLAN  
+--------------
+ Foreign Scan
+(1 row)
 
 --Testcase 74:
 select max(unique2) from tenk1 order by max(unique2)+1;
@@ -1436,7 +1444,7 @@ select max(100) from tenk1;
 
 -- try it on an inheritance tree
 --Testcase 412:
-create foreign table minmaxtest(f1 int) server sqlite_svr;;
+create foreign table minmaxtest(f1 int) server sqlite_svr;
 --Testcase 413:
 create table minmaxtest1() inherits (minmaxtest);
 --Testcase 414:
@@ -1460,15 +1468,30 @@ insert into minmaxtest3 values(17), (18);
 --Testcase 83:
 explain (costs off)
   select min(f1), max(f1) from minmaxtest;
-                     QUERY PLAN                      
------------------------------------------------------
- Aggregate
-   ->  Append
-         ->  Foreign Scan on minmaxtest minmaxtest_1
-         ->  Seq Scan on minmaxtest1 minmaxtest_2
-         ->  Seq Scan on minmaxtest2 minmaxtest_3
-         ->  Seq Scan on minmaxtest3 minmaxtest_4
-(6 rows)
+                                         QUERY PLAN                                          
+---------------------------------------------------------------------------------------------
+ Result
+   InitPlan 1 (returns $0)
+     ->  Limit
+           ->  Merge Append
+                 Sort Key: minmaxtest.f1
+                 ->  Foreign Scan on minmaxtest minmaxtest_1
+                 ->  Index Only Scan using minmaxtest1i on minmaxtest1 minmaxtest_2
+                       Index Cond: (f1 IS NOT NULL)
+                 ->  Index Only Scan Backward using minmaxtest2i on minmaxtest2 minmaxtest_3
+                       Index Cond: (f1 IS NOT NULL)
+                 ->  Index Only Scan using minmaxtest3i on minmaxtest3 minmaxtest_4
+   InitPlan 2 (returns $1)
+     ->  Limit
+           ->  Merge Append
+                 Sort Key: minmaxtest_5.f1 DESC
+                 ->  Foreign Scan on minmaxtest minmaxtest_6
+                 ->  Index Only Scan Backward using minmaxtest1i on minmaxtest1 minmaxtest_7
+                       Index Cond: (f1 IS NOT NULL)
+                 ->  Index Only Scan using minmaxtest2i on minmaxtest2 minmaxtest_8
+                       Index Cond: (f1 IS NOT NULL)
+                 ->  Index Only Scan Backward using minmaxtest3i on minmaxtest3 minmaxtest_9
+(21 rows)
 
 --Testcase 84:
 select min(f1), max(f1) from minmaxtest;
@@ -1481,18 +1504,33 @@ select min(f1), max(f1) from minmaxtest;
 --Testcase 85:
 explain (costs off)
   select distinct min(f1), max(f1) from minmaxtest;
-                           QUERY PLAN                            
------------------------------------------------------------------
+                                         QUERY PLAN                                          
+---------------------------------------------------------------------------------------------
  Unique
+   InitPlan 1 (returns $0)
+     ->  Limit
+           ->  Merge Append
+                 Sort Key: minmaxtest.f1
+                 ->  Foreign Scan on minmaxtest minmaxtest_1
+                 ->  Index Only Scan using minmaxtest1i on minmaxtest1 minmaxtest_2
+                       Index Cond: (f1 IS NOT NULL)
+                 ->  Index Only Scan Backward using minmaxtest2i on minmaxtest2 minmaxtest_3
+                       Index Cond: (f1 IS NOT NULL)
+                 ->  Index Only Scan using minmaxtest3i on minmaxtest3 minmaxtest_4
+   InitPlan 2 (returns $1)
+     ->  Limit
+           ->  Merge Append
+                 Sort Key: minmaxtest_5.f1 DESC
+                 ->  Foreign Scan on minmaxtest minmaxtest_6
+                 ->  Index Only Scan Backward using minmaxtest1i on minmaxtest1 minmaxtest_7
+                       Index Cond: (f1 IS NOT NULL)
+                 ->  Index Only Scan using minmaxtest2i on minmaxtest2 minmaxtest_8
+                       Index Cond: (f1 IS NOT NULL)
+                 ->  Index Only Scan Backward using minmaxtest3i on minmaxtest3 minmaxtest_9
    ->  Sort
-         Sort Key: (min(minmaxtest.f1)), (max(minmaxtest.f1))
-         ->  Aggregate
-               ->  Append
-                     ->  Foreign Scan on minmaxtest minmaxtest_1
-                     ->  Seq Scan on minmaxtest1 minmaxtest_2
-                     ->  Seq Scan on minmaxtest2 minmaxtest_3
-                     ->  Seq Scan on minmaxtest3 minmaxtest_4
-(9 rows)
+         Sort Key: ($0), ($1)
+         ->  Result
+(24 rows)
 
 --Testcase 86:
 select distinct min(f1), max(f1) from minmaxtest;
@@ -2292,20 +2330,23 @@ LINE 1: select f1, percentile_cont(f1,f1)
                    ^
 rollback;
 --Testcase 179:
-select percentile_cont(0.5) within group (order by b) from aggtest;
- percentile_cont  
-------------------
- 53.4485001564026
+-- Round the result to limited digits to avoid platform-specific results.
+select (percentile_cont(0.5) within group (order by b))::numeric(20,10) from aggtest;
+ percentile_cont 
+-----------------
+   53.4485001564
 (1 row)
 
 --Testcase 180:
-select percentile_cont(0.5) within group (order by b), sum(b) from aggtest;
- percentile_cont  |   sum   
-------------------+---------
- 53.4485001564026 | 431.773
+-- Round the result to limited digits to avoid platform-specific results.
+select (percentile_cont(0.5) within group (order by b))::numeric(20,10), sum(b)::numeric(10,3) from aggtest;
+ percentile_cont |   sum   
+-----------------+---------
+   53.4485001564 | 431.773
 (1 row)
 
 --Testcase 181:
+-- Round the result to limited digits to avoid platform-specific results.
 select percentile_cont(0.5) within group (order by thousand) from tenk1;
  percentile_cont 
 -----------------
@@ -2341,10 +2382,11 @@ select cume_dist(3) within group (order by f1) from INT4_TBL;
 --Testcase 187:
 insert into INT4_TBL values (5);
 --Testcase 458:
-select percent_rank(3) within group (order by f1) from INT4_TBL;
+-- Round the result to limited digits to avoid platform-specific results.
+select (percent_rank(3) within group (order by f1))::numeric(20,10) from INT4_TBL;
  percent_rank 
 --------------
-          0.5
+ 0.5000000000
 (1 row)
 
 --Testcase 459:
@@ -2627,8 +2669,8 @@ returns anyelement language sql as
   'select least($1, min($2[i])) from generate_subscripts($2,1) g(i)';
 --Testcase 489:
 create aggregate least_agg(variadic items anyarray) (
-  stype = anyelement, sfunc = least_accum);
-  
+  stype = anyelement, sfunc = least_accum
+);
 --Testcase 490:
 create function cleast_accum(anycompatible, variadic anycompatiblearray)
 returns anycompatible language sql as
@@ -2636,7 +2678,6 @@ returns anycompatible language sql as
 --Testcase 491:
 create aggregate cleast_agg(variadic items anycompatiblearray) (
   stype = anycompatible, sfunc = cleast_accum);
-  
 --Testcase 198:
 select least_agg(q1,q2) from int8_tbl;
      least_agg     
@@ -3316,14 +3357,12 @@ set jit_above_cost = 0;
 explain (costs off)
 select g%10000 as c1, sum(g::numeric) as c2, count(*) as c3
   from agg_data_20k group by g%10000;
-                QUERY PLAN                
-------------------------------------------
+             QUERY PLAN             
+------------------------------------
  GroupAggregate
-   Group Key: ((g % 10000))
-   ->  Sort
-         Sort Key: ((g % 10000))
-         ->  Foreign Scan on agg_data_20k
-(5 rows)
+   Group Key: (g % 10000)
+   ->  Foreign Scan on agg_data_20k
+(3 rows)
 
 --Testcase 573:
 insert into agg_group_1
@@ -3359,7 +3398,7 @@ select g%10000 as c1, sum(g::numeric) as c2, count(*) as c3
   from agg_data_20k group by g%10000;
              QUERY PLAN             
 ------------------------------------
- HashAggregate
+ GroupAggregate
    Group Key: (g % 10000)
    ->  Foreign Scan on agg_data_20k
 (3 rows)

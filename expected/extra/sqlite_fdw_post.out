@@ -133,7 +133,7 @@ SELECT c3, c4 FROM ft1 ORDER BY c3, c1 LIMIT 1;  -- should work
 ALTER SERVER sqlite_svr OPTIONS (SET database 'no such database');
 --Testcase 7:
 SELECT c3, c4 FROM ft1 ORDER BY c3, c1 LIMIT 1;  -- should fail
-ERROR:  SQL error during prepare: no such table: main.T 1 SELECT `C 1`, `c3`, `c4` FROM main."T 1"
+ERROR:  SQL error during prepare: no such table: main.T 1 SELECT `C 1`, `c3`, `c4` FROM main."T 1" ORDER BY `c3` ASC NULLS LAST, `C 1` ASC NULLS LAST LIMIT 1
 DO $d$
     BEGIN
         EXECUTE $$ALTER SERVER sqlite_svr
@@ -159,13 +159,10 @@ SELECT c3, c4 FROM ft1 ORDER BY c3, c1 LIMIT 1;  -- should work again
 -- single table without alias
 --Testcase 9:
 EXPLAIN (COSTS OFF) SELECT * FROM ft1 ORDER BY c3, c1 OFFSET 100 LIMIT 10;
-           QUERY PLAN            
----------------------------------
- Limit
-   ->  Sort
-         Sort Key: c3, c1
-         ->  Foreign Scan on ft1
-(4 rows)
+     QUERY PLAN      
+---------------------
+ Foreign Scan on ft1
+(1 row)
 
 --Testcase 10:
 SELECT * FROM ft1 ORDER BY c3, c1 OFFSET 100 LIMIT 10;
@@ -217,17 +214,12 @@ SELECT * FROM ft1 t1 ORDER BY t1.c3, t1.c1, t1.tableoid OFFSET 100 LIMIT 10;
 -- whole-row reference
 --Testcase 13:
 EXPLAIN (VERBOSE, COSTS OFF) SELECT t1 FROM ft1 t1 ORDER BY t1.c3, t1.c1 OFFSET 100 LIMIT 10;
-                                             QUERY PLAN                                             
-----------------------------------------------------------------------------------------------------
- Limit
+                                                                          QUERY PLAN                                                                           
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.ft1 t1
    Output: t1.*, c3, c1
-   ->  Sort
-         Output: t1.*, c3, c1
-         Sort Key: t1.c3, t1.c1
-         ->  Foreign Scan on public.ft1 t1
-               Output: t1.*, c3, c1
-               SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
-(8 rows)
+   SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1" ORDER BY `c3` ASC NULLS LAST, `C 1` ASC NULLS LAST LIMIT 10 OFFSET 100
+(3 rows)
 
 --Testcase 14:
 SELECT t1 FROM ft1 t1 ORDER BY t1.c3, t1.c1 OFFSET 100 LIMIT 10;
@@ -1048,18 +1040,15 @@ SELECT count(c3) FROM ft1 t1 WHERE t1.c1 === t1.c2;
 --Testcase 496:
 EXPLAIN (VERBOSE, COSTS OFF)
   SELECT * FROM ft1 t1 WHERE t1.c1 === t1.c2 order by t1.c2 limit 1;
-                                             QUERY PLAN                                             
-----------------------------------------------------------------------------------------------------
+                                                        QUERY PLAN                                                         
+---------------------------------------------------------------------------------------------------------------------------
  Limit
    Output: c1, c2, c3, c4, c5, c6, c7, c8
-   ->  Sort
+   ->  Foreign Scan on public.ft1 t1
          Output: c1, c2, c3, c4, c5, c6, c7, c8
-         Sort Key: t1.c2
-         ->  Foreign Scan on public.ft1 t1
-               Output: c1, c2, c3, c4, c5, c6, c7, c8
-               Filter: (t1.c1 === t1.c2)
-               SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
-(9 rows)
+         Filter: (t1.c1 === t1.c2)
+         SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1" ORDER BY `c2` ASC NULLS LAST
+(6 rows)
 
 --Testcase 497:
 SELECT * FROM ft1 t1 WHERE t1.c1 === t1.c2 order by t1.c2 limit 1;
@@ -1117,18 +1106,15 @@ SELECT count(c3) FROM ft1 t1 WHERE t1.c1 === t1.c2;
 --Testcase 502:
 EXPLAIN (VERBOSE, COSTS OFF)
   SELECT * FROM ft1 t1 WHERE t1.c1 === t1.c2 order by t1.c2 limit 1;
-                                             QUERY PLAN                                             
-----------------------------------------------------------------------------------------------------
+                                                        QUERY PLAN                                                         
+---------------------------------------------------------------------------------------------------------------------------
  Limit
    Output: c1, c2, c3, c4, c5, c6, c7, c8
-   ->  Sort
+   ->  Foreign Scan on public.ft1 t1
          Output: c1, c2, c3, c4, c5, c6, c7, c8
-         Sort Key: t1.c2
-         ->  Foreign Scan on public.ft1 t1
-               Output: c1, c2, c3, c4, c5, c6, c7, c8
-               Filter: (t1.c1 === t1.c2)
-               SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
-(9 rows)
+         Filter: (t1.c1 === t1.c2)
+         SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1" ORDER BY `c2` ASC NULLS LAST
+(6 rows)
 
 --Testcase 503:
 SELECT * FROM ft1 t1 WHERE t1.c1 === t1.c2 order by t1.c2 limit 1;
@@ -1148,31 +1134,22 @@ SELECT * FROM ft1 t1 WHERE t1.c1 === t1.c2 order by t1.c2 limit 1;
 --Testcase 65:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT t1.c1, t2.c1 FROM ft1 t1 JOIN ft2 t2 ON (t1.c1 = t2.c1) ORDER BY t1.c3, t1.c1 OFFSET 100 LIMIT 10;
-                                 QUERY PLAN                                 
-----------------------------------------------------------------------------
+                                                    QUERY PLAN                                                     
+-------------------------------------------------------------------------------------------------------------------
  Limit
    Output: t1.c1, t2.c1, t1.c3
-   ->  Sort
+   ->  Nested Loop
          Output: t1.c1, t2.c1, t1.c3
-         Sort Key: t1.c3, t1.c1
-         ->  Merge Join
-               Output: t1.c1, t2.c1, t1.c3
-               Merge Cond: (t1.c1 = t2.c1)
-               ->  Sort
-                     Output: t1.c1, t1.c3
-                     Sort Key: t1.c1
-                     ->  Foreign Scan on public.ft1 t1
-                           Output: t1.c1, t1.c3
-                           SQLite query: SELECT `C 1`, `c3` FROM main."T 1"
-               ->  Materialize
+         Join Filter: (t1.c1 = t2.c1)
+         ->  Foreign Scan on public.ft1 t1
+               Output: t1.c1, t1.c3
+               SQLite query: SELECT `C 1`, `c3` FROM main."T 1" ORDER BY `c3` ASC NULLS LAST, `C 1` ASC NULLS LAST
+         ->  Materialize
+               Output: t2.c1
+               ->  Foreign Scan on public.ft2 t2
                      Output: t2.c1
-                     ->  Sort
-                           Output: t2.c1
-                           Sort Key: t2.c1
-                           ->  Foreign Scan on public.ft2 t2
-                                 Output: t2.c1
-                                 SQLite query: SELECT `C 1` FROM main."T 1"
-(22 rows)
+                     SQLite query: SELECT `C 1` FROM main."T 1"
+(13 rows)
 
 --Testcase 66:
 SELECT t1.c1, t2.c1 FROM ft1 t1 JOIN ft2 t2 ON (t1.c1 = t2.c1) ORDER BY t1.c3, t1.c1 OFFSET 100 LIMIT 10;
@@ -1194,42 +1171,30 @@ SELECT t1.c1, t2.c1 FROM ft1 t1 JOIN ft2 t2 ON (t1.c1 = t2.c1) ORDER BY t1.c3, t
 --Testcase 67:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT t1.c1, t2.c2, t3.c3 FROM ft1 t1 JOIN ft2 t2 ON (t1.c1 = t2.c1) JOIN ft4 t3 ON (t3.c1 = t1.c1) ORDER BY t1.c3, t1.c1 OFFSET 10 LIMIT 10;
-                                          QUERY PLAN                                          
-----------------------------------------------------------------------------------------------
+                                                       QUERY PLAN                                                        
+-------------------------------------------------------------------------------------------------------------------------
  Limit
    Output: t1.c1, t2.c2, t3.c3, t1.c3
-   ->  Sort
+   ->  Nested Loop
          Output: t1.c1, t2.c2, t3.c3, t1.c3
-         Sort Key: t1.c3, t1.c1
-         ->  Merge Join
-               Output: t1.c1, t2.c2, t3.c3, t1.c3
-               Merge Cond: (t3.c1 = t1.c1)
-               ->  Sort
+         Join Filter: (t1.c1 = t2.c1)
+         ->  Nested Loop
+               Output: t1.c1, t1.c3, t3.c3, t3.c1
+               Join Filter: (t1.c1 = t3.c1)
+               ->  Foreign Scan on public.ft1 t1
+                     Output: t1.c1, t1.c3
+                     SQLite query: SELECT `C 1`, `c3` FROM main."T 1" ORDER BY `c3` ASC NULLS LAST, `C 1` ASC NULLS LAST
+               ->  Materialize
                      Output: t3.c3, t3.c1
-                     Sort Key: t3.c1
                      ->  Foreign Scan on public.ft4 t3
                            Output: t3.c3, t3.c1
                            SQLite query: SELECT `c1`, `c3` FROM main."T 3"
-               ->  Materialize
-                     Output: t1.c1, t1.c3, t2.c2, t2.c1
-                     ->  Merge Join
-                           Output: t1.c1, t1.c3, t2.c2, t2.c1
-                           Merge Cond: (t1.c1 = t2.c1)
-                           ->  Sort
-                                 Output: t1.c1, t1.c3
-                                 Sort Key: t1.c1
-                                 ->  Foreign Scan on public.ft1 t1
-                                       Output: t1.c1, t1.c3
-                                       SQLite query: SELECT `C 1`, `c3` FROM main."T 1"
-                           ->  Materialize
-                                 Output: t2.c2, t2.c1
-                                 ->  Sort
-                                       Output: t2.c2, t2.c1
-                                       Sort Key: t2.c1
-                                       ->  Foreign Scan on public.ft2 t2
-                                             Output: t2.c2, t2.c1
-                                             SQLite query: SELECT `C 1`, `c2` FROM main."T 1"
-(33 rows)
+         ->  Materialize
+               Output: t2.c2, t2.c1
+               ->  Foreign Scan on public.ft2 t2
+                     Output: t2.c2, t2.c1
+                     SQLite query: SELECT `C 1`, `c2` FROM main."T 1"
+(21 rows)
 
 --Testcase 68:
 SELECT t1.c1, t2.c2, t3.c3 FROM ft1 t1 JOIN ft2 t2 ON (t1.c1 = t2.c1) JOIN ft4 t3 ON (t3.c1 = t1.c1) ORDER BY t1.c3, t1.c1 OFFSET 10 LIMIT 10;
@@ -2266,33 +2231,24 @@ ERROR:  server "loopback" does not exist
 --Testcase 111:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT t1.c1, t2.c1 FROM ft1 t1 JOIN ft2 t2 ON (t1.c1 = t2.c1) ORDER BY t1.c3, t1.c1 OFFSET 100 LIMIT 10 FOR UPDATE OF t1;
-                                                         QUERY PLAN                                                         
-----------------------------------------------------------------------------------------------------------------------------
+                                                                         QUERY PLAN                                                                          
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
  Limit
    Output: t1.c1, t2.c1, t1.c3, t1.*, t2.*
    ->  LockRows
          Output: t1.c1, t2.c1, t1.c3, t1.*, t2.*
-         ->  Sort
+         ->  Nested Loop
                Output: t1.c1, t2.c1, t1.c3, t1.*, t2.*
-               Sort Key: t1.c3, t1.c1
-               ->  Merge Join
-                     Output: t1.c1, t2.c1, t1.c3, t1.*, t2.*
-                     Merge Cond: (t1.c1 = t2.c1)
-                     ->  Sort
-                           Output: t1.c1, t1.c3, t1.*
-                           Sort Key: t1.c1
-                           ->  Foreign Scan on public.ft1 t1
-                                 Output: t1.c1, t1.c3, t1.*
-                                 SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
-                     ->  Materialize
+               Join Filter: (t1.c1 = t2.c1)
+               ->  Foreign Scan on public.ft1 t1
+                     Output: t1.c1, t1.c3, t1.*
+                     SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1" ORDER BY `c3` ASC NULLS LAST, `C 1` ASC NULLS LAST
+               ->  Materialize
+                     Output: t2.c1, t2.*
+                     ->  Foreign Scan on public.ft2 t2
                            Output: t2.c1, t2.*
-                           ->  Sort
-                                 Output: t2.c1, t2.*
-                                 Sort Key: t2.c1
-                                 ->  Foreign Scan on public.ft2 t2
-                                       Output: t2.c1, t2.*
-                                       SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
-(24 rows)
+                           SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
+(15 rows)
 
 --Testcase 112:
 SELECT t1.c1, t2.c1 FROM ft1 t1 JOIN ft2 t2 ON (t1.c1 = t2.c1) ORDER BY t1.c3, t1.c1 OFFSET 100 LIMIT 10 FOR UPDATE OF t1;
@@ -2313,33 +2269,24 @@ SELECT t1.c1, t2.c1 FROM ft1 t1 JOIN ft2 t2 ON (t1.c1 = t2.c1) ORDER BY t1.c3, t
 --Testcase 113:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT t1.c1, t2.c1 FROM ft1 t1 JOIN ft2 t2 ON (t1.c1 = t2.c1) ORDER BY t1.c3, t1.c1 OFFSET 100 LIMIT 10 FOR UPDATE;
-                                                         QUERY PLAN                                                         
-----------------------------------------------------------------------------------------------------------------------------
+                                                                         QUERY PLAN                                                                          
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
  Limit
    Output: t1.c1, t2.c1, t1.c3, t1.*, t2.*
    ->  LockRows
          Output: t1.c1, t2.c1, t1.c3, t1.*, t2.*
-         ->  Sort
+         ->  Nested Loop
                Output: t1.c1, t2.c1, t1.c3, t1.*, t2.*
-               Sort Key: t1.c3, t1.c1
-               ->  Merge Join
-                     Output: t1.c1, t2.c1, t1.c3, t1.*, t2.*
-                     Merge Cond: (t1.c1 = t2.c1)
-                     ->  Sort
-                           Output: t1.c1, t1.c3, t1.*
-                           Sort Key: t1.c1
-                           ->  Foreign Scan on public.ft1 t1
-                                 Output: t1.c1, t1.c3, t1.*
-                                 SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
-                     ->  Materialize
+               Join Filter: (t1.c1 = t2.c1)
+               ->  Foreign Scan on public.ft1 t1
+                     Output: t1.c1, t1.c3, t1.*
+                     SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1" ORDER BY `c3` ASC NULLS LAST, `C 1` ASC NULLS LAST
+               ->  Materialize
+                     Output: t2.c1, t2.*
+                     ->  Foreign Scan on public.ft2 t2
                            Output: t2.c1, t2.*
-                           ->  Sort
-                                 Output: t2.c1, t2.*
-                                 Sort Key: t2.c1
-                                 ->  Foreign Scan on public.ft2 t2
-                                       Output: t2.c1, t2.*
-                                       SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
-(24 rows)
+                           SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
+(15 rows)
 
 --Testcase 114:
 SELECT t1.c1, t2.c1 FROM ft1 t1 JOIN ft2 t2 ON (t1.c1 = t2.c1) ORDER BY t1.c3, t1.c1 OFFSET 100 LIMIT 10 FOR UPDATE;
@@ -2361,33 +2308,24 @@ SELECT t1.c1, t2.c1 FROM ft1 t1 JOIN ft2 t2 ON (t1.c1 = t2.c1) ORDER BY t1.c3, t
 --Testcase 115:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT t1.c1, t2.c1 FROM ft1 t1 JOIN ft2 t2 ON (t1.c1 = t2.c1) ORDER BY t1.c3, t1.c1 OFFSET 100 LIMIT 10 FOR SHARE OF t1;
-                                                         QUERY PLAN                                                         
-----------------------------------------------------------------------------------------------------------------------------
+                                                                         QUERY PLAN                                                                          
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
  Limit
    Output: t1.c1, t2.c1, t1.c3, t1.*, t2.*
    ->  LockRows
          Output: t1.c1, t2.c1, t1.c3, t1.*, t2.*
-         ->  Sort
+         ->  Nested Loop
                Output: t1.c1, t2.c1, t1.c3, t1.*, t2.*
-               Sort Key: t1.c3, t1.c1
-               ->  Merge Join
-                     Output: t1.c1, t2.c1, t1.c3, t1.*, t2.*
-                     Merge Cond: (t1.c1 = t2.c1)
-                     ->  Sort
-                           Output: t1.c1, t1.c3, t1.*
-                           Sort Key: t1.c1
-                           ->  Foreign Scan on public.ft1 t1
-                                 Output: t1.c1, t1.c3, t1.*
-                                 SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
-                     ->  Materialize
+               Join Filter: (t1.c1 = t2.c1)
+               ->  Foreign Scan on public.ft1 t1
+                     Output: t1.c1, t1.c3, t1.*
+                     SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1" ORDER BY `c3` ASC NULLS LAST, `C 1` ASC NULLS LAST
+               ->  Materialize
+                     Output: t2.c1, t2.*
+                     ->  Foreign Scan on public.ft2 t2
                            Output: t2.c1, t2.*
-                           ->  Sort
-                                 Output: t2.c1, t2.*
-                                 Sort Key: t2.c1
-                                 ->  Foreign Scan on public.ft2 t2
-                                       Output: t2.c1, t2.*
-                                       SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
-(24 rows)
+                           SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
+(15 rows)
 
 --Testcase 116:
 SELECT t1.c1, t2.c1 FROM ft1 t1 JOIN ft2 t2 ON (t1.c1 = t2.c1) ORDER BY t1.c3, t1.c1 OFFSET 100 LIMIT 10 FOR SHARE OF t1;
@@ -2408,33 +2346,24 @@ SELECT t1.c1, t2.c1 FROM ft1 t1 JOIN ft2 t2 ON (t1.c1 = t2.c1) ORDER BY t1.c3, t
 --Testcase 117:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT t1.c1, t2.c1 FROM ft1 t1 JOIN ft2 t2 ON (t1.c1 = t2.c1) ORDER BY t1.c3, t1.c1 OFFSET 100 LIMIT 10 FOR SHARE;
-                                                         QUERY PLAN                                                         
-----------------------------------------------------------------------------------------------------------------------------
+                                                                         QUERY PLAN                                                                          
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
  Limit
    Output: t1.c1, t2.c1, t1.c3, t1.*, t2.*
    ->  LockRows
          Output: t1.c1, t2.c1, t1.c3, t1.*, t2.*
-         ->  Sort
+         ->  Nested Loop
                Output: t1.c1, t2.c1, t1.c3, t1.*, t2.*
-               Sort Key: t1.c3, t1.c1
-               ->  Merge Join
-                     Output: t1.c1, t2.c1, t1.c3, t1.*, t2.*
-                     Merge Cond: (t1.c1 = t2.c1)
-                     ->  Sort
-                           Output: t1.c1, t1.c3, t1.*
-                           Sort Key: t1.c1
-                           ->  Foreign Scan on public.ft1 t1
-                                 Output: t1.c1, t1.c3, t1.*
-                                 SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
-                     ->  Materialize
+               Join Filter: (t1.c1 = t2.c1)
+               ->  Foreign Scan on public.ft1 t1
+                     Output: t1.c1, t1.c3, t1.*
+                     SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1" ORDER BY `c3` ASC NULLS LAST, `C 1` ASC NULLS LAST
+               ->  Materialize
+                     Output: t2.c1, t2.*
+                     ->  Foreign Scan on public.ft2 t2
                            Output: t2.c1, t2.*
-                           ->  Sort
-                                 Output: t2.c1, t2.*
-                                 Sort Key: t2.c1
-                                 ->  Foreign Scan on public.ft2 t2
-                                       Output: t2.c1, t2.*
-                                       SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
-(24 rows)
+                           SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
+(15 rows)
 
 --Testcase 118:
 SELECT t1.c1, t2.c1 FROM ft1 t1 JOIN ft2 t2 ON (t1.c1 = t2.c1) ORDER BY t1.c3, t1.c1 OFFSET 100 LIMIT 10 FOR SHARE;
@@ -2505,59 +2434,41 @@ WITH t (c1_1, c1_3, c2_1) AS MATERIALIZED (SELECT t1.c1, t1.c3, t2.c1 FROM ft1 t
 --Testcase 121:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT t1.ctid, t1, t2, t1.c1 FROM ft1 t1 JOIN ft2 t2 ON (t1.c1 = t2.c1) ORDER BY t1.c3, t1.c1 OFFSET 100 LIMIT 10;
-                                                      QUERY PLAN                                                      
-----------------------------------------------------------------------------------------------------------------------
+                                                                      QUERY PLAN                                                                       
+-------------------------------------------------------------------------------------------------------------------------------------------------------
  Limit
    Output: t1.ctid, t1.*, t2.*, t1.c1, t1.c3
-   ->  Sort
+   ->  Nested Loop
          Output: t1.ctid, t1.*, t2.*, t1.c1, t1.c3
-         Sort Key: t1.c3, t1.c1
-         ->  Merge Join
-               Output: t1.ctid, t1.*, t2.*, t1.c1, t1.c3
-               Merge Cond: (t1.c1 = t2.c1)
-               ->  Sort
-                     Output: t1.ctid, t1.*, t1.c1, t1.c3
-                     Sort Key: t1.c1
-                     ->  Foreign Scan on public.ft1 t1
-                           Output: t1.ctid, t1.*, t1.c1, t1.c3
-                           SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
-               ->  Materialize
+         Join Filter: (t1.c1 = t2.c1)
+         ->  Foreign Scan on public.ft1 t1
+               Output: t1.ctid, t1.*, t1.c1, t1.c3
+               SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1" ORDER BY `c3` ASC NULLS LAST, `C 1` ASC NULLS LAST
+         ->  Materialize
+               Output: t2.*, t2.c1
+               ->  Foreign Scan on public.ft2 t2
                      Output: t2.*, t2.c1
-                     ->  Sort
-                           Output: t2.*, t2.c1
-                           Sort Key: t2.c1
-                           ->  Foreign Scan on public.ft2 t2
-                                 Output: t2.*, t2.c1
-                                 SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
-(22 rows)
+                     SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
+(13 rows)
 
 -- SEMI JOIN, not pushed down
 --Testcase 122:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT t1.c1 FROM ft1 t1 WHERE EXISTS (SELECT 1 FROM ft2 t2 WHERE t1.c1 = t2.c1) ORDER BY t1.c1 OFFSET 100 LIMIT 10;
-                                 QUERY PLAN                                 
-----------------------------------------------------------------------------
+                                       QUERY PLAN                                       
+----------------------------------------------------------------------------------------
  Limit
    Output: t1.c1
-   ->  Sort
+   ->  Merge Semi Join
          Output: t1.c1
-         Sort Key: t1.c1
-         ->  Hash Join
+         Merge Cond: (t1.c1 = t2.c1)
+         ->  Foreign Scan on public.ft1 t1
                Output: t1.c1
-               Inner Unique: true
-               Hash Cond: (t1.c1 = t2.c1)
-               ->  Foreign Scan on public.ft1 t1
-                     Output: t1.c1
-                     SQLite query: SELECT `C 1` FROM main."T 1"
-               ->  Hash
-                     Output: t2.c1
-                     ->  HashAggregate
-                           Output: t2.c1
-                           Group Key: t2.c1
-                           ->  Foreign Scan on public.ft2 t2
-                                 Output: t2.c1
-                                 SQLite query: SELECT `C 1` FROM main."T 1"
-(20 rows)
+               SQLite query: SELECT `C 1` FROM main."T 1" ORDER BY `C 1` ASC NULLS LAST
+         ->  Foreign Scan on public.ft2 t2
+               Output: t2.c1
+               SQLite query: SELECT `C 1` FROM main."T 1" ORDER BY `C 1` ASC NULLS LAST
+(11 rows)
 
 --Testcase 123:
 SELECT t1.c1 FROM ft1 t1 WHERE EXISTS (SELECT 1 FROM ft2 t2 WHERE t1.c1 = t2.c1) ORDER BY t1.c1 OFFSET 100 LIMIT 10;
@@ -2579,25 +2490,22 @@ SELECT t1.c1 FROM ft1 t1 WHERE EXISTS (SELECT 1 FROM ft2 t2 WHERE t1.c1 = t2.c1)
 --Testcase 124:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT t1.c1 FROM ft1 t1 WHERE NOT EXISTS (SELECT 1 FROM ft2 t2 WHERE t1.c1 = t2.c2) ORDER BY t1.c1 OFFSET 100 LIMIT 10;
-                             QUERY PLAN                              
----------------------------------------------------------------------
+                                       QUERY PLAN                                       
+----------------------------------------------------------------------------------------
  Limit
    Output: t1.c1
-   ->  Sort
+   ->  Nested Loop Anti Join
          Output: t1.c1
-         Sort Key: t1.c1
-         ->  Hash Anti Join
+         Join Filter: (t1.c1 = t2.c2)
+         ->  Foreign Scan on public.ft1 t1
                Output: t1.c1
-               Hash Cond: (t1.c1 = t2.c2)
-               ->  Foreign Scan on public.ft1 t1
-                     Output: t1.c1
-                     SQLite query: SELECT `C 1` FROM main."T 1"
-               ->  Hash
+               SQLite query: SELECT `C 1` FROM main."T 1" ORDER BY `C 1` ASC NULLS LAST
+         ->  Materialize
+               Output: t2.c2
+               ->  Foreign Scan on public.ft2 t2
                      Output: t2.c2
-                     ->  Foreign Scan on public.ft2 t2
-                           Output: t2.c2
-                           SQLite query: SELECT `c2` FROM main."T 1"
-(16 rows)
+                     SQLite query: SELECT `c2` FROM main."T 1"
+(13 rows)
 
 --Testcase 125:
 SELECT t1.c1 FROM ft1 t1 WHERE NOT EXISTS (SELECT 1 FROM ft2 t2 WHERE t1.c1 = t2.c2) ORDER BY t1.c1 OFFSET 100 LIMIT 10;
@@ -2658,28 +2566,22 @@ SELECT t1.c1, t2.c1 FROM ft1 t1 CROSS JOIN ft2 t2 ORDER BY t1.c1, t2.c1 OFFSET 1
 --Testcase 128:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT t1.c1, t2.c1 FROM ft5 t1 JOIN ft6 t2 ON (t1.c1 = t2.c1) ORDER BY t1.c1, t2.c1 OFFSET 100 LIMIT 10;
-                             QUERY PLAN                              
----------------------------------------------------------------------
+                                         QUERY PLAN                                         
+--------------------------------------------------------------------------------------------
  Limit
    Output: t1.c1, t2.c1
    ->  Merge Join
          Output: t1.c1, t2.c1
          Merge Cond: (t1.c1 = t2.c1)
-         ->  Sort
-               Output: t1.c1
-               Sort Key: t1.c1
-               ->  Foreign Scan on public.ft5 t1
-                     Output: t1.c1
-                     SQLite query: SELECT `c1` FROM main."T 4"
+         ->  Foreign Scan on public.ft5 t1
+               Output: t1.c1, t1.c2, t1.c3
+               SQLite query: SELECT `c1` FROM main."T 4" ORDER BY `c1` ASC NULLS LAST
          ->  Materialize
-               Output: t2.c1
-               ->  Sort
-                     Output: t2.c1
-                     Sort Key: t2.c1
-                     ->  Foreign Scan on public.ft6 t2
-                           Output: t2.c1
-                           SQLite query: SELECT `c1` FROM main."T 4"
-(19 rows)
+               Output: t2.c1, t2.c2, t2.c3
+               ->  Foreign Scan on public.ft6 t2
+                     Output: t2.c1, t2.c2, t2.c3
+                     SQLite query: SELECT `c1` FROM main."T 4" ORDER BY `c1` ASC NULLS LAST
+(13 rows)
 
 --Testcase 129:
 SELECT t1.c1, t2.c1 FROM ft5 t1 JOIN ft6 t2 ON (t1.c1 = t2.c1) ORDER BY t1.c1, t2.c1 OFFSET 100 LIMIT 10;
@@ -2738,31 +2640,22 @@ SELECT t1.c1, t2.c1 FROM ft1 t1 LEFT JOIN ft2 t2 ON (t1.c8 = t2.c8) ORDER BY t1.
 --Testcase 132:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT t1.c1, t2.c1 FROM ft1 t1 LEFT JOIN ft2 t2 ON (t1.c1 = t2.c1) WHERE t1.c8 = 'foo' ORDER BY t1.c3, t1.c1 OFFSET 100 LIMIT 10;
-                                            QUERY PLAN                                             
----------------------------------------------------------------------------------------------------
+                                                                QUERY PLAN                                                                
+------------------------------------------------------------------------------------------------------------------------------------------
  Limit
    Output: t1.c1, t2.c1, t1.c3
-   ->  Sort
+   ->  Nested Loop Left Join
          Output: t1.c1, t2.c1, t1.c3
-         Sort Key: t1.c3, t1.c1
-         ->  Merge Left Join
-               Output: t1.c1, t2.c1, t1.c3
-               Merge Cond: (t1.c1 = t2.c1)
-               ->  Sort
-                     Output: t1.c1, t1.c3
-                     Sort Key: t1.c1
-                     ->  Foreign Scan on public.ft1 t1
-                           Output: t1.c1, t1.c3
-                           SQLite query: SELECT `C 1`, `c3` FROM main."T 1" WHERE ((`c8` = 'foo'))
-               ->  Materialize
+         Join Filter: (t1.c1 = t2.c1)
+         ->  Foreign Scan on public.ft1 t1
+               Output: t1.c1, t1.c3
+               SQLite query: SELECT `C 1`, `c3` FROM main."T 1" WHERE ((`c8` = 'foo')) ORDER BY `c3` ASC NULLS LAST, `C 1` ASC NULLS LAST
+         ->  Materialize
+               Output: t2.c1
+               ->  Foreign Scan on public.ft2 t2
                      Output: t2.c1
-                     ->  Sort
-                           Output: t2.c1
-                           Sort Key: t2.c1
-                           ->  Foreign Scan on public.ft2 t2
-                                 Output: t2.c1
-                                 SQLite query: SELECT `C 1` FROM main."T 1"
-(22 rows)
+                     SQLite query: SELECT `C 1` FROM main."T 1"
+(13 rows)
 
 --Testcase 133:
 SELECT t1.c1, t2.c1 FROM ft1 t1 LEFT JOIN ft2 t2 ON (t1.c1 = t2.c1) WHERE t1.c8 = 'foo' ORDER BY t1.c3, t1.c1 OFFSET 100 LIMIT 10;
@@ -2787,31 +2680,22 @@ SELECT t1.c1, t2.c1 FROM ft1 t1 LEFT JOIN ft2 t2 ON (t1.c1 = t2.c1) WHERE t1.c8 
 --Testcase 134:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT t1.c1, t2.c1 FROM ft1 t1 JOIN ft2 t2 ON (t1.c1 = t2.c1) WHERE t1.c8 = t2.c8 ORDER BY t1.c3, t1.c1 OFFSET 100 LIMIT 10;
-                                    QUERY PLAN                                    
-----------------------------------------------------------------------------------
+                                                       QUERY PLAN                                                        
+-------------------------------------------------------------------------------------------------------------------------
  Limit
    Output: t1.c1, t2.c1, t1.c3
-   ->  Sort
+   ->  Nested Loop
          Output: t1.c1, t2.c1, t1.c3
-         Sort Key: t1.c3, t1.c1
-         ->  Merge Join
-               Output: t1.c1, t2.c1, t1.c3
-               Merge Cond: ((t1.c1 = t2.c1) AND (t1.c8 = t2.c8))
-               ->  Sort
-                     Output: t1.c1, t1.c3, t1.c8
-                     Sort Key: t1.c1, t1.c8
-                     ->  Foreign Scan on public.ft1 t1
-                           Output: t1.c1, t1.c3, t1.c8
-                           SQLite query: SELECT `C 1`, `c3`, `c8` FROM main."T 1"
-               ->  Materialize
+         Join Filter: ((t1.c1 = t2.c1) AND (t1.c8 = t2.c8))
+         ->  Foreign Scan on public.ft1 t1
+               Output: t1.c1, t1.c3, t1.c8
+               SQLite query: SELECT `C 1`, `c3`, `c8` FROM main."T 1" ORDER BY `c3` ASC NULLS LAST, `C 1` ASC NULLS LAST
+         ->  Materialize
+               Output: t2.c1, t2.c8
+               ->  Foreign Scan on public.ft2 t2
                      Output: t2.c1, t2.c8
-                     ->  Sort
-                           Output: t2.c1, t2.c8
-                           Sort Key: t2.c1, t2.c8
-                           ->  Foreign Scan on public.ft2 t2
-                                 Output: t2.c1, t2.c8
-                                 SQLite query: SELECT `C 1`, `c8` FROM main."T 1"
-(22 rows)
+                     SQLite query: SELECT `C 1`, `c8` FROM main."T 1"
+(13 rows)
 
 --Testcase 135:
 SELECT t1.c1, t2.c1 FROM ft1 t1 JOIN ft2 t2 ON (t1.c1 = t2.c1) WHERE t1.c8 = t2.c8 ORDER BY t1.c3, t1.c1 OFFSET 100 LIMIT 10;
@@ -2902,38 +2786,29 @@ SELECT t1c1, avg(t1c1 + t2c1) FROM (SELECT t1.c1, t2.c1 FROM ft1 t1 JOIN ft2 t2 
 --Testcase 138:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT t1."C 1" FROM "S 1"."T 1" t1, LATERAL (SELECT DISTINCT t2.c1, t3.c1 FROM ft1 t2, ft2 t3 WHERE t2.c1 = t3.c1 AND t2.c2 = t1.c2) q ORDER BY t1."C 1" OFFSET 10 LIMIT 10;
-                                             QUERY PLAN                                              
------------------------------------------------------------------------------------------------------
+                                                      QUERY PLAN                                                       
+-----------------------------------------------------------------------------------------------------------------------
  Limit
    Output: t1."C 1"
-   ->  Sort
+   ->  Nested Loop
          Output: t1."C 1"
-         Sort Key: t1."C 1"
-         ->  Nested Loop
-               Output: t1."C 1"
-               ->  Foreign Scan on "S 1"."T 1" t1
-                     Output: t1."C 1", t1.c2, t1.c3, t1.c4, t1.c5, t1.c6, t1.c7, t1.c8
-                     SQLite query: SELECT `C 1`, `c2` FROM main."T 1"
-               ->  Unique
+         ->  Foreign Scan on "S 1"."T 1" t1
+               Output: t1."C 1", t1.c2, t1.c3, t1.c4, t1.c5, t1.c6, t1.c7, t1.c8
+               SQLite query: SELECT `C 1`, `c2` FROM main."T 1" ORDER BY `C 1` ASC NULLS LAST
+         ->  Unique
+               Output: t2.c1, t3.c1
+               ->  Merge Join
                      Output: t2.c1, t3.c1
-                     ->  Merge Join
-                           Output: t2.c1, t3.c1
-                           Merge Cond: (t2.c1 = t3.c1)
-                           ->  Sort
-                                 Output: t2.c1
-                                 Sort Key: t2.c1
-                                 ->  Foreign Scan on public.ft1 t2
-                                       Output: t2.c1
-                                       SQLite query: SELECT `C 1` FROM main."T 1" WHERE ((`c2` = ?))
-                           ->  Materialize
+                     Merge Cond: (t2.c1 = t3.c1)
+                     ->  Foreign Scan on public.ft1 t2
+                           Output: t2.c1
+                           SQLite query: SELECT `C 1` FROM main."T 1" WHERE ((`c2` = ?)) ORDER BY `C 1` ASC NULLS LAST
+                     ->  Materialize
+                           Output: t3.c1
+                           ->  Foreign Scan on public.ft2 t3
                                  Output: t3.c1
-                                 ->  Sort
-                                       Output: t3.c1
-                                       Sort Key: t3.c1
-                                       ->  Foreign Scan on public.ft2 t3
-                                             Output: t3.c1
-                                             SQLite query: SELECT `C 1` FROM main."T 1"
-(29 rows)
+                                 SQLite query: SELECT `C 1` FROM main."T 1" ORDER BY `C 1` ASC NULLS LAST
+(20 rows)
 
 --Testcase 139:
 SELECT t1."C 1" FROM "S 1"."T 1" t1, LATERAL (SELECT DISTINCT t2.c1, t3.c1 FROM ft1 t2, ft2 t3 WHERE t2.c1 = t3.c1 AND t2.c2 = t1.c2) q ORDER BY t1."C 1" OFFSET 10 LIMIT 10;
@@ -3031,26 +2906,20 @@ UPDATE ft5 SET c3 = null where c1 % 9 = 0;
 --Testcase 145:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT ft5, ft5.c1, ft5.c2, ft5.c3, ft4.c1, ft4.c2 FROM ft5 left join ft4 on ft5.c1 = ft4.c1 WHERE ft4.c1 BETWEEN 10 and 30 ORDER BY ft5.c1, ft4.c1;
-                                                 QUERY PLAN                                                  
--------------------------------------------------------------------------------------------------------------
+                                                             QUERY PLAN                                                             
+------------------------------------------------------------------------------------------------------------------------------------
  Merge Join
    Output: ft5.*, ft5.c1, ft5.c2, ft5.c3, ft4.c1, ft4.c2
    Merge Cond: (ft5.c1 = ft4.c1)
-   ->  Sort
+   ->  Foreign Scan on public.ft5
          Output: ft5.*, ft5.c1, ft5.c2, ft5.c3
-         Sort Key: ft5.c1
-         ->  Foreign Scan on public.ft5
-               Output: ft5.*, ft5.c1, ft5.c2, ft5.c3
-               SQLite query: SELECT `c1`, `c2`, `c3` FROM main."T 4"
+         SQLite query: SELECT `c1`, `c2`, `c3` FROM main."T 4" ORDER BY `c1` ASC NULLS LAST
    ->  Materialize
-         Output: ft4.c1, ft4.c2
-         ->  Sort
-               Output: ft4.c1, ft4.c2
-               Sort Key: ft4.c1
-               ->  Foreign Scan on public.ft4
-                     Output: ft4.c1, ft4.c2
-                     SQLite query: SELECT `c1`, `c2` FROM main."T 3" WHERE ((`c1` >= 10)) AND ((`c1` <= 30))
-(17 rows)
+         Output: ft4.c1, ft4.c2, ft4.c3
+         ->  Foreign Scan on public.ft4
+               Output: ft4.c1, ft4.c2, ft4.c3
+               SQLite query: SELECT `c1`, `c2` FROM main."T 3" WHERE ((`c1` >= 10)) AND ((`c1` <= 30)) ORDER BY `c1` ASC NULLS LAST
+(11 rows)
 
 --Testcase 146:
 SELECT ft5, ft5.c1, ft5.c2, ft5.c3, ft4.c1, ft4.c2 FROM ft5 left join ft4 on ft5.c1 = ft4.c1 WHERE ft4.c1 BETWEEN 10 and 30 ORDER BY ft5.c1, ft4.c1;
@@ -3370,12 +3239,12 @@ select count(c6), sum(c1), avg(c1), min(c2), max(c1), stddev(c2), sum(c1) * (ran
    ->  Sort
          Output: (count(c6)), (sum(c1)), (avg(c1)), (min(c2)), (max(c1)), (stddev(c2)), c2
          Sort Key: (count(ft1.c6)), (sum(ft1.c1))
-         ->  HashAggregate
+         ->  GroupAggregate
                Output: count(c6), sum(c1), avg(c1), min(c2), max(c1), stddev(c2), c2
                Group Key: ft1.c2
                ->  Foreign Scan on public.ft1
-                     Output: c2, c6, c1
-                     SQLite query: SELECT `C 1`, `c2`, `c6` FROM main."T 1" WHERE ((`c2` < 5))
+                     Output: c6, c1, c2
+                     SQLite query: SELECT `C 1`, `c2`, `c6` FROM main."T 1" WHERE ((`c2` < 5)) ORDER BY `c2` ASC NULLS LAST
 (11 rows)
 
 --Testcase 158:
@@ -3401,12 +3270,12 @@ select count(c6), sum(c1), avg(c1), min(c2), max(c1), stddev(c2), sum(c1) * (ran
          ->  Sort
                Output: (count(c6)), (sum(c1)), (avg(c1)), (min(c2)), (max(c1)), (stddev(c2)), c2
                Sort Key: (count(ft1.c6)), (sum(ft1.c1))
-               ->  HashAggregate
+               ->  GroupAggregate
                      Output: count(c6), sum(c1), avg(c1), min(c2), max(c1), stddev(c2), c2
                      Group Key: ft1.c2
                      ->  Foreign Scan on public.ft1
-                           Output: c2, c6, c1
-                           SQLite query: SELECT `C 1`, `c2`, `c6` FROM main."T 1" WHERE ((`c2` < 5))
+                           Output: c6, c1, c2
+                           SQLite query: SELECT `C 1`, `c2`, `c6` FROM main."T 1" WHERE ((`c2` < 5)) ORDER BY `c2` ASC NULLS LAST
 (13 rows)
 
 --Testcase 515:
@@ -3488,15 +3357,12 @@ select sum(t1.c1), count(t2.c1) from ft1 t1 inner join ft2 t2 on (t1.c1 = t2.c1)
 --Testcase 163:
 explain (verbose, costs off)
 select c2/2, sum(c2) * (c2/2) from ft1 group by c2/2 order by c2/2;
-                                          QUERY PLAN                                          
-----------------------------------------------------------------------------------------------
- Sort
+                                                        QUERY PLAN                                                         
+---------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan
    Output: ((c2 / 2)), ((sum(c2) * (c2 / 2)))
-   Sort Key: ((ft1.c2 / 2))
-   ->  Foreign Scan
-         Output: ((c2 / 2)), ((sum(c2) * (c2 / 2)))
-         SQLite query: SELECT (`c2` / 2), (sum(`c2`) * (`c2` / 2)) FROM main."T 1" GROUP BY 1
-(6 rows)
+   SQLite query: SELECT (`c2` / 2), (sum(`c2`) * (`c2` / 2)) FROM main."T 1" GROUP BY 1 ORDER BY (`c2` / 2) ASC NULLS LAST
+(3 rows)
 
 --Testcase 164:
 select c2/2, sum(c2) * (c2/2) from ft1 group by c2/2 order by c2/2;
@@ -3586,15 +3452,12 @@ select c2 * (random() <= 1)::int as c2 from ft2 group by c2 * (random() <= 1)::i
 --Testcase 516:
 explain (verbose, costs off)
 select count(c2) w, c2 x, 5 y, 7.0 z from ft1 group by 2, y, 9.0::int order by 2;
-                                         QUERY PLAN                                         
---------------------------------------------------------------------------------------------
- Sort
+                                                    QUERY PLAN                                                     
+-------------------------------------------------------------------------------------------------------------------
+ Foreign Scan
    Output: (count(c2)), c2, 5, 7.0, 9
-   Sort Key: ft1.c2
-   ->  Foreign Scan
-         Output: (count(c2)), c2, 5, 7.0, 9
-         SQLite query: SELECT count(`c2`), `c2`, 5, 7.0, 9 FROM main."T 1" GROUP BY 2, 3, 5
-(6 rows)
+   SQLite query: SELECT count(`c2`), `c2`, 5, 7.0, 9 FROM main."T 1" GROUP BY 2, 3, 5 ORDER BY `c2` ASC NULLS LAST
+(3 rows)
 
 --Testcase 517:
 select count(c2) w, c2 x, 5 y, 7.0 z from ft1 group by 2, y, 9.0::int order by 2;
@@ -3617,15 +3480,12 @@ select count(c2) w, c2 x, 5 y, 7.0 z from ft1 group by 2, y, 9.0::int order by 2
 --Testcase 170:
 explain (verbose, costs off)
 select c2, c2 from ft1 where c2 > 6 group by 1, 2 order by sum(c1);
-                                              QUERY PLAN                                              
-------------------------------------------------------------------------------------------------------
- Sort
+                                                            QUERY PLAN                                                             
+-----------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan
    Output: c2, c2, (sum(c1))
-   Sort Key: (sum(ft1.c1))
-   ->  Foreign Scan
-         Output: c2, c2, (sum(c1))
-         SQLite query: SELECT `c2`, `c2`, sum(`C 1`) FROM main."T 1" WHERE ((`c2` > 6)) GROUP BY 1, 2
-(6 rows)
+   SQLite query: SELECT `c2`, `c2`, sum(`C 1`) FROM main."T 1" WHERE ((`c2` > 6)) GROUP BY 1, 2 ORDER BY sum(`C 1`) ASC NULLS LAST
+(3 rows)
 
 --Testcase 171:
 select c2, c2 from ft1 where c2 > 6 group by 1, 2 order by sum(c1);
@@ -3640,15 +3500,12 @@ select c2, c2 from ft1 where c2 > 6 group by 1, 2 order by sum(c1);
 --Testcase 172:
 explain (verbose, costs off)
 select c2, sum(c1) from ft2 group by c2 having avg(c1) < 500 and sum(c1) < 49800 order by c2;
-                                                           QUERY PLAN                                                            
----------------------------------------------------------------------------------------------------------------------------------
- Sort
+                                                                       QUERY PLAN                                                                       
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan
    Output: c2, (sum(c1))
-   Sort Key: ft2.c2
-   ->  Foreign Scan
-         Output: c2, (sum(c1))
-         SQLite query: SELECT `c2`, sum(`C 1`) FROM main."T 1" GROUP BY 1 HAVING ((avg(`C 1`) < 500)) AND ((sum(`C 1`) < 49800))
-(6 rows)
+   SQLite query: SELECT `c2`, sum(`C 1`) FROM main."T 1" GROUP BY 1 HAVING ((avg(`C 1`) < 500)) AND ((sum(`C 1`) < 49800)) ORDER BY `c2` ASC NULLS LAST
+(3 rows)
 
 --Testcase 173:
 select c2, sum(c1) from ft2 group by c2 having avg(c1) < 500 and sum(c1) < 49800 order by c2;
@@ -3691,13 +3548,13 @@ select sum(c1) from ft1 group by c2 having avg(c1 * (random() <= 1)::int) > 100 
  Sort
    Output: (sum(c1)), c2
    Sort Key: (sum(ft1.c1))
-   ->  HashAggregate
+   ->  GroupAggregate
          Output: sum(c1), c2
          Group Key: ft1.c2
          Filter: (avg((ft1.c1 * ((random() <= '1'::double precision))::integer)) > '100'::numeric)
          ->  Foreign Scan on public.ft1
-               Output: c2, c1
-               SQLite query: SELECT `C 1`, `c2` FROM main."T 1"
+               Output: c1, c2
+               SQLite query: SELECT `C 1`, `c2` FROM main."T 1" ORDER BY `c2` ASC NULLS LAST
 (10 rows)
 
 -- Remote aggregate in combination with a local Param (for the output
@@ -3748,21 +3605,18 @@ select exists(select 1 from pg_enum), sum(c1) from ft1 group by 1;
 --Testcase 177:
 explain (verbose, costs off)
 select array_agg(c1 order by c1) from ft1 where c1 < 100 group by c2 order by 1;
-                                         QUERY PLAN                                         
---------------------------------------------------------------------------------------------
+                                                    QUERY PLAN                                                     
+-------------------------------------------------------------------------------------------------------------------
  Sort
    Output: (array_agg(c1 ORDER BY c1)), c2
    Sort Key: (array_agg(ft1.c1 ORDER BY ft1.c1))
    ->  GroupAggregate
          Output: array_agg(c1 ORDER BY c1), c2
          Group Key: ft1.c2
-         ->  Sort
-               Output: c2, c1
-               Sort Key: ft1.c2
-               ->  Foreign Scan on public.ft1
-                     Output: c2, c1
-                     SQLite query: SELECT `C 1`, `c2` FROM main."T 1" WHERE ((`C 1` < 100))
-(12 rows)
+         ->  Foreign Scan on public.ft1
+               Output: c1, c2
+               SQLite query: SELECT `C 1`, `c2` FROM main."T 1" WHERE ((`C 1` < 100)) ORDER BY `c2` ASC NULLS LAST
+(9 rows)
 
 --Testcase 178:
 select array_agg(c1 order by c1) from ft1 where c1 < 100 group by c2 order by 1;
@@ -3804,8 +3658,8 @@ select array_agg(c5 order by c1 desc) from ft2 where c2 = 6 and c1 < 50;
 --Testcase 181:
 explain (verbose, costs off)
 select array_agg(distinct (t1.c1)%5) from ft4 t1 full join ft5 t2 on (t1.c1 = t2.c1) where t1.c1 < 20 or (t1.c1 is null and t2.c1 < 5) group by (t2.c1)%3 order by 1;
-                                   QUERY PLAN                                    
----------------------------------------------------------------------------------
+                                                  QUERY PLAN                                                  
+--------------------------------------------------------------------------------------------------------------
  Sort
    Output: (array_agg(DISTINCT (t1.c1 % 5))), ((t2.c1 % 3))
    Sort Key: (array_agg(DISTINCT (t1.c1 % 5)))
@@ -3815,25 +3669,19 @@ select array_agg(distinct (t1.c1)%5) from ft4 t1 full join ft5 t2 on (t1.c1 = t2
          ->  Sort
                Output: ((t2.c1 % 3)), t1.c1
                Sort Key: ((t2.c1 % 3))
-               ->  Merge Full Join
+               ->  Hash Full Join
                      Output: (t2.c1 % 3), t1.c1
-                     Merge Cond: (t1.c1 = t2.c1)
+                     Hash Cond: (t1.c1 = t2.c1)
                      Filter: ((t1.c1 < 20) OR ((t1.c1 IS NULL) AND (t2.c1 < 5)))
-                     ->  Sort
-                           Output: t1.c1
-                           Sort Key: t1.c1
-                           ->  Foreign Scan on public.ft4 t1
-                                 Output: t1.c1
-                                 SQLite query: SELECT `c1` FROM main."T 3"
-                     ->  Materialize
+                     ->  Foreign Scan on public.ft4 t1
+                           Output: t1.c1, t1.c2, t1.c3
+                           SQLite query: SELECT `c1` FROM main."T 3"
+                     ->  Hash
                            Output: t2.c1
-                           ->  Sort
+                           ->  Foreign Scan on public.ft5 t2
                                  Output: t2.c1
-                                 Sort Key: t2.c1
-                                 ->  Foreign Scan on public.ft5 t2
-                                       Output: t2.c1
-                                       SQLite query: SELECT `c1` FROM main."T 4"
-(27 rows)
+                                 SQLite query: SELECT `c1` FROM main."T 4" ORDER BY (`c1` % 3) ASC NULLS LAST
+(21 rows)
 
 --Testcase 182:
 select array_agg(distinct (t1.c1)%5) from ft4 t1 full join ft5 t2 on (t1.c1 = t2.c1) where t1.c1 < 20 or (t1.c1 is null and t2.c1 < 5) group by (t2.c1)%3 order by 1;
@@ -3847,8 +3695,8 @@ select array_agg(distinct (t1.c1)%5) from ft4 t1 full join ft5 t2 on (t1.c1 = t2
 --Testcase 183:
 explain (verbose, costs off)
 select array_agg(distinct (t1.c1)%5 order by (t1.c1)%5) from ft4 t1 full join ft5 t2 on (t1.c1 = t2.c1) where t1.c1 < 20 or (t1.c1 is null and t2.c1 < 5) group by (t2.c1)%3 order by 1;
-                                     QUERY PLAN                                      
--------------------------------------------------------------------------------------
+                                                  QUERY PLAN                                                  
+--------------------------------------------------------------------------------------------------------------
  Sort
    Output: (array_agg(DISTINCT (t1.c1 % 5) ORDER BY (t1.c1 % 5))), ((t2.c1 % 3))
    Sort Key: (array_agg(DISTINCT (t1.c1 % 5) ORDER BY (t1.c1 % 5)))
@@ -3858,25 +3706,19 @@ select array_agg(distinct (t1.c1)%5 order by (t1.c1)%5) from ft4 t1 full join ft
          ->  Sort
                Output: ((t2.c1 % 3)), t1.c1
                Sort Key: ((t2.c1 % 3))
-               ->  Merge Full Join
+               ->  Hash Full Join
                      Output: (t2.c1 % 3), t1.c1
-                     Merge Cond: (t1.c1 = t2.c1)
+                     Hash Cond: (t1.c1 = t2.c1)
                      Filter: ((t1.c1 < 20) OR ((t1.c1 IS NULL) AND (t2.c1 < 5)))
-                     ->  Sort
-                           Output: t1.c1
-                           Sort Key: t1.c1
-                           ->  Foreign Scan on public.ft4 t1
-                                 Output: t1.c1
-                                 SQLite query: SELECT `c1` FROM main."T 3"
-                     ->  Materialize
+                     ->  Foreign Scan on public.ft4 t1
+                           Output: t1.c1, t1.c2, t1.c3
+                           SQLite query: SELECT `c1` FROM main."T 3"
+                     ->  Hash
                            Output: t2.c1
-                           ->  Sort
+                           ->  Foreign Scan on public.ft5 t2
                                  Output: t2.c1
-                                 Sort Key: t2.c1
-                                 ->  Foreign Scan on public.ft5 t2
-                                       Output: t2.c1
-                                       SQLite query: SELECT `c1` FROM main."T 4"
-(27 rows)
+                                 SQLite query: SELECT `c1` FROM main."T 4" ORDER BY (`c1` % 3) ASC NULLS LAST
+(21 rows)
 
 --Testcase 184:
 select array_agg(distinct (t1.c1)%5 order by (t1.c1)%5) from ft4 t1 full join ft5 t2 on (t1.c1 = t2.c1) where t1.c1 < 20 or (t1.c1 is null and t2.c1 < 5) group by (t2.c1)%3 order by 1;
@@ -3889,8 +3731,8 @@ select array_agg(distinct (t1.c1)%5 order by (t1.c1)%5) from ft4 t1 full join ft
 --Testcase 185:
 explain (verbose, costs off)
 select array_agg(distinct (t1.c1)%5 order by (t1.c1)%5 desc nulls last) from ft4 t1 full join ft5 t2 on (t1.c1 = t2.c1) where t1.c1 < 20 or (t1.c1 is null and t2.c1 < 5) group by (t2.c1)%3 order by 1;
-                                             QUERY PLAN                                              
------------------------------------------------------------------------------------------------------
+                                                  QUERY PLAN                                                  
+--------------------------------------------------------------------------------------------------------------
  Sort
    Output: (array_agg(DISTINCT (t1.c1 % 5) ORDER BY (t1.c1 % 5) DESC NULLS LAST)), ((t2.c1 % 3))
    Sort Key: (array_agg(DISTINCT (t1.c1 % 5) ORDER BY (t1.c1 % 5) DESC NULLS LAST))
@@ -3900,25 +3742,19 @@ select array_agg(distinct (t1.c1)%5 order by (t1.c1)%5 desc nulls last) from ft4
          ->  Sort
                Output: ((t2.c1 % 3)), t1.c1
                Sort Key: ((t2.c1 % 3))
-               ->  Merge Full Join
+               ->  Hash Full Join
                      Output: (t2.c1 % 3), t1.c1
-                     Merge Cond: (t1.c1 = t2.c1)
+                     Hash Cond: (t1.c1 = t2.c1)
                      Filter: ((t1.c1 < 20) OR ((t1.c1 IS NULL) AND (t2.c1 < 5)))
-                     ->  Sort
-                           Output: t1.c1
-                           Sort Key: t1.c1
-                           ->  Foreign Scan on public.ft4 t1
-                                 Output: t1.c1
-                                 SQLite query: SELECT `c1` FROM main."T 3"
-                     ->  Materialize
+                     ->  Foreign Scan on public.ft4 t1
+                           Output: t1.c1, t1.c2, t1.c3
+                           SQLite query: SELECT `c1` FROM main."T 3"
+                     ->  Hash
                            Output: t2.c1
-                           ->  Sort
+                           ->  Foreign Scan on public.ft5 t2
                                  Output: t2.c1
-                                 Sort Key: t2.c1
-                                 ->  Foreign Scan on public.ft5 t2
-                                       Output: t2.c1
-                                       SQLite query: SELECT `c1` FROM main."T 4"
-(27 rows)
+                                 SQLite query: SELECT `c1` FROM main."T 4" ORDER BY (`c1` % 3) ASC NULLS LAST
+(21 rows)
 
 --Testcase 186:
 select array_agg(distinct (t1.c1)%5 order by (t1.c1)%5 desc nulls last) from ft4 t1 full join ft5 t2 on (t1.c1 = t2.c1) where t1.c1 < 20 or (t1.c1 is null and t2.c1 < 5) group by (t2.c1)%3 order by 1;
@@ -3932,17 +3768,17 @@ select array_agg(distinct (t1.c1)%5 order by (t1.c1)%5 desc nulls last) from ft4
 --Testcase 187:
 explain (verbose, costs off)
 select sum(c1) filter (where c1 < 100 and c2 > 5) from ft1 group by c2 order by 1 nulls last;
-                                 QUERY PLAN                                 
-----------------------------------------------------------------------------
+                                         QUERY PLAN                                          
+---------------------------------------------------------------------------------------------
  Sort
    Output: (sum(c1) FILTER (WHERE ((c1 < 100) AND (c2 > 5)))), c2
    Sort Key: (sum(ft1.c1) FILTER (WHERE ((ft1.c1 < 100) AND (ft1.c2 > 5))))
-   ->  HashAggregate
+   ->  GroupAggregate
          Output: sum(c1) FILTER (WHERE ((c1 < 100) AND (c2 > 5))), c2
          Group Key: ft1.c2
          ->  Foreign Scan on public.ft1
-               Output: c2, c1
-               SQLite query: SELECT `C 1`, `c2` FROM main."T 1"
+               Output: c1, c2
+               SQLite query: SELECT `C 1`, `c2` FROM main."T 1" ORDER BY `c2` ASC NULLS LAST
 (9 rows)
 
 --Testcase 188:
@@ -4050,12 +3886,12 @@ select sum(c1) filter (where (c1 / c1) * random() <= 1) from ft1 group by c2 ord
  Sort
    Output: (sum(c1) FILTER (WHERE ((((c1 / c1))::double precision * random()) <= '1'::double precision))), c2
    Sort Key: (sum(ft1.c1) FILTER (WHERE ((((ft1.c1 / ft1.c1))::double precision * random()) <= '1'::double precision)))
-   ->  HashAggregate
+   ->  GroupAggregate
          Output: sum(c1) FILTER (WHERE ((((c1 / c1))::double precision * random()) <= '1'::double precision)), c2
          Group Key: ft1.c2
          ->  Foreign Scan on public.ft1
-               Output: c2, c1
-               SQLite query: SELECT `C 1`, `c2` FROM main."T 1"
+               Output: c1, c2
+               SQLite query: SELECT `C 1`, `c2` FROM main."T 1" ORDER BY `c2` ASC NULLS LAST
 (9 rows)
 
 --Testcase 196:
@@ -4086,13 +3922,10 @@ select c2, rank('10'::varchar) within group (order by c6), percentile_cont(c2/10
    Output: c2, rank('10'::character varying) WITHIN GROUP (ORDER BY c6), percentile_cont((((c2)::numeric / '10'::numeric))::double precision) WITHIN GROUP (ORDER BY ((c1)::double precision))
    Group Key: ft1.c2
    Filter: (percentile_cont((((ft1.c2)::numeric / '10'::numeric))::double precision) WITHIN GROUP (ORDER BY ((ft1.c1)::double precision)) < '500'::double precision)
-   ->  Sort
+   ->  Foreign Scan on public.ft1
          Output: c2, c6, c1
-         Sort Key: ft1.c2
-         ->  Foreign Scan on public.ft1
-               Output: c2, c6, c1
-               SQLite query: SELECT `C 1`, `c2`, `c6` FROM main."T 1" WHERE ((`c2` < 10))
-(10 rows)
+         SQLite query: SELECT `C 1`, `c2`, `c6` FROM main."T 1" WHERE ((`c2` < 10)) ORDER BY `c2` ASC NULLS LAST
+(7 rows)
 
 --Testcase 198:
 select c2, rank('10'::varchar) within group (order by c6), percentile_cont(c2/10::numeric) within group (order by c1) from ft1 where c2 < 10 group by c2 having percentile_cont(c2/10::numeric) within group (order by c1) < 500 order by c2;
@@ -4109,18 +3942,15 @@ select c2, rank('10'::varchar) within group (order by c6), percentile_cont(c2/10
 --Testcase 199:
 explain (verbose, costs off)
 select c1, rank(c1, c2) within group (order by c1, c2) from ft1 group by c1, c2 having c1 = 6 order by 1;
-                                     QUERY PLAN                                     
-------------------------------------------------------------------------------------
+                                                QUERY PLAN                                                 
+-----------------------------------------------------------------------------------------------------------
  GroupAggregate
    Output: c1, rank(c1, c2) WITHIN GROUP (ORDER BY c1, c2), c2
    Group Key: ft1.c1, ft1.c2
-   ->  Sort
+   ->  Foreign Scan on public.ft1
          Output: c1, c2
-         Sort Key: ft1.c2
-         ->  Foreign Scan on public.ft1
-               Output: c1, c2
-               SQLite query: SELECT `C 1`, `c2` FROM main."T 1" WHERE ((`C 1` = 6))
-(9 rows)
+         SQLite query: SELECT `C 1`, `c2` FROM main."T 1" WHERE ((`C 1` = 6)) ORDER BY `c2` ASC NULLS LAST
+(6 rows)
 
 --Testcase 200:
 select c1, rank(c1, c2) within group (order by c1, c2) from ft1 group by c1, c2 having c1 = 6 order by 1;
@@ -4144,18 +3974,15 @@ set enable_hashagg to false;
 --Testcase 524:
 explain (verbose, costs off)
 select c2, least_agg(c1) from ft1 group by c2 order by c2;
-                           QUERY PLAN                           
-----------------------------------------------------------------
+                                      QUERY PLAN                                       
+---------------------------------------------------------------------------------------
  GroupAggregate
    Output: c2, least_agg(VARIADIC ARRAY[c1])
    Group Key: ft1.c2
-   ->  Sort
+   ->  Foreign Scan on public.ft1
          Output: c2, c1
-         Sort Key: ft1.c2
-         ->  Foreign Scan on public.ft1
-               Output: c2, c1
-               SQLite query: SELECT `C 1`, `c2` FROM main."T 1"
-(9 rows)
+         SQLite query: SELECT `C 1`, `c2` FROM main."T 1" ORDER BY `c2` ASC NULLS LAST
+(6 rows)
 
 -- Add function and aggregate into extension
 --alter extension postgres_fdw add function least_accum(anyelement, variadic anyarray);
@@ -4165,18 +3992,15 @@ select c2, least_agg(c1) from ft1 group by c2 order by c2;
 --Testcase 525:
 explain (verbose, costs off)
 select c2, least_agg(c1) from ft1 where c2 < 100 group by c2 order by c2;
-                                     QUERY PLAN                                      
--------------------------------------------------------------------------------------
+                                                 QUERY PLAN                                                 
+------------------------------------------------------------------------------------------------------------
  GroupAggregate
    Output: c2, least_agg(VARIADIC ARRAY[c1])
    Group Key: ft1.c2
-   ->  Sort
+   ->  Foreign Scan on public.ft1
          Output: c2, c1
-         Sort Key: ft1.c2
-         ->  Foreign Scan on public.ft1
-               Output: c2, c1
-               SQLite query: SELECT `C 1`, `c2` FROM main."T 1" WHERE ((`c2` < 100))
-(9 rows)
+         SQLite query: SELECT `C 1`, `c2` FROM main."T 1" WHERE ((`c2` < 100)) ORDER BY `c2` ASC NULLS LAST
+(6 rows)
 
 --Testcase 526:
 select c2, least_agg(c1) from ft1 where c2 < 100 group by c2 order by c2;
@@ -4202,18 +4026,15 @@ select c2, least_agg(c1) from ft1 where c2 < 100 group by c2 order by c2;
 --Testcase 527:
 explain (verbose, costs off)
 select c2, least_agg(c1) from ft1 group by c2 order by c2;
-                           QUERY PLAN                           
-----------------------------------------------------------------
+                                      QUERY PLAN                                       
+---------------------------------------------------------------------------------------
  GroupAggregate
    Output: c2, least_agg(VARIADIC ARRAY[c1])
    Group Key: ft1.c2
-   ->  Sort
+   ->  Foreign Scan on public.ft1
          Output: c2, c1
-         Sort Key: ft1.c2
-         ->  Foreign Scan on public.ft1
-               Output: c2, c1
-               SQLite query: SELECT `C 1`, `c2` FROM main."T 1"
-(9 rows)
+         SQLite query: SELECT `C 1`, `c2` FROM main."T 1" ORDER BY `c2` ASC NULLS LAST
+(6 rows)
 
 -- Cleanup
 reset enable_hashagg;
@@ -4409,8 +4230,8 @@ select count(*), x.b from ft1, (select c2 a, sum(c1) b from ft1 group by c2) x w
 --Testcase 204:
 explain (verbose, costs off)
 select avg(t1.c1), sum(t2.c1) from ft4 t1 full join ft5 t2 on (t1.c1 = t2.c1) group by t2.c1 having (avg(t1.c1) is null and sum(t2.c1) < 10) or sum(t2.c1) is null order by 1 nulls last, 2;
-                                       QUERY PLAN                                       
-----------------------------------------------------------------------------------------
+                                            QUERY PLAN                                            
+--------------------------------------------------------------------------------------------------
  Sort
    Output: (avg(t1.c1)), (sum(t2.c1)), t2.c1
    Sort Key: (avg(t1.c1)), (sum(t2.c1))
@@ -4418,24 +4239,18 @@ select avg(t1.c1), sum(t2.c1) from ft4 t1 full join ft5 t2 on (t1.c1 = t2.c1) gr
          Output: avg(t1.c1), sum(t2.c1), t2.c1
          Group Key: t2.c1
          Filter: (((avg(t1.c1) IS NULL) AND (sum(t2.c1) < 10)) OR (sum(t2.c1) IS NULL))
-         ->  Merge Full Join
+         ->  Hash Full Join
                Output: t2.c1, t1.c1
-               Merge Cond: (t1.c1 = t2.c1)
-               ->  Sort
-                     Output: t1.c1
-                     Sort Key: t1.c1
-                     ->  Foreign Scan on public.ft4 t1
-                           Output: t1.c1
-                           SQLite query: SELECT `c1` FROM main."T 3"
-               ->  Materialize
+               Hash Cond: (t1.c1 = t2.c1)
+               ->  Foreign Scan on public.ft4 t1
+                     Output: t1.c1, t1.c2, t1.c3
+                     SQLite query: SELECT `c1` FROM main."T 3"
+               ->  Hash
                      Output: t2.c1
-                     ->  Sort
+                     ->  Foreign Scan on public.ft5 t2
                            Output: t2.c1
-                           Sort Key: t2.c1
-                           ->  Foreign Scan on public.ft5 t2
-                                 Output: t2.c1
-                                 SQLite query: SELECT `c1` FROM main."T 4"
-(24 rows)
+                           SQLite query: SELECT `c1` FROM main."T 4" ORDER BY `c1` ASC NULLS LAST
+(18 rows)
 
 --Testcase 205:
 select avg(t1.c1), sum(t2.c1) from ft4 t1 full join ft5 t2 on (t1.c1 = t2.c1) group by t2.c1 having (avg(t1.c1) is null and sum(t2.c1) < 10) or sum(t2.c1) is null order by 1 nulls last, 2;
@@ -4508,23 +4323,20 @@ set enable_hashagg to false;
 --Testcase 210:
 explain (verbose, costs off)
 select c2, sum from "S 1"."T 1" t1, lateral (select sum(t2.c1 + t1."C 1") sum from ft2 t2 group by t2.c1) qry where t1.c2 * 2 = qry.sum and t1.c2 < 3 and t1."C 1" < 100 order by 1;
-                                              QUERY PLAN                                               
--------------------------------------------------------------------------------------------------------
- Sort
+                                                          QUERY PLAN                                                          
+------------------------------------------------------------------------------------------------------------------------------
+ Nested Loop
    Output: t1.c2, qry.sum
-   Sort Key: t1.c2
-   ->  Nested Loop
-         Output: t1.c2, qry.sum
-         ->  Foreign Scan on "S 1"."T 1" t1
-               Output: t1."C 1", t1.c2, t1.c3, t1.c4, t1.c5, t1.c6, t1.c7, t1.c8
-               SQLite query: SELECT `C 1`, `c2` FROM main."T 1" WHERE ((`c2` < 3)) AND ((`C 1` < 100))
-         ->  Subquery Scan on qry
-               Output: qry.sum, t2.c1
-               Filter: (((t1.c2 * 2))::numeric = qry.sum)
-               ->  Foreign Scan
-                     Output: (sum((t2.c1 + t1."C 1"))), t2.c1
-                     SQLite query: SELECT sum((`C 1` + ?)), `C 1` FROM main."T 1" GROUP BY 2
-(14 rows)
+   ->  Foreign Scan on "S 1"."T 1" t1
+         Output: t1."C 1", t1.c2, t1.c3, t1.c4, t1.c5, t1.c6, t1.c7, t1.c8
+         SQLite query: SELECT `C 1`, `c2` FROM main."T 1" WHERE ((`c2` < 3)) AND ((`C 1` < 100)) ORDER BY `c2` ASC NULLS LAST
+   ->  Subquery Scan on qry
+         Output: qry.sum, t2.c1
+         Filter: (((t1.c2 * 2))::numeric = qry.sum)
+         ->  Foreign Scan
+               Output: (sum((t2.c1 + t1."C 1"))), t2.c1
+               SQLite query: SELECT sum((`C 1` + ?)), `C 1` FROM main."T 1" GROUP BY 2
+(11 rows)
 
 --Testcase 211:
 select c2, sum from "S 1"."T 1" t1, lateral (select sum(t2.c1 + t1."C 1") sum from ft2 t2 group by t2.c1) qry where t1.c2 * 2 = qry.sum and t1.c2 < 3 and t1."C 1" < 100 order by 1;
@@ -4549,27 +4361,24 @@ FROM
     ) AS subq_1
 WHERE ref_0."C 1" < 10 AND subq_1.c3 = '00001'
 ORDER BY ref_0."C 1";
-                                                  QUERY PLAN                                                   
----------------------------------------------------------------------------------------------------------------
- Sort
+                                                 QUERY PLAN                                                  
+-------------------------------------------------------------------------------------------------------------
+ Nested Loop
    Output: ref_0.c2, ref_0."C 1", (ref_0.c2), ref_1.c3, ref_0."C 1"
-   Sort Key: ref_0."C 1"
+   ->  Foreign Scan on "S 1"."T 1" ref_0
+         Output: ref_0."C 1", ref_0.c2, ref_0.c3, ref_0.c4, ref_0.c5, ref_0.c6, ref_0.c7, ref_0.c8
+         SQLite query: SELECT `C 1`, `c2` FROM main."T 1" WHERE ((`C 1` < 10)) ORDER BY `C 1` ASC NULLS LAST
    ->  Nested Loop
-         Output: ref_0.c2, ref_0."C 1", (ref_0.c2), ref_1.c3, ref_0."C 1"
-         ->  Nested Loop
-               Output: ref_0.c2, ref_0."C 1", ref_1.c3, (ref_0.c2)
-               ->  Foreign Scan on "S 1"."T 1" ref_0
-                     Output: ref_0."C 1", ref_0.c2, ref_0.c3, ref_0.c4, ref_0.c5, ref_0.c6, ref_0.c7, ref_0.c8
-                     SQLite query: SELECT `C 1`, `c2` FROM main."T 1" WHERE ((`C 1` < 10))
-               ->  Foreign Scan on public.ft1 ref_1
-                     Output: ref_1.c3, ref_0.c2
-                     SQLite query: SELECT `c3` FROM main."T 1" WHERE ((`c3` = '00001'))
+         Output: ref_1.c3, (ref_0.c2)
+         ->  Foreign Scan on public.ft1 ref_1
+               Output: ref_1.c3, ref_0.c2
+               SQLite query: SELECT `c3` FROM main."T 1" WHERE ((`c3` = '00001'))
          ->  Materialize
                Output: ref_3.c3
                ->  Foreign Scan on public.ft2 ref_3
                      Output: ref_3.c3
                      SQLite query: SELECT `c3` FROM main."T 1" WHERE ((`c3` = '00001'))
-(18 rows)
+(15 rows)
 
 --Testcase 547:
 SELECT ref_0.c2, subq_1.*
@@ -4648,19 +4457,16 @@ select sum(q.a), count(q.b) from ft4 left join (select 13, avg(ft1.c1), sum(ft2.
 --Testcase 214:
 explain (verbose, costs off)
 select c2, sum(c1) from ft1 where c2 < 3 group by rollup(c2) order by 1 nulls last;
-                                    QUERY PLAN                                     
------------------------------------------------------------------------------------
- Sort
-   Output: c2, (sum(c1))
-   Sort Key: ft1.c2
-   ->  MixedAggregate
-         Output: c2, sum(c1)
-         Hash Key: ft1.c2
-         Group Key: ()
-         ->  Foreign Scan on public.ft1
-               Output: c2, c1
-               SQLite query: SELECT `C 1`, `c2` FROM main."T 1" WHERE ((`c2` < 3))
-(10 rows)
+                                                QUERY PLAN                                                
+----------------------------------------------------------------------------------------------------------
+ GroupAggregate
+   Output: c2, sum(c1)
+   Group Key: ft1.c2
+   Group Key: ()
+   ->  Foreign Scan on public.ft1
+         Output: c2, c1
+         SQLite query: SELECT `C 1`, `c2` FROM main."T 1" WHERE ((`c2` < 3)) ORDER BY `c2` ASC NULLS LAST
+(7 rows)
 
 --Testcase 215:
 select c2, sum(c1) from ft1 where c2 < 3 group by rollup(c2) order by 1 nulls last;
@@ -4675,19 +4481,16 @@ select c2, sum(c1) from ft1 where c2 < 3 group by rollup(c2) order by 1 nulls la
 --Testcase 216:
 explain (verbose, costs off)
 select c2, sum(c1) from ft1 where c2 < 3 group by cube(c2) order by 1 nulls last;
-                                    QUERY PLAN                                     
------------------------------------------------------------------------------------
- Sort
-   Output: c2, (sum(c1))
-   Sort Key: ft1.c2
-   ->  MixedAggregate
-         Output: c2, sum(c1)
-         Hash Key: ft1.c2
-         Group Key: ()
-         ->  Foreign Scan on public.ft1
-               Output: c2, c1
-               SQLite query: SELECT `C 1`, `c2` FROM main."T 1" WHERE ((`c2` < 3))
-(10 rows)
+                                                QUERY PLAN                                                
+----------------------------------------------------------------------------------------------------------
+ GroupAggregate
+   Output: c2, sum(c1)
+   Group Key: ft1.c2
+   Group Key: ()
+   ->  Foreign Scan on public.ft1
+         Output: c2, c1
+         SQLite query: SELECT `C 1`, `c2` FROM main."T 1" WHERE ((`c2` < 3)) ORDER BY `c2` ASC NULLS LAST
+(7 rows)
 
 --Testcase 217:
 select c2, sum(c1) from ft1 where c2 < 3 group by cube(c2) order by 1 nulls last;
@@ -4702,18 +4505,18 @@ select c2, sum(c1) from ft1 where c2 < 3 group by cube(c2) order by 1 nulls last
 --Testcase 218:
 explain (verbose, costs off)
 select c2, c6, sum(c1) from ft1 where c2 < 3 group by grouping sets(c2, c6) order by 1 nulls last, 2 nulls last;
-                                       QUERY PLAN                                        
------------------------------------------------------------------------------------------
+                                                      QUERY PLAN                                                      
+----------------------------------------------------------------------------------------------------------------------
  Sort
    Output: c2, c6, (sum(c1))
    Sort Key: ft1.c2, ft1.c6
-   ->  HashAggregate
+   ->  MixedAggregate
          Output: c2, c6, sum(c1)
-         Hash Key: ft1.c2
          Hash Key: ft1.c6
+         Group Key: ft1.c2
          ->  Foreign Scan on public.ft1
                Output: c2, c6, c1
-               SQLite query: SELECT `C 1`, `c2`, `c6` FROM main."T 1" WHERE ((`c2` < 3))
+               SQLite query: SELECT `C 1`, `c2`, `c6` FROM main."T 1" WHERE ((`c2` < 3)) ORDER BY `c2` ASC NULLS LAST
 (10 rows)
 
 --Testcase 219:
@@ -4731,18 +4534,15 @@ select c2, c6, sum(c1) from ft1 where c2 < 3 group by grouping sets(c2, c6) orde
 --Testcase 220:
 explain (verbose, costs off)
 select c2, sum(c1), grouping(c2) from ft1 where c2 < 3 group by c2 order by 1 nulls last;
-                                    QUERY PLAN                                     
------------------------------------------------------------------------------------
- Sort
-   Output: c2, (sum(c1)), (GROUPING(c2))
-   Sort Key: ft1.c2
-   ->  HashAggregate
-         Output: c2, sum(c1), GROUPING(c2)
-         Group Key: ft1.c2
-         ->  Foreign Scan on public.ft1
-               Output: c2, c1
-               SQLite query: SELECT `C 1`, `c2` FROM main."T 1" WHERE ((`c2` < 3))
-(9 rows)
+                                                QUERY PLAN                                                
+----------------------------------------------------------------------------------------------------------
+ GroupAggregate
+   Output: c2, sum(c1), GROUPING(c2)
+   Group Key: ft1.c2
+   ->  Foreign Scan on public.ft1
+         Output: c2, c1
+         SQLite query: SELECT `C 1`, `c2` FROM main."T 1" WHERE ((`c2` < 3)) ORDER BY `c2` ASC NULLS LAST
+(6 rows)
 
 --Testcase 221:
 select c2, sum(c1), grouping(c2) from ft1 where c2 < 3 group by c2 order by 1 nulls last;
@@ -4921,28 +4721,21 @@ EXECUTE st1(101, 101);
 PREPARE st2(int) AS SELECT * FROM ft1 t1 WHERE t1.c1 < $2 AND t1.c3 IN (SELECT c3 FROM ft2 t2 WHERE c1 > $1 AND date(c4) = '1970-01-17'::date) ORDER BY c1;
 --Testcase 235:
 EXPLAIN (VERBOSE, COSTS OFF) EXECUTE st2(10, 20);
-                                                       QUERY PLAN                                                        
--------------------------------------------------------------------------------------------------------------------------
- Sort
+                                                                   QUERY PLAN                                                                    
+-------------------------------------------------------------------------------------------------------------------------------------------------
+ Nested Loop Semi Join
    Output: t1.c1, t1.c2, t1.c3, t1.c4, t1.c5, t1.c6, t1.c7, t1.c8
-   Sort Key: t1.c1
-   ->  Hash Join
+   Join Filter: (t1.c3 = t2.c3)
+   ->  Foreign Scan on public.ft1 t1
          Output: t1.c1, t1.c2, t1.c3, t1.c4, t1.c5, t1.c6, t1.c7, t1.c8
-         Inner Unique: true
-         Hash Cond: (t1.c3 = t2.c3)
-         ->  Foreign Scan on public.ft1 t1
-               Output: t1.c1, t1.c2, t1.c3, t1.c4, t1.c5, t1.c6, t1.c7, t1.c8
-               SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1" WHERE ((`C 1` < 20))
-         ->  Hash
+         SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1" WHERE ((`C 1` < 20)) ORDER BY `C 1` ASC NULLS LAST
+   ->  Materialize
+         Output: t2.c3
+         ->  Foreign Scan on public.ft2 t2
                Output: t2.c3
-               ->  HashAggregate
-                     Output: t2.c3
-                     Group Key: t2.c3
-                     ->  Foreign Scan on public.ft2 t2
-                           Output: t2.c3
-                           Filter: (date(t2.c4) = '01-17-1970'::date)
-                           SQLite query: SELECT `c3`, `c4` FROM main."T 1" WHERE ((`C 1` > 10))
-(19 rows)
+               Filter: (date(t2.c4) = '01-17-1970'::date)
+               SQLite query: SELECT `c3`, `c4` FROM main."T 1" WHERE ((`C 1` > 10))
+(12 rows)
 
 --Testcase 236:
 EXECUTE st2(10, 20);
@@ -4963,28 +4756,21 @@ EXECUTE st2(101, 121);
 PREPARE st3(int) AS SELECT * FROM ft1 t1 WHERE t1.c1 < $2 AND t1.c3 IN (SELECT c3 FROM ft2 t2 WHERE c1 > $1 AND date(c5) = '1970-01-17'::date) ORDER BY c1;
 --Testcase 239:
 EXPLAIN (VERBOSE, COSTS OFF) EXECUTE st3(10, 20);
-                                                       QUERY PLAN                                                        
--------------------------------------------------------------------------------------------------------------------------
- Sort
+                                                                   QUERY PLAN                                                                    
+-------------------------------------------------------------------------------------------------------------------------------------------------
+ Nested Loop Semi Join
    Output: t1.c1, t1.c2, t1.c3, t1.c4, t1.c5, t1.c6, t1.c7, t1.c8
-   Sort Key: t1.c1
-   ->  Hash Join
+   Join Filter: (t1.c3 = t2.c3)
+   ->  Foreign Scan on public.ft1 t1
          Output: t1.c1, t1.c2, t1.c3, t1.c4, t1.c5, t1.c6, t1.c7, t1.c8
-         Inner Unique: true
-         Hash Cond: (t1.c3 = t2.c3)
-         ->  Foreign Scan on public.ft1 t1
-               Output: t1.c1, t1.c2, t1.c3, t1.c4, t1.c5, t1.c6, t1.c7, t1.c8
-               SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1" WHERE ((`C 1` < 20))
-         ->  Hash
+         SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1" WHERE ((`C 1` < 20)) ORDER BY `C 1` ASC NULLS LAST
+   ->  Materialize
+         Output: t2.c3
+         ->  Foreign Scan on public.ft2 t2
                Output: t2.c3
-               ->  HashAggregate
-                     Output: t2.c3
-                     Group Key: t2.c3
-                     ->  Foreign Scan on public.ft2 t2
-                           Output: t2.c3
-                           Filter: (date(t2.c5) = '01-17-1970'::date)
-                           SQLite query: SELECT `c3`, `c5` FROM main."T 1" WHERE ((`C 1` > 10))
-(19 rows)
+               Filter: (date(t2.c5) = '01-17-1970'::date)
+               SQLite query: SELECT `c3`, `c5` FROM main."T 1" WHERE ((`C 1` > 10))
+(12 rows)
 
 --Testcase 240:
 EXECUTE st3(10, 20);
@@ -5249,14 +5035,12 @@ SELECT * FROM ft1 t1 WHERE t1.tableoid = 'ft1'::regclass LIMIT 1;
 --Testcase 266:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT tableoid::regclass, * FROM ft1 t1 LIMIT 1;
-                                          QUERY PLAN                                          
-----------------------------------------------------------------------------------------------
- Limit
-   Output: ((tableoid)::regclass), c1, c2, c3, c4, c5, c6, c7, c8
-   ->  Foreign Scan on public.ft1 t1
-         Output: (tableoid)::regclass, c1, c2, c3, c4, c5, c6, c7, c8
-         SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
-(5 rows)
+                                           QUERY PLAN                                           
+------------------------------------------------------------------------------------------------
+ Foreign Scan on public.ft1 t1
+   Output: (tableoid)::regclass, c1, c2, c3, c4, c5, c6, c7, c8
+   SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1" LIMIT 1
+(3 rows)
 
 --Testcase 267:
 SELECT tableoid::regclass, * FROM ft1 t1 LIMIT 1;
@@ -5285,14 +5069,12 @@ SELECT * FROM ft1 t1 WHERE t1.ctid = '(0,2)';
 --Testcase 554:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT ctid, * FROM ft1 t1 LIMIT 1;
-                                          QUERY PLAN                                          
-----------------------------------------------------------------------------------------------
- Limit
+                                           QUERY PLAN                                           
+------------------------------------------------------------------------------------------------
+ Foreign Scan on public.ft1 t1
    Output: ctid, c1, c2, c3, c4, c5, c6, c7, c8
-   ->  Foreign Scan on public.ft1 t1
-         Output: ctid, c1, c2, c3, c4, c5, c6, c7, c8
-         SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
-(5 rows)
+   SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1" LIMIT 1
+(3 rows)
 
 --Testcase 271:
 SELECT ctid, * FROM ft1 t1 LIMIT 1;
@@ -5497,12 +5279,10 @@ INSERT INTO ft2 (c1,c2,c3) SELECT c1+1000,c2+100, c3 || c3 FROM ft2 LIMIT 20;
  Insert on public.ft2
    ->  Subquery Scan on "*SELECT*"
          Output: "*SELECT*"."?column?", "*SELECT*"."?column?_1", NULL::integer, "*SELECT*"."?column?_2", NULL::timestamp with time zone, NULL::timestamp without time zone, NULL::character varying, 'ft2       '::character(10), NULL::text
-         ->  Limit
-               Output: ((ft2_1.c1 + 1000)), ((ft2_1.c2 + 100)), ((ft2_1.c3 || ft2_1.c3))
-               ->  Foreign Scan on public.ft2 ft2_1
-                     Output: (ft2_1.c1 + 1000), (ft2_1.c2 + 100), (ft2_1.c3 || ft2_1.c3)
-                     SQLite query: SELECT `C 1`, `c2`, `c3` FROM main."T 1"
-(8 rows)
+         ->  Foreign Scan on public.ft2 ft2_1
+               Output: (ft2_1.c1 + 1000), (ft2_1.c2 + 100), (ft2_1.c3 || ft2_1.c3)
+               SQLite query: SELECT `C 1`, `c2`, `c3` FROM main."T 1" LIMIT 20
+(6 rows)
 
 --Testcase 283:
 INSERT INTO ft2 (c1,c2,c3) SELECT c1+1000,c2+100, c3 || c3 FROM ft2 LIMIT 20;
@@ -7420,17 +7200,12 @@ select c2, count(*) from "S 1"."T 1" where c2 < 500 group by 1 order by 1;
 -- ORDER BY DESC NULLS LAST options
 --Testcase 339:
 EXPLAIN (VERBOSE, COSTS OFF) SELECT * FROM ft1 ORDER BY c6 DESC NULLS LAST, c1 OFFSET 795 LIMIT 10;
-                                             QUERY PLAN                                             
-----------------------------------------------------------------------------------------------------
- Limit
+                                                                           QUERY PLAN                                                                           
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.ft1
    Output: c1, c2, c3, c4, c5, c6, c7, c8
-   ->  Sort
-         Output: c1, c2, c3, c4, c5, c6, c7, c8
-         Sort Key: ft1.c6 DESC NULLS LAST, ft1.c1
-         ->  Foreign Scan on public.ft1
-               Output: c1, c2, c3, c4, c5, c6, c7, c8
-               SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
-(8 rows)
+   SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1" ORDER BY `c6` DESC NULLS LAST, `C 1` ASC NULLS LAST LIMIT 10 OFFSET 795
+(3 rows)
 
 --Testcase 340:
 SELECT * FROM ft1 ORDER BY c6 DESC NULLS LAST, c1 OFFSET 795  LIMIT 10;
@@ -7451,17 +7226,12 @@ SELECT * FROM ft1 ORDER BY c6 DESC NULLS LAST, c1 OFFSET 795  LIMIT 10;
 -- ORDER BY DESC NULLS FIRST options
 --Testcase 341:
 EXPLAIN (VERBOSE, COSTS OFF) SELECT * FROM ft1 ORDER BY c6 DESC NULLS FIRST, c1 OFFSET 15 LIMIT 10;
-                                             QUERY PLAN                                             
-----------------------------------------------------------------------------------------------------
- Limit
+                                                                           QUERY PLAN                                                                           
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.ft1
    Output: c1, c2, c3, c4, c5, c6, c7, c8
-   ->  Sort
-         Output: c1, c2, c3, c4, c5, c6, c7, c8
-         Sort Key: ft1.c6 DESC, ft1.c1
-         ->  Foreign Scan on public.ft1
-               Output: c1, c2, c3, c4, c5, c6, c7, c8
-               SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
-(8 rows)
+   SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1" ORDER BY `c6` DESC NULLS FIRST, `C 1` ASC NULLS LAST LIMIT 10 OFFSET 15
+(3 rows)
 
 --Testcase 342:
 SELECT * FROM ft1 ORDER BY c6 DESC NULLS FIRST, c1 OFFSET 15 LIMIT 10;
@@ -7482,17 +7252,12 @@ SELECT * FROM ft1 ORDER BY c6 DESC NULLS FIRST, c1 OFFSET 15 LIMIT 10;
 -- ORDER BY ASC NULLS FIRST options
 --Testcase 343:
 EXPLAIN (VERBOSE, COSTS OFF) SELECT * FROM ft1 ORDER BY c6 ASC NULLS FIRST, c1 OFFSET 15 LIMIT 10;
-                                             QUERY PLAN                                             
-----------------------------------------------------------------------------------------------------
- Limit
+                                                                          QUERY PLAN                                                                           
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.ft1
    Output: c1, c2, c3, c4, c5, c6, c7, c8
-   ->  Sort
-         Output: c1, c2, c3, c4, c5, c6, c7, c8
-         Sort Key: ft1.c6 NULLS FIRST, ft1.c1
-         ->  Foreign Scan on public.ft1
-               Output: c1, c2, c3, c4, c5, c6, c7, c8
-               SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
-(8 rows)
+   SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1" ORDER BY `c6` ASC NULLS FIRST, `C 1` ASC NULLS LAST LIMIT 10 OFFSET 15
+(3 rows)
 
 --Testcase 344:
 SELECT * FROM ft1 ORDER BY c6 ASC NULLS FIRST, c1 OFFSET 15 LIMIT 10;
@@ -8962,8 +8727,8 @@ analyze foo;
 --Testcase 714:
 explain (verbose, costs off)
 	select foo.f1, foo2.f1 from foo join foo2 on (foo.f1 = foo2.f1) order by foo.f2 offset 10 limit 10;
-                                    QUERY PLAN                                     
------------------------------------------------------------------------------------
+                                                   QUERY PLAN                                                   
+----------------------------------------------------------------------------------------------------------------
  Limit
    Output: foo.f1, foo2.f1, foo.f2
    ->  Sort
@@ -8971,7 +8736,13 @@ explain (verbose, costs off)
          Sort Key: foo.f2
          ->  Merge Join
                Output: foo.f1, foo2.f1, foo.f2
-               Merge Cond: (foo.f1 = foo2.f1)
+               Merge Cond: (foo2.f1 = foo.f1)
+               ->  Sort
+                     Output: foo2.f1
+                     Sort Key: foo2.f1
+                     ->  Foreign Scan on public.foo2
+                           Output: foo2.f1
+                           SQLite query: SELECT `f1` FROM main."loct1"
                ->  Sort
                      Output: foo.f1, foo.f2
                      Sort Key: foo.f1
@@ -8980,16 +8751,8 @@ explain (verbose, costs off)
                                  Output: foo_1.f1, foo_1.f2
                            ->  Foreign Scan on public.foo2 foo_2
                                  Output: foo_2.f1, foo_2.f2
-                                 SQLite query: SELECT `f1`, `f2` FROM main."loct1"
-               ->  Materialize
-                     Output: foo2.f1
-                     ->  Sort
-                           Output: foo2.f1
-                           Sort Key: foo2.f1
-                           ->  Foreign Scan on public.foo2
-                                 Output: foo2.f1
-                                 SQLite query: SELECT `f1` FROM main."loct1"
-(25 rows)
+                                 SQLite query: SELECT `f1`, `f2` FROM main."loct1" ORDER BY `f2` ASC NULLS LAST
+(23 rows)
 
 --Testcase 715:
 select foo.f1, foo2.f1 from foo join foo2 on (foo.f1 = foo2.f1) order by foo.f2 offset 10 limit 10;
@@ -9012,16 +8775,22 @@ select foo.f1, foo2.f1 from foo join foo2 on (foo.f1 = foo2.f1) order by foo.f2 
 --Testcase 716:
 explain (verbose, costs off)
 	select foo.f1, foo2.f1 from foo left join foo2 on (foo.f1 = foo2.f1) order by foo.f2 offset 10 limit 10;
-                                    QUERY PLAN                                     
------------------------------------------------------------------------------------
+                                                   QUERY PLAN                                                   
+----------------------------------------------------------------------------------------------------------------
  Limit
    Output: foo.f1, foo2.f1, foo.f2
    ->  Sort
          Output: foo.f1, foo2.f1, foo.f2
          Sort Key: foo.f2
-         ->  Merge Left Join
+         ->  Merge Right Join
                Output: foo.f1, foo2.f1, foo.f2
-               Merge Cond: (foo.f1 = foo2.f1)
+               Merge Cond: (foo2.f1 = foo.f1)
+               ->  Sort
+                     Output: foo2.f1
+                     Sort Key: foo2.f1
+                     ->  Foreign Scan on public.foo2
+                           Output: foo2.f1
+                           SQLite query: SELECT `f1` FROM main."loct1"
                ->  Sort
                      Output: foo.f1, foo.f2
                      Sort Key: foo.f1
@@ -9030,16 +8799,8 @@ explain (verbose, costs off)
                                  Output: foo_1.f1, foo_1.f2
                            ->  Foreign Scan on public.foo2 foo_2
                                  Output: foo_2.f1, foo_2.f2
-                                 SQLite query: SELECT `f1`, `f2` FROM main."loct1"
-               ->  Materialize
-                     Output: foo2.f1
-                     ->  Sort
-                           Output: foo2.f1
-                           Sort Key: foo2.f1
-                           ->  Foreign Scan on public.foo2
-                                 Output: foo2.f1
-                                 SQLite query: SELECT `f1` FROM main."loct1"
-(25 rows)
+                                 SQLite query: SELECT `f1`, `f2` FROM main."loct1" ORDER BY `f2` ASC NULLS LAST
+(23 rows)
 
 --Testcase 717:
 select foo.f1, foo2.f1 from foo left join foo2 on (foo.f1 = foo2.f1) order by foo.f2 offset 10 limit 10;
