@@ -2409,6 +2409,13 @@ add_foreign_final_paths(PlannerInfo *root, RelOptInfo *input_rel,
 	if (ifpinfo->local_conds)
 		return;
 
+#if PG_VERSION_NUM >= 130000
+	/* Don't pushdown FETCH ... WITH TIES option */
+	if (parse->limitCount
+	                && parse->limitOption == LIMIT_OPTION_WITH_TIES)
+		return;
+#endif
+
 	/*
 	 * Also, the LIMIT/OFFSET cannot be pushed down, if their expressions are
 	 * not safe to remote.

@@ -247,8 +247,9 @@ SELECT * FROM  "type_TIMESTAMP" WHERE col > b;
  2017-11-06 12:34:56.789 | 2017-11-06 00:00:00
 (1 row)
 
+--Testcase 47:
 DROP EXTENSION sqlite_fdw CASCADE;
-NOTICE:  drop cascades to 25 other objects
+NOTICE:  drop cascades to 26 other objects
 DETAIL:  drop cascades to server sqlite_svr
 drop cascades to foreign table department
 drop cascades to foreign table employee
@@ -258,6 +259,7 @@ drop cascades to foreign table t
 drop cascades to foreign table multiprimary
 drop cascades to foreign table columntest
 drop cascades to foreign table noprimary
+drop cascades to foreign table limittest
 drop cascades to foreign table "type_STRING"
 drop cascades to foreign table "type_BOOLEAN"
 drop cascades to foreign table "type_BYTE"

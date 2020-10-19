@@ -1,15 +1,19 @@
 --
 -- TIMESTAMP
 --
+--Testcase 1:
 CREATE EXTENSION sqlite_fdw;
+--Testcase 2:
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlitefdw_test_core.db');
+--Testcase 3:
 CREATE FOREIGN TABLE dates1 (
 	name varchar(20),
 	date_as_text timestamp without time zone,
 	date_as_number timestamp without time zone OPTIONS (column_type 'INT'))
 SERVER sqlite_svr
 OPTIONS (table 'dates');
+--Testcase 4:
 CREATE FOREIGN TABLE dates2 (
 	name varchar(20),
 	date_as_text timestamp without time zone,
@@ -17,6 +21,7 @@ CREATE FOREIGN TABLE dates2 (
 SERVER sqlite_svr
 OPTIONS (table 'dates');
 -- Showing timestamp column from SQLite value as TEXT and as INTEGER/FLOAT has same value
+--Testcase 5:
 SELECT name,
 	to_char(date_as_text, 	'YYYY-MM-DD HH24:MI:SS.MS') as date_as_text, 
 	to_char(date_as_number, 'YYYY-MM-DD HH24:MI:SS.MS') as date_as_number
@@ -28,6 +33,7 @@ FROM dates1;
  ThirdDate  | 2020-05-10 10:45:29.000 | 2020-05-10 10:45:29.000
 (3 rows)
 
+--Testcase 6:
 SELECT * FROM dates2;
     name    |       date_as_text       | date_as_number 
 ------------+--------------------------+----------------
@@ -37,6 +43,7 @@ SELECT * FROM dates2;
 (3 rows)
 
 -- Comparing exact values showing same results even comparing to a text source sqlite column or numerical source sqlite column
+--Testcase 7:
 SELECT * FROM dates1
 WHERE date_as_text = to_timestamp('2020-05-10 10:45:29.000', 'YYYY-MM-DD HH24:MI:SS.MS');
    name    |       date_as_text       |      date_as_number      
@@ -44,6 +51,7 @@ WHERE date_as_text = to_timestamp('2020-05-10 10:45:29.000', 'YYYY-MM-DD HH24:MI
  ThirdDate | Sun May 10 10:45:29 2020 | Sun May 10 10:45:29 2020
 (1 row)
 
+--Testcase 8:
 SELECT * FROM dates1
 WHERE date_as_number = to_timestamp('2020-05-10 10:45:29.000', 'YYYY-MM-DD HH24:MI:SS.MS');
    name    |       date_as_text       |      date_as_number      
@@ -51,6 +59,7 @@ WHERE date_as_number = to_timestamp('2020-05-10 10:45:29.000', 'YYYY-MM-DD HH24:
  ThirdDate | Sun May 10 10:45:29 2020 | Sun May 10 10:45:29 2020
 (1 row)
 
+--Testcase 9:
 SELECT * FROM dates1
 WHERE date_as_text = to_timestamp('2020-05-10 10:45:29', 'YYYY-MM-DD HH24:MI:SS.MS');
    name    |       date_as_text       |      date_as_number      
@@ -58,6 +67,7 @@ WHERE date_as_text = to_timestamp('2020-05-10 10:45:29', 'YYYY-MM-DD HH24:MI:SS.
  ThirdDate | Sun May 10 10:45:29 2020 | Sun May 10 10:45:29 2020
 (1 row)
 
+--Testcase 10:
 SELECT * FROM dates1
 WHERE date_as_number = to_timestamp('2020-05-10 10:45:29', 'YYYY-MM-DD HH24:MI:SS.MS');
    name    |       date_as_text       |      date_as_number      
@@ -66,6 +76,7 @@ WHERE date_as_number = to_timestamp('2020-05-10 10:45:29', 'YYYY-MM-DD HH24:MI:S
 (1 row)
 
 -- Comparing greater values showing same results even comparing to a text source sqlite column or numerical source sqlite column
+--Testcase 11:
 SELECT * FROM dates1
 WHERE date_as_text > to_timestamp('2020-05-10 10:45:29.000', 'YYYY-MM-DD HH24:MI:SS.MS');
     name    |       date_as_text       |      date_as_number      
@@ -74,6 +85,7 @@ WHERE date_as_text > to_timestamp('2020-05-10 10:45:29.000', 'YYYY-MM-DD HH24:MI
  SecondDate | Tue May 12 13:32:31 2020 | Tue May 12 13:32:31 2020
 (2 rows)
 
+--Testcase 12:
 explain (verbose, costs off)
 SELECT * FROM dates1
 WHERE date_as_text > to_timestamp('2020-05-10 10:45:29.000', 'YYYY-MM-DD HH24:MI:SS.MS');
@@ -85,6 +97,7 @@ WHERE date_as_text > to_timestamp('2020-05-10 10:45:29.000', 'YYYY-MM-DD HH24:MI
    SQLite query: SELECT `name`, `date_as_text`, `date_as_number` FROM main."dates"
 (4 rows)
 
+--Testcase 13:
 SELECT * FROM dates1
 WHERE date_as_number > to_timestamp('2020-05-10 10:45:29.000', 'YYYY-MM-DD HH24:MI:SS.MS');
     name    |       date_as_text       |      date_as_number      
@@ -93,6 +106,7 @@ WHERE date_as_number > to_timestamp('2020-05-10 10:45:29.000', 'YYYY-MM-DD HH24:
  SecondDate | Tue May 12 13:32:31 2020 | Tue May 12 13:32:31 2020
 (2 rows)
 
+--Testcase 14:
 explain (verbose, costs off)
 SELECT * FROM dates1
 WHERE date_as_number > to_timestamp('2020-05-10 10:45:29.000', 'YYYY-MM-DD HH24:MI:SS.MS');
@@ -104,6 +118,7 @@ WHERE date_as_number > to_timestamp('2020-05-10 10:45:29.000', 'YYYY-MM-DD HH24:
    SQLite query: SELECT `name`, `date_as_text`, `date_as_number` FROM main."dates"
 (4 rows)
 
+--Testcase 15:
 SELECT * FROM dates1
 WHERE date_as_text > to_timestamp('2020-05-10 10:45:29', 'YYYY-MM-DD HH24:MI:SS.MS');
     name    |       date_as_text       |      date_as_number      
@@ -112,6 +127,7 @@ WHERE date_as_text > to_timestamp('2020-05-10 10:45:29', 'YYYY-MM-DD HH24:MI:SS.
  SecondDate | Tue May 12 13:32:31 2020 | Tue May 12 13:32:31 2020
 (2 rows)
 
+--Testcase 16:
 explain (verbose, costs off)
 SELECT * FROM dates1
 WHERE date_as_text > to_timestamp('2020-05-10 10:45:29', 'YYYY-MM-DD HH24:MI:SS.MS');
@@ -123,6 +139,7 @@ WHERE date_as_text > to_timestamp('2020-05-10 10:45:29', 'YYYY-MM-DD HH24:MI:SS.
    SQLite query: SELECT `name`, `date_as_text`, `date_as_number` FROM main."dates"
 (4 rows)
 
+--Testcase 17:
 SELECT * FROM dates1
 WHERE date_as_number > to_timestamp('2020-05-10 10:45:29', 'YYYY-MM-DD HH24:MI:SS.MS');
     name    |       date_as_text       |      date_as_number      
@@ -131,6 +148,7 @@ WHERE date_as_number > to_timestamp('2020-05-10 10:45:29', 'YYYY-MM-DD HH24:MI:S
  SecondDate | Tue May 12 13:32:31 2020 | Tue May 12 13:32:31 2020
 (2 rows)
 
+--Testcase 18:
 explain (verbose, costs off)
 SELECT * FROM dates1
 WHERE date_as_number > to_timestamp('2020-05-10 10:45:29', 'YYYY-MM-DD HH24:MI:SS.MS');
@@ -143,6 +161,7 @@ WHERE date_as_number > to_timestamp('2020-05-10 10:45:29', 'YYYY-MM-DD HH24:MI:S
 (4 rows)
 
 --- Comparing without using to_timestamp
+--Testcase 19:
 SELECT * FROM dates1
 WHERE date_as_text = (('2020-05-10 10:45:29.000')::timestamp);
    name    |       date_as_text       |      date_as_number      
@@ -150,6 +169,7 @@ WHERE date_as_text = (('2020-05-10 10:45:29.000')::timestamp);
  ThirdDate | Sun May 10 10:45:29 2020 | Sun May 10 10:45:29 2020
 (1 row)
 
+--Testcase 20:
 explain (verbose, costs off)
 SELECT * FROM dates1
 WHERE date_as_text = (('2020-05-10 10:45:29.000')::timestamp);
@@ -160,6 +180,7 @@ WHERE date_as_text = (('2020-05-10 10:45:29.000')::timestamp);
    SQLite query: SELECT `name`, `date_as_text`, `date_as_number` FROM main."dates" WHERE ((`date_as_text` = '2020-05-10 10:45:29'))
 (3 rows)
 
+--Testcase 21:
 SELECT * FROM dates1
 WHERE date_as_number = (('2020-05-10 10:45:29.000')::timestamp);
    name    |       date_as_text       |      date_as_number      
@@ -167,6 +188,7 @@ WHERE date_as_number = (('2020-05-10 10:45:29.000')::timestamp);
  ThirdDate | Sun May 10 10:45:29 2020 | Sun May 10 10:45:29 2020
 (1 row)
 
+--Testcase 22:
 explain (verbose, costs off)
 SELECT * FROM dates1
 WHERE date_as_number = (('2020-05-10 10:45:29.000')::timestamp);
@@ -177,6 +199,7 @@ WHERE date_as_number = (('2020-05-10 10:45:29.000')::timestamp);
    SQLite query: SELECT `name`, `date_as_text`, `date_as_number` FROM main."dates" WHERE ((`date_as_number` = strftime('%s', '2020-05-10 10:45:29')))
 (3 rows)
 
+--Testcase 23:
 SELECT * FROM dates1
 WHERE date_as_text = (('2020-05-10 10:45:29')::timestamp);
    name    |       date_as_text       |      date_as_number      
@@ -184,6 +207,7 @@ WHERE date_as_text = (('2020-05-10 10:45:29')::timestamp);
  ThirdDate | Sun May 10 10:45:29 2020 | Sun May 10 10:45:29 2020
 (1 row)
 
+--Testcase 24:
 explain (verbose, costs off)
 SELECT * FROM dates1
 WHERE date_as_text = (('2020-05-10 10:45:29')::timestamp);
@@ -194,6 +218,7 @@ WHERE date_as_text = (('2020-05-10 10:45:29')::timestamp);
    SQLite query: SELECT `name`, `date_as_text`, `date_as_number` FROM main."dates" WHERE ((`date_as_text` = '2020-05-10 10:45:29'))
 (3 rows)
 
+--Testcase 25:
 SELECT * FROM dates1
 WHERE date_as_number = (('2020-05-10 10:45:29')::timestamp);
    name    |       date_as_text       |      date_as_number      
@@ -201,6 +226,7 @@ WHERE date_as_number = (('2020-05-10 10:45:29')::timestamp);
  ThirdDate | Sun May 10 10:45:29 2020 | Sun May 10 10:45:29 2020
 (1 row)
 
+--Testcase 26:
 explain (verbose, costs off)
 SELECT * FROM dates1
 WHERE date_as_number = (('2020-05-10 10:45:29')::timestamp);
@@ -212,6 +238,7 @@ WHERE date_as_number = (('2020-05-10 10:45:29')::timestamp);
 (3 rows)
 
 -- Comparing greater values  without using to_timestamp
+--Testcase 27:
 SELECT * FROM dates1
 WHERE date_as_text > (('2020-05-10 10:45:29.000')::timestamp);
     name    |       date_as_text       |      date_as_number      
@@ -220,6 +247,7 @@ WHERE date_as_text > (('2020-05-10 10:45:29.000')::timestamp);
  SecondDate | Tue May 12 13:32:31 2020 | Tue May 12 13:32:31 2020
 (2 rows)
 
+--Testcase 28:
 explain (verbose, costs off)
 SELECT * FROM dates1
 WHERE date_as_text > (('2020-05-10 10:45:29.000')::timestamp);
@@ -230,6 +258,7 @@ WHERE date_as_text > (('2020-05-10 10:45:29.000')::timestamp);
    SQLite query: SELECT `name`, `date_as_text`, `date_as_number` FROM main."dates" WHERE ((`date_as_text` > '2020-05-10 10:45:29'))
 (3 rows)
 
+--Testcase 29:
 SELECT * FROM dates1
 WHERE date_as_number > (('2020-05-10 10:45:29.000')::timestamp);
     name    |       date_as_text       |      date_as_number      
@@ -238,6 +267,7 @@ WHERE date_as_number > (('2020-05-10 10:45:29.000')::timestamp);
  SecondDate | Tue May 12 13:32:31 2020 | Tue May 12 13:32:31 2020
 (2 rows)
 
+--Testcase 30:
 explain (verbose, costs off)
 SELECT * FROM dates1
 WHERE date_as_number > (('2020-05-10 10:45:29.000')::timestamp);
@@ -248,6 +278,7 @@ WHERE date_as_number > (('2020-05-10 10:45:29.000')::timestamp);
    SQLite query: SELECT `name`, `date_as_text`, `date_as_number` FROM main."dates" WHERE ((`date_as_number` > strftime('%s', '2020-05-10 10:45:29')))
 (3 rows)
 
+--Testcase 31:
 SELECT * FROM dates1
 WHERE date_as_text > (('2020-05-10 10:45:29')::timestamp);
     name    |       date_as_text       |      date_as_number      
@@ -256,6 +287,7 @@ WHERE date_as_text > (('2020-05-10 10:45:29')::timestamp);
  SecondDate | Tue May 12 13:32:31 2020 | Tue May 12 13:32:31 2020
 (2 rows)
 
+--Testcase 32:
 explain (verbose, costs off)
 SELECT * FROM dates1
 WHERE date_as_text > (('2020-05-10 10:45:29')::timestamp);
@@ -266,6 +298,7 @@ WHERE date_as_text > (('2020-05-10 10:45:29')::timestamp);
    SQLite query: SELECT `name`, `date_as_text`, `date_as_number` FROM main."dates" WHERE ((`date_as_text` > '2020-05-10 10:45:29'))
 (3 rows)
 
+--Testcase 33:
 SELECT * FROM dates1
 WHERE date_as_number > (('2020-05-10 10:45:29')::timestamp);
     name    |       date_as_text       |      date_as_number      
@@ -274,6 +307,7 @@ WHERE date_as_number > (('2020-05-10 10:45:29')::timestamp);
  SecondDate | Tue May 12 13:32:31 2020 | Tue May 12 13:32:31 2020
 (2 rows)
 
+--Testcase 34:
 explain (verbose, costs off)
 SELECT * FROM dates1
 WHERE date_as_number > (('2020-05-10 10:45:29')::timestamp);
@@ -284,7 +318,11 @@ WHERE date_as_number > (('2020-05-10 10:45:29')::timestamp);
    SQLite query: SELECT `name`, `date_as_text`, `date_as_number` FROM main."dates" WHERE ((`date_as_number` > strftime('%s', '2020-05-10 10:45:29')))
 (3 rows)
 
+--Testcase 35:
 DROP FOREIGN TABLE dates1;
+--Testcase 36:
 DROP FOREIGN TABLE dates2;
+--Testcase 37:
 DROP SERVER sqlite_svr;
+--Testcase 38:
 DROP EXTENSION sqlite_fdw CASCADE;

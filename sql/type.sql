@@ -111,4 +111,5 @@ EXPLAIN (VERBOSE, COSTS OFF) SELECT * FROM  "type_TIMESTAMP" WHERE col > b;
 --Testcase 43:
 SELECT * FROM  "type_TIMESTAMP" WHERE col > b;
 
+--Testcase 47:
 DROP EXTENSION sqlite_fdw CASCADE;
