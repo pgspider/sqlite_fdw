@@ -87,13 +87,13 @@ SELECT avg(four) AS avg_1 FROM onek;
 SELECT avg(a) AS avg_32 FROM aggtest WHERE a < 100;
 
 -- In 7.1, avg(float4) is computed using float8 arithmetic.
--- Round the result to 3 digits to avoid platform-specific results.
-
 --Testcase 3:
+-- Round the result to limited digits to avoid platform-specific results.
 SELECT avg(b)::numeric(10,3) AS avg_107_943 FROM aggtest;
 
 --Testcase 4:
-SELECT avg(gpa) AS avg_3_4 FROM ONLY student;
+-- Round the result to limited digits to avoid platform-specific results.
+SELECT avg(gpa)::numeric(10,3) AS avg_3_4 FROM ONLY student;
 
 
 --Testcase 5:
@@ -101,9 +101,11 @@ SELECT sum(four) AS sum_1500 FROM onek;
 --Testcase 6:
 SELECT sum(a) AS sum_198 FROM aggtest;
 --Testcase 7:
-SELECT sum(b) AS avg_431_773 FROM aggtest;
+-- Round the result to limited digits to avoid platform-specific results.
+SELECT sum(b)::numeric(10,3) AS avg_431_773 FROM aggtest;
 --Testcase 8:
-SELECT sum(gpa) AS avg_6_8 FROM ONLY student;
+-- Round the result to limited digits to avoid platform-specific results.
+SELECT sum(gpa)::numeric(10,3) AS avg_6_8 FROM ONLY student;
 
 --Testcase 9:
 SELECT max(four) AS max_3 FROM onek;
@@ -115,13 +117,17 @@ SELECT max(aggtest.b) AS max_324_78 FROM aggtest;
 SELECT max(student.gpa) AS max_3_7 FROM student;
 
 --Testcase 13:
-SELECT stddev_pop(b) FROM aggtest;
+-- Round the result to limited digits to avoid platform-specific results.
+SELECT stddev_pop(b)::numeric(20,10) FROM aggtest;
 --Testcase 14:
-SELECT stddev_samp(b) FROM aggtest;
+-- Round the result to limited digits to avoid platform-specific results.
+SELECT stddev_samp(b)::numeric(20,10) FROM aggtest;
 --Testcase 15:
-SELECT var_pop(b) FROM aggtest;
+-- Round the result to limited digits to avoid platform-specific results.
+SELECT var_pop(b)::numeric(20,10) FROM aggtest;
 --Testcase 16:
-SELECT var_samp(b) FROM aggtest;
+-- Round the result to limited digits to avoid platform-specific results.
+SELECT var_samp(b)::numeric(20,10) FROM aggtest;
 
 --Testcase 17:
 SELECT stddev_pop(b::numeric) FROM aggtest;
@@ -307,19 +313,26 @@ SELECT regr_count(b, a) FROM aggtest;
 --Testcase 22:
 SELECT regr_sxx(b, a) FROM aggtest;
 --Testcase 23:
-SELECT regr_syy(b, a) FROM aggtest;
+-- Round the result to limited digits to avoid platform-specific results.
+SELECT regr_syy(b, a)::numeric(20,10) FROM aggtest;
 --Testcase 24:
-SELECT regr_sxy(b, a) FROM aggtest;
+-- Round the result to limited digits to avoid platform-specific results.
+SELECT regr_sxy(b, a)::numeric(20,10) FROM aggtest;
 --Testcase 25:
-SELECT regr_avgx(b, a), regr_avgy(b, a) FROM aggtest;
+-- Round the result to limited digits to avoid platform-specific results.
+SELECT regr_avgx(b, a), regr_avgy(b, a)::numeric(20,10) FROM aggtest;
 --Testcase 26:
-SELECT regr_r2(b, a) FROM aggtest;
+-- Round the result to limited digits to avoid platform-specific results.
+SELECT regr_r2(b, a)::numeric(20,10) FROM aggtest;
 --Testcase 27:
-SELECT regr_slope(b, a), regr_intercept(b, a) FROM aggtest;
+-- Round the result to limited digits to avoid platform-specific results.
+SELECT regr_slope(b, a)::numeric(20,10), regr_intercept(b, a)::numeric(20,10) FROM aggtest;
 --Testcase 28:
-SELECT covar_pop(b, a), covar_samp(b, a) FROM aggtest;
+-- Round the result to limited digits to avoid platform-specific results.
+SELECT covar_pop(b, a)::numeric(20,10), covar_samp(b, a)::numeric(20,10) FROM aggtest;
 --Testcase 29:
-SELECT corr(b, a) FROM aggtest;
+-- Round the result to limited digits to avoid platform-specific results.
+SELECT corr(b, a)::numeric(20,10) FROM aggtest;
 
 -- check single-tuple behavior
 --Testcase 350:
@@ -794,7 +807,7 @@ select max(100) from tenk1;
 
 -- try it on an inheritance tree
 --Testcase 412:
-create foreign table minmaxtest(f1 int) server sqlite_svr;;
+create foreign table minmaxtest(f1 int) server sqlite_svr;
 --Testcase 413:
 create table minmaxtest1() inherits (minmaxtest);
 --Testcase 414:
@@ -1283,10 +1296,13 @@ group by f1 order by f1;
 rollback;
 
 --Testcase 179:
-select percentile_cont(0.5) within group (order by b) from aggtest;
+-- Round the result to limited digits to avoid platform-specific results.
+select (percentile_cont(0.5) within group (order by b))::numeric(20,10) from aggtest;
 --Testcase 180:
-select percentile_cont(0.5) within group (order by b), sum(b) from aggtest;
+-- Round the result to limited digits to avoid platform-specific results.
+select (percentile_cont(0.5) within group (order by b))::numeric(20,10), sum(b)::numeric(10,3) from aggtest;
 --Testcase 181:
+-- Round the result to limited digits to avoid platform-specific results.
 select percentile_cont(0.5) within group (order by thousand) from tenk1;
 --Testcase 182:
 select percentile_disc(0.5) within group (order by thousand) from tenk1;
@@ -1303,7 +1319,8 @@ select cume_dist(3) within group (order by f1) from INT4_TBL;
 --Testcase 187:
 insert into INT4_TBL values (5);
 --Testcase 458:
-select percent_rank(3) within group (order by f1) from INT4_TBL;
+-- Round the result to limited digits to avoid platform-specific results.
+select (percent_rank(3) within group (order by f1))::numeric(20,10) from INT4_TBL;
 --Testcase 459:
 delete from INT4_TBL where f1 = 5;
 --Testcase 188:
@@ -1485,8 +1502,9 @@ returns anyelement language sql as
 
 --Testcase 489:
 create aggregate least_agg(variadic items anyarray) (
-  stype = anyelement, sfunc = least_accum);
-  
+  stype = anyelement, sfunc = least_accum
+);
+
 --Testcase 490:
 create function cleast_accum(anycompatible, variadic anycompatiblearray)
 returns anycompatible language sql as
@@ -1495,7 +1513,7 @@ returns anycompatible language sql as
 --Testcase 491:
 create aggregate cleast_agg(variadic items anycompatiblearray) (
   stype = anycompatible, sfunc = cleast_accum);
-  
+
 --Testcase 198:
 select least_agg(q1,q2) from int8_tbl;
 --Testcase 199:

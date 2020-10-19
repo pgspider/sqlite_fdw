@@ -1,7 +1,7 @@
 # SQLite Foreign Data Wrapper for PostgreSQL
 This PostgreSQL extension is a Foreign Data Wrapper for [SQLite][1].
 
-The current version can work with PostgreSQL 9.6, 10, 11 and 12.
+The current version can work with PostgreSQL 9.6, 10, 11, 12 and 13.
 
 ## Installation
 ### 1. Install SQLite library
@@ -50,12 +50,18 @@ If you want to update tables, please add `OPTIONS (key 'true')` to a primary key
 <pre>
 CREATE FOREIGN TABLE t1(a integer OPTIONS (key 'true'), b text) SERVER sqlite_server OPTIONS (table 't1_sqlite');
 </pre>
+
+If you need to convert INT SQLite column (epoch Unix Time) to be treated/visualized as TIMESTAMP in PostgreSQL, please add `OPTIONS (column_type 'INT')` when
+defining FOREIGN table at PostgreSQL like the following:
+<pre>
+CREATE FOREIGN TABLE t1(a integer, b text, c timestamp without time zone OPTIONS (column_type 'INT')) SERVER sqlite_server OPTIONS (table 't1_sqlite');
+</pre>
 ### Import foreign schema
 <pre>
 IMPORT FOREIGN SCHEMA public FROM SERVER sqlite_server INTO public;
 </pre>
 
-### Access foregin table
+### Access foreign table
 <pre>
 SELECT * FROM t1;
 </pre>
@@ -64,6 +70,8 @@ SELECT * FROM t1;
 - Support update to foreign table  
 - WHERE clauses are pushdowned  
 - Aggregate function are pushdowned
+- Order By is pushdowned.
+- Limit and Offset are pushdowned (*when all tables queried are fdw)
 - Transactions  
 
 ## Limitations
@@ -73,7 +81,7 @@ SELECT * FROM t1;
 Opening issues and pull requests on GitHub are welcome.
 
 ## License
-Copyright (c) 2017 - 2019, TOSHIBA Corporation  
+Copyright (c) 2017 - 2020, TOSHIBA Corporation  
 Copyright (c) 2011 - 2016, EnterpriseDB Corporation  
 
 Permission to use, copy, modify, and distribute this software and its documentation for any purpose, without fee, and without a written agreement is hereby granted, provided that the above copyright notice and this paragraph and the following two paragraphs appear in all copies.

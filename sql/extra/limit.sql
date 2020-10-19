@@ -59,6 +59,31 @@ CREATE FOREIGN TABLE tenk1 (
 	string4		name
 ) SERVER sqlite_svr;
 
+--Testcase 88:
+CREATE TABLE parent_table (
+	unique1		int4 PRIMARY KEY,
+	unique2		int4,
+	two 		int4,
+	four		int4,
+	ten 		int4,
+	twenty		int4,
+	hundred		int4,
+	thousand	int4,
+	twothousand	int4,
+	fivethous	int4,
+	tenthous	int4,
+	odd			int4,
+	even		int4,
+	stringu1	name,
+	stringu2	name,
+	string4		name
+);
+
+--Testcase 89:
+CREATE FOREIGN table inherited_table ()
+INHERITS (parent_table)
+SERVER sqlite_svr options (table 'tenk1');
+
 --Testcase 1:
 SELECT ''::text AS two, unique1, unique2, stringu1
 		FROM onek WHERE unique1 > 50
@@ -213,7 +238,38 @@ select unique1, unique2, nextval('testseq')
 select unique1, unique2, nextval('testseq')
   from tenk1 order by unique2 limit 10;
 
+--Testcase 90:
+explain (verbose, costs off)
+select unique1, unique2, nextval('testseq')
+  from tenk1 order by unique2 limit 10 offset 5;
+
+--Testcase 91:
+select unique1, unique2, nextval('testseq')
+  from tenk1 order by unique2 limit 10 offset 5;
+
 --Testcase 17:
+select currval('testseq');
+
+--Testcase 92:
+explain (verbose, costs off)
+select unique1, unique2, nextval('testseq')
+  from tenk1 order by unique2 desc limit 10;
+
+--Testcase 93:
+select unique1, unique2, nextval('testseq')
+  from tenk1 order by unique2 desc limit 10;
+
+
+--Testcase 94:
+explain (verbose, costs off)
+select unique1, unique2, nextval('testseq')
+  from tenk1 order by unique2 desc limit 10 offset 5;
+
+--Testcase 95:
+select unique1, unique2, nextval('testseq')
+  from tenk1 order by unique2 desc limit 10 offset 5;
+
+--Testcase 96:
 select currval('testseq');
 
 --Testcase 18:
@@ -225,7 +281,39 @@ select unique1, unique2, nextval('testseq')
 select unique1, unique2, nextval('testseq')
   from tenk1 order by tenthous limit 10;
 
+--Testcase 97:
+explain (verbose, costs off)
+select unique1, unique2, nextval('testseq')
+  from tenk1 order by tenthous limit 10 offset 5;
+
+--Testcase 98:
+select unique1, unique2, nextval('testseq')
+  from tenk1 order by tenthous limit 10 offset 5;
+
 --Testcase 20:
+select currval('testseq');
+
+-- test for limit and offset when querying table and foreign table inherited
+--Testcase 99:
+explain (verbose, costs off)
+select unique1, unique2, nextval('testseq')
+  from parent_table order by tenthous limit 10;
+
+--Testcase 100:
+select unique1, unique2, nextval('testseq')
+  from parent_table order by tenthous limit 10;
+
+-- when querying regular tables with inherited tables, only limit is pushed-down when no offset is specified
+--Testcase 101:
+explain (verbose, costs off)
+select unique1, unique2, nextval('testseq')
+  from parent_table order by tenthous limit 10 offset 5;
+
+--Testcase 102:
+select unique1, unique2, nextval('testseq')
+  from parent_table order by tenthous limit 10 offset 5;
+
+--Testcase 103:
 select currval('testseq');
 
 --Testcase 21:

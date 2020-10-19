@@ -3,6 +3,7 @@ DROP TABLE IF EXISTS department;
 DROP TABLE IF EXISTS employee;
 DROP TABLE IF EXISTS empdata;
 DROP TABLE IF EXISTS numbers;
+DROP TABLE IF EXISTS limittest;
 CREATE TABLE department(department_id int primary key, department_name text);
 CREATE TABLE employee(emp_id int primary key, emp_name text, emp_dept_id int);
 CREATE TABLE empdata(emp_id int primary key, emp_dat bytea);
@@ -11,7 +12,7 @@ CREATE TABLE t(a integer primary key, b integer);
 CREATE TABLE multiprimary(a integer, b integer, c integer, primary key(b,c));
 CREATE TABLE columntest("a a" integer, "b b" integer,"c c" integer, primary key("a a","b b") );
 CREATE TABLE noprimary(a integer, b text);
-
+CREATE TABLE limittest(id int primary key, x integer, y text);
 
 CREATE TABLE "type_STRING" (col text primary key);
 CREATE TABLE "type_BOOLEAN" (col boolean primary key);

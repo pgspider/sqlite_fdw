@@ -67,7 +67,7 @@ EXPLAIN (COSTS FALSE) SELECT * FROM department d, employee e WHERE d.department_
 --Testcase 21:
 SELECT * FROM department d, employee e WHERE d.department_id = e.emp_dept_id LIMIT 10;
 --Testcase 22:
-SELECT * FROM department d, employee e WHERE d.department_id IN (SELECT department_id FROM department) LIMIT 10;
+SELECT * FROM department d, employee e WHERE d.department_id IN (SELECT department_id FROM department) ORDER BY d.department_id LIMIT 10;
 --Testcase 23:
 SELECT * FROM empdata;
 

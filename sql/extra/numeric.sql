@@ -1237,7 +1237,7 @@ INSERT INTO ceil_floor_round VALUES ('0.0000001');
 --Testcase 505:
 INSERT INTO ceil_floor_round VALUES ('-0.000001');
 --Testcase 506:
-SELECT a, ceil(a), ceiling(a), floor(a), round(a) FROM ceil_floor_round;
+SELECT a, ceil(a), ceiling(a), floor(a), round(a) FROM ceil_floor_round ORDER BY a;
 
 -- Check rounding, it should round ties away from zero.
 --Testcase 602:
@@ -1323,6 +1323,7 @@ DELETE FROM width_bucket_tbl;
 INSERT INTO width_bucket_tbl VALUES (0, 'NaN'::numeric, 4.0, 888);
 --Testcase 630:
 SELECT width_bucket(id1::float8, id2, id3::float8, id4) FROM width_bucket_tbl;
+
 
 -- normal operation
 --Testcase 631:

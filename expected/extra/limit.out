@@ -56,6 +56,29 @@ CREATE FOREIGN TABLE tenk1 (
 	stringu2	name,
 	string4		name
 ) SERVER sqlite_svr;
+--Testcase 88:
+CREATE TABLE parent_table (
+	unique1		int4 PRIMARY KEY,
+	unique2		int4,
+	two 		int4,
+	four		int4,
+	ten 		int4,
+	twenty		int4,
+	hundred		int4,
+	thousand	int4,
+	twothousand	int4,
+	fivethous	int4,
+	tenthous	int4,
+	odd			int4,
+	even		int4,
+	stringu1	name,
+	stringu2	name,
+	string4		name
+);
+--Testcase 89:
+CREATE FOREIGN table inherited_table ()
+INHERITS (parent_table)
+SERVER sqlite_svr options (table 'tenk1');
 --Testcase 1:
 SELECT ''::text AS two, unique1, unique2, stringu1
 		FROM onek WHERE unique1 > 50
@@ -204,9 +227,9 @@ fetch all in c1;
 ------------------+-------------------
               123 |               456
               123 |  4567890123456789
+ 4567890123456789 | -4567890123456789
  4567890123456789 |               123
  4567890123456789 |  4567890123456789
- 4567890123456789 | -4567890123456789
 (5 rows)
 
 --Testcase 13:
@@ -217,19 +240,19 @@ fetch 1 in c1;
 
 --Testcase 14:
 fetch backward 1 in c1;
-        q1        |        q2         
-------------------+-------------------
- 4567890123456789 | -4567890123456789
+        q1        |        q2        
+------------------+------------------
+ 4567890123456789 | 4567890123456789
 (1 row)
 
 --Testcase 33:
 fetch backward all in c1;
-        q1        |        q2        
-------------------+------------------
- 4567890123456789 | 4567890123456789
- 4567890123456789 |              123
-              123 | 4567890123456789
-              123 |              456
+        q1        |        q2         
+------------------+-------------------
+ 4567890123456789 |               123
+ 4567890123456789 | -4567890123456789
+              123 |  4567890123456789
+              123 |               456
 (4 rows)
 
 --Testcase 34:
@@ -244,9 +267,9 @@ fetch all in c1;
 ------------------+-------------------
               123 |               456
               123 |  4567890123456789
+ 4567890123456789 | -4567890123456789
  4567890123456789 |               123
  4567890123456789 |  4567890123456789
- 4567890123456789 | -4567890123456789
 (5 rows)
 
 declare c2 scroll cursor for select * from int8_tbl limit 3;
@@ -472,19 +495,12 @@ create temp sequence testseq;
 explain (verbose, costs off)
 select unique1, unique2, nextval('testseq')
   from tenk1 order by unique2 limit 10;
-                                   QUERY PLAN                                    
----------------------------------------------------------------------------------
- Limit
-   Output: unique1, unique2, (nextval('testseq'::regclass))
-   ->  Result
-         Output: unique1, unique2, nextval('testseq'::regclass)
-         ->  Sort
-               Output: unique1, unique2
-               Sort Key: tenk1.unique2
-               ->  Foreign Scan on public.tenk1
-                     Output: unique1, unique2
-                     SQLite query: SELECT `unique1`, `unique2` FROM main."tenk1"
-(10 rows)
+                                                QUERY PLAN                                                
+----------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.tenk1
+   Output: unique1, unique2, nextval('testseq'::regclass)
+   SQLite query: SELECT `unique1`, `unique2` FROM main."tenk1" ORDER BY `unique2` ASC NULLS LAST LIMIT 10
+(3 rows)
 
 --Testcase 16:
 select unique1, unique2, nextval('testseq')
@@ -503,72 +519,268 @@ select unique1, unique2, nextval('testseq')
     3043 |       9 |      10
 (10 rows)
 
---Testcase 17:
-select currval('testseq');
- currval 
----------
-      10
-(1 row)
-
---Testcase 18:
+--Testcase 90:
 explain (verbose, costs off)
 select unique1, unique2, nextval('testseq')
-  from tenk1 order by tenthous limit 10;
-                                         QUERY PLAN                                          
----------------------------------------------------------------------------------------------
- Limit
-   Output: unique1, unique2, (nextval('testseq'::regclass)), tenthous
-   ->  Result
-         Output: unique1, unique2, nextval('testseq'::regclass), tenthous
-         ->  Sort
-               Output: unique1, unique2, tenthous
-               Sort Key: tenk1.tenthous
-               ->  Foreign Scan on public.tenk1
-                     Output: unique1, unique2, tenthous
-                     SQLite query: SELECT `unique1`, `unique2`, `tenthous` FROM main."tenk1"
-(10 rows)
+  from tenk1 order by unique2 limit 10 offset 5;
+                                                    QUERY PLAN                                                     
+-------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.tenk1
+   Output: unique1, unique2, nextval('testseq'::regclass)
+   SQLite query: SELECT `unique1`, `unique2` FROM main."tenk1" ORDER BY `unique2` ASC NULLS LAST LIMIT 10 OFFSET 5
+(3 rows)
 
---Testcase 19:
+--Testcase 91:
 select unique1, unique2, nextval('testseq')
-  from tenk1 order by tenthous limit 10;
+  from tenk1 order by unique2 limit 10 offset 5;
  unique1 | unique2 | nextval 
 ---------+---------+---------
-       0 |    9998 |      11
-       1 |    2838 |      12
-       2 |    2716 |      13
-       3 |    5679 |      14
-       4 |    1621 |      15
-       5 |    5557 |      16
-       6 |    2855 |      17
-       7 |    8518 |      18
-       8 |    5435 |      19
-       9 |    4463 |      20
+    8009 |       5 |      11
+    5057 |       6 |      12
+    6701 |       7 |      13
+    4321 |       8 |      14
+    3043 |       9 |      15
+    1314 |      10 |      16
+    1504 |      11 |      17
+    5222 |      12 |      18
+    6243 |      13 |      19
+    5471 |      14 |      20
 (10 rows)
 
---Testcase 20:
+--Testcase 17:
 select currval('testseq');
  currval 
 ---------
       20
 (1 row)
 
+--Testcase 92:
+explain (verbose, costs off)
+select unique1, unique2, nextval('testseq')
+  from tenk1 order by unique2 desc limit 10;
+                                                 QUERY PLAN                                                 
+------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.tenk1
+   Output: unique1, unique2, nextval('testseq'::regclass)
+   SQLite query: SELECT `unique1`, `unique2` FROM main."tenk1" ORDER BY `unique2` DESC NULLS FIRST LIMIT 10
+(3 rows)
+
+--Testcase 93:
+select unique1, unique2, nextval('testseq')
+  from tenk1 order by unique2 desc limit 10;
+ unique1 | unique2 | nextval 
+---------+---------+---------
+    2968 |    9999 |      21
+       0 |    9998 |      22
+    2992 |    9997 |      23
+    1783 |    9996 |      24
+    5780 |    9995 |      25
+     429 |    9994 |      26
+    6093 |    9993 |      27
+    6587 |    9992 |      28
+    4093 |    9991 |      29
+    4773 |    9990 |      30
+(10 rows)
+
+--Testcase 94:
+explain (verbose, costs off)
+select unique1, unique2, nextval('testseq')
+  from tenk1 order by unique2 desc limit 10 offset 5;
+                                                     QUERY PLAN                                                      
+---------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.tenk1
+   Output: unique1, unique2, nextval('testseq'::regclass)
+   SQLite query: SELECT `unique1`, `unique2` FROM main."tenk1" ORDER BY `unique2` DESC NULLS FIRST LIMIT 10 OFFSET 5
+(3 rows)
+
+--Testcase 95:
+select unique1, unique2, nextval('testseq')
+  from tenk1 order by unique2 desc limit 10 offset 5;
+ unique1 | unique2 | nextval 
+---------+---------+---------
+     429 |    9994 |      31
+    6093 |    9993 |      32
+    6587 |    9992 |      33
+    4093 |    9991 |      34
+    4773 |    9990 |      35
+    8592 |    9989 |      36
+     858 |    9988 |      37
+    9194 |    9987 |      38
+    1384 |    9986 |      39
+    2406 |    9985 |      40
+(10 rows)
+
+--Testcase 96:
+select currval('testseq');
+ currval 
+---------
+      40
+(1 row)
+
+--Testcase 18:
+explain (verbose, costs off)
+select unique1, unique2, nextval('testseq')
+  from tenk1 order by tenthous limit 10;
+                                                      QUERY PLAN                                                       
+-----------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.tenk1
+   Output: unique1, unique2, nextval('testseq'::regclass), tenthous
+   SQLite query: SELECT `unique1`, `unique2`, `tenthous` FROM main."tenk1" ORDER BY `tenthous` ASC NULLS LAST LIMIT 10
+(3 rows)
+
+--Testcase 19:
+select unique1, unique2, nextval('testseq')
+  from tenk1 order by tenthous limit 10;
+ unique1 | unique2 | nextval 
+---------+---------+---------
+       0 |    9998 |      41
+       1 |    2838 |      42
+       2 |    2716 |      43
+       3 |    5679 |      44
+       4 |    1621 |      45
+       5 |    5557 |      46
+       6 |    2855 |      47
+       7 |    8518 |      48
+       8 |    5435 |      49
+       9 |    4463 |      50
+(10 rows)
+
+--Testcase 97:
+explain (verbose, costs off)
+select unique1, unique2, nextval('testseq')
+  from tenk1 order by tenthous limit 10 offset 5;
+                                                           QUERY PLAN                                                           
+--------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.tenk1
+   Output: unique1, unique2, nextval('testseq'::regclass), tenthous
+   SQLite query: SELECT `unique1`, `unique2`, `tenthous` FROM main."tenk1" ORDER BY `tenthous` ASC NULLS LAST LIMIT 10 OFFSET 5
+(3 rows)
+
+--Testcase 98:
+select unique1, unique2, nextval('testseq')
+  from tenk1 order by tenthous limit 10 offset 5;
+ unique1 | unique2 | nextval 
+---------+---------+---------
+       5 |    5557 |      51
+       6 |    2855 |      52
+       7 |    8518 |      53
+       8 |    5435 |      54
+       9 |    4463 |      55
+      10 |    8788 |      56
+      11 |    8396 |      57
+      12 |    6605 |      58
+      13 |    5696 |      59
+      14 |    4341 |      60
+(10 rows)
+
+--Testcase 20:
+select currval('testseq');
+ currval 
+---------
+      60
+(1 row)
+
+-- test for limit and offset when querying table and foreign table inherited
+--Testcase 99:
+explain (verbose, costs off)
+select unique1, unique2, nextval('testseq')
+  from parent_table order by tenthous limit 10;
+                                                               QUERY PLAN                                                                
+-----------------------------------------------------------------------------------------------------------------------------------------
+ Limit
+   Output: parent_table.unique1, parent_table.unique2, (nextval('testseq'::regclass)), parent_table.tenthous
+   ->  Result
+         Output: parent_table.unique1, parent_table.unique2, nextval('testseq'::regclass), parent_table.tenthous
+         ->  Merge Append
+               Sort Key: parent_table.tenthous
+               ->  Sort
+                     Output: parent_table_1.unique1, parent_table_1.unique2, parent_table_1.tenthous
+                     Sort Key: parent_table_1.tenthous
+                     ->  Seq Scan on public.parent_table parent_table_1
+                           Output: parent_table_1.unique1, parent_table_1.unique2, parent_table_1.tenthous
+               ->  Foreign Scan on public.inherited_table parent_table_2
+                     Output: parent_table_2.unique1, parent_table_2.unique2, parent_table_2.tenthous
+                     SQLite query: SELECT `unique1`, `unique2`, `tenthous` FROM main."tenk1" ORDER BY `tenthous` ASC NULLS LAST LIMIT 10
+(14 rows)
+
+--Testcase 100:
+select unique1, unique2, nextval('testseq')
+  from parent_table order by tenthous limit 10;
+ unique1 | unique2 | nextval 
+---------+---------+---------
+       0 |    9998 |      61
+       1 |    2838 |      62
+       2 |    2716 |      63
+       3 |    5679 |      64
+       4 |    1621 |      65
+       5 |    5557 |      66
+       6 |    2855 |      67
+       7 |    8518 |      68
+       8 |    5435 |      69
+       9 |    4463 |      70
+(10 rows)
+
+-- when querying regular tables with inherited tables, only limit is pushed-down when no offset is specified
+--Testcase 101:
+explain (verbose, costs off)
+select unique1, unique2, nextval('testseq')
+  from parent_table order by tenthous limit 10 offset 5;
+                                                           QUERY PLAN                                                           
+--------------------------------------------------------------------------------------------------------------------------------
+ Limit
+   Output: parent_table.unique1, parent_table.unique2, (nextval('testseq'::regclass)), parent_table.tenthous
+   ->  Result
+         Output: parent_table.unique1, parent_table.unique2, nextval('testseq'::regclass), parent_table.tenthous
+         ->  Merge Append
+               Sort Key: parent_table.tenthous
+               ->  Sort
+                     Output: parent_table_1.unique1, parent_table_1.unique2, parent_table_1.tenthous
+                     Sort Key: parent_table_1.tenthous
+                     ->  Seq Scan on public.parent_table parent_table_1
+                           Output: parent_table_1.unique1, parent_table_1.unique2, parent_table_1.tenthous
+               ->  Foreign Scan on public.inherited_table parent_table_2
+                     Output: parent_table_2.unique1, parent_table_2.unique2, parent_table_2.tenthous
+                     SQLite query: SELECT `unique1`, `unique2`, `tenthous` FROM main."tenk1" ORDER BY `tenthous` ASC NULLS LAST
+(14 rows)
+
+--Testcase 102:
+select unique1, unique2, nextval('testseq')
+  from parent_table order by tenthous limit 10 offset 5;
+ unique1 | unique2 | nextval 
+---------+---------+---------
+       5 |    5557 |      76
+       6 |    2855 |      77
+       7 |    8518 |      78
+       8 |    5435 |      79
+       9 |    4463 |      80
+      10 |    8788 |      81
+      11 |    8396 |      82
+      12 |    6605 |      83
+      13 |    5696 |      84
+      14 |    4341 |      85
+(10 rows)
+
+--Testcase 103:
+select currval('testseq');
+ currval 
+---------
+      85
+(1 row)
+
 --Testcase 21:
 explain (verbose, costs off)
 select unique1, unique2, generate_series(1,10)
   from tenk1 order by unique2 limit 7;
-                                   QUERY PLAN                                    
----------------------------------------------------------------------------------
+                                                                         QUERY PLAN                                                                          
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
  Limit
    Output: unique1, unique2, (generate_series(1, 10))
    ->  ProjectSet
          Output: unique1, unique2, generate_series(1, 10)
-         ->  Sort
-               Output: unique1, unique2
-               Sort Key: tenk1.unique2
-               ->  Foreign Scan on public.tenk1
-                     Output: unique1, unique2
-                     SQLite query: SELECT `unique1`, `unique2` FROM main."tenk1"
-(10 rows)
+         ->  Foreign Scan on public.tenk1
+               Output: unique1, unique2, two, four, ten, twenty, hundred, thousand, twothousand, fivethous, tenthous, odd, even, stringu1, stringu2, string4
+               SQLite query: SELECT `unique1`, `unique2` FROM main."tenk1" ORDER BY `unique2` ASC NULLS LAST
+(7 rows)
 
 --Testcase 22:
 select unique1, unique2, generate_series(1,10)
@@ -588,19 +800,16 @@ select unique1, unique2, generate_series(1,10)
 explain (verbose, costs off)
 select unique1, unique2, generate_series(1,10)
   from tenk1 order by tenthous limit 7;
-                                         QUERY PLAN                                          
----------------------------------------------------------------------------------------------
+                                                                         QUERY PLAN                                                                          
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
  Limit
    Output: unique1, unique2, (generate_series(1, 10)), tenthous
    ->  ProjectSet
          Output: unique1, unique2, generate_series(1, 10), tenthous
-         ->  Sort
-               Output: unique1, unique2, tenthous
-               Sort Key: tenk1.tenthous
-               ->  Foreign Scan on public.tenk1
-                     Output: unique1, unique2, tenthous
-                     SQLite query: SELECT `unique1`, `unique2`, `tenthous` FROM main."tenk1"
-(10 rows)
+         ->  Foreign Scan on public.tenk1
+               Output: unique1, unique2, two, four, ten, twenty, hundred, thousand, twothousand, fivethous, tenthous, odd, even, stringu1, stringu2, string4
+               SQLite query: SELECT `unique1`, `unique2`, `tenthous` FROM main."tenk1" ORDER BY `tenthous` ASC NULLS LAST
+(7 rows)
 
 --Testcase 24:
 select unique1, unique2, generate_series(1,10)
@@ -643,15 +852,12 @@ select q1, q2 from int8_tmp;
 --Testcase 70:
 explain (verbose, costs off)
 select q1, q2 from int8_tmp order by q2 desc;
-                          QUERY PLAN                          
---------------------------------------------------------------
- Sort
+                                      QUERY PLAN                                       
+---------------------------------------------------------------------------------------
+ Foreign Scan on public.int8_tmp
    Output: q1, q2
-   Sort Key: int8_tmp.q2 DESC
-   ->  Foreign Scan on public.int8_tmp
-         Output: q1, q2
-         SQLite query: SELECT `q1`, `q2` FROM main."int8_tmp"
-(6 rows)
+   SQLite query: SELECT `q1`, `q2` FROM main."int8_tmp" ORDER BY `q2` DESC NULLS FIRST
+(3 rows)
 
 --Testcase 71:
 select q1, q2 from int8_tmp order by q2 desc;
@@ -667,19 +873,14 @@ select q1, q2 from int8_tmp order by q2 desc;
 explain (verbose, costs off)
 select sum(tenthous) as s1, sum(tenthous) + random()*0 as s2
   from tenk1 group by thousand order by thousand limit 3;
-                                                      QUERY PLAN                                                       
------------------------------------------------------------------------------------------------------------------------
+                                                        QUERY PLAN                                                        
+--------------------------------------------------------------------------------------------------------------------------
  Limit
    Output: (sum(tenthous)), ((((sum(tenthous)))::double precision + (random() * '0'::double precision))), thousand
-   ->  Result
+   ->  Foreign Scan
          Output: (sum(tenthous)), (((sum(tenthous)))::double precision + (random() * '0'::double precision)), thousand
-         ->  Sort
-               Output: (sum(tenthous)), thousand
-               Sort Key: tenk1.thousand
-               ->  Foreign Scan
-                     Output: (sum(tenthous)), thousand
-                     SQLite query: SELECT sum(`tenthous`), `thousand` FROM main."tenk1" GROUP BY 2
-(10 rows)
+         SQLite query: SELECT sum(`tenthous`), `thousand` FROM main."tenk1" GROUP BY 2 ORDER BY `thousand` ASC NULLS LAST
+(5 rows)
 
 --Testcase 26:
 select sum(tenthous) as s1, sum(tenthous) + random()*0 as s2
