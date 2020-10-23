@@ -156,11 +156,17 @@ typedef struct SqliteFdwRelationInfo
 
 	/* Grouping information */
 	List	   *grouped_tlist;
+
+	/* Function pushdown surppot in target list */
+	bool		is_tlist_func_pushdown;
 }			SqliteFdwRelationInfo;
 
 extern bool sqlite_is_foreign_expr(PlannerInfo *root,
 								   RelOptInfo *baserel,
 								   Expr *expr);
+extern bool sqlite_is_foreign_function_tlist(PlannerInfo *root,
+											 RelOptInfo *baserel,
+											 List *tlist);
 
 extern Expr *sqlite_find_em_expr_for_rel(EquivalenceClass *ec, RelOptInfo *rel);
 extern Expr *sqlite_find_em_expr_for_input_target(PlannerInfo *root,
