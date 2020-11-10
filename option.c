@@ -64,7 +64,7 @@ static struct SqliteFdwOption valid_options[] =
 	{NULL, InvalidOid}
 };
 
-extern Datum sqlite_fdw_validator(PG_FUNCTION_ARGS);
+extern PGDLLEXPORT Datum sqlite_fdw_validator(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1(sqlite_fdw_validator);
 bool

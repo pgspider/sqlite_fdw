@@ -90,8 +90,7 @@ enum FdwPathPrivateIndex
 	FdwPathPrivateHasLimit
 };
 
-extern Datum sqlite_fdw_handler(PG_FUNCTION_ARGS);
-extern Datum sqlite_fdw_validator(PG_FUNCTION_ARGS);
+extern PGDLLEXPORT Datum sqlite_fdw_handler(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1(sqlite_fdw_handler);
 
