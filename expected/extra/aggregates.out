@@ -451,14 +451,14 @@ select avg(null::float8) from agg_t8;
 select sum('NaN'::numeric) from agg_t8;
  sum 
 -----
- 0.0
+   0
 (1 row)
 
 --Testcase 330:
 select avg('NaN'::numeric) from agg_t8;
  avg 
 -----
- 0.0
+   0
 (1 row)
 
 -- verify correct results for infinite inputs
