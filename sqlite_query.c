@@ -174,6 +174,13 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum)
 				}
 				break;
 			}
+		case NUMERICOID:
+			{
+				double		value = sqlite3_column_double(stmt, attnum);
+
+				valueDatum = CStringGetDatum((char *)DirectFunctionCall1(float8out, Float8GetDatum((float8) value)));
+				break;
+			}
 		default:
 			valueDatum = CStringGetDatum((char *) sqlite3_column_text(stmt, attnum));
 	}
