@@ -1513,6 +1513,7 @@ returns anycompatible language sql as
 --Testcase 491:
 create aggregate cleast_agg(variadic items anycompatiblearray) (
   stype = anycompatible, sfunc = cleast_accum);
+
 --Testcase 198:
 select least_agg(q1,q2) from int8_tbl;
 --Testcase 199:
