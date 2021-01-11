@@ -90,8 +90,7 @@ enum FdwPathPrivateIndex
 	FdwPathPrivateHasLimit
 };
 
-extern Datum sqlite_fdw_handler(PG_FUNCTION_ARGS);
-extern Datum sqlite_fdw_validator(PG_FUNCTION_ARGS);
+extern PGDLLEXPORT Datum sqlite_fdw_handler(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1(sqlite_fdw_handler);
 
@@ -1248,11 +1247,14 @@ sqlitePlanForeignModify(PlannerInfo *root,
 	}
 
 	if (plan->returningLists)
-		elog(ERROR, "RETURNING is not supported by this FDW");
+		ereport(ERROR,
+				(errcode(ERRCODE_FDW_UNABLE_TO_CREATE_EXECUTION),
+				errmsg("RETURNING clause is not supported")));
 
 	if (plan->onConflictAction != ONCONFLICT_NONE)
-		elog(ERROR, "not suport ON CONFLICT: %d",
-			 (int) plan->onConflictAction);
+		ereport(ERROR,
+				(errcode(ERRCODE_FDW_UNABLE_TO_CREATE_EXECUTION),
+				errmsg("INSERT with ON CONFLICT clause is not supported")));
 
 	/*
 	 * Add all primary key attribute names to condAttr used in where clause of
