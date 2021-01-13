@@ -1,5 +1,5 @@
 def NODE_NAME = 'AWS_Instance_CentOS'
-def MAIL_TO = 'db-jenkins@swc.toshiba.co.jp'
+def MAIL_TO = '$DEFAULT_RECIPIENTS'
 def BRANCH_NAME = 'Branch [' + env.BRANCH_NAME + ']'
 def BUILD_INFO = 'Jenkins job: ' + env.BUILD_URL + '\n'
 
