@@ -611,6 +611,9 @@ sqliteGetForeignPlan(
 
 	elog(DEBUG1, "sqlite_fdw : %s", __func__);
 
+	/* Decide to execute function pushdown support in the target list. */
+	fpinfo->is_tlist_func_pushdown = sqlite_is_foreign_function_tlist(root, baserel, tlist);
+
 	/*
 	 * Get FDW private data created by sqliteGetForeignUpperPaths(), if any.
 	 */
@@ -647,8 +650,9 @@ sqliteGetForeignPlan(
 	 * local_exprs list, since appendWhereClause expects a list of
 	 * RestrictInfos.
 	 */
-	if (baserel->reloptkind == RELOPT_BASEREL ||
-		baserel->reloptkind == RELOPT_OTHER_MEMBER_REL)
+	if ((baserel->reloptkind == RELOPT_BASEREL ||
+		 baserel->reloptkind == RELOPT_OTHER_MEMBER_REL) &&
+		fpinfo->is_tlist_func_pushdown == false)
 	{
 		foreach(lc, scan_clauses)
 		{
@@ -694,7 +698,10 @@ sqliteGetForeignPlan(
 		 * parameterization right now, so there should be no scan_clauses for
 		 * a joinrel or an upper rel either.
 		 */
-		Assert(!scan_clauses);
+		if (fpinfo->is_tlist_func_pushdown == false)
+		{
+			Assert(!scan_clauses);
+		}
 
 		/*
 		 * Instead we get the conditions to apply from the fdw_private
@@ -715,7 +722,39 @@ sqliteGetForeignPlan(
 		 */
 
 		/* Build the list of columns to be fetched from the foreign server. */
-		fdw_scan_tlist = sqlite_build_tlist_to_deparse(baserel);
+		if (fpinfo->is_tlist_func_pushdown == true)
+		{
+			int next_resno = list_length(fdw_scan_tlist) + 1;
+
+			foreach(lc, tlist)
+			{
+				TargetEntry *tlist_tle = lfirst_node(TargetEntry, lc);
+
+				if (!IsA(tlist_tle->expr, Const))
+				{
+					TargetEntry *tle;
+
+					tle = makeTargetEntry(copyObject(tlist_tle->expr),
+										  next_resno++,
+										  NULL,
+										  false);
+					fdw_scan_tlist = lappend(fdw_scan_tlist, tle);
+				}
+			}
+
+			foreach(lc, fpinfo->local_conds)
+			{
+				RestrictInfo *rinfo = lfirst_node(RestrictInfo, lc);
+
+				fdw_scan_tlist = add_to_flat_tlist(fdw_scan_tlist,
+												   pull_var_clause((Node *) rinfo->clause,
+																   PVC_RECURSE_PLACEHOLDERS));
+			}
+		}
+		else
+		{
+			fdw_scan_tlist = sqlite_build_tlist_to_deparse(baserel);
+		}
 
 		/*
 		 * Ensure that the outer plan produces a tuple whose descriptor
@@ -2408,6 +2447,13 @@ add_foreign_final_paths(PlannerInfo *root, RelOptInfo *input_rel,
 	 */
 	if (ifpinfo->local_conds)
 		return;
+
+#if PG_VERSION_NUM >= 130000
+	/* Don't pushdown FETCH ... WITH TIES option */
+	if (parse->limitCount
+	                && parse->limitOption == LIMIT_OPTION_WITH_TIES)
+		return;
+#endif
 
 	/*
 	 * Also, the LIMIT/OFFSET cannot be pushed down, if their expressions are

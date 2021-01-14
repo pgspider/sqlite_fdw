@@ -38,6 +38,7 @@
 #define QUOTE '"'
 
 static char *sqlite_quote_identifier(const char *s, char q);
+static bool sqlite_contain_immutable_functions_walker(Node *node, void *context);
 
 /*
  * Global context for foreign_expr_walker's search of an expression tree.
@@ -1023,6 +1024,7 @@ sqlite_deparse_select(List *tlist, List **retrieved_attrs, deparse_expr_cxt *con
 	appendStringInfoString(buf, "SELECT ");
 
 	if (foreignrel->reloptkind == RELOPT_JOINREL ||
+		fpinfo->is_tlist_func_pushdown == true ||
 		foreignrel->reloptkind == RELOPT_UPPER_REL)
 	{
 		/*
@@ -2690,4 +2692,131 @@ deparseSortGroupClause(Index ref, List *tlist, bool force_colno, deparse_expr_cx
 	}
 
 	return (Node *) expr;
+}
+
+/*****************************************************************************
+ *		Check clauses for immutable functions
+ *****************************************************************************/
+
+/*
+ * contain_immutable_functions
+ *	  Recursively search for immutable functions within a clause.
+ *
+ * Returns true if any immutable function (or operator implemented by a
+ * immutable function) is found.
+ *
+ * We will recursively look into TargetEntry exprs.
+ */
+static bool
+sqlite_contain_immutable_functions(Node *clause)
+{
+	return sqlite_contain_immutable_functions_walker(clause, NULL);
+}
+
+static bool
+sqlite_contain_immutable_functions_walker(Node *node, void *context)
+{
+	if (node == NULL)
+		return false;
+	/* Check for mutable functions in node itself */
+	if (nodeTag(node) == T_FuncExpr)
+	{
+		FuncExpr *expr = (FuncExpr *) node;
+		if (func_volatile(expr->funcid) == PROVOLATILE_IMMUTABLE)
+			return true;
+	}
+
+	/*
+	 * It should be safe to treat MinMaxExpr as immutable, because it will
+	 * depend on a non-cross-type btree comparison function, and those should
+	 * always be immutable.  Treating XmlExpr as immutable is more dubious,
+	 * and treating CoerceToDomain as immutable is outright dangerous.  But we
+	 * have done so historically, and changing this would probably cause more
+	 * problems than it would fix.  In practice, if you have a non-immutable
+	 * domain constraint you are in for pain anyhow.
+	 */
+
+	/* Recurse to check arguments */
+	if (IsA(node, Query))
+	{
+		/* Recurse into subselects */
+		return query_tree_walker((Query *) node,
+								 sqlite_contain_immutable_functions_walker,
+								 context, 0);
+	}
+	return expression_tree_walker(node, sqlite_contain_immutable_functions_walker,
+								  context);
+}
+
+/*
+ * Returns true if given tlist is safe to evaluate on the foreign server.
+ */
+bool sqlite_is_foreign_function_tlist(PlannerInfo *root,
+									  RelOptInfo *baserel,
+									  List *tlist)
+{
+	foreign_glob_cxt glob_cxt;
+	foreign_loc_cxt  loc_cxt;
+	ListCell        *lc;
+	bool             is_contain_function;
+
+	if (!(baserel->reloptkind == RELOPT_BASEREL ||
+		  baserel->reloptkind == RELOPT_OTHER_MEMBER_REL))
+		return false;
+
+	/*
+	 * Check that the expression consists of any immutable function.
+	 */
+	is_contain_function = false;
+	foreach(lc, tlist)
+	{
+		TargetEntry *tle = lfirst_node(TargetEntry, lc);
+
+		if (sqlite_contain_immutable_functions((Node *) tle->expr))
+		{
+			is_contain_function = true;
+			break;
+		}
+	}
+
+	if (!is_contain_function)
+		return false;
+
+	/*
+	 * Check that the expression consists of nodes that are safe to execute
+	 * remotely.
+	 */
+	foreach(lc, tlist)
+	{
+		TargetEntry *tle = lfirst_node(TargetEntry, lc);
+
+		glob_cxt.root = root;
+		glob_cxt.foreignrel = baserel;
+		glob_cxt.relids = baserel->relids;
+		loc_cxt.collation = InvalidOid;
+		loc_cxt.state = FDW_COLLATE_NONE;
+
+		if (!foreign_expr_walker((Node *) tle->expr, &glob_cxt, &loc_cxt))
+			return false;
+
+		/*
+		 * If the expression has a valid collation that does not arise from a
+		 * foreign var, the expression can not be sent over.
+		 */
+		if (loc_cxt.state == FDW_COLLATE_UNSAFE)
+			return false;
+
+		/*
+		 * An expression which includes any mutable functions can't be sent over
+		 * because its result is not stable.  For example, sending now() remote
+		 * side could cause confusion from clock offsets.  Future versions might
+		 * be able to make this choice with more granularity.  (We check this last
+		 * because it requires a lot of expensive catalog lookups.)
+		 */
+		if (contain_mutable_functions((Node *) tle->expr))
+			return false;
+	}
+
+	/* OK for the target list with functions to evaluate on the remote server */
+	return true;
 }

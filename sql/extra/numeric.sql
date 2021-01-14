@@ -1324,6 +1324,7 @@ INSERT INTO width_bucket_tbl VALUES (0, 'NaN'::numeric, 4.0, 888);
 --Testcase 630:
 SELECT width_bucket(id1::float8, id2, id3::float8, id4) FROM width_bucket_tbl;
 
+
 -- normal operation
 --Testcase 631:
 CREATE FOREIGN TABLE width_bucket_test (

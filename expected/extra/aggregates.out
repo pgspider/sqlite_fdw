@@ -451,14 +451,14 @@ select avg(null::float8) from agg_t8;
 select sum('NaN'::numeric) from agg_t8;
  sum 
 -----
- 0.0
+   0
 (1 row)
 
 --Testcase 330:
 select avg('NaN'::numeric) from agg_t8;
  avg 
 -----
- 0.0
+   0
 (1 row)
 
 -- verify correct results for infinite inputs
@@ -1582,38 +1582,44 @@ from agg_t1 inner join agg_t2 on agg_t1.a = agg_t2.x and agg_t1.b = agg_t2.y
 group by agg_t1.a,agg_t1.b,agg_t1.c,agg_t1.d,agg_t2.x,agg_t2.y,agg_t2.z;
                                     QUERY PLAN                                     
 -----------------------------------------------------------------------------------
- HashAggregate
+ Group
    Group Key: agg_t1.a, agg_t1.b, agg_t1.c, agg_t1.d, agg_t2.x, agg_t2.y, agg_t2.z
-   ->  Merge Join
-         Merge Cond: ((agg_t1.a = agg_t2.x) AND (agg_t1.b = agg_t2.y))
-         ->  Sort
-               Sort Key: agg_t1.a, agg_t1.b
-               ->  Foreign Scan on agg_t1
-         ->  Materialize
+   ->  Incremental Sort
+         Sort Key: agg_t1.a, agg_t1.b, agg_t1.c, agg_t1.d, agg_t2.z
+         Presorted Key: agg_t1.a, agg_t1.b
+         ->  Merge Join
+               Merge Cond: ((agg_t1.a = agg_t2.x) AND (agg_t1.b = agg_t2.y))
                ->  Sort
-                     Sort Key: agg_t2.x, agg_t2.y
-                     ->  Foreign Scan on agg_t2
-(11 rows)
+                     Sort Key: agg_t1.a, agg_t1.b
+                     ->  Foreign Scan on agg_t1
+               ->  Materialize
+                     ->  Sort
+                           Sort Key: agg_t2.x, agg_t2.y
+                           ->  Foreign Scan on agg_t2
+(14 rows)
 
 -- Test case where agg_t1 can be optimized but not agg_t2
 --Testcase 92:
 explain (costs off) select agg_t1.*,agg_t2.x,agg_t2.z
 from agg_t1 inner join agg_t2 on agg_t1.a = agg_t2.x and agg_t1.b = agg_t2.y
 group by agg_t1.a,agg_t1.b,agg_t1.c,agg_t1.d,agg_t2.x,agg_t2.z;
-                               QUERY PLAN                                
--------------------------------------------------------------------------
- HashAggregate
+                                 QUERY PLAN                                  
+-----------------------------------------------------------------------------
+ Group
    Group Key: agg_t1.a, agg_t1.b, agg_t1.c, agg_t1.d, agg_t2.x, agg_t2.z
-   ->  Merge Join
-         Merge Cond: ((agg_t1.a = agg_t2.x) AND (agg_t1.b = agg_t2.y))
-         ->  Sort
-               Sort Key: agg_t1.a, agg_t1.b
-               ->  Foreign Scan on agg_t1
-         ->  Materialize
+   ->  Incremental Sort
+         Sort Key: agg_t1.a, agg_t1.b, agg_t1.c, agg_t1.d, agg_t2.z
+         Presorted Key: agg_t1.a, agg_t1.b
+         ->  Merge Join
+               Merge Cond: ((agg_t1.a = agg_t2.x) AND (agg_t1.b = agg_t2.y))
                ->  Sort
-                     Sort Key: agg_t2.x, agg_t2.y
-                     ->  Foreign Scan on agg_t2
-(11 rows)
+                     Sort Key: agg_t1.a, agg_t1.b
+                     ->  Foreign Scan on agg_t1
+               ->  Materialize
+                     ->  Sort
+                           Sort Key: agg_t2.x, agg_t2.y
+                           ->  Foreign Scan on agg_t2
+(14 rows)
 
 -- Cannot optimize when PK is deferrable
 --Testcase 422:

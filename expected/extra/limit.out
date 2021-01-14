@@ -56,6 +56,7 @@ CREATE FOREIGN TABLE tenk1 (
 	stringu2	name,
 	string4		name
 ) SERVER sqlite_svr;
+--Testcase 88:
 CREATE TABLE parent_table (
 	unique1		int4 PRIMARY KEY,
 	unique2		int4,
@@ -74,6 +75,7 @@ CREATE TABLE parent_table (
 	stringu2	name,
 	string4		name
 );
+--Testcase 89:
 CREATE FOREIGN table inherited_table ()
 INHERITS (parent_table)
 SERVER sqlite_svr options (table 'tenk1');
@@ -517,6 +519,7 @@ select unique1, unique2, nextval('testseq')
     3043 |       9 |      10
 (10 rows)
 
+--Testcase 90:
 explain (verbose, costs off)
 select unique1, unique2, nextval('testseq')
   from tenk1 order by unique2 limit 10 offset 5;
@@ -527,6 +530,7 @@ select unique1, unique2, nextval('testseq')
    SQLite query: SELECT `unique1`, `unique2` FROM main."tenk1" ORDER BY `unique2` ASC NULLS LAST LIMIT 10 OFFSET 5
 (3 rows)
 
+--Testcase 91:
 select unique1, unique2, nextval('testseq')
   from tenk1 order by unique2 limit 10 offset 5;
  unique1 | unique2 | nextval 
@@ -550,6 +554,7 @@ select currval('testseq');
       20
 (1 row)
 
+--Testcase 92:
 explain (verbose, costs off)
 select unique1, unique2, nextval('testseq')
   from tenk1 order by unique2 desc limit 10;
@@ -560,6 +565,7 @@ select unique1, unique2, nextval('testseq')
    SQLite query: SELECT `unique1`, `unique2` FROM main."tenk1" ORDER BY `unique2` DESC NULLS FIRST LIMIT 10
 (3 rows)
 
+--Testcase 93:
 select unique1, unique2, nextval('testseq')
   from tenk1 order by unique2 desc limit 10;
  unique1 | unique2 | nextval 
@@ -576,6 +582,7 @@ select unique1, unique2, nextval('testseq')
     4773 |    9990 |      30
 (10 rows)
 
+--Testcase 94:
 explain (verbose, costs off)
 select unique1, unique2, nextval('testseq')
   from tenk1 order by unique2 desc limit 10 offset 5;
@@ -586,6 +593,7 @@ select unique1, unique2, nextval('testseq')
    SQLite query: SELECT `unique1`, `unique2` FROM main."tenk1" ORDER BY `unique2` DESC NULLS FIRST LIMIT 10 OFFSET 5
 (3 rows)
 
+--Testcase 95:
 select unique1, unique2, nextval('testseq')
   from tenk1 order by unique2 desc limit 10 offset 5;
  unique1 | unique2 | nextval 
@@ -602,6 +610,7 @@ select unique1, unique2, nextval('testseq')
     2406 |    9985 |      40
 (10 rows)
 
+--Testcase 96:
 select currval('testseq');
  currval 
 ---------
@@ -636,6 +645,7 @@ select unique1, unique2, nextval('testseq')
        9 |    4463 |      50
 (10 rows)
 
+--Testcase 97:
 explain (verbose, costs off)
 select unique1, unique2, nextval('testseq')
   from tenk1 order by tenthous limit 10 offset 5;
@@ -646,6 +656,7 @@ select unique1, unique2, nextval('testseq')
    SQLite query: SELECT `unique1`, `unique2`, `tenthous` FROM main."tenk1" ORDER BY `tenthous` ASC NULLS LAST LIMIT 10 OFFSET 5
 (3 rows)
 
+--Testcase 98:
 select unique1, unique2, nextval('testseq')
   from tenk1 order by tenthous limit 10 offset 5;
  unique1 | unique2 | nextval 
@@ -670,6 +681,7 @@ select currval('testseq');
 (1 row)
 
 -- test for limit and offset when querying table and foreign table inherited
+--Testcase 99:
 explain (verbose, costs off)
 select unique1, unique2, nextval('testseq')
   from parent_table order by tenthous limit 10;
@@ -691,6 +703,7 @@ select unique1, unique2, nextval('testseq')
                      SQLite query: SELECT `unique1`, `unique2`, `tenthous` FROM main."tenk1" ORDER BY `tenthous` ASC NULLS LAST LIMIT 10
 (14 rows)
 
+--Testcase 100:
 select unique1, unique2, nextval('testseq')
   from parent_table order by tenthous limit 10;
  unique1 | unique2 | nextval 
@@ -708,6 +721,7 @@ select unique1, unique2, nextval('testseq')
 (10 rows)
 
 -- when querying regular tables with inherited tables, only limit is pushed-down when no offset is specified
+--Testcase 101:
 explain (verbose, costs off)
 select unique1, unique2, nextval('testseq')
   from parent_table order by tenthous limit 10 offset 5;
@@ -729,6 +743,7 @@ select unique1, unique2, nextval('testseq')
                      SQLite query: SELECT `unique1`, `unique2`, `tenthous` FROM main."tenk1" ORDER BY `tenthous` ASC NULLS LAST
 (14 rows)
 
+--Testcase 102:
 select unique1, unique2, nextval('testseq')
   from parent_table order by tenthous limit 10 offset 5;
  unique1 | unique2 | nextval 
@@ -745,6 +760,7 @@ select unique1, unique2, nextval('testseq')
       14 |    4341 |      85
 (10 rows)
 
+--Testcase 103:
 select currval('testseq');
  currval 
 ---------
@@ -888,7 +904,15 @@ SELECT  thousand
 ----------
         0
         0
-(2 rows)
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+(10 rows)
 
 --Testcase 73:
 SELECT  thousand
@@ -897,7 +921,16 @@ SELECT  thousand
  thousand 
 ----------
         0
-(1 row)
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+(10 rows)
 
 --Testcase 74:
 SELECT  thousand
@@ -906,7 +939,16 @@ SELECT  thousand
  thousand 
 ----------
         0
-(1 row)
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+(10 rows)
 
 --Testcase 75:
 SELECT  thousand
@@ -923,7 +965,7 @@ SELECT  thousand
 SELECT ''::text AS two, unique1, unique2, stringu1
 		FROM onek WHERE unique1 > 50
 		FETCH FIRST 2 ROW WITH TIES;
-ERROR:  WITH TIES options can not be specified without ORDER BY clause
+ERROR:  WITH TIES cannot be specified without ORDER BY clause
 -- test ruleutils
 --Testcase 77:
 CREATE VIEW limit_thousand_v_1 AS SELECT thousand FROM onek WHERE thousand < 995
@@ -962,7 +1004,7 @@ View definition:
 --Testcase 81:
 CREATE VIEW limit_thousand_v_3 AS SELECT thousand FROM onek WHERE thousand < 995
 		ORDER BY thousand FETCH FIRST NULL ROWS WITH TIES;		-- fails
-ERROR:  row count cannot be NULL in FETCH FIRST ... WITH TIES clause
+ERROR:  row count cannot be null in FETCH FIRST ... WITH TIES clause
 --Testcase 82:
 CREATE VIEW limit_thousand_v_3 AS SELECT thousand FROM onek WHERE thousand < 995
 		ORDER BY thousand FETCH FIRST (NULL+1) ROWS WITH TIES;
