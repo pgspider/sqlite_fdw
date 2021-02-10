@@ -46,6 +46,9 @@
 #define table_open(rel, lock)	heap_open(rel, lock)
 #endif
 
+/* Code version is updated at new release. */
+#define CODE_VERSION   10301
+
 /*
  * Options structure to store the Sqlite
  * server information

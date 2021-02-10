@@ -23,3 +23,7 @@ LANGUAGE C STRICT;
 CREATE FOREIGN DATA WRAPPER sqlite_fdw
   HANDLER sqlite_fdw_handler
   VALIDATOR sqlite_fdw_validator;
+
+CREATE OR REPLACE FUNCTION sqlite_fdw_version()
+  RETURNS pg_catalog.int4 STRICT
+  AS 'MODULE_PATHNAME' LANGUAGE C;

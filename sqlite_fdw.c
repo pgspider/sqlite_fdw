@@ -93,6 +93,7 @@ enum FdwPathPrivateIndex
 extern PGDLLEXPORT Datum sqlite_fdw_handler(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1(sqlite_fdw_handler);
+PG_FUNCTION_INFO_V1(sqlite_fdw_version);
 
 
 static void sqliteGetForeignRelSize(PlannerInfo *root,
@@ -300,6 +301,12 @@ sqlite_fdw_handler(PG_FUNCTION_ARGS)
 	fdwroutine->GetForeignUpperPaths = sqliteGetForeignUpperPaths;
 
 	PG_RETURN_POINTER(fdwroutine);
+}
+
+Datum
+sqlite_fdw_version(PG_FUNCTION_ARGS)
+{
+	PG_RETURN_INT32(CODE_VERSION);
 }
 
 /* Wrapper for sqlite3_prepare */
