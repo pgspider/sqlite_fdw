@@ -47,3 +47,11 @@ include $(top_builddir)/src/Makefile.global
 include $(top_srcdir)/contrib/contrib-global.mk
 endif
 
+ifdef REGRESS_PREFIX
+REGRESS_PREFIX_SUB = $(REGRESS_PREFIX)
+else
+REGRESS_PREFIX_SUB = $(VERSION)
+endif
+
+REGRESS := $(addprefix $(REGRESS_PREFIX_SUB)/,$(REGRESS))
+$(shell mkdir -p results/$(REGRESS_PREFIX_SUB)/extra)
