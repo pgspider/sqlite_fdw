@@ -70,7 +70,8 @@ SELECT * FROM t1;
 - Support update to foreign table  
 - WHERE clauses are pushdowned  
 - Aggregate function are pushdowned
-- Order By is pushdowned.
+- Order By is pushdowned
+- Joins (left/right/inner) are pushdowned
 - Limit and Offset are pushdowned (*when all tables queried are fdw)
 - Transactions  
 
@@ -81,7 +82,7 @@ SELECT * FROM t1;
 Opening issues and pull requests on GitHub are welcome.
 
 ## License
-Copyright (c) 2017 - 2020, TOSHIBA Corporation  
+Copyright (c) 2017 - 2021, TOSHIBA Corporation  
 Copyright (c) 2011 - 2016, EnterpriseDB Corporation  
 
 Permission to use, copy, modify, and distribute this software and its documentation for any purpose, without fee, and without a written agreement is hereby granted, provided that the above copyright notice and this paragraph and the following two paragraphs appear in all copies.
