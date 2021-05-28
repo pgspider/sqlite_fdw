@@ -1435,6 +1435,31 @@ SELECT * FROM noprimary;
  1 | 2
 (2 rows)
 
+--get version
+--Testcase 153:
+\df sqlite*
+                                List of functions
+ Schema |         Name         | Result data type | Argument data types |  Type  
+--------+----------------------+------------------+---------------------+--------
+ public | sqlite_fdw_handler   | fdw_handler      |                     | normal
+ public | sqlite_fdw_validator | void             | text[], oid         | normal
+ public | sqlite_fdw_version   | integer          |                     | normal
+(3 rows)
+
+--Testcase 154:
+SELECT * FROM public.sqlite_fdw_version();
+ sqlite_fdw_version 
+--------------------
+              10302
+(1 row)
+
+--Testcase 155:
+SELECT sqlite_fdw_version();
+ sqlite_fdw_version 
+--------------------
+              10302
+(1 row)
+
 --Testcase 142:
 DROP FUNCTION test_param_WHERE();
 --Testcase 143:
