@@ -30,7 +30,7 @@ def make_check_test(String target, String version) {
         status = sh(returnStatus: true, script: "grep -q 'All [0-9]* tests passed' 'make_check_existed_test.out'")
         if (status != 0) {
             unstable(message: "Set UNSTABLE result")
-            sh 'docker cp postgresserver_multi_for_sqlite_existed_test:/home/postgres/${target}${version}/contrib/sqlite_fdw/regression.diffs regression.diffs'
+            sh "docker cp postgresserver_multi_for_sqlite_existed_test:/home/postgres/${target}${version}/contrib/sqlite_fdw/regression.diffs regression.diffs"
             sh 'cat regression.diffs || true'
             emailext subject: '[CI SQLITE_FDW] EXISTED_TEST: Result make check on ${target}${version} FAILED ' + BRANCH_NAME, body: BUILD_INFO  + '${FILE,path="make_check_existed_test.out"}', to: "${MAIL_TO}", attachLog: false
             updateGitlabCommitStatus name: 'make_check', state: 'failed'
@@ -90,27 +90,37 @@ pipeline {
         }
         stage('make_check_FDW_Test_With_Postgres_9_6_19') {
             steps {
-                make_check_test("postgresql", "9.6.19")
+                catchError() {
+                    make_check_test("postgresql", "9.6.19")
+                }
             }
         }
         stage('make_check_FDW_Test_With_Postgres_10_14') {
             steps {
+                catchError() {
                    make_check_test("postgresql","10.14")
+                }
             }
         }
         stage('make_check_FDW_Test_With_Postgres_11_9') {
             steps {
+                catchError() {
                    make_check_test("postgresql","11.9")
+                }
             }
         }
         stage('make_check_FDW_Test_With_Postgres_12_4') {
             steps {
+                catchError() {
                    make_check_test("postgresql","12.4")
+                }
             }
         }
         stage('make_check_FDW_Test_With_Postgres_13_0') {
             steps {
+                catchError() {
                    make_check_test("postgresql","13.0")
+                }
             }
         }
         stage('Build_PGSpider_For_FDW_Test') {
@@ -133,7 +143,9 @@ pipeline {
         }
         stage('make_check_FDW_Test_With_PGSpider') {
             steps {
+                catchError() {
                    make_check_test("PGSpider","")
+                }
             }
         }
     }

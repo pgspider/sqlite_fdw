@@ -1568,44 +1568,20 @@ explain (costs off) select a,c from agg_t1 group by a,c,d;
 explain (costs off) select *
 from agg_t1 inner join agg_t2 on agg_t1.a = agg_t2.x and agg_t1.b = agg_t2.y
 group by agg_t1.a,agg_t1.b,agg_t1.c,agg_t1.d,agg_t2.x,agg_t2.y,agg_t2.z;
-                                    QUERY PLAN                                     
------------------------------------------------------------------------------------
- Group
-   Group Key: agg_t1.a, agg_t1.b, agg_t1.c, agg_t1.d, agg_t2.x, agg_t2.y, agg_t2.z
-   ->  Sort
-         Sort Key: agg_t1.a, agg_t1.b, agg_t1.c, agg_t1.d, agg_t2.z
-         ->  Merge Join
-               Merge Cond: ((agg_t1.a = agg_t2.x) AND (agg_t1.b = agg_t2.y))
-               ->  Sort
-                     Sort Key: agg_t1.a, agg_t1.b
-                     ->  Foreign Scan on agg_t1
-               ->  Materialize
-                     ->  Sort
-                           Sort Key: agg_t2.x, agg_t2.y
-                           ->  Foreign Scan on agg_t2
-(13 rows)
+  QUERY PLAN  
+--------------
+ Foreign Scan
+(1 row)
 
 -- Test case where agg_t1 can be optimized but not agg_t2
 --Testcase 92:
 explain (costs off) select agg_t1.*,agg_t2.x,agg_t2.z
 from agg_t1 inner join agg_t2 on agg_t1.a = agg_t2.x and agg_t1.b = agg_t2.y
 group by agg_t1.a,agg_t1.b,agg_t1.c,agg_t1.d,agg_t2.x,agg_t2.z;
-                                 QUERY PLAN                                  
------------------------------------------------------------------------------
- Group
-   Group Key: agg_t1.a, agg_t1.b, agg_t1.c, agg_t1.d, agg_t2.x, agg_t2.z
-   ->  Sort
-         Sort Key: agg_t1.a, agg_t1.b, agg_t1.c, agg_t1.d, agg_t2.z
-         ->  Merge Join
-               Merge Cond: ((agg_t1.a = agg_t2.x) AND (agg_t1.b = agg_t2.y))
-               ->  Sort
-                     Sort Key: agg_t1.a, agg_t1.b
-                     ->  Foreign Scan on agg_t1
-               ->  Materialize
-                     ->  Sort
-                           Sort Key: agg_t2.x, agg_t2.y
-                           ->  Foreign Scan on agg_t2
-(13 rows)
+  QUERY PLAN  
+--------------
+ Foreign Scan
+(1 row)
 
 -- Cannot optimize when PK is deferrable
 --Testcase 422:
@@ -3234,15 +3210,15 @@ rollback;
 explain (costs off)
   select 1 from tenk1
    where (hundred, thousand) in (select twothousand, twothousand from onek);
-                         QUERY PLAN                          
--------------------------------------------------------------
+                      QUERY PLAN                       
+-------------------------------------------------------
  Hash Join
-   Hash Cond: (tenk1.hundred = onek.twothousand)
-   ->  Foreign Scan on tenk1
+   Hash Cond: (onek.twothousand = tenk1.hundred)
+   ->  HashAggregate
+         Group Key: onek.twothousand, onek.twothousand
+         ->  Foreign Scan on onek
    ->  Hash
-         ->  HashAggregate
-               Group Key: onek.twothousand, onek.twothousand
-               ->  Foreign Scan on onek
+         ->  Foreign Scan on tenk1
 (7 rows)
 
 --

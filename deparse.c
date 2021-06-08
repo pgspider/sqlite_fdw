@@ -35,13 +35,9 @@
 #include "utils/syscache.h"
 #include "utils/timestamp.h"
 #include "utils/typcache.h"
-#define QUOTE '"'
-
-static char *sqlite_quote_identifier(const char *s, char q);
-static bool sqlite_contain_immutable_functions_walker(Node *node, void *context);
 
 /*
- * Global context for foreign_expr_walker's search of an expression tree.
+ * Global context for sqlite_foreign_expr_walker's search of an expression tree.
  */
 typedef struct foreign_glob_cxt
 {
@@ -52,7 +48,7 @@ typedef struct foreign_glob_cxt
 } foreign_glob_cxt;
 
 /*
- * Local (per-tree-level) context for foreign_expr_walker's search.
+ * Local (per-tree-level) context for sqlite_foreign_expr_walker's search.
  * This is concerned with identifying collations used in the expression.
  */
 typedef enum
@@ -69,7 +65,7 @@ typedef struct foreign_loc_cxt
 } foreign_loc_cxt;
 
 /*
- * Context for deparseExpr
+ * Context for sqlite_deparse_expr
  */
 typedef struct deparse_expr_cxt
 {
@@ -80,24 +76,35 @@ typedef struct deparse_expr_cxt
 								 * a base relation. */
 	StringInfo	buf;			/* output buffer to append to */
 	List	  **params_list;	/* exprs that will become remote Params */
-	Expr 		*complementarynode; /* variable where we can store, only if needed,
-									 * a complementary node to obtain info for processing actual node.
-									 * Created mostly for sqlite_deparse_op_expr to have both nodes accesible
-									 * during each node deparse. */
+	Expr	   *complementarynode;	/* variable where we can store, only if
+									 * needed, a complementary node to obtain
+									 * info for processing actual node.
+									 * Created mostly for
+									 * sqlite_deparse_op_expr to have both
+									 * nodes accesible during each node
+									 * deparse. */
 } deparse_expr_cxt;
+
+#define QUOTE '"'
+#define REL_ALIAS_PREFIX	"r"
+/* Handy macro to add relation name qualification */
+#define ADD_REL_QUALIFIER(buf, varno)	\
+		appendStringInfo((buf), "%s%d.", REL_ALIAS_PREFIX, (varno))
+#define SUBQUERY_REL_ALIAS_PREFIX	"s"
+#define SUBQUERY_COL_ALIAS_PREFIX	"c"
 
 /*
  * Functions to determine whether an expression can be evaluated safely on
  * remote server.
  */
-static bool foreign_expr_walker(Node *node,
-								foreign_glob_cxt *glob_cxt,
-								foreign_loc_cxt *outer_cxt);
+static bool sqlite_foreign_expr_walker(Node *node,
+									   foreign_glob_cxt *glob_cxt,
+									   foreign_loc_cxt *outer_cxt);
 
 /*
  * Functions to construct string representation of a node tree.
  */
-static void deparseExpr(Expr *expr, deparse_expr_cxt *context);
+static void sqlite_deparse_expr(Expr *expr, deparse_expr_cxt *context);
 static void sqlite_deparse_var(Var *node, deparse_expr_cxt *context);
 static void sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype);
 static void sqlite_deparse_param(Param *node, deparse_expr_cxt *context);
@@ -117,35 +124,44 @@ static void sqlite_print_remote_placeholder(Oid paramtype, int32 paramtypmod,
 											deparse_expr_cxt *context);
 static void sqlite_deparse_relation(StringInfo buf, Relation rel);
 static void sqlite_deparse_target_list(StringInfo buf, PlannerInfo *root, Index rtindex, Relation rel,
-									   Bitmapset *attrs_used, List **retrieved_attrs);
-static void sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *root);
+									   Bitmapset *attrs_used, bool qualify_col, List **retrieved_attrs, bool is_concat, bool check_null);
+static void sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *root, bool qualify_col);
 static void sqlite_deparse_select(List *tlist, List **retrieved_attrs, deparse_expr_cxt *context);
 static void sqlite_deparse_case_expr(CaseExpr *node, deparse_expr_cxt *context);
 static void sqlite_deparse_null_if_expr(NullIfExpr *node, deparse_expr_cxt *context);
 static void sqlite_deparse_coalesce_expr(CoalesceExpr *node, deparse_expr_cxt *context);
-static void deparseFromExprForRel(StringInfo buf, PlannerInfo *root,
-								  RelOptInfo *foreignrel,
-								  bool use_alias, List **params_list);
-static void deparseFromExpr(List *quals, deparse_expr_cxt *context);
-static void deparseAggref(Aggref *node, deparse_expr_cxt *context);
-static void appendLimitClause(deparse_expr_cxt *context);
-static void appendConditions(List *exprs, deparse_expr_cxt *context);
-static void appendGroupByClause(List *tlist, deparse_expr_cxt *context);
-static void appendAggOrderBy(List *orderList, List *targetList,
-							 deparse_expr_cxt *context);
-static void appendOrderByClause(List *pathkeys, bool has_final_sort, deparse_expr_cxt *context);
-static void appendFunctionName(Oid funcid, deparse_expr_cxt *context);
-
-static Node *deparseSortGroupClause(Index ref, List *tlist, bool force_colno,
-									deparse_expr_cxt *context);
-static void deparseExplicitTargetList(List *tlist, List **retrieved_attrs,
-									  deparse_expr_cxt *context);
-static bool is_builtin(Oid objectId);
+static void sqlite_deparse_from_expr_for_rel(StringInfo buf, PlannerInfo *root, RelOptInfo *foreignrel,
+											 bool use_alias, Index ignore_rel, List **ignore_conds,
+											 List **params_list);
+static void sqlite_deparse_range_tbl_ref(StringInfo buf, PlannerInfo *root,
+										 RelOptInfo *foreignrel, bool make_subquery,
+										 Index ignore_rel, List **ignore_conds, List **params_list);
+static void sqlite_deparse_from_expr(List *quals, deparse_expr_cxt *context);
+static void sqlite_deparse_aggref(Aggref *node, deparse_expr_cxt *context);
+static void sqlite_append_limit_clause(deparse_expr_cxt *context);
+static void sqlite_append_conditions(List *exprs, deparse_expr_cxt *context);
+static void sqlite_append_group_by_clause(List *tlist, deparse_expr_cxt *context);
+static void sqlite_append_agg_order_by(List *orderList, List *targetList,
+									   deparse_expr_cxt *context);
+static void sqlite_append_order_by_clause(List *pathkeys, bool has_final_sort, deparse_expr_cxt *context);
+static void sqlite_append_function_name(Oid funcid, deparse_expr_cxt *context);
+const char *sqlite_get_jointype_name(JoinType jointype);
+static Node *sqlite_deparse_sort_group_clause(Index ref, List *tlist, bool force_colno,
+											  deparse_expr_cxt *context);
+static void sqlite_deparse_explicit_target_list(List *tlist, List **retrieved_attrs,
+												deparse_expr_cxt *context);
 
 /*
- * Local variables.
+ * Helper functions
  */
-static char *cur_opname = NULL;
+static bool sqlite_is_subquery_var(Var *node, RelOptInfo *foreignrel,
+								   int *relno, int *colno);
+static void sqlite_get_relation_column_alias_ids(Var *node, RelOptInfo *foreignrel,
+												 int *relno, int *colno);
+static char *sqlite_quote_identifier(const char *s, char q);
+static bool sqlite_contain_immutable_functions_walker(Node *node, void *context);
+static bool sqlite_is_valid_type(Oid type);
+static bool sqlite_is_builtin(Oid objectId);
 
 /*
  * Append remote name of specified foreign table to buf.
@@ -199,9 +215,6 @@ sqlite_quote_identifier(const char *s, char q)
 	return result;
 }
 
-
-
-
 /*
  * Returns true if given expr is safe to evaluate on the foreign server.
  */
@@ -226,13 +239,13 @@ sqlite_is_foreign_expr(PlannerInfo *root,
 	 * because the upperrel's own relids currently aren't set to anything
 	 * meaningful by the core code.  For other relation, use their own relids.
 	 */
-	if (baserel->reloptkind == RELOPT_UPPER_REL)
+	if (IS_UPPER_REL(baserel))
 		glob_cxt.relids = fpinfo->outerrel->relids;
 	else
 		glob_cxt.relids = baserel->relids;
 	loc_cxt.collation = InvalidOid;
 	loc_cxt.state = FDW_COLLATE_NONE;
-	if (!foreign_expr_walker((Node *) expr, &glob_cxt, &loc_cxt))
+	if (!sqlite_foreign_expr_walker((Node *) expr, &glob_cxt, &loc_cxt))
 		return false;
 
 	/*
@@ -246,7 +259,7 @@ sqlite_is_foreign_expr(PlannerInfo *root,
 	 * An expression which includes any mutable functions can't be sent over
 	 * because its result is not stable.  For example, sending now() remote
 	 * side could cause confusion from clock offsets.  Future versions might
-	 * be able to make this choice with more granularity.  (We check this last
+	 * be able to make this choice with more granularity. (We check this last
 	 * because it requires a lot of expensive catalog lookups.)
 	 */
 	if (contain_mutable_functions((Node *) expr))
@@ -256,8 +269,57 @@ sqlite_is_foreign_expr(PlannerInfo *root,
 	return true;
 }
 
+/*
+ * Returns true if given expr is something we'd have to send the value of
+ * to the foreign server.
+ *
+ * This should return true when the expression is a shippable node that
+ * deparseExpr would add to context->params_list.  Note that we don't care
+ * if the expression *contains* such a node, only whether one appears at top
+ * level.  We need this to detect cases where setrefs.c would recognize a
+ * false match between an fdw_exprs item (which came from the params_list)
+ * and an entry in fdw_scan_tlist (which we're considering putting the given
+ * expression into).
+ */
+bool
+sqlite_is_foreign_param(PlannerInfo *root,
+						RelOptInfo *baserel,
+						Expr *expr)
+{
+	if (expr == NULL)
+		return false;
+
+	switch (nodeTag(expr))
+	{
+		case T_Var:
+			{
+				/* It would have to be sent unless it's a foreign Var */
+				Var		   *var = (Var *) expr;
+				SqliteFdwRelationInfo *fpinfo = (SqliteFdwRelationInfo *) (baserel->fdw_private);
+				Relids		relids;
+
+				if (IS_UPPER_REL(baserel))
+					relids = fpinfo->outerrel->relids;
+				else
+					relids = baserel->relids;
+
+				if (bms_is_member(var->varno, relids) && var->varlevelsup == 0)
+					return false;	/* foreign Var, so not a param */
+				else
+					return true;	/* it'd have to be a param */
+				break;
+			}
+		case T_Param:
+			/* Params always have to be sent to the foreign server */
+			return true;
+		default:
+			break;
+	}
+	return false;
+}
+
 static bool
-is_valid_type(Oid type)
+sqlite_is_valid_type(Oid type)
 {
 	switch (type)
 	{
@@ -291,9 +353,9 @@ is_valid_type(Oid type)
  * can assume here that the given expression is valid.
  */
 static bool
-foreign_expr_walker(Node *node,
-					foreign_glob_cxt *glob_cxt,
-					foreign_loc_cxt *outer_cxt)
+sqlite_foreign_expr_walker(Node *node,
+						   foreign_glob_cxt *glob_cxt,
+						   foreign_loc_cxt *outer_cxt)
 {
 	bool		check_type = true;
 	foreign_loc_cxt inner_cxt;
@@ -301,7 +363,6 @@ foreign_expr_walker(Node *node,
 	FDWCollateState state = FDW_COLLATE_NONE;
 	HeapTuple	tuple;
 	Form_pg_operator form;
-	char	   *cur_opname;
 
 	/* Need do nothing for empty subexpressions */
 	if (node == NULL)
@@ -329,10 +390,10 @@ foreign_expr_walker(Node *node,
 					/* Var belongs to foreign table */
 
 					/*
-					 * System columns should not be sent to the remote, since
-					 * we don't make any effort to ensure that local and
-					 * remote values match (tableoid, in particular, almost
-					 * certainly doesn't match).
+					 * System columns (e.g. oid, ctid) should not be sent to
+					 * the remote, since we don't make any effort to ensure
+					 * that local and remote values match (tableoid, in
+					 * particular, almost certainly doesn't match).
 					 */
 					if (var->varattno < 0)
 						return false;
@@ -409,7 +470,23 @@ foreign_expr_walker(Node *node,
 			{
 				Param	   *p = (Param *) node;
 
-				if (!is_valid_type(p->paramtype))
+				/*
+				 * If it's a MULTIEXPR Param, punt.  We can't tell from here
+				 * whether the referenced sublink/subplan contains any remote
+				 * Vars; if it does, handling that is too complicated to
+				 * consider supporting at present.  Fortunately, MULTIEXPR
+				 * Params are not reduced to plain PARAM_EXEC until the end of
+				 * planning, so we can easily detect this case.  (Normal
+				 * PARAM_EXEC Params are safe to ship because their values
+				 * come from somewhere else in the plan tree; but a MULTIEXPR
+				 * references a sub-select elsewhere in the same targetlist,
+				 * so we'd be on the hook to evaluate it somehow if we wanted
+				 * to handle such cases as direct foreign updates.)
+				 */
+				if (p->paramkind == PARAM_MULTIEXPR)
+					return false;
+
+				if (!sqlite_is_valid_type(p->paramtype))
 					return false;
 
 				/*
@@ -443,23 +520,33 @@ foreign_expr_walker(Node *node,
 				if (schema != PG_CATALOG_NAMESPACE)
 					return false;
 
-				/* these function can be passed to SQLite */
-				if (!(strcmp(opername, "abs") == 0
+				/*
+				 * These function can be passed to SQLite. In case of nest
+				 * functions, for example, (round(abs(c1), 0) = 1, the
+				 * postgres core will transform to
+				 * (round((abs(t1.c1))::numeric, 0) = '1'::numeric), so
+				 * "::numberic" is kind of function format
+				 * COERCE_IMPLICIT_CAST we must check.
+				 *
+				 * In SQLite, lower/upper function does not support UNICODE
+				 * character, so we don't push down these functions.
+				 *
+				 */
+				if (!(func->funcformat == COERCE_IMPLICIT_CAST
+					  || strcmp(opername, "abs") == 0
 					  || strcmp(opername, "btrim") == 0
 					  || strcmp(opername, "length") == 0
-					  || strcmp(opername, "lower") == 0
 					  || strcmp(opername, "ltrim") == 0
 					  || strcmp(opername, "replace") == 0
 					  || strcmp(opername, "round") == 0
 					  || strcmp(opername, "rtrim") == 0
-					  || strcmp(opername, "substr") == 0
-					  || strcmp(opername, "upper") == 0))
+					  || strcmp(opername, "substr") == 0))
 				{
 					return false;
 				}
 
-				if (!foreign_expr_walker((Node *) func->args,
-										 glob_cxt, &inner_cxt))
+				if (!sqlite_foreign_expr_walker((Node *) func->args,
+												glob_cxt, &inner_cxt))
 					return false;
 
 
@@ -494,6 +581,7 @@ foreign_expr_walker(Node *node,
 		case T_OpExpr:
 		case T_NullIfExpr:
 			{
+				char	   *cur_opname = NULL;
 				OpExpr	   *oe = (OpExpr *) node;
 
 				/*
@@ -501,7 +589,7 @@ foreign_expr_walker(Node *node,
 				 * (If the operator is, surely its underlying function is
 				 * too.)
 				 */
-				if (!is_builtin(oe->opno))
+				if (!sqlite_is_builtin(oe->opno))
 					return false;
 
 				tuple = SearchSysCache1(OPEROID, ObjectIdGetDatum(oe->opno));
@@ -510,21 +598,30 @@ foreign_expr_walker(Node *node,
 				form = (Form_pg_operator) GETSTRUCT(tuple);
 
 				/* opname is not a SQL identifier, so we should not quote it. */
-				cur_opname = NameStr(form->oprname);
+				cur_opname = pstrdup(NameStr(form->oprname));
+				ReleaseSysCache(tuple);
+
+				/*
+				 * Factorial (!) and Bitwise XOR (^) cannot be pushed down to
+				 * SQLite
+				 */
+				if (strcmp(cur_opname, "!") == 0
+					|| strcmp(cur_opname, "^") == 0)
+				{
+					return false;
+				}
 
 				/* ILIKE cannot be pushed down to SQLite */
 				if (strcmp(cur_opname, "~~*") == 0 || strcmp(cur_opname, "!~~*") == 0)
 				{
-					ReleaseSysCache(tuple);
 					return false;
 				}
-				ReleaseSysCache(tuple);
 
 				/*
 				 * Recurse to input subexpressions.
 				 */
-				if (!foreign_expr_walker((Node *) oe->args,
-										 glob_cxt, &inner_cxt))
+				if (!sqlite_foreign_expr_walker((Node *) oe->args,
+												glob_cxt, &inner_cxt))
 					return false;
 
 				/*
@@ -555,14 +652,14 @@ foreign_expr_walker(Node *node,
 				/*
 				 * Again, only built-in operators can be sent to remote.
 				 */
-				if (!is_builtin(oe->opno))
+				if (!sqlite_is_builtin(oe->opno))
 					return false;
 
 				/*
 				 * Recurse to input subexpressions.
 				 */
-				if (!foreign_expr_walker((Node *) oe->args,
-										 glob_cxt, &inner_cxt))
+				if (!sqlite_foreign_expr_walker((Node *) oe->args,
+												glob_cxt, &inner_cxt))
 					return false;
 
 				/*
@@ -587,8 +684,8 @@ foreign_expr_walker(Node *node,
 				/*
 				 * Recurse to input subexpression.
 				 */
-				if (!foreign_expr_walker((Node *) r->arg,
-										 glob_cxt, &inner_cxt))
+				if (!sqlite_foreign_expr_walker((Node *) r->arg,
+												glob_cxt, &inner_cxt))
 					return false;
 
 				/*
@@ -612,8 +709,8 @@ foreign_expr_walker(Node *node,
 				/*
 				 * Recurse to input subexpressions.
 				 */
-				if (!foreign_expr_walker((Node *) b->args,
-										 glob_cxt, &inner_cxt))
+				if (!sqlite_foreign_expr_walker((Node *) b->args,
+												glob_cxt, &inner_cxt))
 					return false;
 
 				/* Output is always boolean and so noncollatable. */
@@ -628,8 +725,8 @@ foreign_expr_walker(Node *node,
 				/*
 				 * Recurse to input subexpressions.
 				 */
-				if (!foreign_expr_walker((Node *) nt->arg,
-										 glob_cxt, &inner_cxt))
+				if (!sqlite_foreign_expr_walker((Node *) nt->arg,
+												glob_cxt, &inner_cxt))
 					return false;
 
 				/* Output is always boolean and so noncollatable. */
@@ -647,8 +744,8 @@ foreign_expr_walker(Node *node,
 				 */
 				foreach(lc, l)
 				{
-					if (!foreign_expr_walker((Node *) lfirst(lc),
-											 glob_cxt, &inner_cxt))
+					if (!sqlite_foreign_expr_walker((Node *) lfirst(lc),
+													glob_cxt, &inner_cxt))
 						return false;
 				}
 
@@ -674,8 +771,8 @@ foreign_expr_walker(Node *node,
 				/* Recurse to each argument */
 				foreach(lc, coalesce->args)
 				{
-					if (!foreign_expr_walker((Node *) lfirst(lc),
-											 glob_cxt, &inner_cxt))
+					if (!sqlite_foreign_expr_walker((Node *) lfirst(lc),
+													glob_cxt, &inner_cxt))
 						return false;
 				}
 			}
@@ -687,8 +784,8 @@ foreign_expr_walker(Node *node,
 				/* Recurse to condition subexpressions. */
 				foreach(lc, ((CaseExpr *) node)->args)
 				{
-					if (!foreign_expr_walker((Node *) lfirst(lc),
-											 glob_cxt, &inner_cxt))
+					if (!sqlite_foreign_expr_walker((Node *) lfirst(lc),
+													glob_cxt, &inner_cxt))
 						return false;
 				}
 			}
@@ -698,12 +795,12 @@ foreign_expr_walker(Node *node,
 				CaseWhen   *whenExpr = (CaseWhen *) node;
 
 				/* Recurse to condition expression. */
-				if (!foreign_expr_walker((Node *) whenExpr->expr,
-										 glob_cxt, &inner_cxt))
+				if (!sqlite_foreign_expr_walker((Node *) whenExpr->expr,
+												glob_cxt, &inner_cxt))
 					return false;
 				/* Recurse to result expression. */
-				if (!foreign_expr_walker((Node *) whenExpr->result,
-										 glob_cxt, &inner_cxt))
+				if (!sqlite_foreign_expr_walker((Node *) whenExpr->result,
+												glob_cxt, &inner_cxt))
 					return false;
 				/* Don't apply exprType() to the case when expr. */
 				check_type = false;
@@ -742,7 +839,7 @@ foreign_expr_walker(Node *node,
 
 
 				/* Not safe to pushdown when not in grouping context */
-				if (glob_cxt->foreignrel->reloptkind != RELOPT_UPPER_REL)
+				if (!IS_UPPER_REL(glob_cxt->foreignrel))
 					return false;
 
 				/* Only non-split aggregates are pushable. */
@@ -766,7 +863,7 @@ foreign_expr_walker(Node *node,
 						n = (Node *) tle->expr;
 					}
 
-					if (!foreign_expr_walker(n, glob_cxt, &inner_cxt))
+					if (!sqlite_foreign_expr_walker(n, glob_cxt, &inner_cxt))
 						return false;
 				}
 
@@ -804,6 +901,32 @@ foreign_expr_walker(Node *node,
 			}
 			break;
 		case T_ArrayExpr:
+			{
+				ArrayExpr  *a = (ArrayExpr *) node;
+
+				/*
+				 * Recurse to input subexpressions.
+				 */
+				if (!sqlite_foreign_expr_walker((Node *) a->elements,
+												glob_cxt, &inner_cxt))
+					return false;
+
+				/*
+				 * ArrayExpr must not introduce a collation not derived from
+				 * an input foreign Var (same logic as for a function).
+				 */
+				collation = a->array_collid;
+				if (collation == InvalidOid)
+					state = FDW_COLLATE_NONE;
+				else if (inner_cxt.state == FDW_COLLATE_SAFE &&
+						 collation == inner_cxt.collation)
+					state = FDW_COLLATE_SAFE;
+				else if (collation == DEFAULT_COLLATION_OID)
+					state = FDW_COLLATE_NONE;
+				else
+					state = FDW_COLLATE_UNSAFE;
+			}
+			break;
 		case T_DistinctExpr:
 			/* IS DISTINCT FROM */
 			return false;
@@ -820,7 +943,7 @@ foreign_expr_walker(Node *node,
 	 * If result type of given expression is not built-in, it can't be sent to
 	 * remote because it might have incompatible semantics on remote side.
 	 */
-	if (check_type && !is_builtin(exprType(node)))
+	if (check_type && !sqlite_is_builtin(exprType(node)))
 		return false;
 
 	/*
@@ -890,7 +1013,7 @@ sqlite_build_tlist_to_deparse(RelOptInfo *foreignrel)
 	 * For an upper relation, we have already built the target list while
 	 * checking shippability, so just return that.
 	 */
-	if (foreignrel->reloptkind == RELOPT_UPPER_REL)
+	if (IS_UPPER_REL(foreignrel))
 		return fpinfo->grouped_tlist;
 
 	/*
@@ -935,11 +1058,11 @@ sqlite_build_tlist_to_deparse(RelOptInfo *foreignrel)
  * List of columns selected is returned in retrieved_attrs.
  */
 void
-sqliteDeparseSelectStmtForRel(StringInfo buf, PlannerInfo *root, RelOptInfo *rel,
-							  List *tlist, List *remote_conds, List *pathkeys,
-							  bool has_final_sort, bool has_limit, bool is_subquery,
-							  List **retrieved_attrs,
-							  List **params_list)
+sqlite_deparse_select_stmt_for_rel(StringInfo buf, PlannerInfo *root, RelOptInfo *rel,
+								   List *tlist, List *remote_conds, List *pathkeys,
+								   bool has_final_sort, bool has_limit, bool is_subquery,
+								   List **retrieved_attrs,
+								   List **params_list)
 {
 	deparse_expr_cxt context;
 	SqliteFdwRelationInfo *fpinfo = (SqliteFdwRelationInfo *) rel->fdw_private;
@@ -949,15 +1072,15 @@ sqliteDeparseSelectStmtForRel(StringInfo buf, PlannerInfo *root, RelOptInfo *rel
 	 * We handle relations for foreign tables, joins between those and upper
 	 * relations.
 	 */
-	Assert(rel->reloptkind == RELOPT_JOINREL ||
-		   rel->reloptkind == RELOPT_BASEREL ||
-		   rel->reloptkind == RELOPT_OTHER_MEMBER_REL ||
-		   rel->reloptkind == RELOPT_UPPER_REL);
+	Assert(IS_JOIN_REL(rel) ||
+		   IS_SIMPLE_REL(rel) ||
+		   IS_OTHER_REL(rel) ||
+		   IS_UPPER_REL(rel));
 	/* Fill portions of context common to upper, join and base relation */
 	context.buf = buf;
 	context.root = root;
 	context.foreignrel = rel;
-	context.scanrel = (rel->reloptkind == RELOPT_UPPER_REL) ?
+	context.scanrel = IS_UPPER_REL(rel) ?
 		fpinfo->outerrel : rel;
 	context.params_list = params_list;
 
@@ -969,7 +1092,7 @@ sqliteDeparseSelectStmtForRel(StringInfo buf, PlannerInfo *root, RelOptInfo *rel
 	 * conditions of the underlying scan relation; otherwise, we can use the
 	 * supplied list of remote conditions directly.
 	 */
-	if (rel->reloptkind == RELOPT_UPPER_REL)
+	if (IS_UPPER_REL(rel))
 	{
 		SqliteFdwRelationInfo *ofpinfo;
 
@@ -980,28 +1103,28 @@ sqliteDeparseSelectStmtForRel(StringInfo buf, PlannerInfo *root, RelOptInfo *rel
 		quals = remote_conds;
 
 	/* Construct FROM and WHERE clauses */
-	deparseFromExpr(quals, &context);
+	sqlite_deparse_from_expr(quals, &context);
 
-	if (rel->reloptkind == RELOPT_UPPER_REL)
+	if (IS_UPPER_REL(rel))
 	{
 		/* Append GROUP BY clause */
-		appendGroupByClause(tlist, &context);
+		sqlite_append_group_by_clause(tlist, &context);
 
 		/* Append HAVING clause */
 		if (remote_conds)
 		{
 			appendStringInfo(buf, " HAVING ");
-			appendConditions(remote_conds, &context);
+			sqlite_append_conditions(remote_conds, &context);
 		}
 	}
 
 	/* Add ORDER BY clause if we found any useful pathkeys */
 	if (pathkeys)
-		appendOrderByClause(pathkeys, has_final_sort, &context);
+		sqlite_append_order_by_clause(pathkeys, has_final_sort, &context);
 
 	/* Add LIMIT clause if necessary */
 	if (has_limit)
-		appendLimitClause(&context);
+		sqlite_append_limit_clause(&context);
 
 }
 
@@ -1023,15 +1146,15 @@ sqlite_deparse_select(List *tlist, List **retrieved_attrs, deparse_expr_cxt *con
 	 */
 	appendStringInfoString(buf, "SELECT ");
 
-	if (foreignrel->reloptkind == RELOPT_JOINREL ||
+	if (IS_JOIN_REL(foreignrel) ||
 		fpinfo->is_tlist_func_pushdown == true ||
-		foreignrel->reloptkind == RELOPT_UPPER_REL)
+		IS_UPPER_REL(foreignrel))
 	{
 		/*
 		 * For a join or upper relation the input tlist gives the list of
 		 * columns required to be fetched from the foreign server.
 		 */
-		deparseExplicitTargetList(tlist, retrieved_attrs, context);
+		sqlite_deparse_explicit_target_list(tlist, retrieved_attrs, context);
 	}
 	else
 	{
@@ -1047,7 +1170,7 @@ sqlite_deparse_select(List *tlist, List **retrieved_attrs, deparse_expr_cxt *con
 		 */
 		Relation	rel = table_open(rte->relid, NoLock);
 
-		sqlite_deparse_target_list(buf, root, foreignrel->relid, rel, fpinfo->attrs_used, retrieved_attrs);
+		sqlite_deparse_target_list(buf, root, foreignrel->relid, rel, fpinfo->attrs_used, false, retrieved_attrs, false, false);
 
 		table_close(rel, NoLock);
 	}
@@ -1060,27 +1183,28 @@ sqlite_deparse_select(List *tlist, List **retrieved_attrs, deparse_expr_cxt *con
  * quals is the list of clauses to be included in the WHERE clause.
  */
 static void
-deparseFromExpr(List *quals, deparse_expr_cxt *context)
+sqlite_deparse_from_expr(List *quals, deparse_expr_cxt *context)
 {
 	StringInfo	buf = context->buf;
 	RelOptInfo *scanrel = context->scanrel;
 
 	/* For upper relations, scanrel must be either a joinrel or a baserel */
-	Assert(context->foreignrel->reloptkind != RELOPT_UPPER_REL ||
-		   scanrel->reloptkind == RELOPT_JOINREL ||
-		   scanrel->reloptkind == RELOPT_BASEREL);
+	Assert(!IS_UPPER_REL(context->foreignrel) ||
+		   IS_JOIN_REL(scanrel) ||
+		   IS_SIMPLE_REL(scanrel));
 
 	/* Construct FROM clause */
 	appendStringInfoString(buf, " FROM ");
-	deparseFromExprForRel(buf, context->root, scanrel,
-						  (bms_num_members(scanrel->relids) > 1),
-						  context->params_list);
+	sqlite_deparse_from_expr_for_rel(buf, context->root, scanrel,
+									 (bms_num_members(scanrel->relids) == BMS_MULTIPLE),
+									 (Index) 0, NULL,
+									 context->params_list);
 
 	/* Construct WHERE clause */
 	if (quals != NIL)
 	{
 		appendStringInfo(buf, " WHERE ");
-		appendConditions(quals, context);
+		sqlite_append_conditions(quals, context);
 	}
 }
 
@@ -1092,7 +1216,7 @@ deparseFromExpr(List *quals, deparse_expr_cxt *context)
  * deparse WHERE clauses, JOIN .. ON clauses and HAVING clauses.
  */
 static void
-appendConditions(List *exprs, deparse_expr_cxt *context)
+sqlite_append_conditions(List *exprs, deparse_expr_cxt *context)
 {
 	int			nestlevel;
 	ListCell   *lc;
@@ -1115,13 +1239,40 @@ appendConditions(List *exprs, deparse_expr_cxt *context)
 			appendStringInfoString(buf, " AND ");
 
 		appendStringInfoChar(buf, '(');
-		deparseExpr(expr, context);
+		sqlite_deparse_expr(expr, context);
 		appendStringInfoChar(buf, ')');
 
 		is_first = false;
 	}
 
 	sqlite_reset_transmission_modes(nestlevel);
+}
+
+/* Output join name for given join type */
+const char *
+sqlite_get_jointype_name(JoinType jointype)
+{
+	switch (jointype)
+	{
+		case JOIN_INNER:
+			return "INNER";
+
+		case JOIN_LEFT:
+			return "LEFT";
+
+		case JOIN_RIGHT:
+			return "RIGHT";
+
+		case JOIN_FULL:
+			return "FULL";
+
+		default:
+			/* Shouldn't come here, but protect from buggy code. */
+			elog(ERROR, "unsupported join type %d", jointype);
+	}
+
+	/* Keep compiler happy */
+	return NULL;
 }
 
 
@@ -1134,8 +1285,8 @@ appendConditions(List *exprs, deparse_expr_cxt *context)
  * from 1. It has same number of entries as tlist.
  */
 static void
-deparseExplicitTargetList(List *tlist, List **retrieved_attrs,
-						  deparse_expr_cxt *context)
+sqlite_deparse_explicit_target_list(List *tlist, List **retrieved_attrs,
+									deparse_expr_cxt *context)
 {
 	ListCell   *lc;
 	StringInfo	buf = context->buf;
@@ -1149,7 +1300,7 @@ deparseExplicitTargetList(List *tlist, List **retrieved_attrs,
 
 		if (i > 0)
 			appendStringInfoString(buf, ", ");
-		deparseExpr((Expr *) tle->expr, context);
+		sqlite_deparse_expr((Expr *) tle->expr, context);
 
 		*retrieved_attrs = lappend_int(*retrieved_attrs, i + 1);
 		i++;
@@ -1168,14 +1319,126 @@ deparseExplicitTargetList(List *tlist, List **retrieved_attrs,
  * alias if so requested.
  */
 static void
-deparseFromExprForRel(StringInfo buf, PlannerInfo *root, RelOptInfo *foreignrel,
-					  bool use_alias, List **params_list)
+sqlite_deparse_from_expr_for_rel(StringInfo buf, PlannerInfo *root, RelOptInfo *foreignrel,
+								 bool use_alias, Index ignore_rel, List **ignore_conds,
+								 List **params_list)
 {
-	Assert(!use_alias);
-	if (foreignrel->reloptkind == RELOPT_JOINREL)
+	if (IS_JOIN_REL(foreignrel))
 	{
-		/* Join pushdown not supported */
-		Assert(false);
+		StringInfoData join_sql_o;
+		StringInfoData join_sql_i;
+		SqliteFdwRelationInfo *fpinfo = (SqliteFdwRelationInfo *) foreignrel->fdw_private;
+		RelOptInfo *outerrel = fpinfo->outerrel;
+		RelOptInfo *innerrel = fpinfo->innerrel;
+		bool		outerrel_is_target = false;
+		bool		innerrel_is_target = false;
+
+		if (ignore_rel > 0 && bms_is_member(ignore_rel, foreignrel->relids))
+		{
+			/*
+			 * If this is an inner join, add joinclauses to *ignore_conds and
+			 * set it to empty so that those can be deparsed into the WHERE
+			 * clause.  Note that since the target relation can never be
+			 * within the nullable side of an outer join, those could safely
+			 * be pulled up into the WHERE clause (see foreign_join_ok()).
+			 * Note also that since the target relation is only inner-joined
+			 * to any other relation in the query, all conditions in the join
+			 * tree mentioning the target relation could be deparsed into the
+			 * WHERE clause by doing this recursively.
+			 */
+			if (fpinfo->jointype == JOIN_INNER)
+			{
+				*ignore_conds = list_concat(*ignore_conds,
+											fpinfo->joinclauses);
+				fpinfo->joinclauses = NIL;
+			}
+
+			/*
+			 * Check if either of the input relations is the target relation.
+			 */
+			if (outerrel->relid == ignore_rel)
+				outerrel_is_target = true;
+			else if (innerrel->relid == ignore_rel)
+				innerrel_is_target = true;
+		}
+
+		/* Deparse outer relation */
+		if (!outerrel_is_target)
+		{
+			initStringInfo(&join_sql_o);
+			sqlite_deparse_range_tbl_ref(&join_sql_o, root, outerrel,
+										 fpinfo->make_outerrel_subquery,
+										 ignore_rel, ignore_conds, params_list);
+
+			/*
+			 * If inner relation is the target relation, skip deparsing it.
+			 * Note that since the join of the target relation with any other
+			 * relation in the query is an inner join and can never be within
+			 * the nullable side of an outer join, the join could be
+			 * interchanged with higher-level joins (cf. identity 1 on outer
+			 * join reordering shown in src/backend/optimizer/README), which
+			 * means it's safe to skip the target-relation deparsing here.
+			 */
+			if (innerrel_is_target)
+			{
+				Assert(fpinfo->jointype == JOIN_INNER);
+				Assert(fpinfo->joinclauses == NIL);
+				appendBinaryStringInfo(buf, join_sql_o.data, join_sql_o.len);
+				return;
+			}
+		}
+
+		/* Deparse inner relation */
+		if (!innerrel_is_target)
+		{
+			initStringInfo(&join_sql_i);
+			sqlite_deparse_range_tbl_ref(&join_sql_i, root, innerrel,
+										 fpinfo->make_innerrel_subquery,
+										 ignore_rel, ignore_conds, params_list);
+
+			/*
+			 * If outer relation is the target relation, skip deparsing it.
+			 * See the above note about safety.
+			 */
+			if (outerrel_is_target)
+			{
+				Assert(fpinfo->jointype == JOIN_INNER);
+				Assert(fpinfo->joinclauses == NIL);
+				appendBinaryStringInfo(buf, join_sql_i.data, join_sql_i.len);
+				return;
+			}
+		}
+
+		/* Neither of the relations is the target relation. */
+		Assert(!outerrel_is_target && !innerrel_is_target);
+
+		/*
+		 * For a join relation FROM clause entry is deparsed as ((outer
+		 * relation) <join type> (inner relation) ON (joinclauses))
+		 */
+		appendStringInfo(buf, "(%s %s JOIN %s ON ", join_sql_o.data,
+						 sqlite_get_jointype_name(fpinfo->jointype), join_sql_i.data);
+
+		/* Append join clause; (TRUE) if no join clause */
+		if (fpinfo->joinclauses)
+		{
+			deparse_expr_cxt context;
+
+			context.buf = buf;
+			context.foreignrel = foreignrel;
+			context.scanrel = foreignrel;
+			context.root = root;
+			context.params_list = params_list;
+
+			appendStringInfo(buf, "(");
+			sqlite_append_conditions(fpinfo->joinclauses, &context);
+			appendStringInfo(buf, ")");
+		}
+		else
+			appendStringInfoString(buf, "(TRUE)");
+
+		/* End the FROM clause entry. */
+		appendStringInfo(buf, ")");
 	}
 	else
 	{
@@ -1185,12 +1448,87 @@ deparseFromExprForRel(StringInfo buf, PlannerInfo *root, RelOptInfo *foreignrel,
 		 * Core code already has some lock on each rel being planned, so we
 		 * can use NoLock here.
 		 */
-                Relation        rel = table_open(rte->relid, NoLock);
+		Relation	rel = table_open(rte->relid, NoLock);
 
 		sqlite_deparse_relation(buf, rel);
 
-                table_close(rel, NoLock);
+		/*
+		 * Add a unique alias to avoid any conflict in relation names due to
+		 * pulled up subqueries in the query being built for a pushed down
+		 * join.
+		 */
+		if (use_alias)
+			appendStringInfo(buf, " %s%d", REL_ALIAS_PREFIX, foreignrel->relid);
+
+		table_close(rel, NoLock);
 	}
+}
+
+/*
+ * Append FROM clause entry for the given relation into buf.
+ */
+static void
+sqlite_deparse_range_tbl_ref(StringInfo buf, PlannerInfo *root, RelOptInfo *foreignrel,
+							 bool make_subquery, Index ignore_rel, List **ignore_conds,
+							 List **params_list)
+{
+	SqliteFdwRelationInfo *fpinfo = (SqliteFdwRelationInfo *) foreignrel->fdw_private;
+
+	/* Should only be called in these cases. */
+	Assert(IS_SIMPLE_REL(foreignrel) || IS_JOIN_REL(foreignrel));
+
+	Assert(fpinfo->local_conds == NIL);
+
+	/* If make_subquery is true, deparse the relation as a subquery. */
+	if (make_subquery)
+	{
+		List	   *retrieved_attrs;
+		int			ncols;
+
+		/*
+		 * The given relation shouldn't contain the target relation, because
+		 * this should only happen for input relations for a full join, and
+		 * such relations can never contain an UPDATE/DELETE target.
+		 */
+		Assert(ignore_rel == 0 ||
+			   !bms_is_member(ignore_rel, foreignrel->relids));
+
+		/* Deparse the subquery representing the relation. */
+		appendStringInfoChar(buf, '(');
+		sqlite_deparse_select_stmt_for_rel(buf, root, foreignrel, NIL,
+										   fpinfo->remote_conds, NIL,
+										   false, false, true,
+										   &retrieved_attrs, params_list);
+		appendStringInfoChar(buf, ')');
+
+		/* Append the relation alias. */
+		appendStringInfo(buf, " %s%d", SUBQUERY_REL_ALIAS_PREFIX,
+						 fpinfo->relation_index);
+
+		/*
+		 * Append the column aliases if needed.  Note that the subquery emits
+		 * expressions specified in the relation's reltarget (see
+		 * deparseSubqueryTargetList).
+		 */
+		ncols = list_length(foreignrel->reltarget->exprs);
+		if (ncols > 0)
+		{
+			int			i;
+
+			appendStringInfoChar(buf, '(');
+			for (i = 1; i <= ncols; i++)
+			{
+				if (i > 1)
+					appendStringInfoString(buf, ", ");
+
+				appendStringInfo(buf, "%s%d", SUBQUERY_COL_ALIAS_PREFIX, i);
+			}
+			appendStringInfoChar(buf, ')');
+		}
+	}
+	else
+		sqlite_deparse_from_expr_for_rel(buf, root, foreignrel, true, ignore_rel,
+										 ignore_conds, params_list);
 }
 
 /*
@@ -1203,13 +1541,13 @@ deparseFromExprForRel(StringInfo buf, PlannerInfo *root, RelOptInfo *foreignrel,
 void
 sqlite_deparse_insert(StringInfo buf, PlannerInfo *root,
 					  Index rtindex, Relation rel,
-					  List *targetAttrs)
+					  List *targetAttrs, bool doNothing)
 {
 	AttrNumber	pindex;
 	bool		first;
 	ListCell   *lc;
 
-	appendStringInfoString(buf, "INSERT INTO ");
+	appendStringInfo(buf, "INSERT %sINTO ", doNothing ? "OR IGNORE " : "");
 	sqlite_deparse_relation(buf, rel);
 
 	if (targetAttrs)
@@ -1225,7 +1563,7 @@ sqlite_deparse_insert(StringInfo buf, PlannerInfo *root,
 				appendStringInfoString(buf, ", ");
 			first = false;
 
-			sqlite_deparse_column_ref(buf, rtindex, attnum, root);
+			sqlite_deparse_column_ref(buf, rtindex, attnum, root, false);
 		}
 
 		appendStringInfoString(buf, ") VALUES (");
@@ -1267,7 +1605,10 @@ sqlite_deparse_target_list(StringInfo buf,
 						   Index rtindex,
 						   Relation rel,
 						   Bitmapset *attrs_used,
-						   List **retrieved_attrs)
+						   bool qualify_col,
+						   List **retrieved_attrs,
+						   bool is_concat,
+						   bool check_null)
 {
 	TupleDesc	tupdesc = RelationGetDescr(rel);
 	bool		have_wholerow;
@@ -1279,7 +1620,6 @@ sqlite_deparse_target_list(StringInfo buf,
 								  attrs_used);
 
 	first = true;
-
 	*retrieved_attrs = NIL;
 	for (i = 1; i <= tupdesc->natts; i++)
 	{
@@ -1294,10 +1634,26 @@ sqlite_deparse_target_list(StringInfo buf,
 						  attrs_used))
 		{
 			if (!first)
-				appendStringInfoString(buf, ", ");
+			{
+				if (is_concat)
+					appendStringInfoString(buf, ", '') || \",\" || COALESCE(");
+				else if (check_null)
+					appendStringInfoString(buf, "OR ( ");
+				else
+					appendStringInfoString(buf, ", ");
+			}
+			else if (is_concat)
+				appendStringInfoString(buf, "COALESCE(");
+			else if (check_null)
+				appendStringInfoString(buf, "( ");
+
 			first = false;
 
-			sqlite_deparse_column_ref(buf, rtindex, i, root);
+			sqlite_deparse_column_ref(buf, rtindex, i, root, qualify_col);
+
+			if (check_null)
+				appendStringInfoString(buf, " IS NOT NULL) ");
+
 			*retrieved_attrs = lappend_int(*retrieved_attrs, i);
 		}
 	}
@@ -1305,8 +1661,9 @@ sqlite_deparse_target_list(StringInfo buf,
 	/* Don't generate bad syntax if no undropped columns */
 	if (first)
 		appendStringInfoString(buf, "NULL");
+	else if (is_concat)
+		appendStringInfoString(buf, ", '')");
 }
-
 
 /*
  * Deparse WHERE clauses in given list of RestrictInfos and append them to buf.
@@ -1353,7 +1710,7 @@ sqlite_append_where_clause(StringInfo buf,
 			appendStringInfoString(buf, " AND ");
 
 		appendStringInfoChar(buf, '(');
-		deparseExpr(ri->clause, &context);
+		sqlite_deparse_expr(ri->clause, &context);
 		appendStringInfoChar(buf, ')');
 
 		is_first = false;
@@ -1366,46 +1723,100 @@ sqlite_append_where_clause(StringInfo buf,
  * If it has a column_name FDW option, use that instead of attribute name.
  */
 static void
-sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *root)
+sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *root, bool qualify_col)
 {
 	RangeTblEntry *rte;
-	char	   *colname = NULL;
-	List	   *options;
-	ListCell   *lc;
-
-	/* varno must not be any of OUTER_VAR, INNER_VAR and INDEX_VAR. */
-	Assert(!IS_SPECIAL_VARNO(varno));
 
 	/* Get RangeTblEntry from array in PlannerInfo. */
 	rte = planner_rt_fetch(varno, root);
-
-	/*
-	 * If it's a column of a foreign table, and it has the column_name FDW
-	 * option, use that value.
-	 */
-	options = GetForeignColumnOptions(rte->relid, varattno);
-	foreach(lc, options)
+	if (varattno == 0)
 	{
-		DefElem    *def = (DefElem *) lfirst(lc);
+		/* Whole row reference */
+		Relation	rel;
+		Bitmapset  *attrs_used;
 
-		if (strcmp(def->defname, "column_name") == 0)
-		{
-			colname = defGetString(def);
-			break;
-		}
+		/* Required only to be passed down to deparseTargetList(). */
+		List	   *retrieved_attrs;
+
+		/*
+		 * The lock on the relation will be held by upper callers, so it's
+		 * fine to open it with no lock here.
+		 */
+		rel = table_open(rte->relid, NoLock);
+
+		/*
+		 * The local name of the foreign table can not be recognized by the
+		 * foreign server and the table it references on foreign server might
+		 * have different column ordering or different columns than those
+		 * declared locally. Hence we have to deparse whole-row reference as
+		 * ROW(columns referenced locally). Construct this by deparsing a
+		 * "whole row" attribute.
+		 */
+		attrs_used = bms_add_member(NULL,
+									0 - FirstLowInvalidHeapAttributeNumber);
+
+		/*
+		 * In case the whole-row reference is under an outer join then it has
+		 * to go NULL whenever the rest of the row goes NULL. Deparsing a join
+		 * query would always involve multiple relations, thus qualify_col
+		 * would be true.
+		 */
+		appendStringInfoString(buf, "CASE WHEN ");
+		sqlite_deparse_target_list(buf, root, varno, rel, attrs_used, qualify_col,
+								   &retrieved_attrs, false, true);
+		appendStringInfoString(buf, "THEN ");
+
+		appendStringInfoString(buf, "(\"(\" || ");
+		sqlite_deparse_target_list(buf, root, varno, rel, attrs_used, qualify_col,
+								   &retrieved_attrs, true, false);
+		appendStringInfoString(buf, "|| \")\")");
+		appendStringInfoString(buf, " END");
+
+		table_close(rel, NoLock);
+		bms_free(attrs_used);
 	}
+	else
+	{
+		char	   *colname = NULL;
+		List	   *options;
+		ListCell   *lc;
 
-	/*
-	 * If it's a column of a regular table or it doesn't have column_name FDW
-	 * option, use attribute name.
-	 */
-	if (colname == NULL)
-		colname = get_attname(rte->relid, varattno
+		/* varno must not be any of OUTER_VAR, INNER_VAR and INDEX_VAR. */
+		Assert(!IS_SPECIAL_VARNO(varno));
+
+		/*
+		 * If it's a column of a foreign table, and it has the column_name FDW
+		 * option, use that value.
+		 */
+		options = GetForeignColumnOptions(rte->relid, varattno);
+		foreach(lc, options)
+		{
+			DefElem    *def = (DefElem *) lfirst(lc);
+
+			if (strcmp(def->defname, "column_name") == 0)
+			{
+				colname = defGetString(def);
+				break;
+			}
+			elog(DEBUG1, "column name = %s\n", def->defname);
+		}
+
+		/*
+		 * If it's a column of a regular table or it doesn't have column_name
+		 * FDW option, use attribute name.
+		 */
+		if (colname == NULL)
 #if (PG_VERSION_NUM >= 110000)
-							  ,false
+			colname = get_attname(rte->relid, varattno, false);
+#else
+			colname = get_attname(rte->relid, varattno);
 #endif
-			);
-	appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+
+		if (qualify_col)
+			ADD_REL_QUALIFIER(buf, varno);
+
+		appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+	}
 }
 
 static char *
@@ -1441,43 +1852,6 @@ sqlite_deparse_column_option(int varno, int varattno, PlannerInfo *root, char *o
 	return coloptionvalue;
 }
 
-
-static void
-sqlite_deparse_string(StringInfo buf, const char *val, bool isstr)
-{
-	const char *valptr;
-	int			i = -1;
-
-	for (valptr = val; *valptr; valptr++)
-	{
-		char		ch = *valptr;
-
-		i++;
-
-		if (i == 0 && isstr)
-			appendStringInfoChar(buf, '\'');
-
-		/*
-		 * Remove '{', '}' and \" character from the string. Because this
-		 * syntax is not recognize by the remote Sqlite server.
-		 */
-		if ((ch == '{' && i == 0) || (ch == '}' && (i == (strlen(val) - 1))) || ch == '\"')
-			continue;
-
-		if (ch == ',' && isstr)
-		{
-			appendStringInfoChar(buf, '\'');
-			appendStringInfoChar(buf, ch);
-			appendStringInfoChar(buf, ' ');
-			appendStringInfoChar(buf, '\'');
-			continue;
-		}
-		appendStringInfoChar(buf, ch);
-	}
-	if (isstr)
-		appendStringInfoChar(buf, '\'');
-}
-
 /*
 * Append a SQL string literal representing "val" to buf.
 */
@@ -1501,7 +1875,7 @@ sqlite_deparse_string_literal(StringInfo buf, const char *val)
 /*
  * Deparse given expression into context->buf.
  *
- * This function must support all the same node types that foreign_expr_walker
+ * This function must support all the same node types that sqlite_foreign_expr_walker
  * accepts.
  *
  * Note: unlike ruleutils.c, we just use a simple hard-wired parenthesization
@@ -1509,7 +1883,7 @@ sqlite_deparse_string_literal(StringInfo buf, const char *val)
  * should be self-parenthesized.
  */
 static void
-deparseExpr(Expr *node, deparse_expr_cxt *context)
+sqlite_deparse_expr(Expr *node, deparse_expr_cxt *context)
 {
 	if (node == NULL)
 		return;
@@ -1556,7 +1930,7 @@ deparseExpr(Expr *node, deparse_expr_cxt *context)
 			sqlite_deparse_null_if_expr((NullIfExpr *) node, context);
 			break;
 		case T_Aggref:
-			deparseAggref((Aggref *) node, context);
+			sqlite_deparse_aggref((Aggref *) node, context);
 			break;
 		default:
 			elog(ERROR, "unsupported expression type for deparse: %d",
@@ -1598,7 +1972,7 @@ sqlite_deparse_update(StringInfo buf, PlannerInfo *root,
 			appendStringInfoString(buf, ", ");
 		first = false;
 
-		sqlite_deparse_column_ref(buf, rtindex, attnum, root);
+		sqlite_deparse_column_ref(buf, rtindex, attnum, root, false);
 		appendStringInfo(buf, " = ?");
 		pindex++;
 	}
@@ -1608,12 +1982,94 @@ sqlite_deparse_update(StringInfo buf, PlannerInfo *root,
 		int			attnum = lfirst_int(lc);
 
 		appendStringInfo(buf, i == 0 ? " WHERE " : " AND ");
-		sqlite_deparse_column_ref(buf, rtindex, attnum, root);
+		sqlite_deparse_column_ref(buf, rtindex, attnum, root, false);
 		appendStringInfo(buf, "=?");
 		i++;
 	}
 }
 
+
+/*
+ * deparse remote UPDATE statement
+ *
+ * 'buf' is the output buffer to append the statement to 'rtindex' is the RT
+ * index of the associated target relation 'rel' is the relation descriptor
+ * for the target relation 'foreignrel' is the RelOptInfo for the target
+ * relation or the join relation containing all base relations in the query
+ * 'targetlist' is the tlist of the underlying foreign-scan plan node
+ * 'targetAttrs' is the target columns of the UPDATE 'remote_conds' is the
+ * qual clauses that must be evaluated remotely '*params_list' is an output
+ * list of exprs that will become remote Params '*retrieved_attrs' is an
+ * output list of integers of columns being retrieved by RETURNING (if any)
+ */
+void
+sqlite_deparse_direct_update_sql(StringInfo buf, PlannerInfo *root,
+								 Index rtindex, Relation rel,
+								 RelOptInfo *foreignrel,
+								 List *targetlist,
+								 List *targetAttrs,
+								 List *remote_conds,
+								 List **params_list,
+								 List **retrieved_attrs)
+{
+	deparse_expr_cxt context;
+	int			nestlevel;
+	bool		first;
+	ListCell   *lc;
+
+	/* Set up context struct for recursion */
+	context.root = root;
+	context.foreignrel = foreignrel;
+	context.scanrel = foreignrel;
+	context.buf = buf;
+	context.params_list = params_list;
+
+	appendStringInfoString(buf, "UPDATE ");
+	sqlite_deparse_relation(buf, rel);
+	if (IS_JOIN_REL(foreignrel))
+		appendStringInfo(buf, " %s%d", REL_ALIAS_PREFIX, rtindex);
+	appendStringInfoString(buf, " SET ");
+
+	/* Make sure any constants in the exprs are printed portably */
+	nestlevel = sqlite_set_transmission_modes();
+
+	first = true;
+	foreach(lc, targetAttrs)
+	{
+		int			attnum = lfirst_int(lc);
+		TargetEntry *tle = get_tle_by_resno(targetlist, attnum);
+
+		if (!tle)
+			elog(ERROR, "attribute number %d not found in UPDATE targetlist",
+				 attnum);
+
+		if (!first)
+			appendStringInfoString(buf, ", ");
+		first = false;
+
+		sqlite_deparse_column_ref(buf, rtindex, attnum, root, false);
+		appendStringInfoString(buf, " = ");
+		sqlite_deparse_expr((Expr *) tle->expr, &context);
+	}
+
+	sqlite_reset_transmission_modes(nestlevel);
+
+	if (IS_JOIN_REL(foreignrel))
+	{
+		List	   *ignore_conds = NIL;
+
+		appendStringInfo(buf, " FROM ");
+		sqlite_deparse_from_expr_for_rel(buf, root, foreignrel, true, rtindex,
+										 &ignore_conds, params_list);
+		remote_conds = list_concat(remote_conds, ignore_conds);
+	}
+
+	if (remote_conds)
+	{
+		appendStringInfoString(buf, " WHERE ");
+		sqlite_append_conditions(remote_conds, &context);
+	}
+}
 
 /*
  * deparse remote DELETE statement
@@ -1637,9 +2093,61 @@ sqlite_deparse_delete(StringInfo buf, PlannerInfo *root,
 		int			attnum = lfirst_int(lc);
 
 		appendStringInfo(buf, i == 0 ? " WHERE " : " AND ");
-		sqlite_deparse_column_ref(buf, rtindex, attnum, root);
+		sqlite_deparse_column_ref(buf, rtindex, attnum, root, false);
 		appendStringInfo(buf, "=?");
 		i++;
+	}
+}
+
+
+/*
+ * deparse remote DELETE statement
+ *
+ * 'buf' is the output buffer to append the statement to 'rtindex' is the RT
+ * index of the associated target relation 'rel' is the relation descriptor
+ * for the target relation 'foreignrel' is the RelOptInfo for the target
+ * relation or the join relation containing all base relations in the query
+ * 'remote_conds' is the qual clauses that must be evaluated remotely
+ * '*params_list' is an output list of exprs that will become remote Params
+ * '*retrieved_attrs' is an output list of integers of columns being
+ * retrieved by RETURNING (if any)
+ */
+void
+sqlite_deparse_direct_delete_sql(StringInfo buf, PlannerInfo *root,
+								 Index rtindex, Relation rel,
+								 RelOptInfo *foreignrel,
+								 List *remote_conds,
+								 List **params_list,
+								 List **retrieved_attrs)
+{
+	deparse_expr_cxt context;
+
+	/* Set up context struct for recursion */
+	context.root = root;
+	context.foreignrel = foreignrel;
+	context.scanrel = foreignrel;
+	context.buf = buf;
+	context.params_list = params_list;
+
+	appendStringInfoString(buf, "DELETE FROM ");
+	sqlite_deparse_relation(buf, rel);
+	if (IS_JOIN_REL(foreignrel))
+		appendStringInfo(buf, " %s%d", REL_ALIAS_PREFIX, rtindex);
+
+	if (IS_JOIN_REL(foreignrel))
+	{
+		List	   *ignore_conds = NIL;
+
+		appendStringInfo(buf, " USING ");
+		sqlite_deparse_from_expr_for_rel(buf, root, foreignrel, true, rtindex,
+										 &ignore_conds, params_list);
+		remote_conds = list_concat(remote_conds, ignore_conds);
+	}
+
+	if (remote_conds)
+	{
+		appendStringInfoString(buf, " WHERE ");
+		sqlite_append_conditions(remote_conds, &context);
 	}
 }
 
@@ -1656,16 +2164,29 @@ sqlite_deparse_var(Var *node, deparse_expr_cxt *context)
 {
 	StringInfo	buf = context->buf;
 	Relids		relids = context->scanrel->relids;
+	int			relno;
+	int			colno;
 
 	/* Qualify columns when multiple relations are involved. */
-	/* bool		qualify_col = (bms_num_members(relids) > 1); */
+	bool		qualify_col = (bms_membership(relids) == BMS_MULTIPLE);
+
+	/*
+	 * If the Var belongs to the foreign relation that is deparsed as a
+	 * subquery, use the relation and column alias to the Var provided by the
+	 * subquery, instead of the remote name.
+	 */
+	if (sqlite_is_subquery_var(node, context->scanrel, &relno, &colno))
+	{
+		appendStringInfo(context->buf, "%s%d.%s%d",
+						 SUBQUERY_REL_ALIAS_PREFIX, relno,
+						 SUBQUERY_COL_ALIAS_PREFIX, colno);
+		return;
+	}
 
 	if (bms_is_member(node->varno, relids) && node->varlevelsup == 0)
-		/* if (node->varno == context->foreignrel->relid && */
-		/* node->varlevelsup == 0) */
 	{
 		/* Var belongs to foreign table */
-		sqlite_deparse_column_ref(buf, node->varno, node->varattno, context->root);
+		sqlite_deparse_column_ref(buf, node->varno, node->varattno, context->root, qualify_col);
 	}
 	else
 	{
@@ -1710,7 +2231,7 @@ get_complementary_var_node(Expr *node)
 
 	switch (nodeTag(node))
 	{
-		/* Only supported case by now is T_Var complementary node */
+			/* Only supported case by now is T_Var complementary node */
 		case T_Var:
 			return (Var *) node;
 			break;
@@ -1733,10 +2254,10 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 	StringInfo	buf = context->buf;
 	Oid			typoutput;
 	bool		typIsVarlena;
-	char		*extval;
-	char		*sqlitecolumntype;
+	char	   *extval;
+	char	   *sqlitecolumntype;
 	bool		convert_timestamp_tounixepoch;
-	Var			*varnode;
+	Var		   *varnode;
 
 	if (node->constisnull)
 	{
@@ -1894,6 +2415,16 @@ sqlite_deparse_func_expr(FuncExpr *node, deparse_expr_cxt *context)
 	ListCell   *arg;
 
 	/*
+	 * If the function call came from an implicit coercion, then just show the
+	 * first argument.
+	 */
+	if (node->funcformat == COERCE_IMPLICIT_CAST)
+	{
+		sqlite_deparse_expr((Expr *) linitial(node->args), context);
+		return;
+	}
+
+	/*
 	 * Normal function: display as proname(args).
 	 */
 	proctup = SearchSysCache1(PROCOID, ObjectIdGetDatum(node->funcid));
@@ -1913,7 +2444,7 @@ sqlite_deparse_func_expr(FuncExpr *node, deparse_expr_cxt *context)
 	{
 		if (!first)
 			appendStringInfoString(buf, ", ");
-		deparseExpr((Expr *) lfirst(arg), context);
+		sqlite_deparse_expr((Expr *) lfirst(arg), context);
 		first = false;
 	}
 	appendStringInfoChar(buf, ')');
@@ -1960,7 +2491,7 @@ sqlite_deparse_op_expr(OpExpr *node, deparse_expr_cxt *context)
 		if (oprkind == 'b')
 			context->complementarynode = lfirst(rightarg);
 
-		deparseExpr(lfirst(leftarg), context);
+		sqlite_deparse_expr(lfirst(leftarg), context);
 		appendStringInfoChar(buf, ' ');
 	}
 
@@ -1974,7 +2505,7 @@ sqlite_deparse_op_expr(OpExpr *node, deparse_expr_cxt *context)
 		if (oprkind == 'b')
 			context->complementarynode = lfirst(leftarg);
 
-		deparseExpr(lfirst(rightarg), context);
+		sqlite_deparse_expr(lfirst(rightarg), context);
 	}
 
 	appendStringInfoChar(buf, ')');
@@ -1988,6 +2519,8 @@ sqlite_deparse_op_expr(OpExpr *node, deparse_expr_cxt *context)
 static void
 sqlite_deparse_operator_name(StringInfo buf, Form_pg_operator opform)
 {
+	char	   *cur_opname = NULL;
+
 	/* opname is not a SQL identifier, so we should not quote it. */
 	cur_opname = NameStr(opform->oprname);
 
@@ -2040,10 +2573,11 @@ sqlite_deparse_scalar_array_op_expr(ScalarArrayOpExpr *node, deparse_expr_cxt *c
 	Expr	   *arg1;
 	Expr	   *arg2;
 	Form_pg_operator form;
-	char	   *opname;
+	char	   *opname = NULL;
 	Oid			typoutput;
 	bool		typIsVarlena;
 	char	   *extval;
+	bool		useIn = false;
 
 	/* Retrieve information about the operator from system catalog. */
 	tuple = SearchSysCache1(OPEROID, ObjectIdGetDatum(node->opno));
@@ -2054,25 +2588,44 @@ sqlite_deparse_scalar_array_op_expr(ScalarArrayOpExpr *node, deparse_expr_cxt *c
 	/* Sanity check. */
 	Assert(list_length(node->args) == 2);
 
-	/* Deparse left operand. */
+	opname = pstrdup(NameStr(form->oprname));
+	ReleaseSysCache(tuple);
+
+	/* Using IN clause for '= ANY' and NOT IN clause for '<> ALL' */
+	if ((strcmp(opname, "=") == 0 && node->useOr == true) ||
+		(strcmp(opname, "<>") == 0 && node->useOr == false))
+		useIn = true;
+
+	/* Get left and right argument for deparsing */
 	arg1 = linitial(node->args);
-	deparseExpr(arg1, context);
-	appendStringInfoChar(buf, ' ');
-
-	opname = NameStr(form->oprname);
-	if (strcmp(opname, "<>") == 0)
-		appendStringInfo(buf, " NOT ");
-
-	/* Deparse operator name plus decoration. */
-	appendStringInfo(buf, " IN (");
-
-	/* Deparse right operand. */
 	arg2 = lsecond(node->args);
+
+	if (useIn)
+	{
+		/* Deparse left operand. */
+		sqlite_deparse_expr(arg1, context);
+		appendStringInfoChar(buf, ' ');
+
+		/* Add IN clause */
+		if (strcmp(opname, "<>") == 0)
+		{
+			appendStringInfoString(buf, "NOT IN (");
+		}
+		else if (strcmp(opname, "=") == 0)
+		{
+			appendStringInfoString(buf, "IN (");
+		}
+	}
+
 	switch (nodeTag((Node *) arg2))
 	{
 		case T_Const:
 			{
 				Const	   *c = (Const *) arg2;
+				bool		isstr = false;
+				const char *valptr;
+				int			i = -1;
+				bool		deparseLeft = true;
 
 				if (!c->constisnull)
 				{
@@ -2080,16 +2633,76 @@ sqlite_deparse_scalar_array_op_expr(ScalarArrayOpExpr *node, deparse_expr_cxt *c
 									  &typoutput, &typIsVarlena);
 					extval = OidOutputFunctionCall(typoutput, c->constvalue);
 
+					/* Determine array type */
 					switch (c->consttype)
 					{
 						case INT4ARRAYOID:
 						case OIDARRAYOID:
-							sqlite_deparse_string(buf, extval, false);
+							isstr = false;
 							break;
 						default:
-							sqlite_deparse_string(buf, extval, true);
+							isstr = true;
 							break;
 					}
+
+					for (valptr = extval; *valptr; valptr++)
+					{
+						char		ch = *valptr;
+
+						i++;
+
+						if (useIn)
+						{
+							if (i == 0 && isstr)
+								appendStringInfoChar(buf, '\'');
+						}
+						else if (deparseLeft)
+						{
+							/* Deparse left operand. */
+							sqlite_deparse_expr(arg1, context);
+							/* Append operator */
+							appendStringInfo(buf, " %s ", opname);
+							if (isstr)
+								appendStringInfoChar(buf, '\'');
+							deparseLeft = false;
+						}
+
+						/*
+						 * Remove '{', '}' and \" character from the string.
+						 * Because this syntax is not recognize by the remote
+						 * Sqlite server.
+						 */
+						if ((ch == '{' && i == 0) || (ch == '}' && (i == (strlen(extval) - 1))) || ch == '\"')
+							continue;
+
+						if (ch == ',')
+						{
+							if (useIn)
+							{
+								if (isstr)
+									appendStringInfoChar(buf, '\'');
+								appendStringInfoChar(buf, ch);
+								appendStringInfoChar(buf, ' ');
+								if (isstr)
+									appendStringInfoChar(buf, '\'');
+							}
+							else
+							{
+								if (isstr)
+									appendStringInfoChar(buf, '\'');
+								if (node->useOr)
+									appendStringInfoString(buf, " OR ");
+								else
+									appendStringInfoString(buf, " AND ");
+								deparseLeft = true;
+							}
+							continue;
+						}
+						appendStringInfoChar(buf, ch);
+					}
+
+					if (isstr)
+						appendStringInfoChar(buf, '\'');
 				}
 				else
 				{
@@ -2098,12 +2711,57 @@ sqlite_deparse_scalar_array_op_expr(ScalarArrayOpExpr *node, deparse_expr_cxt *c
 				}
 			}
 			break;
+		case T_ArrayExpr:
+			{
+				bool		first = true;
+				ListCell   *lc;
+
+				foreach(lc, ((ArrayExpr *) arg2)->elements)
+				{
+					if (!first)
+					{
+						if (useIn)
+						{
+							appendStringInfoString(buf, ", ");
+						}
+						else
+						{
+							if (node->useOr)
+								appendStringInfoString(buf, " OR ");
+							else
+								appendStringInfoString(buf, " AND ");
+						}
+					}
+
+					if (useIn)
+					{
+						sqlite_deparse_expr(lfirst(lc), context);
+					}
+					else
+					{
+						/* Deparse left argument */
+						appendStringInfoChar(buf, '(');
+						sqlite_deparse_expr(arg1, context);
+
+						appendStringInfo(buf, " %s ", opname);
+
+						/* Deparse each element in right argument */
+						sqlite_deparse_expr(lfirst(lc), context);
+						appendStringInfoChar(buf, ')');
+					}
+					first = false;
+				}
+				break;
+			}
 		default:
-			deparseExpr(arg2, context);
+			elog(ERROR, "unsupported expression type for deparse: %d", (int) nodeTag(node));
 			break;
 	}
-	appendStringInfoChar(buf, ')');
-	ReleaseSysCache(tuple);
+
+	/* Close IN clause */
+	if (useIn)
+		appendStringInfoChar(buf, ')');
+
 }
 
 /*
@@ -2112,7 +2770,7 @@ sqlite_deparse_scalar_array_op_expr(ScalarArrayOpExpr *node, deparse_expr_cxt *c
 static void
 sqlite_deparse_relabel_type(RelabelType *node, deparse_expr_cxt *context)
 {
-	deparseExpr(node->arg, context);
+	sqlite_deparse_expr(node->arg, context);
 }
 
 /*
@@ -2139,7 +2797,7 @@ sqlite_deparse_bool_expr(BoolExpr *node, deparse_expr_cxt *context)
 			break;
 		case NOT_EXPR:
 			appendStringInfoString(buf, "(NOT ");
-			deparseExpr(linitial(node->args), context);
+			sqlite_deparse_expr(linitial(node->args), context);
 			appendStringInfoChar(buf, ')');
 			return;
 	}
@@ -2150,7 +2808,7 @@ sqlite_deparse_bool_expr(BoolExpr *node, deparse_expr_cxt *context)
 	{
 		if (!first)
 			appendStringInfo(buf, " %s ", op);
-		deparseExpr((Expr *) lfirst(lc), context);
+		sqlite_deparse_expr((Expr *) lfirst(lc), context);
 		first = false;
 	}
 	appendStringInfoChar(buf, ')');
@@ -2165,7 +2823,7 @@ sqlite_deparse_null_test(NullTest *node, deparse_expr_cxt *context)
 	StringInfo	buf = context->buf;
 
 	appendStringInfoChar(buf, '(');
-	deparseExpr(node->arg, context);
+	sqlite_deparse_expr(node->arg, context);
 	if (node->nulltesttype == IS_NULL)
 		appendStringInfoString(buf, " IS NULL)");
 	else
@@ -2187,7 +2845,7 @@ sqlite_deparse_array_expr(ArrayExpr *node, deparse_expr_cxt *context)
 	{
 		if (!first)
 			appendStringInfoString(buf, ", ");
-		deparseExpr(lfirst(lc), context);
+		sqlite_deparse_expr(lfirst(lc), context);
 		first = false;
 	}
 	appendStringInfoChar(buf, ']');
@@ -2206,7 +2864,7 @@ sqlite_deparse_case_expr(CaseExpr *node, deparse_expr_cxt *context)
 
 	/* If CASE arg WHEN then appen arg before continuing */
 	if (node->arg != NULL)
-		deparseExpr(node->arg, context);
+		sqlite_deparse_expr(node->arg, context);
 
 	/* Add individual cases */
 	foreach(lc, node->args)
@@ -2216,20 +2874,20 @@ sqlite_deparse_case_expr(CaseExpr *node, deparse_expr_cxt *context)
 		/* WHEN */
 		appendStringInfoString(buf, " WHEN ");
 		if (node->arg == NULL)	/* CASE WHEN */
-			deparseExpr(whenclause->expr, context);
+			sqlite_deparse_expr(whenclause->expr, context);
 		else					/* CASE arg WHEN */
-			deparseExpr(lsecond(((OpExpr *) whenclause->expr)->args), context);
+			sqlite_deparse_expr(lsecond(((OpExpr *) whenclause->expr)->args), context);
 
 		/* THEN */
 		appendStringInfoString(buf, " THEN ");
-		deparseExpr(whenclause->result, context);
+		sqlite_deparse_expr(whenclause->result, context);
 	}
 
 	/* add ELSE if needed */
 	if (node->defresult != NULL)
 	{
 		appendStringInfoString(buf, " ELSE ");
-		deparseExpr(node->defresult, context);
+		sqlite_deparse_expr(node->defresult, context);
 	}
 
 	/* append END */
@@ -2245,9 +2903,9 @@ sqlite_deparse_null_if_expr(NullIfExpr *node, deparse_expr_cxt *context)
 	StringInfo	buf = context->buf;
 
 	appendStringInfoString(buf, "NULLIF(");
-	deparseExpr(lfirst(list_head(node->args)), context);
+	sqlite_deparse_expr(lfirst(list_head(node->args)), context);
 	appendStringInfoString(buf, ", ");
-	deparseExpr(lfirst(list_tail(node->args)), context);
+	sqlite_deparse_expr(lfirst(list_tail(node->args)), context);
 	appendStringInfoChar(buf, ')');
 }
 
@@ -2268,7 +2926,7 @@ sqlite_deparse_coalesce_expr(CoalesceExpr *node, deparse_expr_cxt *context)
 			appendStringInfoString(buf, ", ");
 		first = false;
 
-		deparseExpr(lfirst(lc), context);
+		sqlite_deparse_expr(lfirst(lc), context);
 	}
 	appendStringInfoChar(buf, ')');
 }
@@ -2318,7 +2976,7 @@ sqlite_print_remote_placeholder(Oid paramtype, int32 paramtypmod,
  * track of that would be a huge exercise.
  */
 static bool
-is_builtin(Oid oid)
+sqlite_is_builtin(Oid oid)
 {
 	return (oid < FirstBootstrapObjectId);
 }
@@ -2327,7 +2985,7 @@ is_builtin(Oid oid)
  * Deparse an Aggref node.
  */
 static void
-deparseAggref(Aggref *node, deparse_expr_cxt *context)
+sqlite_deparse_aggref(Aggref *node, deparse_expr_cxt *context)
 {
 	StringInfo	buf = context->buf;
 	bool		use_variadic;
@@ -2339,7 +2997,7 @@ deparseAggref(Aggref *node, deparse_expr_cxt *context)
 	use_variadic = node->aggvariadic;
 
 	/* Find aggregate name from aggfnoid which is a pg_proc entry */
-	appendFunctionName(node->aggfnoid, context);
+	sqlite_append_function_name(node->aggfnoid, context);
 	appendStringInfoChar(buf, '(');
 
 	/* Add DISTINCT */
@@ -2360,11 +3018,11 @@ deparseAggref(Aggref *node, deparse_expr_cxt *context)
 				appendStringInfoString(buf, ", ");
 			first = false;
 
-			deparseExpr((Expr *) lfirst(arg), context);
+			sqlite_deparse_expr((Expr *) lfirst(arg), context);
 		}
 
 		appendStringInfoString(buf, ") WITHIN GROUP (ORDER BY ");
-		appendAggOrderBy(node->aggorder, node->args, context);
+		sqlite_append_agg_order_by(node->aggorder, node->args, context);
 	}
 	else
 	{
@@ -2397,7 +3055,7 @@ deparseAggref(Aggref *node, deparse_expr_cxt *context)
 #endif
 					appendStringInfoString(buf, "VARIADIC ");
 
-				deparseExpr((Expr *) n, context);
+				sqlite_deparse_expr((Expr *) n, context);
 			}
 		}
 
@@ -2405,7 +3063,7 @@ deparseAggref(Aggref *node, deparse_expr_cxt *context)
 		if (node->aggorder != NIL)
 		{
 			appendStringInfoString(buf, " ORDER BY ");
-			appendAggOrderBy(node->aggorder, node->args, context);
+			sqlite_append_agg_order_by(node->aggorder, node->args, context);
 		}
 	}
 
@@ -2413,7 +3071,7 @@ deparseAggref(Aggref *node, deparse_expr_cxt *context)
 	if (node->aggfilter != NULL)
 	{
 		appendStringInfoString(buf, ") FILTER (WHERE ");
-		deparseExpr((Expr *) node->aggfilter, context);
+		sqlite_deparse_expr((Expr *) node->aggfilter, context);
 	}
 
 	appendStringInfoChar(buf, ')');
@@ -2423,7 +3081,7 @@ deparseAggref(Aggref *node, deparse_expr_cxt *context)
  * Deparse GROUP BY clause.
  */
 static void
-appendGroupByClause(List *tlist, deparse_expr_cxt *context)
+sqlite_append_group_by_clause(List *tlist, deparse_expr_cxt *context)
 {
 	StringInfo	buf = context->buf;
 	Query	   *query = context->root->parse;
@@ -2450,7 +3108,7 @@ appendGroupByClause(List *tlist, deparse_expr_cxt *context)
 			appendStringInfoString(buf, ", ");
 		first = false;
 
-		deparseSortGroupClause(grp->tleSortGroupRef, tlist, true, context);
+		sqlite_deparse_sort_group_clause(grp->tleSortGroupRef, tlist, true, context);
 	}
 }
 
@@ -2459,7 +3117,7 @@ appendGroupByClause(List *tlist, deparse_expr_cxt *context)
  * Append ORDER BY within aggregate function.
  */
 static void
-appendAggOrderBy(List *orderList, List *targetList, deparse_expr_cxt *context)
+sqlite_append_agg_order_by(List *orderList, List *targetList, deparse_expr_cxt *context)
 {
 	StringInfo	buf = context->buf;
 	ListCell   *lc;
@@ -2476,8 +3134,8 @@ appendAggOrderBy(List *orderList, List *targetList, deparse_expr_cxt *context)
 			appendStringInfoString(buf, ", ");
 		first = false;
 
-		sortexpr = deparseSortGroupClause(srt->tleSortGroupRef, targetList, false,
-										  context);
+		sortexpr = sqlite_deparse_sort_group_clause(srt->tleSortGroupRef, targetList, false,
+													context);
 		sortcoltype = exprType(sortexpr);
 		/* See whether operator is default < or > for datatype */
 		typentry = lookup_type_cache(sortcoltype,
@@ -2515,7 +3173,7 @@ appendAggOrderBy(List *orderList, List *targetList, deparse_expr_cxt *context)
  * base relation are obtained and deparsed.
  */
 static void
-appendOrderByClause(List *pathkeys, bool has_final_sort, deparse_expr_cxt *context)
+sqlite_append_order_by_clause(List *pathkeys, bool has_final_sort, deparse_expr_cxt *context)
 {
 	ListCell   *lcell;
 	int			nestlevel;
@@ -2531,7 +3189,7 @@ appendOrderByClause(List *pathkeys, bool has_final_sort, deparse_expr_cxt *conte
 	{
 		PathKey    *pathkey = lfirst(lcell);
 		Expr	   *em_expr;
-		int sqliteVersion = sqlite3_libversion_number();
+		int			sqliteVersion = sqlite3_libversion_number();
 
 		if (has_final_sort)
 		{
@@ -2540,9 +3198,9 @@ appendOrderByClause(List *pathkeys, bool has_final_sort, deparse_expr_cxt *conte
 			 * the final sort.
 			 */
 			em_expr = sqlite_find_em_expr_for_input_target(context->root,
-													pathkey->pk_eclass,
-													context->foreignrel->reltarget,
-													baserel);
+														   pathkey->pk_eclass,
+														   context->foreignrel->reltarget,
+														   baserel);
 		}
 		else
 			em_expr = sqlite_find_em_expr_for_rel(pathkey->pk_eclass, baserel);
@@ -2550,17 +3208,17 @@ appendOrderByClause(List *pathkeys, bool has_final_sort, deparse_expr_cxt *conte
 		Assert(em_expr != NULL);
 
 		appendStringInfoString(buf, delim);
-		deparseExpr(em_expr, context);
+		sqlite_deparse_expr(em_expr, context);
 		if (pathkey->pk_strategy == BTLessStrategyNumber)
 			appendStringInfoString(buf, " ASC");
 		else
 			appendStringInfoString(buf, " DESC");
 
 		/*
-		 * In SQLITE3 Release v3.30.0 (2019-10-04) NULLS FIRST/LAST is supported, but not in prior versions
-		 * More info: 
-		 *    https://www.sqlite.org/changes.html
-		 *    https://www.sqlite.org/lang_select.html#orderby
+		 * In SQLITE3 Release v3.30.0 (2019-10-04) NULLS FIRST/LAST is
+		 * supported, but not in prior versions More info:
+		 * https://www.sqlite.org/changes.html
+		 * https://www.sqlite.org/lang_select.html#orderby
 		 */
 		if (sqliteVersion >= 3030000)
 		{
@@ -2571,7 +3229,11 @@ appendOrderByClause(List *pathkeys, bool has_final_sort, deparse_expr_cxt *conte
 		}
 		else
 		{
-			/* If we need a different behaviour than SQLite default...we show warning message because NULLS FIRST/LAST is not implemented in this SQLite version. */
+			/*
+			 * If we need a different behaviour than SQLite default...we show
+			 * warning message because NULLS FIRST/LAST is not implemented in
+			 * this SQLite version.
+			 */
 			if (!pathkey->pk_nulls_first && pathkey->pk_strategy == BTLessStrategyNumber)
 				elog(WARNING, "Current Sqlite Version (%d) does not support NULLS LAST for ORDER BY ASC, degraded emitted query to ORDER BY ASC NULLS FIRST (default sqlite behaviour).", sqliteVersion);
 			else if (pathkey->pk_nulls_first && pathkey->pk_strategy != BTLessStrategyNumber)
@@ -2587,7 +3249,7 @@ appendOrderByClause(List *pathkeys, bool has_final_sort, deparse_expr_cxt *conte
  * Deparse LIMIT/OFFSET clause.
  */
 static void
-appendLimitClause(deparse_expr_cxt *context)
+sqlite_append_limit_clause(deparse_expr_cxt *context)
 {
 	PlannerInfo *root = context->root;
 	StringInfo	buf = context->buf;
@@ -2599,30 +3261,33 @@ appendLimitClause(deparse_expr_cxt *context)
 	if (root->parse->limitCount)
 	{
 		appendStringInfoString(buf, " LIMIT ");
-		deparseExpr((Expr *) root->parse->limitCount, context);
+		sqlite_deparse_expr((Expr *) root->parse->limitCount, context);
 	}
 	else
 	{
-		/* We add this LIMIT -1 because OFFSET by itself its not implemented/allowed in SQLite.
-		You need to provide LIMIT *always* when using OFFSET */
+		/*
+		 * We add this LIMIT -1 because OFFSET by itself its not
+		 * implemented/allowed in SQLite. You need to provide LIMIT *always*
+		 * when using OFFSET
+		 */
 		appendStringInfoString(buf, " LIMIT -1");
 	}
 
 	if (root->parse->limitOffset)
 	{
 		appendStringInfoString(buf, " OFFSET ");
-		deparseExpr((Expr *) root->parse->limitOffset, context);
+		sqlite_deparse_expr((Expr *) root->parse->limitOffset, context);
 	}
 
 	sqlite_reset_transmission_modes(nestlevel);
 }
 
 /*
- * appendFunctionName
+ * sqlite_append_function_name
  *		Deparses function name from given function oid.
  */
 static void
-appendFunctionName(Oid funcid, deparse_expr_cxt *context)
+sqlite_append_function_name(Oid funcid, deparse_expr_cxt *context)
 {
 	StringInfo	buf = context->buf;
 	HeapTuple	proctup;
@@ -2657,7 +3322,7 @@ appendFunctionName(Oid funcid, deparse_expr_cxt *context)
  * need not find it again.
  */
 static Node *
-deparseSortGroupClause(Index ref, List *tlist, bool force_colno, deparse_expr_cxt *context)
+sqlite_deparse_sort_group_clause(Index ref, List *tlist, bool force_colno, deparse_expr_cxt *context)
 {
 	StringInfo	buf = context->buf;
 	TargetEntry *tle;
@@ -2682,17 +3347,114 @@ deparseSortGroupClause(Index ref, List *tlist, bool force_colno, deparse_expr_cx
 		sqlite_deparse_const((Const *) expr, context, 1);
 	}
 	else if (!expr || IsA(expr, Var))
-		deparseExpr(expr, context);
+		sqlite_deparse_expr(expr, context);
 	else
 	{
 		/* Always parenthesize the expression. */
 		appendStringInfoString(buf, "(");
-		deparseExpr(expr, context);
+		sqlite_deparse_expr(expr, context);
 		appendStringInfoString(buf, ")");
 	}
 
 	return (Node *) expr;
 }
+
+
+/*
+ * Returns true if given Var is deparsed as a subquery output column, in
+ * which case, *relno and *colno are set to the IDs for the relation and
+ * column alias to the Var provided by the subquery.
+ */
+static bool
+sqlite_is_subquery_var(Var *node, RelOptInfo *foreignrel, int *relno, int *colno)
+{
+	SqliteFdwRelationInfo *fpinfo = (SqliteFdwRelationInfo *) foreignrel->fdw_private;
+	RelOptInfo *outerrel = fpinfo->outerrel;
+	RelOptInfo *innerrel = fpinfo->innerrel;
+
+	/* Should only be called in these cases. */
+	Assert(IS_SIMPLE_REL(foreignrel) || IS_JOIN_REL(foreignrel));
+
+	/*
+	 * If the given relation isn't a join relation, it doesn't have any lower
+	 * subqueries, so the Var isn't a subquery output column.
+	 */
+	if (!IS_JOIN_REL(foreignrel))
+		return false;
+
+	/*
+	 * If the Var doesn't belong to any lower subqueries, it isn't a subquery
+	 * output column.
+	 */
+	if (!bms_is_member(node->varno, fpinfo->lower_subquery_rels))
+		return false;
+
+	if (bms_is_member(node->varno, outerrel->relids))
+	{
+		/*
+		 * If outer relation is deparsed as a subquery, the Var is an output
+		 * column of the subquery; get the IDs for the relation/column alias.
+		 */
+		if (fpinfo->make_outerrel_subquery)
+		{
+			sqlite_get_relation_column_alias_ids(node, outerrel, relno, colno);
+			return true;
+		}
+
+		/* Otherwise, recurse into the outer relation. */
+		return sqlite_is_subquery_var(node, outerrel, relno, colno);
+	}
+	else
+	{
+		Assert(bms_is_member(node->varno, innerrel->relids));
+
+		/*
+		 * If inner relation is deparsed as a subquery, the Var is an output
+		 * column of the subquery; get the IDs for the relation/column alias.
+		 */
+		if (fpinfo->make_innerrel_subquery)
+		{
+			sqlite_get_relation_column_alias_ids(node, innerrel, relno, colno);
+			return true;
+		}
+
+		/* Otherwise, recurse into the inner relation. */
+		return sqlite_is_subquery_var(node, innerrel, relno, colno);
+	}
+}
+
+
+/*
+ * Get the IDs for the relation and column alias to given Var belonging to
+ * given relation, which are returned into *relno and *colno.
+ */
+static void
+sqlite_get_relation_column_alias_ids(Var *node, RelOptInfo *foreignrel,
+									 int *relno, int *colno)
+{
+	SqliteFdwRelationInfo *fpinfo = (SqliteFdwRelationInfo *) foreignrel->fdw_private;
+	int			i;
+	ListCell   *lc;
+
+	/* Get the relation alias ID */
+	*relno = fpinfo->relation_index;
+
+	/* Get the column alias ID */
+	i = 1;
+	foreach(lc, foreignrel->reltarget->exprs)
+	{
+		if (equal(lfirst(lc), (Node *) node))
+		{
+			*colno = i;
+			return;
+		}
+		i++;
+	}
+
+	/* Shouldn't get here */
+	elog(ERROR, "unexpected expression in subquery output");
+}
+
 
 /*****************************************************************************
  *		Check clauses for immutable functions
@@ -2721,7 +3483,8 @@ sqlite_contain_immutable_functions_walker(Node *node, void *context)
 	/* Check for mutable functions in node itself */
 	if (nodeTag(node) == T_FuncExpr)
 	{
-		FuncExpr *expr = (FuncExpr *) node;
+		FuncExpr   *expr = (FuncExpr *) node;
+
 		if (func_volatile(expr->funcid) == PROVOLATILE_IMMUTABLE)
 			return true;
 	}
@@ -2751,17 +3514,18 @@ sqlite_contain_immutable_functions_walker(Node *node, void *context)
 /*
  * Returns true if given tlist is safe to evaluate on the foreign server.
  */
-bool sqlite_is_foreign_function_tlist(PlannerInfo *root,
-									  RelOptInfo *baserel,
-									  List *tlist)
+bool
+sqlite_is_foreign_function_tlist(PlannerInfo *root,
+								 RelOptInfo *baserel,
+								 List *tlist)
 {
 	foreign_glob_cxt glob_cxt;
-	foreign_loc_cxt  loc_cxt;
-	ListCell        *lc;
-	bool             is_contain_function;
+	foreign_loc_cxt loc_cxt;
+	ListCell   *lc;
+	bool		is_contain_function;
 
-	if (!(baserel->reloptkind == RELOPT_BASEREL ||
-		  baserel->reloptkind == RELOPT_OTHER_MEMBER_REL))
+	if (!IS_SIMPLE_REL(baserel) ||
+		IS_OTHER_REL(baserel))
 		return false;
 
 	/*
@@ -2796,7 +3560,7 @@ bool sqlite_is_foreign_function_tlist(PlannerInfo *root,
 		loc_cxt.collation = InvalidOid;
 		loc_cxt.state = FDW_COLLATE_NONE;
 
-		if (!foreign_expr_walker((Node *) tle->expr, &glob_cxt, &loc_cxt))
+		if (!sqlite_foreign_expr_walker((Node *) tle->expr, &glob_cxt, &loc_cxt))
 			return false;
 
 		/*
@@ -2807,11 +3571,12 @@ bool sqlite_is_foreign_function_tlist(PlannerInfo *root,
 			return false;
 
 		/*
-		 * An expression which includes any mutable functions can't be sent over
-		 * because its result is not stable.  For example, sending now() remote
-		 * side could cause confusion from clock offsets.  Future versions might
-		 * be able to make this choice with more granularity.  (We check this last
-		 * because it requires a lot of expensive catalog lookups.)
+		 * An expression which includes any mutable functions can't be sent
+		 * over because its result is not stable.  For example, sending now()
+		 * remote side could cause confusion from clock offsets.  Future
+		 * versions might be able to make this choice with more granularity.
+		 * (We check this last because it requires a lot of expensive catalog
+		 * lookups.)
 		 */
 		if (contain_mutable_functions((Node *) tle->expr))
 			return false;
@@ -2819,4 +3584,33 @@ bool sqlite_is_foreign_function_tlist(PlannerInfo *root,
 
 	/* OK for the target list with functions to evaluate on the remote server */
 	return true;
+}
+
+/*
+ * Examine each qual clause in input_conds, and classify them into two
+ * groups, which are returned as two lists: - remote_conds contains
+ * expressions that can be evaluated remotely - local_conds contains
+ * expressions that can't be evaluated remotely
+ */
+void
+sqlite_classify_conditions(PlannerInfo *root,
+						   RelOptInfo *baserel,
+						   List *input_conds,
+						   List **remote_conds,
+						   List **local_conds)
+{
+	ListCell   *lc;
+
+	*remote_conds = NIL;
+	*local_conds = NIL;
+
+	foreach(lc, input_conds)
+	{
+		RestrictInfo *ri = lfirst_node(RestrictInfo, lc);
+
+		if (sqlite_is_foreign_expr(root, baserel, ri->clause))
+			*remote_conds = lappend(*remote_conds, ri);
+		else
+			*local_conds = lappend(*local_conds, ri);
+	}
 }

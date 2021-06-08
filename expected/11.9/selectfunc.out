@@ -72,7 +72,7 @@ EXPLAIN VERBOSE
 SELECT abs(value1), abs(value2), abs(value3), abs(value4) FROM s3;
                                   QUERY PLAN                                  
 ------------------------------------------------------------------------------
- Foreign Scan on public.s3  (cost=10.00..1010000.00 rows=1000000 width=24)
+ Foreign Scan on public.s3  (cost=10.00..1723.06 rows=1706 width=24)
    Output: abs(value1), abs(value2), abs(value3), abs(value4)
    SQLite query: SELECT `value1`, `value2`, `value3`, `value4` FROM main."s3"
 (3 rows)
@@ -96,7 +96,7 @@ EXPLAIN VERBOSE
 SELECT abs(value1), abs(value2), abs(value3), abs(value4) FROM s3 WHERE to_hex(value2) != '64';
                                   QUERY PLAN                                  
 ------------------------------------------------------------------------------
- Foreign Scan on public.s3  (cost=10.00..1010000.00 rows=1000000 width=24)
+ Foreign Scan on public.s3  (cost=10.00..1713.97 rows=1697 width=24)
    Output: abs(value1), abs(value2), abs(value3), abs(value4)
    Filter: (to_hex(s3.value2) <> '64'::text)
    SQLite query: SELECT `value1`, `value2`, `value3`, `value4` FROM main."s3"
@@ -118,7 +118,7 @@ EXPLAIN VERBOSE
 SELECT abs(value1), abs(value2), abs(value3), abs(value4) FROM s3 WHERE value2 != 200;
                                                QUERY PLAN                                               
 --------------------------------------------------------------------------------------------------------
- Foreign Scan on public.s3  (cost=10.00..1010000.00 rows=1000000 width=24)
+ Foreign Scan on public.s3  (cost=10.00..1713.97 rows=1697 width=24)
    Output: abs(value1), abs(value2), abs(value3), abs(value4)
    SQLite query: SELECT `value1`, `value2`, `value3`, `value4` FROM main."s3" WHERE ((`value2` <> 200))
 (3 rows)
@@ -209,9 +209,9 @@ SELECT sum(value3),abs(sum(value3)) FROM s3;
 --Testcase 14:
 EXPLAIN VERBOSE
 SELECT abs(value3), pi(), 4.1 FROM s3;
-                                QUERY PLAN                                 
----------------------------------------------------------------------------
- Foreign Scan on public.s3  (cost=10.00..1002500.00 rows=1000000 width=48)
+                             QUERY PLAN                              
+---------------------------------------------------------------------
+ Foreign Scan on public.s3  (cost=10.00..2566.40 rows=2560 width=48)
    Output: abs(value3), '3.14159265358979'::double precision, 4.1
    SQLite query: SELECT `value3` FROM main."s3"
 (3 rows)
@@ -336,7 +336,7 @@ EXPLAIN VERBOSE
 SELECT abs(value1) + 1, value2, tag1, sqrt(value2) FROM s3;
                                            QUERY PLAN                                            
 -------------------------------------------------------------------------------------------------
- Foreign Scan on public.s3  (cost=10.00..1010000.00 rows=1000000 width=52)
+ Foreign Scan on public.s3  (cost=10.00..1216.04 rows=1204 width=52)
    Output: (abs(value1) + '1'::double precision), value2, tag1, sqrt((value2)::double precision)
    SQLite query: SELECT `tag1`, `value1`, `value2` FROM main."s3"
 (3 rows)
@@ -377,9 +377,9 @@ SELECT abs(value1), abs(value3), sqrt(value2) FROM s3 ORDER BY abs(value3) LIMIT
 --Testcase 25:
 EXPLAIN VERBOSE
 SELECT abs(value1), sqrt(value2), upper(tag1) FROM s3;
-                                QUERY PLAN                                 
----------------------------------------------------------------------------
- Foreign Scan on public.s3  (cost=10.00..1010000.00 rows=1000000 width=48)
+                              QUERY PLAN                              
+----------------------------------------------------------------------
+ Foreign Scan on public.s3  (cost=10.00..1216.04 rows=1204 width=48)
    Output: abs(value1), sqrt((value2)::double precision), upper(tag1)
    SQLite query: SELECT `tag1`, `value1`, `value2` FROM main."s3"
 (3 rows)
@@ -404,7 +404,7 @@ EXPLAIN VERBOSE
 SELECT abs(value3), length(tag1), lower(str1), ltrim(str2), ltrim(str1, '-'), replace(str1, 'XYZ', 'ABC'), round(value3), rtrim(str1, '-'), rtrim(str2), substr(str1, 4), substr(str1, 4, 3) FROM s3;
                                                                                                        QUERY PLAN                                                                                                        
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- Foreign Scan on public.s3  (cost=10.00..1027500.00 rows=1000000 width=276)
+ Foreign Scan on public.s3  (cost=10.00..657.60 rows=640 width=276)
    Output: abs(value3), length(tag1), lower(str1), ltrim(str2), ltrim(str1, '-'::text), replace(str1, 'XYZ'::text, 'ABC'::text), round(value3), rtrim(str1, '-'::text), rtrim(str2), substr(str1, 4), substr(str1, 4, 3)
    SQLite query: SELECT `tag1`, `value3`, `str1`, `str2` FROM main."s3"
 (3 rows)
@@ -420,6 +420,30 @@ SELECT abs(value3), length(tag1), lower(str1), ltrim(str2), ltrim(str1, '-'), re
  1.1 |      1 | ---xyz--- | XYZ    | XYZ--- | ---ABC--- |    -1 | ---XYZ |    XYZ | XYZ--- | XYZ
  2.2 |      1 | ---xyz--- | XYZ    | XYZ--- | ---ABC--- |    -2 | ---XYZ |    XYZ | XYZ--- | XYZ
  3.3 |      1 | ---xyz--- | XYZ    | XYZ--- | ---ABC--- |    -3 | ---XYZ |    XYZ | XYZ--- | XYZ
+(6 rows)
+
+-- sqlite pushdown nest functions (explain)
+--Testcase 32:
+EXPLAIN VERBOSE
+SELECT round(abs(value2), 0) FROM s3;
+                             QUERY PLAN                              
+---------------------------------------------------------------------
+ Foreign Scan on public.s3  (cost=10.00..2946.94 rows=2925 width=32)
+   Output: round((abs(value2))::numeric, 0)
+   SQLite query: SELECT `value2` FROM main."s3"
+(3 rows)
+
+-- sqlite pushdown nest functions (result)
+--Testcase 33:
+SELECT round(abs(value2), 0) FROM s3;
+ round 
+-------
+   100
+   100
+   100
+   200
+   200
+   200
 (6 rows)
 
 --Testcase 29:

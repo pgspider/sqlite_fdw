@@ -111,5 +111,38 @@ EXPLAIN (VERBOSE, COSTS OFF) SELECT * FROM  "type_TIMESTAMP" WHERE col > b;
 --Testcase 43:
 SELECT * FROM  "type_TIMESTAMP" WHERE col > b;
 
+--Testcase 48:
+INSERT INTO "type_DATE"(col) VALUES ('2021.02.23');
+--Testcase 49:
+INSERT INTO "type_DATE"(col) VALUES ('2021/03/08');
+--Testcase 50:
+INSERT INTO "type_DATE"(col) VALUES ('9999-12-30');
+--Testcase 58:
+SELECT * FROM "type_DATE";
+
+--Testcase 51:
+INSERT INTO "type_TIME"(col) VALUES ('01:23:45');
+--Testcase 52:
+INSERT INTO "type_TIME"(col) VALUES ('01:23:45.6789');
+--Testcase 59:
+SELECT * FROM "type_TIME";
+
+--Testcase 60:
+EXPLAIN VERBOSE
+SELECT c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c17, c18, c19, c2, c21, c22, c23, c24 FROM alltypetest;
+--Testcase 61:
+SELECT c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15,  c17, c18, c19, c2, c21, c22, c23, c24 FROM alltypetest;
+
+--Testcase 53:
+CREATE FOREIGN TABLE type_JSON(col JSON OPTIONS (key 'true')) SERVER sqlite_svr OPTIONS (table 'type_TEXT');
+--Testcase 54:
+INSERT INTO type_JSON(col) VALUES ('[1, 2, "foo", null]');
+--Testcase 55:
+INSERT INTO type_JSON(col) VALUES ('{"bar": "baz", "balance": 7.77, "active": false}'::json);
+--Testcase 56
+SELECT * FROM type_JSON;
+--Testcase 57
+DELETE FROM type_JSON;
+
 --Testcase 47:
 DROP EXTENSION sqlite_fdw CASCADE;

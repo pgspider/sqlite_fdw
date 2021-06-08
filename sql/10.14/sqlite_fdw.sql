@@ -117,6 +117,11 @@ SELECT * FROM numbers WHERE (CASE WHEN a % 2 = 0 THEN 1 WHEN a % 5 = 0 THEN 1 EL
 --Testcase 42:
 SELECT * FROM numbers WHERE (CASE b WHEN 'Two' THEN 1 WHEN 'Six' THEN 1 ELSE 0 END) = 1;
 
+--Testcase 152:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE (round(abs(a)) = 1);
+--Testcase 153:
+SELECT * FROM numbers WHERE (round(abs(a)) = 1);
+
 --Testcase 137:
 create or replace function test_param_WHERE() returns void as $$
 DECLARE
@@ -221,22 +226,176 @@ SELECT * from numbers;
 
 -- push down
 --Testcase 74:
-explain (costs off) SELECT * from numbers WHERE  a = any(ARRAY[2,3,4,5]::int[]);
+explain (verbose, costs off) SELECT * from numbers WHERE  a = any(ARRAY[2,3,4,5]::int[]);
 -- (1,2,3) is pushed down
 --Testcase 75:
-explain (costs off) SELECT * from numbers WHERE a in (1,2,3) AND (1,2) < (a,5);
+explain (verbose, costs off) SELECT * from numbers WHERE a in (1,2,3) AND (1,2) < (a,5);
 
--- not push down
 --Testcase 76:
-explain (costs off) SELECT * from numbers WHERE a in (a+2*a,5);
--- not push down
+explain (verbose, costs off) SELECT * from numbers WHERE a in (a+2*a,5);
+
 --Testcase 77:
-explain (costs off) SELECT * from numbers WHERE  a = any(ARRAY[1,2,a]::int[]);
+explain (verbose, costs off) SELECT * from numbers WHERE  a = any(ARRAY[1,2,a]::int[]);
 
 --Testcase 78:
 SELECT * from numbers WHERE  a = any(ARRAY[2,3,4,5]::int[]);
 --Testcase 79:
 SELECT * from numbers WHERE  a = any(ARRAY[1,2,a]::int[]);
+
+-- ANY with ARRAY expression
+--Testcase 154:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a = ANY(ARRAY[1, a + 1]);
+--Testcase 155:
+SELECT * FROM numbers WHERE a = ANY(ARRAY[1, a + 1]);
+
+--Testcase 156:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a <> ANY(ARRAY[1, a + 1]);
+--Testcase 157:
+SELECT * FROM numbers WHERE a <> ANY(ARRAY[1, a + 1]);
+
+--Testcase 158:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a >= ANY(ARRAY[1, a + 1]);
+--Testcase 159:
+SELECT * FROM numbers WHERE a >= ANY(ARRAY[1, a + 1]);
+
+--Testcase 160:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a <= ANY(ARRAY[1, a + 1]);
+--Testcase 161:
+SELECT * FROM numbers WHERE a <= ANY(ARRAY[1, a + 1]);
+
+--Testcase 162:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a > ANY(ARRAY[1, a + 1]);
+--Testcase 163:
+SELECT * FROM numbers WHERE a > ANY(ARRAY[1, a + 1]);
+
+--Testcase 164:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a < ANY(ARRAY[1, a + 1]);
+--Testcase 165:
+SELECT * FROM numbers WHERE a < ANY(ARRAY[1, a + 1]);
+
+-- ANY with ARRAY const
+--Testcase 166:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a = ANY(ARRAY[1, 2]);
+--Testcase 167:
+SELECT * FROM numbers WHERE a = ANY(ARRAY[1, 2]);
+
+--Testcase 168:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a <> ANY(ARRAY[1, 2]);
+--Testcase 169:
+SELECT * FROM numbers WHERE a <> ANY(ARRAY[1, 2]);
+
+--Testcase 170:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a >= ANY(ARRAY[1, 2]);
+--Testcase 171:
+SELECT * FROM numbers WHERE a >= ANY(ARRAY[1, 2]);
+
+--Testcase 172:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a <= ANY(ARRAY[1, 2]);
+--Testcase 173:
+SELECT * FROM numbers WHERE a <= ANY(ARRAY[1, 2]);
+
+--Testcase 174:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a > ANY(ARRAY[1, 2]);
+--Testcase 175:
+SELECT * FROM numbers WHERE a > ANY(ARRAY[1, 2]);
+
+--Testcase 176:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a < ANY(ARRAY[1, 2]);
+--Testcase 177:
+SELECT * FROM numbers WHERE a < ANY(ARRAY[1, 2]);
+
+--Testcase 210:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a = ANY('{1, 2, 3}');
+--Testcase 211:
+SELECT * FROM numbers WHERE a = ANY('{1, 2, 3}');
+
+--Testcase 212:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a <> ANY('{1, 2, 3}');
+--Testcase 213:
+SELECT * FROM numbers WHERE a <> ANY('{1, 2, 3}');
+
+-- ALL with ARRAY expression
+--Testcase 178:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a = ALL(ARRAY[1, a * 1]);
+--Testcase 179:
+SELECT * FROM numbers WHERE a = ALL(ARRAY[1, a * 1]);
+
+--Testcase 180:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a <> ALL(ARRAY[1, a + 1]);
+--Testcase 181:
+SELECT * FROM numbers WHERE a <> ALL(ARRAY[1, a + 1]);
+
+--Testcase 182:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a >= ALL(ARRAY[1, a / 1]);
+--Testcase 183:
+SELECT * FROM numbers WHERE a >= ALL(ARRAY[1, a / 1]);
+
+--Testcase 184:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a <= ALL(ARRAY[1, a + 1]);
+--Testcase 185:
+SELECT * FROM numbers WHERE a <= ALL(ARRAY[1, a + 1]);
+
+--Testcase 186:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a > ALL(ARRAY[1, a - 1]);
+--Testcase 187:
+SELECT * FROM numbers WHERE a > ALL(ARRAY[1, a - 1]);
+
+--Testcase 188:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a < ALL(ARRAY[2, a + 1]);
+--Testcase 189:
+SELECT * FROM numbers WHERE a < ALL(ARRAY[2, a + 1]);
+
+-- ALL with ARRAY const
+--Testcase 190:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a = ALL(ARRAY[1, 1]);
+--Testcase 191:
+SELECT * FROM numbers WHERE a = ALL(ARRAY[1, 1]);
+
+--Testcase 192:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a <> ALL(ARRAY[1, 3]);
+--Testcase 193:
+SELECT * FROM numbers WHERE a <> ALL(ARRAY[1, 3]);
+
+--Testcase 194:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a >= ALL(ARRAY[1, 2]);
+--Testcase 195:
+SELECT * FROM numbers WHERE a >= ALL(ARRAY[1, 2]);
+
+--Testcase 196:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a <= ALL(ARRAY[1, 2]);
+--Testcase 197:
+SELECT * FROM numbers WHERE a <= ALL(ARRAY[1, 2]);
+
+--Testcase 198:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a > ALL(ARRAY[0, 1]);
+--Testcase 199:
+SELECT * FROM numbers WHERE a > ALL(ARRAY[0, 1]);
+
+--Testcase 200:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a < ALL(ARRAY[2, 3]);
+--Testcase 201:
+SELECT * FROM numbers WHERE a < ALL(ARRAY[2, 3]);
+
+-- ANY/ALL with TEXT ARRAY const
+--Testcase 202:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE b = ANY(ARRAY['One', 'Two']);
+--Testcase 203:
+SELECT * FROM numbers WHERE b = ANY(ARRAY['One', 'Two']);
+
+--Testcase 204:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE b <> ALL(ARRAY['One', 'Four']);
+--Testcase 205:
+SELECT * FROM numbers WHERE b <> ALL(ARRAY['One', 'Four']);
+
+--Testcase 206:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE b > ANY(ARRAY['One', 'Two']);
+--Testcase 207:
+SELECT * FROM numbers WHERE b > ANY(ARRAY['One', 'Two']);
+
+--Testcase 208:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE b > ALL(ARRAY['Four', 'Five']);
+--Testcase 209:
+SELECT * FROM numbers WHERE b > ALL(ARRAY['Four', 'Five']);
 
 --Testcase 80:
 INSERT INTO multiprimary VALUES(1,2,3);

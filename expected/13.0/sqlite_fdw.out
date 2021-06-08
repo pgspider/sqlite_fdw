@@ -82,15 +82,10 @@ SELECT count(*) FROM empdata;
 
 --Testcase 19:
 EXPLAIN (COSTS FALSE) SELECT * FROM department d, employee e WHERE d.department_id = e.emp_dept_id LIMIT 10;
-                       QUERY PLAN                       
---------------------------------------------------------
- Limit
-   ->  Nested Loop
-         Join Filter: (d.department_id = e.emp_dept_id)
-         ->  Foreign Scan on department d
-         ->  Materialize
-               ->  Foreign Scan on employee e
-(6 rows)
+  QUERY PLAN  
+--------------
+ Foreign Scan
+(1 row)
 
 --Testcase 20:
 EXPLAIN (COSTS FALSE) SELECT * FROM department d, employee e WHERE d.department_id IN (SELECT department_id FROM department) LIMIT 10;
@@ -397,6 +392,22 @@ SELECT * FROM numbers WHERE (CASE b WHEN 'Two' THEN 1 WHEN 'Six' THEN 1 ELSE 0 E
  6 | Six
 (2 rows)
 
+--Testcase 152:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE (round(abs(a)) = 1);
+                                    QUERY PLAN                                     
+-----------------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..1.00 rows=1 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE ((round(abs(`a`)) = 1))
+(3 rows)
+
+--Testcase 153:
+SELECT * FROM numbers WHERE (round(abs(a)) = 1);
+ a |  b  
+---+-----
+ 1 | One
+(1 row)
+
 --Testcase 137:
 create or replace function test_param_WHERE() returns void as $$
 DECLARE
@@ -576,7 +587,7 @@ COMMIT;
 --Testcase 72:
 UPDATE numbers SET b='Two' WHERE a = 1; 
 ERROR:  failed to execute remote SQL: rc=19 UNIQUE constraint failed: numbers.b 
-   sql=UPDATE main."numbers" SET `b` = ? WHERE `a`=?
+   sql=UPDATE main."numbers" SET `b` = 'Two' WHERE ((`a` = 1))
 --Testcase 73:
 SELECT * from numbers;
  a |  b  
@@ -587,37 +598,42 @@ SELECT * from numbers;
 
 -- push down
 --Testcase 74:
-explain (costs off) SELECT * from numbers WHERE  a = any(ARRAY[2,3,4,5]::int[]);
-       QUERY PLAN        
--------------------------
- Foreign Scan on numbers
-(1 row)
+explain (verbose, costs off) SELECT * from numbers WHERE  a = any(ARRAY[2,3,4,5]::int[]);
+                                   QUERY PLAN                                    
+---------------------------------------------------------------------------------
+ Foreign Scan on public.numbers
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE (`a` IN (2, 3, 4, 5))
+(3 rows)
 
 -- (1,2,3) is pushed down
 --Testcase 75:
-explain (costs off) SELECT * from numbers WHERE a in (1,2,3) AND (1,2) < (a,5);
-            QUERY PLAN             
------------------------------------
- Foreign Scan on numbers
-   Filter: (ROW(1, 2) < ROW(a, 5))
-(2 rows)
+explain (verbose, costs off) SELECT * from numbers WHERE a in (1,2,3) AND (1,2) < (a,5);
+                                  QUERY PLAN                                  
+------------------------------------------------------------------------------
+ Foreign Scan on public.numbers
+   Output: a, b
+   Filter: (ROW(1, 2) < ROW(numbers.a, 5))
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE (`a` IN (1, 2, 3))
+(4 rows)
 
--- not push down
 --Testcase 76:
-explain (costs off) SELECT * from numbers WHERE a in (a+2*a,5);
-       QUERY PLAN        
--------------------------
- Foreign Scan on numbers
-(1 row)
+explain (verbose, costs off) SELECT * from numbers WHERE a in (a+2*a,5);
+                                              QUERY PLAN                                              
+------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.numbers
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE (((`a` = (`a` + (2 * `a`))) OR (`a` = 5)))
+(3 rows)
 
--- not push down
 --Testcase 77:
-explain (costs off) SELECT * from numbers WHERE  a = any(ARRAY[1,2,a]::int[]);
-              QUERY PLAN              
---------------------------------------
- Foreign Scan on numbers
-   Filter: (a = ANY (ARRAY[1, 2, a]))
-(2 rows)
+explain (verbose, costs off) SELECT * from numbers WHERE  a = any(ARRAY[1,2,a]::int[]);
+                                   QUERY PLAN                                   
+--------------------------------------------------------------------------------
+ Foreign Scan on public.numbers
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE (`a` IN (1, 2, `a`))
+(3 rows)
 
 --Testcase 78:
 SELECT * from numbers WHERE  a = any(ARRAY[2,3,4,5]::int[]);
@@ -628,6 +644,504 @@ SELECT * from numbers WHERE  a = any(ARRAY[2,3,4,5]::int[]);
 
 --Testcase 79:
 SELECT * from numbers WHERE  a = any(ARRAY[1,2,a]::int[]);
+ a |  b  
+---+-----
+ 1 | One
+ 2 | Two
+(2 rows)
+
+-- ANY with ARRAY expression
+--Testcase 154:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a = ANY(ARRAY[1, a + 1]);
+                                    QUERY PLAN                                     
+-----------------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..2.00 rows=2 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE (`a` IN (1, (`a` + 1)))
+(3 rows)
+
+--Testcase 155:
+SELECT * FROM numbers WHERE a = ANY(ARRAY[1, a + 1]);
+ a |  b  
+---+-----
+ 1 | One
+(1 row)
+
+--Testcase 156:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a <> ANY(ARRAY[1, a + 1]);
+                                          QUERY PLAN                                          
+----------------------------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..150.00 rows=150 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE ((`a` <> 1) OR (`a` <> (`a` + 1)))
+(3 rows)
+
+--Testcase 157:
+SELECT * FROM numbers WHERE a <> ANY(ARRAY[1, a + 1]);
+ a |  b  
+---+-----
+ 1 | One
+ 2 | Two
+(2 rows)
+
+--Testcase 158:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a >= ANY(ARRAY[1, a + 1]);
+                                          QUERY PLAN                                          
+----------------------------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..83.00 rows=83 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE ((`a` >= 1) OR (`a` >= (`a` + 1)))
+(3 rows)
+
+--Testcase 159:
+SELECT * FROM numbers WHERE a >= ANY(ARRAY[1, a + 1]);
+ a |  b  
+---+-----
+ 1 | One
+ 2 | Two
+(2 rows)
+
+--Testcase 160:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a <= ANY(ARRAY[1, a + 1]);
+                                          QUERY PLAN                                          
+----------------------------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..83.00 rows=83 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE ((`a` <= 1) OR (`a` <= (`a` + 1)))
+(3 rows)
+
+--Testcase 161:
+SELECT * FROM numbers WHERE a <= ANY(ARRAY[1, a + 1]);
+ a |  b  
+---+-----
+ 1 | One
+ 2 | Two
+(2 rows)
+
+--Testcase 162:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a > ANY(ARRAY[1, a + 1]);
+                                         QUERY PLAN                                         
+--------------------------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..83.00 rows=83 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE ((`a` > 1) OR (`a` > (`a` + 1)))
+(3 rows)
+
+--Testcase 163:
+SELECT * FROM numbers WHERE a > ANY(ARRAY[1, a + 1]);
+ a |  b  
+---+-----
+ 2 | Two
+(1 row)
+
+--Testcase 164:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a < ANY(ARRAY[1, a + 1]);
+                                         QUERY PLAN                                         
+--------------------------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..83.00 rows=83 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE ((`a` < 1) OR (`a` < (`a` + 1)))
+(3 rows)
+
+--Testcase 165:
+SELECT * FROM numbers WHERE a < ANY(ARRAY[1, a + 1]);
+ a |  b  
+---+-----
+ 1 | One
+ 2 | Two
+(2 rows)
+
+-- ANY with ARRAY const
+--Testcase 166:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a = ANY(ARRAY[1, 2]);
+                                QUERY PLAN                                 
+---------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..2.00 rows=2 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE (`a` IN (1, 2))
+(3 rows)
+
+--Testcase 167:
+SELECT * FROM numbers WHERE a = ANY(ARRAY[1, 2]);
+ a |  b  
+---+-----
+ 1 | One
+ 2 | Two
+(2 rows)
+
+--Testcase 168:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a <> ANY(ARRAY[1, 2]);
+                                    QUERY PLAN                                    
+----------------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..150.00 rows=150 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE (`a` <> 1 OR `a` <> 2)
+(3 rows)
+
+--Testcase 169:
+SELECT * FROM numbers WHERE a <> ANY(ARRAY[1, 2]);
+ a |  b  
+---+-----
+ 1 | One
+ 2 | Two
+(2 rows)
+
+--Testcase 170:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a >= ANY(ARRAY[1, 2]);
+                                    QUERY PLAN                                    
+----------------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..83.00 rows=83 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE (`a` >= 1 OR `a` >= 2)
+(3 rows)
+
+--Testcase 171:
+SELECT * FROM numbers WHERE a >= ANY(ARRAY[1, 2]);
+ a |  b  
+---+-----
+ 1 | One
+ 2 | Two
+(2 rows)
+
+--Testcase 172:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a <= ANY(ARRAY[1, 2]);
+                                    QUERY PLAN                                    
+----------------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..83.00 rows=83 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE (`a` <= 1 OR `a` <= 2)
+(3 rows)
+
+--Testcase 173:
+SELECT * FROM numbers WHERE a <= ANY(ARRAY[1, 2]);
+ a |  b  
+---+-----
+ 1 | One
+ 2 | Two
+(2 rows)
+
+--Testcase 174:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a > ANY(ARRAY[1, 2]);
+                                   QUERY PLAN                                   
+--------------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..83.00 rows=83 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE (`a` > 1 OR `a` > 2)
+(3 rows)
+
+--Testcase 175:
+SELECT * FROM numbers WHERE a > ANY(ARRAY[1, 2]);
+ a |  b  
+---+-----
+ 2 | Two
+(1 row)
+
+--Testcase 176:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a < ANY(ARRAY[1, 2]);
+                                   QUERY PLAN                                   
+--------------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..83.00 rows=83 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE (`a` < 1 OR `a` < 2)
+(3 rows)
+
+--Testcase 177:
+SELECT * FROM numbers WHERE a < ANY(ARRAY[1, 2]);
+ a |  b  
+---+-----
+ 1 | One
+(1 row)
+
+--Testcase 210:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a = ANY('{1, 2, 3}');
+                                  QUERY PLAN                                  
+------------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..3.00 rows=3 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE (`a` IN (1, 2, 3))
+(3 rows)
+
+--Testcase 211:
+SELECT * FROM numbers WHERE a = ANY('{1, 2, 3}');
+ a |  b  
+---+-----
+ 1 | One
+ 2 | Two
+(2 rows)
+
+--Testcase 212:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a <> ANY('{1, 2, 3}');
+                                          QUERY PLAN                                          
+----------------------------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..150.00 rows=150 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE (`a` <> 1 OR `a` <> 2 OR `a` <> 3)
+(3 rows)
+
+--Testcase 213:
+SELECT * FROM numbers WHERE a <> ANY('{1, 2, 3}');
+ a |  b  
+---+-----
+ 1 | One
+ 2 | Two
+(2 rows)
+
+-- ALL with ARRAY expression
+--Testcase 178:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a = ALL(ARRAY[1, a * 1]);
+                                         QUERY PLAN                                          
+---------------------------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..1.00 rows=1 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE ((`a` = 1) AND (`a` = (`a` * 1)))
+(3 rows)
+
+--Testcase 179:
+SELECT * FROM numbers WHERE a = ALL(ARRAY[1, a * 1]);
+ a |  b  
+---+-----
+ 1 | One
+(1 row)
+
+--Testcase 180:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a <> ALL(ARRAY[1, a + 1]);
+                                      QUERY PLAN                                       
+---------------------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..148.00 rows=148 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE (`a` NOT IN (1, (`a` + 1)))
+(3 rows)
+
+--Testcase 181:
+SELECT * FROM numbers WHERE a <> ALL(ARRAY[1, a + 1]);
+ a |  b  
+---+-----
+ 2 | Two
+(1 row)
+
+--Testcase 182:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a >= ALL(ARRAY[1, a / 1]);
+                                          QUERY PLAN                                           
+-----------------------------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..17.00 rows=17 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE ((`a` >= 1) AND (`a` >= (`a` / 1)))
+(3 rows)
+
+--Testcase 183:
+SELECT * FROM numbers WHERE a >= ALL(ARRAY[1, a / 1]);
+ a |  b  
+---+-----
+ 1 | One
+ 2 | Two
+(2 rows)
+
+--Testcase 184:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a <= ALL(ARRAY[1, a + 1]);
+                                          QUERY PLAN                                           
+-----------------------------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..17.00 rows=17 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE ((`a` <= 1) AND (`a` <= (`a` + 1)))
+(3 rows)
+
+--Testcase 185:
+SELECT * FROM numbers WHERE a <= ALL(ARRAY[1, a + 1]);
+ a |  b  
+---+-----
+ 1 | One
+(1 row)
+
+--Testcase 186:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a > ALL(ARRAY[1, a - 1]);
+                                         QUERY PLAN                                          
+---------------------------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..17.00 rows=17 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE ((`a` > 1) AND (`a` > (`a` - 1)))
+(3 rows)
+
+--Testcase 187:
+SELECT * FROM numbers WHERE a > ALL(ARRAY[1, a - 1]);
+ a |  b  
+---+-----
+ 2 | Two
+(1 row)
+
+--Testcase 188:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a < ALL(ARRAY[2, a + 1]);
+                                         QUERY PLAN                                          
+---------------------------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..17.00 rows=17 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE ((`a` < 2) AND (`a` < (`a` + 1)))
+(3 rows)
+
+--Testcase 189:
+SELECT * FROM numbers WHERE a < ALL(ARRAY[2, a + 1]);
+ a |  b  
+---+-----
+ 1 | One
+(1 row)
+
+-- ALL with ARRAY const
+--Testcase 190:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a = ALL(ARRAY[1, 1]);
+                                   QUERY PLAN                                    
+---------------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..1.00 rows=1 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE (`a` = 1 AND `a` = 1)
+(3 rows)
+
+--Testcase 191:
+SELECT * FROM numbers WHERE a = ALL(ARRAY[1, 1]);
+ a |  b  
+---+-----
+ 1 | One
+(1 row)
+
+--Testcase 192:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a <> ALL(ARRAY[1, 3]);
+                                  QUERY PLAN                                   
+-------------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..148.00 rows=148 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE (`a` NOT IN (1, 3))
+(3 rows)
+
+--Testcase 193:
+SELECT * FROM numbers WHERE a <> ALL(ARRAY[1, 3]);
+ a |  b  
+---+-----
+ 2 | Two
+(1 row)
+
+--Testcase 194:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a >= ALL(ARRAY[1, 2]);
+                                    QUERY PLAN                                     
+-----------------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..17.00 rows=17 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE (`a` >= 1 AND `a` >= 2)
+(3 rows)
+
+--Testcase 195:
+SELECT * FROM numbers WHERE a >= ALL(ARRAY[1, 2]);
+ a |  b  
+---+-----
+ 2 | Two
+(1 row)
+
+--Testcase 196:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a <= ALL(ARRAY[1, 2]);
+                                    QUERY PLAN                                     
+-----------------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..17.00 rows=17 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE (`a` <= 1 AND `a` <= 2)
+(3 rows)
+
+--Testcase 197:
+SELECT * FROM numbers WHERE a <= ALL(ARRAY[1, 2]);
+ a |  b  
+---+-----
+ 1 | One
+(1 row)
+
+--Testcase 198:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a > ALL(ARRAY[0, 1]);
+                                   QUERY PLAN                                    
+---------------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..17.00 rows=17 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE (`a` > 0 AND `a` > 1)
+(3 rows)
+
+--Testcase 199:
+SELECT * FROM numbers WHERE a > ALL(ARRAY[0, 1]);
+ a |  b  
+---+-----
+ 2 | Two
+(1 row)
+
+--Testcase 200:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE a < ALL(ARRAY[2, 3]);
+                                   QUERY PLAN                                    
+---------------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..17.00 rows=17 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE (`a` < 2 AND `a` < 3)
+(3 rows)
+
+--Testcase 201:
+SELECT * FROM numbers WHERE a < ALL(ARRAY[2, 3]);
+ a |  b  
+---+-----
+ 1 | One
+(1 row)
+
+-- ANY/ALL with TEXT ARRAY const
+--Testcase 202:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE b = ANY(ARRAY['One', 'Two']);
+                                    QUERY PLAN                                     
+-----------------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..2.00 rows=2 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE (`b` IN ('One', 'Two'))
+(3 rows)
+
+--Testcase 203:
+SELECT * FROM numbers WHERE b = ANY(ARRAY['One', 'Two']);
+ a |  b  
+---+-----
+ 1 | One
+ 2 | Two
+(2 rows)
+
+--Testcase 204:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE b <> ALL(ARRAY['One', 'Four']);
+                                       QUERY PLAN                                       
+----------------------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..148.00 rows=148 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE (`b` NOT IN ('One', 'Four'))
+(3 rows)
+
+--Testcase 205:
+SELECT * FROM numbers WHERE b <> ALL(ARRAY['One', 'Four']);
+ a |  b  
+---+-----
+ 2 | Two
+(1 row)
+
+--Testcase 206:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE b > ANY(ARRAY['One', 'Two']);
+                                       QUERY PLAN                                       
+----------------------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..83.00 rows=83 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE (`b` > 'One' OR `b` > 'Two')
+(3 rows)
+
+--Testcase 207:
+SELECT * FROM numbers WHERE b > ANY(ARRAY['One', 'Two']);
+ a |  b  
+---+-----
+ 2 | Two
+(1 row)
+
+--Testcase 208:
+EXPLAIN VERBOSE SELECT * FROM numbers WHERE b > ALL(ARRAY['Four', 'Five']);
+                                        QUERY PLAN                                         
+-------------------------------------------------------------------------------------------
+ Foreign Scan on public.numbers  (cost=10.00..17.00 rows=17 width=520)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE (`b` > 'Four' AND `b` > 'Five')
+(3 rows)
+
+--Testcase 209:
+SELECT * FROM numbers WHERE b > ALL(ARRAY['Four', 'Five']);
  a |  b  
 ---+-----
  1 | One
@@ -811,12 +1325,13 @@ SELECT * FROM numbers WHERE abs(a) = 4 AND upper(b) = 'FOUR' AND lower(b) = 'fou
 
 --Testcase 112:
 EXPLAIN (verbose, costs off)  SELECT b, length(b) FROM numbers WHERE abs(a) = 4 AND upper(b) = 'FOUR' AND lower(b) = 'four';
-                                                          QUERY PLAN                                                           
--------------------------------------------------------------------------------------------------------------------------------
+                                             QUERY PLAN                                              
+-----------------------------------------------------------------------------------------------------
  Foreign Scan on public.numbers
    Output: b, length((b)::text)
-   SQLite query: SELECT `b` FROM main."numbers" WHERE ((abs(`a`) = 4)) AND ((upper(`b`) = 'FOUR')) AND ((lower(`b`) = 'four'))
-(3 rows)
+   Filter: ((upper((numbers.b)::text) = 'FOUR'::text) AND (lower((numbers.b)::text) = 'four'::text))
+   SQLite query: SELECT `b` FROM main."numbers" WHERE ((abs(`a`) = 4))
+(4 rows)
 
 -- Only "length(b) = 4" are pushed down
 --Testcase 113:
@@ -876,7 +1391,13 @@ SELECT * FROM multiprimary2;
 ERROR:  SQL error during prepare: no such column: nosuch column SELECT `b`, `nosuch column`, `b` FROM main."multiprimary"
 --Testcase 140:
 EXPLAIN (VERBOSE) SELECT * FROM multiprimary2;
-ERROR:  SQL error during prepare: no such column: nosuch column SELECT `b`, `nosuch column`, `b` FROM main."multiprimary"
+                                   QUERY PLAN                                   
+--------------------------------------------------------------------------------
+ Foreign Scan on public.multiprimary2  (cost=10.00..2275.00 rows=2275 width=12)
+   Output: a, b, c
+   SQLite query: SELECT `b`, `nosuch column`, `b` FROM main."multiprimary"
+(3 rows)
+
 --Testcase 120:
 SELECT a FROM multiprimary2 WHERE b = 1;
 ERROR:  SQL error during prepare: no such column: nosuch column SELECT `b` FROM main."multiprimary" WHERE ((`nosuch column` = 1))

@@ -134,9 +134,9 @@ SELECT  *FROM "type_STRING" WHERE col like 'TYP%';
 
 --Testcase 30:
 EXPLAIN SELECT  *FROM "type_STRING" WHERE col like 'TYP%';
-                                  QUERY PLAN                                   
--------------------------------------------------------------------------------
- Foreign Scan on "type_STRING"  (cost=10.00..1000000.00 rows=1000000 width=32)
+                            QUERY PLAN                             
+-------------------------------------------------------------------
+ Foreign Scan on "type_STRING"  (cost=10.00..7.00 rows=7 width=32)
 (1 row)
 
 -- pushdown
@@ -150,9 +150,9 @@ SELECT  *FROM "type_STRING" WHERE col ilike 'typ%';
 
 --Testcase 32:
 EXPLAIN SELECT  *FROM "type_STRING" WHERE col ilike 'typ%';
-                                  QUERY PLAN                                   
--------------------------------------------------------------------------------
- Foreign Scan on "type_STRING"  (cost=10.00..1000000.00 rows=1000000 width=32)
+                             QUERY PLAN                              
+---------------------------------------------------------------------
+ Foreign Scan on "type_STRING"  (cost=10.00..58.00 rows=58 width=32)
    Filter: (col ~~* 'typ%'::text)
 (2 rows)
 
@@ -165,9 +165,9 @@ SELECT  *FROM "type_STRING" WHERE col ilike 'typ%' and col like 'TYPE';
 
 --Testcase 34:
 EXPLAIN SELECT  *FROM "type_STRING" WHERE col ilike 'typ%' and col like 'TYPE';
-                                  QUERY PLAN                                   
--------------------------------------------------------------------------------
- Foreign Scan on "type_STRING"  (cost=10.00..1000000.00 rows=1000000 width=32)
+                            QUERY PLAN                             
+-------------------------------------------------------------------
+ Foreign Scan on "type_STRING"  (cost=10.00..1.00 rows=1 width=32)
    Filter: (col ~~* 'typ%'::text)
 (2 rows)
 
@@ -247,9 +247,69 @@ SELECT * FROM  "type_TIMESTAMP" WHERE col > b;
  2017-11-06 12:34:56.789 | 2017-11-06 00:00:00
 (1 row)
 
+--Testcase 48:
+INSERT INTO "type_DATE"(col) VALUES ('2021.02.23');
+--Testcase 49:
+INSERT INTO "type_DATE"(col) VALUES ('2021/03/08');
+--Testcase 50:
+INSERT INTO "type_DATE"(col) VALUES ('9999-12-30');
+--Testcase 58:
+SELECT * FROM "type_DATE";
+    col     
+------------
+ 2021-02-23
+ 2021-03-08
+ 9999-12-30
+(3 rows)
+
+--Testcase 51:
+INSERT INTO "type_TIME"(col) VALUES ('01:23:45');
+--Testcase 52:
+INSERT INTO "type_TIME"(col) VALUES ('01:23:45.6789');
+--Testcase 59:
+SELECT * FROM "type_TIME";
+      col      
+---------------
+ 01:23:45
+ 01:23:45.6789
+(2 rows)
+
+--Testcase 60:
+EXPLAIN VERBOSE
+SELECT c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c17, c18, c19, c2, c21, c22, c23, c24 FROM alltypetest;
+                                                                                           QUERY PLAN                                                                                           
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.alltypetest  (cost=10.00..57.00 rows=57 width=1400)
+   Output: c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c17, c18, c19, c2, c21, c22, c23, c24
+   SQLite query: SELECT `c1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8`, `c9`, `c10`, `c11`, `c12`, `c13`, `c14`, `c15`, `c17`, `c18`, `c19`, `c21`, `c22`, `c23`, `c24` FROM main."alltypetest"
+(3 rows)
+
+--Testcase 61:
+SELECT c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15,  c17, c18, c19, c2, c21, c22, c23, c24 FROM alltypetest;
+   c1   | c2  |  c3   |   c4   |      c5       |      c6      |      c7       |     c8     |          c9          |          c10           |         c11         |       c12        |                    c13                    |             c14             |           c15            |   c17   |     c18      |     c19     | c2  | c21  |     c22     |    c23     |         c24         
+--------+-----+-------+--------+---------------+--------------+---------------+------------+----------------------+------------------------+---------------------+------------------+-------------------------------------------+-----------------------------+--------------------------+---------+--------------+-------------+-----+------+-------------+------------+---------------------
+ 583647 | 127 | 12767 | 388607 | 2036854775807 | 573709551615 | 2036854775807 | abcdefghij | abcdefghijjhgfjfuafh | Côte dIvoire Fijifoxju | Hôm nay tôi rất vui | I am happy today | 今日はとても幸せです 今日はとても幸せです | The quick brown fox jumps o | ABCDEFGHIJKLMNOPQRSTUVWX | 3.4e+18 | 1.79769e+108 | 1.79769e+88 | 127 | 1234 | 99999.99999 | 9999-12-31 | 9999-12-31 23:59:59
+(1 row)
+
+--Testcase 53:
+CREATE FOREIGN TABLE type_JSON(col JSON OPTIONS (key 'true')) SERVER sqlite_svr OPTIONS (table 'type_TEXT');
+--Testcase 54:
+INSERT INTO type_JSON(col) VALUES ('[1, 2, "foo", null]');
+--Testcase 55:
+INSERT INTO type_JSON(col) VALUES ('{"bar": "baz", "balance": 7.77, "active": false}'::json);
+--Testcase 56
+SELECT * FROM type_JSON;
+                       col                        
+--------------------------------------------------
+ [1, 2, "foo", null]
+ {"bar": "baz", "balance": 7.77, "active": false}
+(2 rows)
+
+--Testcase 57
+DELETE FROM type_JSON;
 --Testcase 47:
 DROP EXTENSION sqlite_fdw CASCADE;
-NOTICE:  drop cascades to 26 other objects
+NOTICE:  drop cascades to 31 other objects
 DETAIL:  drop cascades to server sqlite_svr
 drop cascades to foreign table department
 drop cascades to foreign table employee
@@ -270,9 +330,14 @@ drop cascades to foreign table "type_FLOAT"
 drop cascades to foreign table "type_DOUBLE"
 drop cascades to foreign table "type_TIMESTAMP"
 drop cascades to foreign table "type_BLOB"
+drop cascades to foreign table "type_DATE"
+drop cascades to foreign table "type_TIME"
 drop cascades to foreign table "BitT"
 drop cascades to foreign table notype
 drop cascades to foreign table typetest
+drop cascades to foreign table "type_TEXT"
+drop cascades to foreign table alltypetest
 drop cascades to foreign table shorty
 drop cascades to foreign table "A a"
+drop cascades to foreign table type_json
 drop cascades to server sqlite2
