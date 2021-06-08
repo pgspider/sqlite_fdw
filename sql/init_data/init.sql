@@ -24,9 +24,14 @@ CREATE TABLE "type_FLOAT" (col float primary key);
 CREATE TABLE "type_DOUBLE" (col double primary key);
 CREATE TABLE "type_TIMESTAMP" (col timestamp primary key, b timestamp);--, c date);
 CREATE TABLE "type_BLOB" (col blob primary key);
+CREATE TABLE "type_DATE" (col date primary key);
+CREATE TABLE "type_TIME" (col time primary key);
 CREATE TABLE BitT (p integer primary key, a BIT(3), b BIT VARYING(5));
 CREATE TABLE notype (a);
 CREATE TABLE typetest (i integer, v varchar(10) , c char(10), t text, d datetime, ti timestamp);
+CREATE TABLE type_TEXT (col text primary key);
+CREATE TABLE alltypetest (c1 int,     c2 tinyint,  c3 smallint, c4 mediumint,  c5 bigint,           c6 unsign big int,    c7 int8,               c8 character(10),       c9 varchar(255),            c10 character varying(255),        c11 nchar(55),                    c12 native character(70),      c13 nvarchar(100),                            c14 text,                          c15 clob,                               c16 blob,                         c17 real,          c18 double,         c19 double precision,   c20 float,           c21 numeric,  c22 decimal(10,5),  c23 date,            c24 datetime);
+INSERT INTO  alltypetest VALUES (583647,   127,        12767,       388607,      2036854775807,          573709551615,      2036854775807,             'abcdefghij',       'abcdefghijjhgfjfuafh',       'Côte dIvoire Fijifoxju',        'Hôm nay tôi rất vui',                 'I am happy today',              '今日はとても幸せです 今日はとても幸せです',            'The quick brown fox jumps o'       ,  'ABCDEFGHIJKLMNOPQRSTUVWX',          x'4142434445',                       3.40E+18,          1.79769E+108,          1.79769E+88,          1.79E+108,          1234,        99999.99999,        '9999-12-31',         '9999-12-31 23:59:59');
 
 -- a table that is missing some fields
 CREATE TABLE shorty (

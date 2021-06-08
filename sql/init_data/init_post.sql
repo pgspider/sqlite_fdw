@@ -4,6 +4,10 @@ DROP TABLE IF EXISTS "T 2";
 DROP TABLE IF EXISTS "T 3";
 DROP TABLE IF EXISTS "T 4";
 DROP TABLE IF EXISTS base_tbl;
+DROP TABLE IF EXISTS local_tbl;
+DROP TABLE IF EXISTS ft3;
+DROP TABLE IF EXISTS foreign_tbl;
+DROP TABLE IF EXISTS grem1;
 DROP TABLE IF EXISTS loc1;
 DROP TABLE IF EXISTS loct;
 DROP TABLE IF EXISTS loct1;
@@ -13,6 +17,7 @@ DROP TABLE IF EXISTS loct4;
 DROP TABLE IF EXISTS loct5;
 DROP TABLE IF EXISTS loct6;
 DROP TABLE IF EXISTS loct7;
+DROP TABLE IF EXISTS t1_constraint;
 
 CREATE TABLE "T 0" (
 	"C 1" int,
@@ -70,4 +75,14 @@ create table ft3 (f1 text, f2 text, f3 text, primary key (f1, f2, f3));
 create table foreign_tbl (a int primary key, b int);
 create table grem1 (a int primary key, b int);
 
+CREATE TABLE t1_constraint (
+	c1 int primary key,
+	c2 int NOT NULL check (c2 >= 0),
+	c3 text,
+	c4 timestamptz,
+	c5 timestamp,
+	c6 varchar(10),
+	c7 char(10),
+	c8 text check (c8 IN ('foo', 'bar', 'buz'))
+);
 analyze;

@@ -1575,17 +1575,43 @@ UPDATE ft2 SET c2 = c2 + 600, c3 = c3 WHERE c1 % 10 = 8 AND c1 < 1200;
 SELECT * FROM ft2 WHERE c1 % 10 = 8 AND c1 < 1200;
 
 -- Test errors thrown on remote side during update
-ALTER TABLE "S 1"."T 1" ADD CONSTRAINT c2positive CHECK (c2 >= 0);
-
+-- create table in the remote server with check contraint
+--Testcase 738:
+CREATE FOREIGN TABLE ft1_constraint (
+	c1 int OPTIONS (key 'true'),
+	c2 int NOT NULL,
+	c3 text,
+	c4 timestamptz,
+	c5 timestamp,
+	c6 varchar(10),
+	c7 char(10) default 'ft1',
+	c8 text
+) SERVER sqlite_svr OPTIONS (table 't1_constraint');
+--Testcase 747:
+INSERT INTO ft1_constraint SELECT * FROM ft1 ON CONFLICT DO NOTHING;
+-- c2 must be greater than or equal to 0, so this case is ignored.
+--Testcase 754:
+INSERT INTO ft1_constraint(c1, c2) VALUES (2222, -2) ON CONFLICT DO NOTHING; -- ignore, do nothing
+--Testcase 755:
+SELECT c1, c2 FROM ft1_constraint WHERE c1 = 2222 or c2 = -2; -- empty result
+--Testcase 748:
+ALTER FOREIGN TABLE ft1 RENAME TO ft1_org;
+--Testcase 749:
+ALTER FOREIGN TABLE ft1_constraint RENAME TO ft1;
 --Testcase 319:
 INSERT INTO ft1(c1, c2) VALUES(11, 12);  -- duplicate key
 --Testcase 320:
 INSERT INTO ft1(c1, c2) VALUES(11, 12) ON CONFLICT (c1, c2) DO NOTHING; -- unsupported
 --Testcase 321:
 INSERT INTO ft1(c1, c2) VALUES(11, 12) ON CONFLICT (c1, c2) DO UPDATE SET c3 = 'ffg'; -- unsupported
--- skip these tests, sqlite fdw does not support CHECK constraint
---INSERT INTO ft1(c1, c2) VALUES(1111, -2);  -- c2positive
---UPDATE ft1 SET c2 = -c2 WHERE c1 = 1;  -- c2positive
+--Testcase 743:
+INSERT INTO ft1(c1, c2) VALUES(1111, -2);  -- c2positive
+--Testcase 744:
+UPDATE ft1 SET c2 = -c2 WHERE c1 = 1;  -- c2positive
+--Testcase 750:
+ALTER FOREIGN TABLE ft1 RENAME TO ft1_constraint;
+--Testcase 751:
+ALTER FOREIGN TABLE ft1_org RENAME TO ft1;
 
 -- Test savepoint/rollback behavior
 --Testcase 322:
@@ -1658,7 +1684,10 @@ SELECT * FROM ft1 ORDER BY c6 ASC NULLS FIRST, c1 OFFSET 15 LIMIT 10;
 -- ===================================================================
 -- test check constraints
 -- ===================================================================
-
+--Testcase 752:
+ALTER FOREIGN TABLE ft1 RENAME TO ft1_org;
+--Testcase 753:
+ALTER FOREIGN TABLE ft1_constraint RENAME TO ft1;
 -- Consistent check constraints provide consistent results
 ALTER FOREIGN TABLE ft1 ADD CONSTRAINT ft1_c2positive CHECK (c2 >= 0);
 --Testcase 587:
@@ -1671,10 +1700,11 @@ EXPLAIN (VERBOSE, COSTS OFF) SELECT count(*) FROM ft1 WHERE c2 < 0;
 --Testcase 590:
 SELECT count(*) FROM ft1 WHERE c2 < 0;
 RESET constraint_exclusion;
--- skip this test, does not support CHECK CONSTRAINT
 -- check constraint is enforced on the remote side, not locally
---INSERT INTO ft1(c1, c2) VALUES(1111, -2);  -- c2positive
---UPDATE ft1 SET c2 = -c2 WHERE c1 = 1;  -- c2positive
+--Testcase 745:
+INSERT INTO ft1(c1, c2) VALUES(1111, -2);  -- c2positive
+--Testcase 746:
+UPDATE ft1 SET c2 = -c2 WHERE c1 = 1;  -- c2positive
 ALTER FOREIGN TABLE ft1 DROP CONSTRAINT ft1_c2positive;
 
 -- But inconsistent check constraints provide inconsistent results

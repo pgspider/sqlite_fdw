@@ -275,6 +275,15 @@ SELECT abs(value3), length(tag1), lower(str1), ltrim(str2), ltrim(str1, '-'), re
 --Testcase 28:
 SELECT abs(value3), length(tag1), lower(str1), ltrim(str2), ltrim(str1, '-'), replace(str1, 'XYZ', 'ABC'), round(value3), rtrim(str1, '-'), rtrim(str2), substr(str1, 4), substr(str1, 4, 3) FROM s3;
 
+-- sqlite pushdown nest functions (explain)
+--Testcase 32:
+EXPLAIN VERBOSE
+SELECT round(abs(value2), 0) FROM s3;
+
+-- sqlite pushdown nest functions (result)
+--Testcase 33:
+SELECT round(abs(value2), 0) FROM s3;
+
 --Testcase 29:
 DROP FOREIGN TABLE s3;
 --Testcase 30:
