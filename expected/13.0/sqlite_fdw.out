@@ -1450,14 +1450,14 @@ SELECT * FROM noprimary;
 SELECT * FROM public.sqlite_fdw_version();
  sqlite_fdw_version 
 --------------------
-              10302
+              20000
 (1 row)
 
 --Testcase 155:
 SELECT sqlite_fdw_version();
  sqlite_fdw_version 
 --------------------
-              10302
+              20000
 (1 row)
 
 --Testcase 142:

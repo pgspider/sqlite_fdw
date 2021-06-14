@@ -22,6 +22,7 @@
 #include "foreign/fdwapi.h"
 #include "foreign/foreign.h"
 #include "optimizer/pathnode.h"
+#include "optimizer/appendinfo.h"
 #include "optimizer/planmain.h"
 #include "optimizer/planner.h"
 #include "optimizer/cost.h"
@@ -152,7 +153,13 @@ static void sqliteReScanForeignScan(ForeignScanState *node);
 static void sqliteEndForeignScan(ForeignScanState *node);
 
 
-static void sqliteAddForeignUpdateTargets(Query *parsetree,
+static void sqliteAddForeignUpdateTargets(
+#if (PG_VERSION_NUM >= 140000)
+										  PlannerInfo *root,
+										  Index rtindex,
+#else
+										  Query *parsetree,
+#endif
 										  RangeTblEntry *target_rte,
 										  Relation target_relation);
 
@@ -542,7 +549,11 @@ sqliteGetForeignRelSize(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntable
 		 * estimate of 10 pages, and divide by the column-datatype-based width
 		 * estimate to get the corresponding number of tuples.
 		 */
+#if (PG_VERSION_NUM >= 140000)
+		if (baserel->tuples < 0)
+#else
 		if (baserel->pages == 0 && baserel->tuples == 0)
+#endif	
 		{
 			baserel->pages = 10;
 			baserel->tuples =
@@ -1242,6 +1253,58 @@ sqliteGetForeignPlan(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntableid,
 							outer_plan);
 }
 
+#if PG_VERSION_NUM >= 140000
+/*
+ * Construct a tuple descriptor for the scan tuples handled by a foreign join.
+ */
+static TupleDesc
+sqlite_get_tupdesc_for_join_scan_tuples(ForeignScanState *node)
+{
+	ForeignScan *fsplan = (ForeignScan *) node->ss.ps.plan;
+	EState	   *estate = node->ss.ps.state;
+	TupleDesc	tupdesc;
+	int i;
+	/*
+	 * The core code has already set up a scan tuple slot based on
+	 * fsplan->fdw_scan_tlist, and this slot's tupdesc is mostly good enough,
+	 * but there's one case where it isn't.  If we have any whole-row row
+	 * identifier Vars, they may have vartype RECORD, and we need to replace
+	 * that with the associated table's actual composite type.  This ensures
+	 * that when we read those ROW() expression values from the remote server,
+	 * we can convert them to a composite type the local server knows.
+	 */
+	tupdesc = CreateTupleDescCopy(node->ss.ss_ScanTupleSlot->tts_tupleDescriptor);
+	for (i = 0; i < tupdesc->natts; i++)
+	{
+		Form_pg_attribute att = TupleDescAttr(tupdesc, i);
+		Var		   *var;
+		RangeTblEntry *rte;
+		Oid			reltype;
+
+		/* Nothing to do if it's not a generic RECORD attribute */
+		if (att->atttypid != RECORDOID || att->atttypmod >= 0)
+			continue;
+
+		/*
+		 * If we can't identify the referenced table, do nothing.  This'll
+		 * likely lead to failure later, but perhaps we can muddle through.
+		 */
+		var = (Var *) list_nth_node(TargetEntry, fsplan->fdw_scan_tlist, i)->expr;
+		if (!IsA(var, Var) || var->varattno != 0)
+			continue;
+		rte = list_nth(estate->es_range_table, var->varno - 1);
+		if (rte->rtekind != RTE_RELATION)
+			continue;
+		reltype = get_rel_type_id(rte->relid);
+		if (!OidIsValid(reltype))
+			continue;
+		att->atttypid = reltype;
+		/* shouldn't need to change anything else */
+	}
+	return tupdesc;
+}
+#endif
+
 /*
  * sqliteBeginForeignScan: Initiate access to the database
  */
@@ -1327,7 +1390,11 @@ sqliteBeginForeignScan(ForeignScanState *node, int eflags)
 	else
 	{
 		festate->rel = NULL;
+#if (PG_VERSION_NUM >= 140000)
+		festate->tupdesc = sqlite_get_tupdesc_for_join_scan_tuples(node);
+#else
 		festate->tupdesc = node->ss.ss_ScanTupleSlot->tts_tupleDescriptor;
+#endif
 	}
 
 	festate->attinmeta = TupleDescGetAttInMetadata(festate->tupdesc);
@@ -1547,7 +1614,13 @@ sqliteReScanForeignScan(ForeignScanState *node)
  * list.
  */
 static void
-sqliteAddForeignUpdateTargets(Query *parsetree,
+sqliteAddForeignUpdateTargets(
+#if (PG_VERSION_NUM >= 140000)
+							  PlannerInfo *root,
+							  Index rtindex,
+#else
+							  Query *parsetree,
+#endif
 							  RangeTblEntry *target_rte,
 							  Relation target_relation)
 {
@@ -1575,16 +1648,19 @@ sqliteAddForeignUpdateTargets(Query *parsetree,
 			if (IS_KEY_COLUMN(def))
 			{
 				Var		   *var;
+#if PG_VERSION_NUM < 140000
+				Index		rtindex = parsetree->resultRelation;
 				TargetEntry *tle;
-
-				/* Make a Var representing the desired value */
-				var = makeVar(parsetree->resultRelation,
+#endif
+				var = makeVar(rtindex,
 							  attrno,
 							  att->atttypid,
 							  att->atttypmod,
 							  att->attcollation,
 							  0);
-
+#if (PG_VERSION_NUM >= 140000)
+				add_row_identity_var(root, var, rtindex, pstrdup(NameStr(att->attname)));
+#else				
 				/* Wrap it in a resjunk TLE with the right name ... */
 				tle = makeTargetEntry((Expr *) var,
 									  list_length(parsetree->targetList) + 1,
@@ -1593,6 +1669,7 @@ sqliteAddForeignUpdateTargets(Query *parsetree,
 
 				/* ... and add it to the query's targetlist */
 				parsetree->targetList = lappend(parsetree->targetList, tle);
+#endif
 				has_key = true;
 			}
 			else if (strcmp(def->defname, "key") == 0)
@@ -1760,12 +1837,17 @@ sqliteBeginForeignModify(ModifyTableState *mtstate,
 	Oid			foreignTableId = InvalidOid;
 	ForeignTable *table;
 	ForeignServer *server;
-	Plan	   *subplan = mtstate->mt_plans[subplan_index]->plan;
+	Plan		*subplan;
 	int			i;
 
 	elog(DEBUG1, " sqlite_fdw : %s", __func__);
 
 	foreignTableId = RelationGetRelid(rel);
+#if (PG_VERSION_NUM >= 140000)
+	subplan = outerPlanState(mtstate)->plan;
+#else
+	subplan = mtstate->mt_plans[subplan_index]->plan;
+#endif
 
 	table = GetForeignTable(foreignTableId);
 	server = GetForeignServer(table->serverid);
@@ -1894,6 +1976,66 @@ sqliteExecForeignInsert(EState *estate,
 	return slot;
 }
 
+#if PG_VERSION_NUM >= 140000
+/*
+ * sqlite_find_modifytable_subplan
+ *		Helper routine for postgresPlanDirectModify to find the
+ *		ModifyTable subplan node that scans the specified RTI.
+ *
+ * Returns NULL if the subplan couldn't be identified.  That's not a fatal
+ * error condition, we just abandon trying to do the update directly.
+ */
+static ForeignScan *
+sqlite_find_modifytable_subplan(PlannerInfo *root,
+						 ModifyTable *plan,
+						 Index rtindex,
+						 int subplan_index)
+{
+	Plan	   *subplan = outerPlan(plan);
+
+	/*
+	 * The cases we support are (1) the desired ForeignScan is the immediate
+	 * child of ModifyTable, or (2) it is the subplan_index'th child of an
+	 * Append node that is the immediate child of ModifyTable.  There is no
+	 * point in looking further down, as that would mean that local joins are
+	 * involved, so we can't do the update directly.
+	 *
+	 * There could be a Result atop the Append too, acting to compute the
+	 * UPDATE targetlist values.  We ignore that here; the tlist will be
+	 * checked by our caller.
+	 *
+	 * In principle we could examine all the children of the Append, but it's
+	 * currently unlikely that the core planner would generate such a plan
+	 * with the children out-of-order.  Moreover, such a search risks costing
+	 * O(N^2) time when there are a lot of children.
+	 */
+	if (IsA(subplan, Append))
+	{
+		Append	   *appendplan = (Append *) subplan;
+
+		if (subplan_index < list_length(appendplan->appendplans))
+			subplan = (Plan *) list_nth(appendplan->appendplans, subplan_index);
+	}
+	else if (IsA(subplan, Result) && IsA(outerPlan(subplan), Append))
+	{
+		Append	   *appendplan = (Append *) outerPlan(subplan);
+
+		if (subplan_index < list_length(appendplan->appendplans))
+			subplan = (Plan *) list_nth(appendplan->appendplans, subplan_index);
+	}
+
+	/* Now, have we got a ForeignScan on the desired rel? */
+	if (IsA(subplan, ForeignScan))
+	{
+		ForeignScan *fscan = (ForeignScan *) subplan;
+
+		if (bms_is_member(rtindex, fscan->fs_relids))
+			return fscan;
+	}
+
+	return NULL;
+}
+#endif
 
 /*
  * sqlitePlanDirectModify
@@ -1909,13 +2051,18 @@ sqlitePlanDirectModify(PlannerInfo *root,
 					   int subplan_index)
 {
 	CmdType		operation = plan->operation;
+#if PG_VERSION_NUM < 140000
 	Plan	   *subplan;
+#endif
 	RelOptInfo *foreignrel;
 	RangeTblEntry *rte;
 	SqliteFdwRelationInfo *fpinfo;
 	Relation	rel;
 	StringInfoData sql;
 	ForeignScan *fscan;
+#if PG_VERSION_NUM >= 140000
+	List	   *processed_tlist = NIL;
+#endif
 	List	   *targetAttrs = NIL;
 	List	   *remote_exprs;
 	List	   *params_list = NIL;
@@ -1937,16 +2084,26 @@ sqlitePlanDirectModify(PlannerInfo *root,
 	 * It's unsafe to modify a foreign table directly if there are any local
 	 * joins needed.
 	 */
+#if (PG_VERSION_NUM >= 140000)
+	fscan = sqlite_find_modifytable_subplan(root, plan, resultRelation, subplan_index);
+	if (!fscan)
+		return false;
+#else
 	subplan = (Plan *) list_nth(plan->plans, subplan_index);
 	if (!IsA(subplan, ForeignScan))
 		return false;
 	fscan = (ForeignScan *) subplan;
+#endif
 
 	/*
 	 * It's unsafe to modify a foreign table directly if there are any quals
 	 * that should be evaluated locally.
 	 */
+#if (PG_VERSION_NUM >= 140000)
+	if (fscan->scan.plan.qual != NIL)
+#else
 	if (subplan->qual != NIL)
+#endif
 		return false;
 
 	/* not supported  RETURNING clause by this FDW */
@@ -1983,6 +2140,31 @@ sqlitePlanDirectModify(PlannerInfo *root,
 	 */
 	if (operation == CMD_UPDATE)
 	{
+#if (PG_VERSION_NUM >= 140000)
+		ListCell   *lc,
+				   *lc2;
+		
+		/*
+		 * The expressions of concern are the first N columns of the processed
+		 * targetlist, where N is the length of the rel's update_colnos.
+		 */
+		get_translated_update_targetlist(root, resultRelation,
+										 &processed_tlist, &targetAttrs);
+		forboth(lc, processed_tlist, lc2, targetAttrs)
+		{
+			TargetEntry *tle = lfirst_node(TargetEntry, lc);
+			AttrNumber	attno = lfirst_int(lc2);
+
+			/* update's new-value expressions shouldn't be resjunk */
+			Assert(!tle->resjunk);
+
+			if (attno <= InvalidAttrNumber) /* shouldn't happen */
+				elog(ERROR, "system-column update is not supported");
+
+			if (!sqlite_is_foreign_expr(root, foreignrel, (Expr *) tle->expr))
+				return false;
+		}
+#else
 		int			col;
 
 		/*
@@ -2010,6 +2192,7 @@ sqlitePlanDirectModify(PlannerInfo *root,
 
 			targetAttrs = lappend_int(targetAttrs, attno);
 		}
+#endif
 	}
 
 	/*
@@ -2038,7 +2221,11 @@ sqlitePlanDirectModify(PlannerInfo *root,
 		case CMD_UPDATE:
 			sqlite_deparse_direct_update_sql(&sql, root, resultRelation, rel,
 											 foreignrel,
+#if (PG_VERSION_NUM >= 140000)
+											 processed_tlist,
+#else
 											 ((Plan *) fscan)->targetlist,
+#endif
 											 targetAttrs,
 											 remote_exprs, &params_list,
 											 &retrieved_attrs);
@@ -2058,7 +2245,9 @@ sqlitePlanDirectModify(PlannerInfo *root,
 	 * Update the operation info.
 	 */
 	fscan->operation = operation;
-
+#if PG_VERSION_NUM >= 140000
+	fscan->resultRelation = resultRelation;
+#endif
 	/*
 	 * Update the fdw_exprs list that will be available to the executor.
 	 */
@@ -2119,7 +2308,11 @@ sqliteBeginDirectModify(ForeignScanState *node, int eflags)
 	 * Identify which user to do the remote access as.  This should match what
 	 * ExecCheckRTEPerms() does.
 	 */
+#if (PG_VERSION_NUM >= 140000)
+	rtindex = node->resultRelInfo->ri_RangeTableIndex;
+#else
 	rtindex = estate->es_result_relation_info->ri_RangeTableIndex;
+#endif
 
 	/* Get info about foreign table. */
 	if (fsplan->scan.scanrelid == 0)
@@ -3281,7 +3474,11 @@ sqlite_foreign_grouping_ok(PlannerInfo *root, RelOptInfo *grouped_rel)
 			Assert(!IsA(expr, RestrictInfo));
 
 #if (PG_VERSION_NUM >= 100000)
-			rinfo = make_restrictinfo(expr,
+			rinfo = make_restrictinfo(
+#if PG_VERSION_NUM >= 140000
+									  root,
+#endif
+									  expr,
 									  true,
 									  false,
 									  false,
@@ -4174,6 +4371,9 @@ sqlite_estimate_path_cost_size(PlannerInfo *root,
 			MemSet(&aggcosts, 0, sizeof(AggClauseCosts));
 			if (root->parse->hasAggs)
 			{
+#if PG_VERSION_NUM >= 140000
+				get_agg_clause_costs(root, AGGSPLIT_SIMPLE, &aggcosts);
+#else
 				get_agg_clause_costs(root, (Node *) fpinfo->grouped_tlist,
 									 AGGSPLIT_SIMPLE, &aggcosts);
 
@@ -4183,7 +4383,8 @@ sqlite_estimate_path_cost_size(PlannerInfo *root,
 				 * to use a translated version of havingQual.
 				 */
 				get_agg_clause_costs(root, (Node *) root->parse->havingQual,
-									 AGGSPLIT_SIMPLE, &aggcosts);
+									 AGGSPLIT_SIMPLE, &aggcosts);	
+#endif				 
 			}
 
 			/*
@@ -4193,7 +4394,11 @@ sqlite_estimate_path_cost_size(PlannerInfo *root,
 			numGroups = estimate_num_groups(root,
 											get_sortgrouplist_exprs(root->parse->groupClause,
 																	fpinfo->grouped_tlist),
-											input_rows, NULL);
+											input_rows, NULL
+#if PG_VERSION_NUM >= 140000
+											, NULL
+#endif
+											);
 
 			/*
 			 * Get the retrieved_rows and rows estimates.  If there are HAVING
