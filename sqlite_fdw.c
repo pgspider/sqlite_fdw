@@ -22,7 +22,9 @@
 #include "foreign/fdwapi.h"
 #include "foreign/foreign.h"
 #include "optimizer/pathnode.h"
+#if PG_VERSION_NUM >= 120000
 #include "optimizer/appendinfo.h"
+#endif
 #include "optimizer/planmain.h"
 #include "optimizer/planner.h"
 #include "optimizer/cost.h"
