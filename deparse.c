@@ -2015,7 +2015,9 @@ sqlite_deparse_direct_update_sql(StringInfo buf, PlannerInfo *root,
 	deparse_expr_cxt context;
 	int			nestlevel;
 	bool		first;
-	ListCell   *lc;
+	ListCell	*lc;
+	ListCell	*lc2;
+
 
 	/* Set up context struct for recursion */
 	context.root = root;
@@ -2034,10 +2036,18 @@ sqlite_deparse_direct_update_sql(StringInfo buf, PlannerInfo *root,
 	nestlevel = sqlite_set_transmission_modes();
 
 	first = true;
-	foreach(lc, targetAttrs)
+	forboth(lc, targetlist, lc2, targetAttrs)
 	{
-		int			attnum = lfirst_int(lc);
-		TargetEntry *tle = get_tle_by_resno(targetlist, attnum);
+		int			attnum = lfirst_int(lc2);
+#if (PG_VERSION_NUM >= 140000)
+		TargetEntry	*tle = lfirst_node(TargetEntry, lc);
+		
+		/* update's new-value expressions shouldn't be resjunk */
+		Assert(!tle->resjunk);
+#else
+		(void)lc;
+		TargetEntry	*tle = get_tle_by_resno(targetlist, attnum);
+#endif
 
 		if (!tle)
 			elog(ERROR, "attribute number %d not found in UPDATE targetlist",
