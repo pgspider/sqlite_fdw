@@ -521,6 +521,14 @@ INSERT INTO noprimary SELECT * FROM noprimary;
 --Testcase 128:
 SELECT * FROM noprimary;
 
+--get version
+--Testcase 153:
+\df sqlite*
+--Testcase 154:
+SELECT * FROM public.sqlite_fdw_version();
+--Testcase 155:
+SELECT sqlite_fdw_version();
+
 --Testcase 142:
 DROP FUNCTION test_param_WHERE();
 --Testcase 143:
