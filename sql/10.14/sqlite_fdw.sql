@@ -480,11 +480,17 @@ SELECT b, length(b) FROM numbers WHERE length(b) = 4 AND power(1, a) != 0 AND le
 --Testcase 114:
 EXPLAIN (verbose, costs off) SELECT b, length(b) FROM numbers WHERE length(b) = 4 AND power(1, a) != 0 AND length(reverse(b)) = 4;
 
+-- Aggregates in subquery are pushed down.
+--Testcase 214:
+explain (verbose, costs off)
+select count(x.a), sum(x.a) from (select a a, sum(a) b from numbers group by a, abs(a) order by 1, 2) x;
+--Testcase 215:
+select count(x.a), sum(x.a) from (select a a, sum(a) b from numbers group by a, abs(a) order by 1, 2) x;
+
 --Testcase 115:
 INSERT INTO multiprimary (b,c) VALUES (99, 100);
 --Testcase 116:
 SELECT c FROM multiprimary WHERE COALESCE(a,b,c) = 99;
-
 
 --Testcase 139:
 CREATE FOREIGN TABLE multiprimary2(a int, b int, c int OPTIONS(column_name 'b')) SERVER sqlite_svr OPTIONS (table 'multiprimary');

@@ -102,6 +102,32 @@ enum FdwPathPrivateIndex
 };
 
 /*
+ * Indexes of FDW-private information stored in fdw_private lists.
+ *
+ * These items are indexed with the enum FdwScanPrivateIndex, so an item
+ * can be fetched with list_nth().  For example, to get the SELECT statement:
+ *		sql = strVal(list_nth(fdw_private, FdwScanPrivateSelectSql));
+ */
+enum FdwScanPrivateIndex
+{
+	/* SQL statement to execute remotely (as a String node) */
+	FdwScanPrivateSelectSql,
+	/* Integer list of attribute numbers retrieved by the SELECT */
+	FdwScanPrivateRetrievedAttrs,
+	/* Integer representing UPDATE/DELETE target */
+	FdwScanPrivateForUpdate,
+#if (PG_VERSION_NUM < 100000)
+	/* rtindex */
+	FdwScanPrivateRtIndex,
+#endif
+	/*
+	 * String describing join i.e. names of relations being joined and types
+	 * of join, added when the scan is join
+	 */
+	FdwScanPrivateRelations
+};
+
+/*
  * Similarly, this enum describes what's kept in the fdw_private list for
  * a ForeignScan node that modifies a foreign table directly.  We store:
  *
@@ -1061,9 +1087,7 @@ sqliteGetForeignPlan(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntableid,
 	 * local_exprs list, since appendWhereClause expects a list of
 	 * RestrictInfos.
 	 */
-	if ((baserel->reloptkind == RELOPT_BASEREL ||
-		 baserel->reloptkind == RELOPT_OTHER_MEMBER_REL) &&
-		fpinfo->is_tlist_func_pushdown == false)
+	if (IS_SIMPLE_REL(baserel) && fpinfo->is_tlist_func_pushdown == false)
 	{
 		foreach(lc, scan_clauses)
 		{
@@ -1232,7 +1256,9 @@ sqliteGetForeignPlan(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntableid,
 	 * Items in the list must match enum FdwScanPrivateIndex, above.
 	 */
 	fdw_private = list_make3(makeString(sql.data), retrieved_attrs, makeInteger(for_update));
+#if (PG_VERSION_NUM < 100000)
 	fdw_private = lappend(fdw_private, makeInteger(root->all_baserels == NULL ? -2 : bms_next_member(root->all_baserels, -1)));
+#endif
 	if (IS_JOIN_REL(baserel) || IS_UPPER_REL(baserel))
 		fdw_private = lappend(fdw_private,
 							  makeString(fpinfo->relation_name));
@@ -1334,7 +1360,7 @@ sqliteBeginForeignScan(ForeignScanState *node, int eflags)
 	/*
 	 * We'll save private state in node->fdw_state.
 	 */
-	festate = (SqliteFdwExecState *) palloc(sizeof(SqliteFdwExecState));
+	festate = (SqliteFdwExecState *) palloc0(sizeof(SqliteFdwExecState));
 	node->fdw_state = (void *) festate;
 	festate->rowidx = 0;
 
@@ -1348,13 +1374,14 @@ sqliteBeginForeignScan(ForeignScanState *node, int eflags)
 		rtindex = fsplan->scan.scanrelid;
 	else
 	{
-		rtindex = intVal(list_nth(fsplan->fdw_private, 3));
+		rtindex = bms_next_member(fsplan->fs_relids, -1);
+#if (PG_VERSION_NUM < 100000)
+		/* PostgreSQL version 9.6.x need to get rtindex from ForeignPlan */
 		if (rtindex == -2)
-		{
-			rtindex = bms_next_member(fsplan->fs_relids, -1);
-		}
+			rtindex = intVal(list_nth(fsplan->fdw_private, FdwScanPrivateRtIndex));
+#endif
 	}
-	rte = rt_fetch(rtindex, estate->es_range_table);
+	rte = exec_rt_fetch(rtindex, estate);
 
 	/* Get info about foreign table. */
 	festate->rel = node->ss.ss_currentRelation;
@@ -1368,9 +1395,9 @@ sqliteBeginForeignScan(ForeignScanState *node, int eflags)
 	conn = sqlite_get_connection(server);
 
 	/* Stash away the state info we have already */
-	festate->query = strVal(list_nth(fsplan->fdw_private, 0));
-	festate->retrieved_attrs = list_nth(fsplan->fdw_private, 1);
-	festate->for_update = intVal(list_nth(fsplan->fdw_private, 2)) ? true : false;
+	festate->query = strVal(list_nth(fsplan->fdw_private, FdwScanPrivateSelectSql));
+	festate->retrieved_attrs = list_nth(fsplan->fdw_private, FdwScanPrivateRetrievedAttrs);
+	festate->for_update = intVal(list_nth(fsplan->fdw_private, FdwScanPrivateForUpdate)) ? true : false;
 	festate->conn = conn;
 	festate->cursor_exists = false;
 
@@ -1865,8 +1892,8 @@ sqliteBeginForeignModify(ModifyTableState *mtstate,
 	fmstate->rel = rel;
 
 	fmstate->conn = sqlite_get_connection(server);
-	fmstate->query = strVal(list_nth(fdw_private, 0));
-	fmstate->retrieved_attrs = (List *) list_nth(fdw_private, 1);
+	fmstate->query = strVal(list_nth(fdw_private, FdwScanPrivateSelectSql));
+	fmstate->retrieved_attrs = (List *) list_nth(fdw_private, FdwScanPrivateRetrievedAttrs);
 
 	n_params = list_length(fmstate->retrieved_attrs) + 1;
 	fmstate->p_flinfo = (FmgrInfo *) palloc0(sizeof(FmgrInfo) * n_params);
@@ -2607,7 +2634,7 @@ sqliteExplainForeignScan(ForeignScanState *node,
 {
 	ForeignScan *plan = castNode(ForeignScan, node->ss.ps.plan);
 	List	*fdw_private = plan->fdw_private;
-	char	*sql = strVal(list_nth(fdw_private, 0));
+	char	*sql = strVal(list_nth(fdw_private, FdwScanPrivateSelectSql));
 
 	elog(DEBUG1, "sqlite_fdw : %s", __func__);
 
@@ -3363,6 +3390,21 @@ sqlite_foreign_grouping_ok(PlannerInfo *root, RelOptInfo *grouped_rel)
 	/* Grouping Sets are not pushable */
 	if (query->groupingSets)
 		return false;
+
+#if (PG_VERSION_NUM < 100000)
+	if (root->query_level > 1)
+	{
+		if (root->all_baserels != NULL)
+		{
+			Query	   *query = root->parent_root->parse;
+			int			rtindex = bms_next_member(root->all_baserels, -1);
+
+			if (rtindex != -2 && list_length(query->rtable) >= rtindex &&
+				getrelid(rtindex, query->rtable) == 0)
+				return false;
+		}
+	}
+#endif
 
 	/* Get the fpinfo of the underlying scan relation. */
 	ofpinfo = (SqliteFdwRelationInfo *) fpinfo->outerrel->fdw_private;

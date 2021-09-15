@@ -1351,6 +1351,32 @@ EXPLAIN (verbose, costs off) SELECT b, length(b) FROM numbers WHERE length(b) = 
    SQLite query: SELECT `b`, length(`b`), `a` FROM main."numbers" WHERE ((length(`b`) = 4))
 (4 rows)
 
+-- Aggregates in subquery are pushed down.
+--Testcase 214:
+explain (verbose, costs off)
+select count(x.a), sum(x.a) from (select a a, sum(a) b from numbers group by a, abs(a) order by 1, 2) x;
+                                                           QUERY PLAN                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Aggregate
+   Output: count(numbers.a), sum(numbers.a)
+   ->  Sort
+         Output: numbers.a, (sum(numbers.a)), (abs(numbers.a))
+         Sort Key: numbers.a, (sum(numbers.a))
+         ->  GroupAggregate
+               Output: numbers.a, sum(numbers.a), (abs(numbers.a))
+               Group Key: numbers.a, (abs(numbers.a))
+               ->  Foreign Scan
+                     Output: numbers.a, (abs(numbers.a))
+                     SQLite query: SELECT `a`, abs(`a`) FROM main."numbers" ORDER BY `a` ASC NULLS LAST, abs(`a`) ASC NULLS LAST
+(11 rows)
+
+--Testcase 215:
+select count(x.a), sum(x.a) from (select a a, sum(a) b from numbers group by a, abs(a) order by 1, 2) x;
+ count | sum 
+-------+-----
+     3 |   7
+(1 row)
+
 --Testcase 115:
 INSERT INTO multiprimary (b,c) VALUES (99, 100);
 --Testcase 116:
