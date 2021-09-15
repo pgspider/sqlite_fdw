@@ -1,11 +1,12 @@
 def NODE_NAME = 'AWS_Instance_CentOS'
-def MAIL_TO = 'db-jenkins@swc.toshiba.co.jp'
+def MAIL_TO = '$DEFAULT_RECIPIENTS'
 def BRANCH_NAME = 'Branch [' + env.BRANCH_NAME + ']'
 def BUILD_INFO = 'Jenkins job: ' + env.BUILD_URL + '\n'
 
-def POSTGRES_DOCKER_PATH = '/home/jenkins/Docker_ExistedMulti/Server/Postgres'
+def POSTGRES_DOCKER_PATH = '/home/jenkins/Docker/Server/Postgres'
 
 def TEST_TYPE = 'SQLITE'
+def BRANCH_PGSPIDER = 'unimplemented_21A'
 
 def make_check_test(String target, String version) {
     def prefix = ""
@@ -73,7 +74,6 @@ pipeline {
                 catchError() {
                     sh """
                         cd ${POSTGRES_DOCKER_PATH}
-                        docker build -t postgresserver_multi .
                         docker run -d --name postgresserver_multi_for_sqlite_existed_test postgresserver_multi
                     """
                 }
@@ -127,7 +127,7 @@ pipeline {
             steps {
                 catchError() {
                     sh """
-                        docker exec postgresserver_multi_for_sqlite_existed_test /bin/bash -c 'su -c "/tmp/initialize_pgspider_existed_test.sh" postgres'
+                        docker exec postgresserver_multi_for_sqlite_existed_test /bin/bash -c 'su -c "/tmp/initialize_pgspider_existed_test.sh ${BRANCH_PGSPIDER}" postgres'
                     """
                 }
             }

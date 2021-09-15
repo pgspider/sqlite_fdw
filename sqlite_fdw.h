@@ -46,6 +46,7 @@
 #if (PG_VERSION_NUM < 120000)
 #define table_close(rel, lock)	heap_close(rel, lock)
 #define table_open(rel, lock)	heap_open(rel, lock)
+#define exec_rt_fetch(rtindex, estate)	rt_fetch(rtindex, estate->es_range_table)
 #endif
 
 /* Code version is updated at new release. */
