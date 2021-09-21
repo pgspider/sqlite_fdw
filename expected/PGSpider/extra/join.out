@@ -119,196 +119,196 @@ analyze onerow;
 -- before diving into more complex join syntax.
 --
 --Testcase 21:
-SELECT '' AS "xxx", *
+SELECT *
   FROM J1_TBL AS tx;
- xxx | i | j |   t   
------+---+---+-------
-     | 1 | 4 | one
-     | 2 | 3 | two
-     | 3 | 2 | three
-     | 4 | 1 | four
-     | 5 | 0 | five
-     | 6 | 6 | six
-     | 7 | 7 | seven
-     | 8 | 8 | eight
-     | 0 |   | zero
-     |   |   | null
-     |   | 0 | zero
+ i | j |   t   
+---+---+-------
+ 1 | 4 | one
+ 2 | 3 | two
+ 3 | 2 | three
+ 4 | 1 | four
+ 5 | 0 | five
+ 6 | 6 | six
+ 7 | 7 | seven
+ 8 | 8 | eight
+ 0 |   | zero
+   |   | null
+   | 0 | zero
 (11 rows)
 
 --Testcase 22:
-SELECT '' AS "xxx", *
+SELECT *
   FROM J1_TBL tx;
- xxx | i | j |   t   
------+---+---+-------
-     | 1 | 4 | one
-     | 2 | 3 | two
-     | 3 | 2 | three
-     | 4 | 1 | four
-     | 5 | 0 | five
-     | 6 | 6 | six
-     | 7 | 7 | seven
-     | 8 | 8 | eight
-     | 0 |   | zero
-     |   |   | null
-     |   | 0 | zero
+ i | j |   t   
+---+---+-------
+ 1 | 4 | one
+ 2 | 3 | two
+ 3 | 2 | three
+ 4 | 1 | four
+ 5 | 0 | five
+ 6 | 6 | six
+ 7 | 7 | seven
+ 8 | 8 | eight
+ 0 |   | zero
+   |   | null
+   | 0 | zero
 (11 rows)
 
 --Testcase 23:
-SELECT '' AS "xxx", *
+SELECT *
   FROM J1_TBL AS t1 (a, b, c);
- xxx | a | b |   c   
------+---+---+-------
-     | 1 | 4 | one
-     | 2 | 3 | two
-     | 3 | 2 | three
-     | 4 | 1 | four
-     | 5 | 0 | five
-     | 6 | 6 | six
-     | 7 | 7 | seven
-     | 8 | 8 | eight
-     | 0 |   | zero
-     |   |   | null
-     |   | 0 | zero
+ a | b |   c   
+---+---+-------
+ 1 | 4 | one
+ 2 | 3 | two
+ 3 | 2 | three
+ 4 | 1 | four
+ 5 | 0 | five
+ 6 | 6 | six
+ 7 | 7 | seven
+ 8 | 8 | eight
+ 0 |   | zero
+   |   | null
+   | 0 | zero
 (11 rows)
 
 --Testcase 24:
-SELECT '' AS "xxx", *
+SELECT *
   FROM J1_TBL t1 (a, b, c);
- xxx | a | b |   c   
------+---+---+-------
-     | 1 | 4 | one
-     | 2 | 3 | two
-     | 3 | 2 | three
-     | 4 | 1 | four
-     | 5 | 0 | five
-     | 6 | 6 | six
-     | 7 | 7 | seven
-     | 8 | 8 | eight
-     | 0 |   | zero
-     |   |   | null
-     |   | 0 | zero
+ a | b |   c   
+---+---+-------
+ 1 | 4 | one
+ 2 | 3 | two
+ 3 | 2 | three
+ 4 | 1 | four
+ 5 | 0 | five
+ 6 | 6 | six
+ 7 | 7 | seven
+ 8 | 8 | eight
+ 0 |   | zero
+   |   | null
+   | 0 | zero
 (11 rows)
 
 --Testcase 25:
-SELECT '' AS "xxx", *
+SELECT *
   FROM J1_TBL t1 (a, b, c), J2_TBL t2 (d, e);
- xxx | a | b |   c   | d | e  
------+---+---+-------+---+----
-     | 1 | 4 | one   | 1 | -1
-     | 2 | 3 | two   | 1 | -1
-     | 3 | 2 | three | 1 | -1
-     | 4 | 1 | four  | 1 | -1
-     | 5 | 0 | five  | 1 | -1
-     | 6 | 6 | six   | 1 | -1
-     | 7 | 7 | seven | 1 | -1
-     | 8 | 8 | eight | 1 | -1
-     | 0 |   | zero  | 1 | -1
-     |   |   | null  | 1 | -1
-     |   | 0 | zero  | 1 | -1
-     | 1 | 4 | one   | 2 |  2
-     | 2 | 3 | two   | 2 |  2
-     | 3 | 2 | three | 2 |  2
-     | 4 | 1 | four  | 2 |  2
-     | 5 | 0 | five  | 2 |  2
-     | 6 | 6 | six   | 2 |  2
-     | 7 | 7 | seven | 2 |  2
-     | 8 | 8 | eight | 2 |  2
-     | 0 |   | zero  | 2 |  2
-     |   |   | null  | 2 |  2
-     |   | 0 | zero  | 2 |  2
-     | 1 | 4 | one   | 3 | -3
-     | 2 | 3 | two   | 3 | -3
-     | 3 | 2 | three | 3 | -3
-     | 4 | 1 | four  | 3 | -3
-     | 5 | 0 | five  | 3 | -3
-     | 6 | 6 | six   | 3 | -3
-     | 7 | 7 | seven | 3 | -3
-     | 8 | 8 | eight | 3 | -3
-     | 0 |   | zero  | 3 | -3
-     |   |   | null  | 3 | -3
-     |   | 0 | zero  | 3 | -3
-     | 1 | 4 | one   | 2 |  4
-     | 2 | 3 | two   | 2 |  4
-     | 3 | 2 | three | 2 |  4
-     | 4 | 1 | four  | 2 |  4
-     | 5 | 0 | five  | 2 |  4
-     | 6 | 6 | six   | 2 |  4
-     | 7 | 7 | seven | 2 |  4
-     | 8 | 8 | eight | 2 |  4
-     | 0 |   | zero  | 2 |  4
-     |   |   | null  | 2 |  4
-     |   | 0 | zero  | 2 |  4
-     | 1 | 4 | one   | 5 | -5
-     | 2 | 3 | two   | 5 | -5
-     | 3 | 2 | three | 5 | -5
-     | 4 | 1 | four  | 5 | -5
-     | 5 | 0 | five  | 5 | -5
-     | 6 | 6 | six   | 5 | -5
-     | 7 | 7 | seven | 5 | -5
-     | 8 | 8 | eight | 5 | -5
-     | 0 |   | zero  | 5 | -5
-     |   |   | null  | 5 | -5
-     |   | 0 | zero  | 5 | -5
-     | 1 | 4 | one   | 5 | -5
-     | 2 | 3 | two   | 5 | -5
-     | 3 | 2 | three | 5 | -5
-     | 4 | 1 | four  | 5 | -5
-     | 5 | 0 | five  | 5 | -5
-     | 6 | 6 | six   | 5 | -5
-     | 7 | 7 | seven | 5 | -5
-     | 8 | 8 | eight | 5 | -5
-     | 0 |   | zero  | 5 | -5
-     |   |   | null  | 5 | -5
-     |   | 0 | zero  | 5 | -5
-     | 1 | 4 | one   | 0 |   
-     | 2 | 3 | two   | 0 |   
-     | 3 | 2 | three | 0 |   
-     | 4 | 1 | four  | 0 |   
-     | 5 | 0 | five  | 0 |   
-     | 6 | 6 | six   | 0 |   
-     | 7 | 7 | seven | 0 |   
-     | 8 | 8 | eight | 0 |   
-     | 0 |   | zero  | 0 |   
-     |   |   | null  | 0 |   
-     |   | 0 | zero  | 0 |   
-     | 1 | 4 | one   |   |   
-     | 2 | 3 | two   |   |   
-     | 3 | 2 | three |   |   
-     | 4 | 1 | four  |   |   
-     | 5 | 0 | five  |   |   
-     | 6 | 6 | six   |   |   
-     | 7 | 7 | seven |   |   
-     | 8 | 8 | eight |   |   
-     | 0 |   | zero  |   |   
-     |   |   | null  |   |   
-     |   | 0 | zero  |   |   
-     | 1 | 4 | one   |   |  0
-     | 2 | 3 | two   |   |  0
-     | 3 | 2 | three |   |  0
-     | 4 | 1 | four  |   |  0
-     | 5 | 0 | five  |   |  0
-     | 6 | 6 | six   |   |  0
-     | 7 | 7 | seven |   |  0
-     | 8 | 8 | eight |   |  0
-     | 0 |   | zero  |   |  0
-     |   |   | null  |   |  0
-     |   | 0 | zero  |   |  0
+ a | b |   c   | d | e  
+---+---+-------+---+----
+ 1 | 4 | one   | 1 | -1
+ 2 | 3 | two   | 1 | -1
+ 3 | 2 | three | 1 | -1
+ 4 | 1 | four  | 1 | -1
+ 5 | 0 | five  | 1 | -1
+ 6 | 6 | six   | 1 | -1
+ 7 | 7 | seven | 1 | -1
+ 8 | 8 | eight | 1 | -1
+ 0 |   | zero  | 1 | -1
+   |   | null  | 1 | -1
+   | 0 | zero  | 1 | -1
+ 1 | 4 | one   | 2 |  2
+ 2 | 3 | two   | 2 |  2
+ 3 | 2 | three | 2 |  2
+ 4 | 1 | four  | 2 |  2
+ 5 | 0 | five  | 2 |  2
+ 6 | 6 | six   | 2 |  2
+ 7 | 7 | seven | 2 |  2
+ 8 | 8 | eight | 2 |  2
+ 0 |   | zero  | 2 |  2
+   |   | null  | 2 |  2
+   | 0 | zero  | 2 |  2
+ 1 | 4 | one   | 3 | -3
+ 2 | 3 | two   | 3 | -3
+ 3 | 2 | three | 3 | -3
+ 4 | 1 | four  | 3 | -3
+ 5 | 0 | five  | 3 | -3
+ 6 | 6 | six   | 3 | -3
+ 7 | 7 | seven | 3 | -3
+ 8 | 8 | eight | 3 | -3
+ 0 |   | zero  | 3 | -3
+   |   | null  | 3 | -3
+   | 0 | zero  | 3 | -3
+ 1 | 4 | one   | 2 |  4
+ 2 | 3 | two   | 2 |  4
+ 3 | 2 | three | 2 |  4
+ 4 | 1 | four  | 2 |  4
+ 5 | 0 | five  | 2 |  4
+ 6 | 6 | six   | 2 |  4
+ 7 | 7 | seven | 2 |  4
+ 8 | 8 | eight | 2 |  4
+ 0 |   | zero  | 2 |  4
+   |   | null  | 2 |  4
+   | 0 | zero  | 2 |  4
+ 1 | 4 | one   | 5 | -5
+ 2 | 3 | two   | 5 | -5
+ 3 | 2 | three | 5 | -5
+ 4 | 1 | four  | 5 | -5
+ 5 | 0 | five  | 5 | -5
+ 6 | 6 | six   | 5 | -5
+ 7 | 7 | seven | 5 | -5
+ 8 | 8 | eight | 5 | -5
+ 0 |   | zero  | 5 | -5
+   |   | null  | 5 | -5
+   | 0 | zero  | 5 | -5
+ 1 | 4 | one   | 5 | -5
+ 2 | 3 | two   | 5 | -5
+ 3 | 2 | three | 5 | -5
+ 4 | 1 | four  | 5 | -5
+ 5 | 0 | five  | 5 | -5
+ 6 | 6 | six   | 5 | -5
+ 7 | 7 | seven | 5 | -5
+ 8 | 8 | eight | 5 | -5
+ 0 |   | zero  | 5 | -5
+   |   | null  | 5 | -5
+   | 0 | zero  | 5 | -5
+ 1 | 4 | one   | 0 |   
+ 2 | 3 | two   | 0 |   
+ 3 | 2 | three | 0 |   
+ 4 | 1 | four  | 0 |   
+ 5 | 0 | five  | 0 |   
+ 6 | 6 | six   | 0 |   
+ 7 | 7 | seven | 0 |   
+ 8 | 8 | eight | 0 |   
+ 0 |   | zero  | 0 |   
+   |   | null  | 0 |   
+   | 0 | zero  | 0 |   
+ 1 | 4 | one   |   |   
+ 2 | 3 | two   |   |   
+ 3 | 2 | three |   |   
+ 4 | 1 | four  |   |   
+ 5 | 0 | five  |   |   
+ 6 | 6 | six   |   |   
+ 7 | 7 | seven |   |   
+ 8 | 8 | eight |   |   
+ 0 |   | zero  |   |   
+   |   | null  |   |   
+   | 0 | zero  |   |   
+ 1 | 4 | one   |   |  0
+ 2 | 3 | two   |   |  0
+ 3 | 2 | three |   |  0
+ 4 | 1 | four  |   |  0
+ 5 | 0 | five  |   |  0
+ 6 | 6 | six   |   |  0
+ 7 | 7 | seven |   |  0
+ 8 | 8 | eight |   |  0
+ 0 |   | zero  |   |  0
+   |   | null  |   |  0
+   | 0 | zero  |   |  0
 (99 rows)
 
 --Testcase 26:
-SELECT '' AS "xxx", t1.a, t2.e
+SELECT t1.a, t2.e
   FROM J1_TBL t1 (a, b, c), J2_TBL t2 (d, e)
   WHERE t1.a = t2.d;
- xxx | a | e  
------+---+----
-     | 0 |   
-     | 1 | -1
-     | 2 |  2
-     | 2 |  4
-     | 3 | -3
-     | 5 | -5
-     | 5 | -5
+ a | e  
+---+----
+ 0 |   
+ 1 | -1
+ 2 |  2
+ 2 |  4
+ 3 | -3
+ 5 | -5
+ 5 | -5
 (7 rows)
 
 --
@@ -317,1335 +317,1335 @@ SELECT '' AS "xxx", t1.a, t2.e
 -- which degenerate into a standard unqualified inner join.
 --
 --Testcase 27:
-SELECT '' AS "xxx", *
+SELECT *
   FROM J1_TBL CROSS JOIN J2_TBL;
- xxx | i | j |   t   | i | k  
------+---+---+-------+---+----
-     | 1 | 4 | one   | 1 | -1
-     | 2 | 3 | two   | 1 | -1
-     | 3 | 2 | three | 1 | -1
-     | 4 | 1 | four  | 1 | -1
-     | 5 | 0 | five  | 1 | -1
-     | 6 | 6 | six   | 1 | -1
-     | 7 | 7 | seven | 1 | -1
-     | 8 | 8 | eight | 1 | -1
-     | 0 |   | zero  | 1 | -1
-     |   |   | null  | 1 | -1
-     |   | 0 | zero  | 1 | -1
-     | 1 | 4 | one   | 2 |  2
-     | 2 | 3 | two   | 2 |  2
-     | 3 | 2 | three | 2 |  2
-     | 4 | 1 | four  | 2 |  2
-     | 5 | 0 | five  | 2 |  2
-     | 6 | 6 | six   | 2 |  2
-     | 7 | 7 | seven | 2 |  2
-     | 8 | 8 | eight | 2 |  2
-     | 0 |   | zero  | 2 |  2
-     |   |   | null  | 2 |  2
-     |   | 0 | zero  | 2 |  2
-     | 1 | 4 | one   | 3 | -3
-     | 2 | 3 | two   | 3 | -3
-     | 3 | 2 | three | 3 | -3
-     | 4 | 1 | four  | 3 | -3
-     | 5 | 0 | five  | 3 | -3
-     | 6 | 6 | six   | 3 | -3
-     | 7 | 7 | seven | 3 | -3
-     | 8 | 8 | eight | 3 | -3
-     | 0 |   | zero  | 3 | -3
-     |   |   | null  | 3 | -3
-     |   | 0 | zero  | 3 | -3
-     | 1 | 4 | one   | 2 |  4
-     | 2 | 3 | two   | 2 |  4
-     | 3 | 2 | three | 2 |  4
-     | 4 | 1 | four  | 2 |  4
-     | 5 | 0 | five  | 2 |  4
-     | 6 | 6 | six   | 2 |  4
-     | 7 | 7 | seven | 2 |  4
-     | 8 | 8 | eight | 2 |  4
-     | 0 |   | zero  | 2 |  4
-     |   |   | null  | 2 |  4
-     |   | 0 | zero  | 2 |  4
-     | 1 | 4 | one   | 5 | -5
-     | 2 | 3 | two   | 5 | -5
-     | 3 | 2 | three | 5 | -5
-     | 4 | 1 | four  | 5 | -5
-     | 5 | 0 | five  | 5 | -5
-     | 6 | 6 | six   | 5 | -5
-     | 7 | 7 | seven | 5 | -5
-     | 8 | 8 | eight | 5 | -5
-     | 0 |   | zero  | 5 | -5
-     |   |   | null  | 5 | -5
-     |   | 0 | zero  | 5 | -5
-     | 1 | 4 | one   | 5 | -5
-     | 2 | 3 | two   | 5 | -5
-     | 3 | 2 | three | 5 | -5
-     | 4 | 1 | four  | 5 | -5
-     | 5 | 0 | five  | 5 | -5
-     | 6 | 6 | six   | 5 | -5
-     | 7 | 7 | seven | 5 | -5
-     | 8 | 8 | eight | 5 | -5
-     | 0 |   | zero  | 5 | -5
-     |   |   | null  | 5 | -5
-     |   | 0 | zero  | 5 | -5
-     | 1 | 4 | one   | 0 |   
-     | 2 | 3 | two   | 0 |   
-     | 3 | 2 | three | 0 |   
-     | 4 | 1 | four  | 0 |   
-     | 5 | 0 | five  | 0 |   
-     | 6 | 6 | six   | 0 |   
-     | 7 | 7 | seven | 0 |   
-     | 8 | 8 | eight | 0 |   
-     | 0 |   | zero  | 0 |   
-     |   |   | null  | 0 |   
-     |   | 0 | zero  | 0 |   
-     | 1 | 4 | one   |   |   
-     | 2 | 3 | two   |   |   
-     | 3 | 2 | three |   |   
-     | 4 | 1 | four  |   |   
-     | 5 | 0 | five  |   |   
-     | 6 | 6 | six   |   |   
-     | 7 | 7 | seven |   |   
-     | 8 | 8 | eight |   |   
-     | 0 |   | zero  |   |   
-     |   |   | null  |   |   
-     |   | 0 | zero  |   |   
-     | 1 | 4 | one   |   |  0
-     | 2 | 3 | two   |   |  0
-     | 3 | 2 | three |   |  0
-     | 4 | 1 | four  |   |  0
-     | 5 | 0 | five  |   |  0
-     | 6 | 6 | six   |   |  0
-     | 7 | 7 | seven |   |  0
-     | 8 | 8 | eight |   |  0
-     | 0 |   | zero  |   |  0
-     |   |   | null  |   |  0
-     |   | 0 | zero  |   |  0
+ i | j |   t   | i | k  
+---+---+-------+---+----
+ 1 | 4 | one   | 1 | -1
+ 2 | 3 | two   | 1 | -1
+ 3 | 2 | three | 1 | -1
+ 4 | 1 | four  | 1 | -1
+ 5 | 0 | five  | 1 | -1
+ 6 | 6 | six   | 1 | -1
+ 7 | 7 | seven | 1 | -1
+ 8 | 8 | eight | 1 | -1
+ 0 |   | zero  | 1 | -1
+   |   | null  | 1 | -1
+   | 0 | zero  | 1 | -1
+ 1 | 4 | one   | 2 |  2
+ 2 | 3 | two   | 2 |  2
+ 3 | 2 | three | 2 |  2
+ 4 | 1 | four  | 2 |  2
+ 5 | 0 | five  | 2 |  2
+ 6 | 6 | six   | 2 |  2
+ 7 | 7 | seven | 2 |  2
+ 8 | 8 | eight | 2 |  2
+ 0 |   | zero  | 2 |  2
+   |   | null  | 2 |  2
+   | 0 | zero  | 2 |  2
+ 1 | 4 | one   | 3 | -3
+ 2 | 3 | two   | 3 | -3
+ 3 | 2 | three | 3 | -3
+ 4 | 1 | four  | 3 | -3
+ 5 | 0 | five  | 3 | -3
+ 6 | 6 | six   | 3 | -3
+ 7 | 7 | seven | 3 | -3
+ 8 | 8 | eight | 3 | -3
+ 0 |   | zero  | 3 | -3
+   |   | null  | 3 | -3
+   | 0 | zero  | 3 | -3
+ 1 | 4 | one   | 2 |  4
+ 2 | 3 | two   | 2 |  4
+ 3 | 2 | three | 2 |  4
+ 4 | 1 | four  | 2 |  4
+ 5 | 0 | five  | 2 |  4
+ 6 | 6 | six   | 2 |  4
+ 7 | 7 | seven | 2 |  4
+ 8 | 8 | eight | 2 |  4
+ 0 |   | zero  | 2 |  4
+   |   | null  | 2 |  4
+   | 0 | zero  | 2 |  4
+ 1 | 4 | one   | 5 | -5
+ 2 | 3 | two   | 5 | -5
+ 3 | 2 | three | 5 | -5
+ 4 | 1 | four  | 5 | -5
+ 5 | 0 | five  | 5 | -5
+ 6 | 6 | six   | 5 | -5
+ 7 | 7 | seven | 5 | -5
+ 8 | 8 | eight | 5 | -5
+ 0 |   | zero  | 5 | -5
+   |   | null  | 5 | -5
+   | 0 | zero  | 5 | -5
+ 1 | 4 | one   | 5 | -5
+ 2 | 3 | two   | 5 | -5
+ 3 | 2 | three | 5 | -5
+ 4 | 1 | four  | 5 | -5
+ 5 | 0 | five  | 5 | -5
+ 6 | 6 | six   | 5 | -5
+ 7 | 7 | seven | 5 | -5
+ 8 | 8 | eight | 5 | -5
+ 0 |   | zero  | 5 | -5
+   |   | null  | 5 | -5
+   | 0 | zero  | 5 | -5
+ 1 | 4 | one   | 0 |   
+ 2 | 3 | two   | 0 |   
+ 3 | 2 | three | 0 |   
+ 4 | 1 | four  | 0 |   
+ 5 | 0 | five  | 0 |   
+ 6 | 6 | six   | 0 |   
+ 7 | 7 | seven | 0 |   
+ 8 | 8 | eight | 0 |   
+ 0 |   | zero  | 0 |   
+   |   | null  | 0 |   
+   | 0 | zero  | 0 |   
+ 1 | 4 | one   |   |   
+ 2 | 3 | two   |   |   
+ 3 | 2 | three |   |   
+ 4 | 1 | four  |   |   
+ 5 | 0 | five  |   |   
+ 6 | 6 | six   |   |   
+ 7 | 7 | seven |   |   
+ 8 | 8 | eight |   |   
+ 0 |   | zero  |   |   
+   |   | null  |   |   
+   | 0 | zero  |   |   
+ 1 | 4 | one   |   |  0
+ 2 | 3 | two   |   |  0
+ 3 | 2 | three |   |  0
+ 4 | 1 | four  |   |  0
+ 5 | 0 | five  |   |  0
+ 6 | 6 | six   |   |  0
+ 7 | 7 | seven |   |  0
+ 8 | 8 | eight |   |  0
+ 0 |   | zero  |   |  0
+   |   | null  |   |  0
+   | 0 | zero  |   |  0
 (99 rows)
 
 -- ambiguous column
 --Testcase 28:
-SELECT '' AS "xxx", i, k, t
+SELECT i, k, t
   FROM J1_TBL CROSS JOIN J2_TBL;
 ERROR:  column reference "i" is ambiguous
-LINE 1: SELECT '' AS "xxx", i, k, t
-                            ^
+LINE 1: SELECT i, k, t
+               ^
 -- resolve previous ambiguity by specifying the table name
 --Testcase 29:
-SELECT '' AS "xxx", t1.i, k, t
+SELECT t1.i, k, t
   FROM J1_TBL t1 CROSS JOIN J2_TBL t2;
- xxx | i | k  |   t   
------+---+----+-------
-     | 1 | -1 | one
-     | 2 | -1 | two
-     | 3 | -1 | three
-     | 4 | -1 | four
-     | 5 | -1 | five
-     | 6 | -1 | six
-     | 7 | -1 | seven
-     | 8 | -1 | eight
-     | 0 | -1 | zero
-     |   | -1 | null
-     |   | -1 | zero
-     | 1 |  2 | one
-     | 2 |  2 | two
-     | 3 |  2 | three
-     | 4 |  2 | four
-     | 5 |  2 | five
-     | 6 |  2 | six
-     | 7 |  2 | seven
-     | 8 |  2 | eight
-     | 0 |  2 | zero
-     |   |  2 | null
-     |   |  2 | zero
-     | 1 | -3 | one
-     | 2 | -3 | two
-     | 3 | -3 | three
-     | 4 | -3 | four
-     | 5 | -3 | five
-     | 6 | -3 | six
-     | 7 | -3 | seven
-     | 8 | -3 | eight
-     | 0 | -3 | zero
-     |   | -3 | null
-     |   | -3 | zero
-     | 1 |  4 | one
-     | 2 |  4 | two
-     | 3 |  4 | three
-     | 4 |  4 | four
-     | 5 |  4 | five
-     | 6 |  4 | six
-     | 7 |  4 | seven
-     | 8 |  4 | eight
-     | 0 |  4 | zero
-     |   |  4 | null
-     |   |  4 | zero
-     | 1 | -5 | one
-     | 2 | -5 | two
-     | 3 | -5 | three
-     | 4 | -5 | four
-     | 5 | -5 | five
-     | 6 | -5 | six
-     | 7 | -5 | seven
-     | 8 | -5 | eight
-     | 0 | -5 | zero
-     |   | -5 | null
-     |   | -5 | zero
-     | 1 | -5 | one
-     | 2 | -5 | two
-     | 3 | -5 | three
-     | 4 | -5 | four
-     | 5 | -5 | five
-     | 6 | -5 | six
-     | 7 | -5 | seven
-     | 8 | -5 | eight
-     | 0 | -5 | zero
-     |   | -5 | null
-     |   | -5 | zero
-     | 1 |    | one
-     | 2 |    | two
-     | 3 |    | three
-     | 4 |    | four
-     | 5 |    | five
-     | 6 |    | six
-     | 7 |    | seven
-     | 8 |    | eight
-     | 0 |    | zero
-     |   |    | null
-     |   |    | zero
-     | 1 |    | one
-     | 2 |    | two
-     | 3 |    | three
-     | 4 |    | four
-     | 5 |    | five
-     | 6 |    | six
-     | 7 |    | seven
-     | 8 |    | eight
-     | 0 |    | zero
-     |   |    | null
-     |   |    | zero
-     | 1 |  0 | one
-     | 2 |  0 | two
-     | 3 |  0 | three
-     | 4 |  0 | four
-     | 5 |  0 | five
-     | 6 |  0 | six
-     | 7 |  0 | seven
-     | 8 |  0 | eight
-     | 0 |  0 | zero
-     |   |  0 | null
-     |   |  0 | zero
+ i | k  |   t   
+---+----+-------
+ 1 | -1 | one
+ 2 | -1 | two
+ 3 | -1 | three
+ 4 | -1 | four
+ 5 | -1 | five
+ 6 | -1 | six
+ 7 | -1 | seven
+ 8 | -1 | eight
+ 0 | -1 | zero
+   | -1 | null
+   | -1 | zero
+ 1 |  2 | one
+ 2 |  2 | two
+ 3 |  2 | three
+ 4 |  2 | four
+ 5 |  2 | five
+ 6 |  2 | six
+ 7 |  2 | seven
+ 8 |  2 | eight
+ 0 |  2 | zero
+   |  2 | null
+   |  2 | zero
+ 1 | -3 | one
+ 2 | -3 | two
+ 3 | -3 | three
+ 4 | -3 | four
+ 5 | -3 | five
+ 6 | -3 | six
+ 7 | -3 | seven
+ 8 | -3 | eight
+ 0 | -3 | zero
+   | -3 | null
+   | -3 | zero
+ 1 |  4 | one
+ 2 |  4 | two
+ 3 |  4 | three
+ 4 |  4 | four
+ 5 |  4 | five
+ 6 |  4 | six
+ 7 |  4 | seven
+ 8 |  4 | eight
+ 0 |  4 | zero
+   |  4 | null
+   |  4 | zero
+ 1 | -5 | one
+ 2 | -5 | two
+ 3 | -5 | three
+ 4 | -5 | four
+ 5 | -5 | five
+ 6 | -5 | six
+ 7 | -5 | seven
+ 8 | -5 | eight
+ 0 | -5 | zero
+   | -5 | null
+   | -5 | zero
+ 1 | -5 | one
+ 2 | -5 | two
+ 3 | -5 | three
+ 4 | -5 | four
+ 5 | -5 | five
+ 6 | -5 | six
+ 7 | -5 | seven
+ 8 | -5 | eight
+ 0 | -5 | zero
+   | -5 | null
+   | -5 | zero
+ 1 |    | one
+ 2 |    | two
+ 3 |    | three
+ 4 |    | four
+ 5 |    | five
+ 6 |    | six
+ 7 |    | seven
+ 8 |    | eight
+ 0 |    | zero
+   |    | null
+   |    | zero
+ 1 |    | one
+ 2 |    | two
+ 3 |    | three
+ 4 |    | four
+ 5 |    | five
+ 6 |    | six
+ 7 |    | seven
+ 8 |    | eight
+ 0 |    | zero
+   |    | null
+   |    | zero
+ 1 |  0 | one
+ 2 |  0 | two
+ 3 |  0 | three
+ 4 |  0 | four
+ 5 |  0 | five
+ 6 |  0 | six
+ 7 |  0 | seven
+ 8 |  0 | eight
+ 0 |  0 | zero
+   |  0 | null
+   |  0 | zero
 (99 rows)
 
 --Testcase 30:
-SELECT '' AS "xxx", ii, tt, kk
+SELECT ii, tt, kk
   FROM (J1_TBL CROSS JOIN J2_TBL)
     AS tx (ii, jj, tt, ii2, kk);
- xxx | ii |  tt   | kk 
------+----+-------+----
-     |  1 | one   | -1
-     |  2 | two   | -1
-     |  3 | three | -1
-     |  4 | four  | -1
-     |  5 | five  | -1
-     |  6 | six   | -1
-     |  7 | seven | -1
-     |  8 | eight | -1
-     |  0 | zero  | -1
-     |    | null  | -1
-     |    | zero  | -1
-     |  1 | one   |  2
-     |  2 | two   |  2
-     |  3 | three |  2
-     |  4 | four  |  2
-     |  5 | five  |  2
-     |  6 | six   |  2
-     |  7 | seven |  2
-     |  8 | eight |  2
-     |  0 | zero  |  2
-     |    | null  |  2
-     |    | zero  |  2
-     |  1 | one   | -3
-     |  2 | two   | -3
-     |  3 | three | -3
-     |  4 | four  | -3
-     |  5 | five  | -3
-     |  6 | six   | -3
-     |  7 | seven | -3
-     |  8 | eight | -3
-     |  0 | zero  | -3
-     |    | null  | -3
-     |    | zero  | -3
-     |  1 | one   |  4
-     |  2 | two   |  4
-     |  3 | three |  4
-     |  4 | four  |  4
-     |  5 | five  |  4
-     |  6 | six   |  4
-     |  7 | seven |  4
-     |  8 | eight |  4
-     |  0 | zero  |  4
-     |    | null  |  4
-     |    | zero  |  4
-     |  1 | one   | -5
-     |  2 | two   | -5
-     |  3 | three | -5
-     |  4 | four  | -5
-     |  5 | five  | -5
-     |  6 | six   | -5
-     |  7 | seven | -5
-     |  8 | eight | -5
-     |  0 | zero  | -5
-     |    | null  | -5
-     |    | zero  | -5
-     |  1 | one   | -5
-     |  2 | two   | -5
-     |  3 | three | -5
-     |  4 | four  | -5
-     |  5 | five  | -5
-     |  6 | six   | -5
-     |  7 | seven | -5
-     |  8 | eight | -5
-     |  0 | zero  | -5
-     |    | null  | -5
-     |    | zero  | -5
-     |  1 | one   |   
-     |  2 | two   |   
-     |  3 | three |   
-     |  4 | four  |   
-     |  5 | five  |   
-     |  6 | six   |   
-     |  7 | seven |   
-     |  8 | eight |   
-     |  0 | zero  |   
-     |    | null  |   
-     |    | zero  |   
-     |  1 | one   |   
-     |  2 | two   |   
-     |  3 | three |   
-     |  4 | four  |   
-     |  5 | five  |   
-     |  6 | six   |   
-     |  7 | seven |   
-     |  8 | eight |   
-     |  0 | zero  |   
-     |    | null  |   
-     |    | zero  |   
-     |  1 | one   |  0
-     |  2 | two   |  0
-     |  3 | three |  0
-     |  4 | four  |  0
-     |  5 | five  |  0
-     |  6 | six   |  0
-     |  7 | seven |  0
-     |  8 | eight |  0
-     |  0 | zero  |  0
-     |    | null  |  0
-     |    | zero  |  0
+ ii |  tt   | kk 
+----+-------+----
+  1 | one   | -1
+  2 | two   | -1
+  3 | three | -1
+  4 | four  | -1
+  5 | five  | -1
+  6 | six   | -1
+  7 | seven | -1
+  8 | eight | -1
+  0 | zero  | -1
+    | null  | -1
+    | zero  | -1
+  1 | one   |  2
+  2 | two   |  2
+  3 | three |  2
+  4 | four  |  2
+  5 | five  |  2
+  6 | six   |  2
+  7 | seven |  2
+  8 | eight |  2
+  0 | zero  |  2
+    | null  |  2
+    | zero  |  2
+  1 | one   | -3
+  2 | two   | -3
+  3 | three | -3
+  4 | four  | -3
+  5 | five  | -3
+  6 | six   | -3
+  7 | seven | -3
+  8 | eight | -3
+  0 | zero  | -3
+    | null  | -3
+    | zero  | -3
+  1 | one   |  4
+  2 | two   |  4
+  3 | three |  4
+  4 | four  |  4
+  5 | five  |  4
+  6 | six   |  4
+  7 | seven |  4
+  8 | eight |  4
+  0 | zero  |  4
+    | null  |  4
+    | zero  |  4
+  1 | one   | -5
+  2 | two   | -5
+  3 | three | -5
+  4 | four  | -5
+  5 | five  | -5
+  6 | six   | -5
+  7 | seven | -5
+  8 | eight | -5
+  0 | zero  | -5
+    | null  | -5
+    | zero  | -5
+  1 | one   | -5
+  2 | two   | -5
+  3 | three | -5
+  4 | four  | -5
+  5 | five  | -5
+  6 | six   | -5
+  7 | seven | -5
+  8 | eight | -5
+  0 | zero  | -5
+    | null  | -5
+    | zero  | -5
+  1 | one   |   
+  2 | two   |   
+  3 | three |   
+  4 | four  |   
+  5 | five  |   
+  6 | six   |   
+  7 | seven |   
+  8 | eight |   
+  0 | zero  |   
+    | null  |   
+    | zero  |   
+  1 | one   |   
+  2 | two   |   
+  3 | three |   
+  4 | four  |   
+  5 | five  |   
+  6 | six   |   
+  7 | seven |   
+  8 | eight |   
+  0 | zero  |   
+    | null  |   
+    | zero  |   
+  1 | one   |  0
+  2 | two   |  0
+  3 | three |  0
+  4 | four  |  0
+  5 | five  |  0
+  6 | six   |  0
+  7 | seven |  0
+  8 | eight |  0
+  0 | zero  |  0
+    | null  |  0
+    | zero  |  0
 (99 rows)
 
 --Testcase 31:
-SELECT '' AS "xxx", tx.ii, tx.jj, tx.kk
+SELECT tx.ii, tx.jj, tx.kk
   FROM (J1_TBL t1 (a, b, c) CROSS JOIN J2_TBL t2 (d, e))
     AS tx (ii, jj, tt, ii2, kk);
- xxx | ii | jj | kk 
------+----+----+----
-     |  1 |  4 | -1
-     |  2 |  3 | -1
-     |  3 |  2 | -1
-     |  4 |  1 | -1
-     |  5 |  0 | -1
-     |  6 |  6 | -1
-     |  7 |  7 | -1
-     |  8 |  8 | -1
-     |  0 |    | -1
-     |    |    | -1
-     |    |  0 | -1
-     |  1 |  4 |  2
-     |  2 |  3 |  2
-     |  3 |  2 |  2
-     |  4 |  1 |  2
-     |  5 |  0 |  2
-     |  6 |  6 |  2
-     |  7 |  7 |  2
-     |  8 |  8 |  2
-     |  0 |    |  2
-     |    |    |  2
-     |    |  0 |  2
-     |  1 |  4 | -3
-     |  2 |  3 | -3
-     |  3 |  2 | -3
-     |  4 |  1 | -3
-     |  5 |  0 | -3
-     |  6 |  6 | -3
-     |  7 |  7 | -3
-     |  8 |  8 | -3
-     |  0 |    | -3
-     |    |    | -3
-     |    |  0 | -3
-     |  1 |  4 |  4
-     |  2 |  3 |  4
-     |  3 |  2 |  4
-     |  4 |  1 |  4
-     |  5 |  0 |  4
-     |  6 |  6 |  4
-     |  7 |  7 |  4
-     |  8 |  8 |  4
-     |  0 |    |  4
-     |    |    |  4
-     |    |  0 |  4
-     |  1 |  4 | -5
-     |  2 |  3 | -5
-     |  3 |  2 | -5
-     |  4 |  1 | -5
-     |  5 |  0 | -5
-     |  6 |  6 | -5
-     |  7 |  7 | -5
-     |  8 |  8 | -5
-     |  0 |    | -5
-     |    |    | -5
-     |    |  0 | -5
-     |  1 |  4 | -5
-     |  2 |  3 | -5
-     |  3 |  2 | -5
-     |  4 |  1 | -5
-     |  5 |  0 | -5
-     |  6 |  6 | -5
-     |  7 |  7 | -5
-     |  8 |  8 | -5
-     |  0 |    | -5
-     |    |    | -5
-     |    |  0 | -5
-     |  1 |  4 |   
-     |  2 |  3 |   
-     |  3 |  2 |   
-     |  4 |  1 |   
-     |  5 |  0 |   
-     |  6 |  6 |   
-     |  7 |  7 |   
-     |  8 |  8 |   
-     |  0 |    |   
-     |    |    |   
-     |    |  0 |   
-     |  1 |  4 |   
-     |  2 |  3 |   
-     |  3 |  2 |   
-     |  4 |  1 |   
-     |  5 |  0 |   
-     |  6 |  6 |   
-     |  7 |  7 |   
-     |  8 |  8 |   
-     |  0 |    |   
-     |    |    |   
-     |    |  0 |   
-     |  1 |  4 |  0
-     |  2 |  3 |  0
-     |  3 |  2 |  0
-     |  4 |  1 |  0
-     |  5 |  0 |  0
-     |  6 |  6 |  0
-     |  7 |  7 |  0
-     |  8 |  8 |  0
-     |  0 |    |  0
-     |    |    |  0
-     |    |  0 |  0
+ ii | jj | kk 
+----+----+----
+  1 |  4 | -1
+  2 |  3 | -1
+  3 |  2 | -1
+  4 |  1 | -1
+  5 |  0 | -1
+  6 |  6 | -1
+  7 |  7 | -1
+  8 |  8 | -1
+  0 |    | -1
+    |    | -1
+    |  0 | -1
+  1 |  4 |  2
+  2 |  3 |  2
+  3 |  2 |  2
+  4 |  1 |  2
+  5 |  0 |  2
+  6 |  6 |  2
+  7 |  7 |  2
+  8 |  8 |  2
+  0 |    |  2
+    |    |  2
+    |  0 |  2
+  1 |  4 | -3
+  2 |  3 | -3
+  3 |  2 | -3
+  4 |  1 | -3
+  5 |  0 | -3
+  6 |  6 | -3
+  7 |  7 | -3
+  8 |  8 | -3
+  0 |    | -3
+    |    | -3
+    |  0 | -3
+  1 |  4 |  4
+  2 |  3 |  4
+  3 |  2 |  4
+  4 |  1 |  4
+  5 |  0 |  4
+  6 |  6 |  4
+  7 |  7 |  4
+  8 |  8 |  4
+  0 |    |  4
+    |    |  4
+    |  0 |  4
+  1 |  4 | -5
+  2 |  3 | -5
+  3 |  2 | -5
+  4 |  1 | -5
+  5 |  0 | -5
+  6 |  6 | -5
+  7 |  7 | -5
+  8 |  8 | -5
+  0 |    | -5
+    |    | -5
+    |  0 | -5
+  1 |  4 | -5
+  2 |  3 | -5
+  3 |  2 | -5
+  4 |  1 | -5
+  5 |  0 | -5
+  6 |  6 | -5
+  7 |  7 | -5
+  8 |  8 | -5
+  0 |    | -5
+    |    | -5
+    |  0 | -5
+  1 |  4 |   
+  2 |  3 |   
+  3 |  2 |   
+  4 |  1 |   
+  5 |  0 |   
+  6 |  6 |   
+  7 |  7 |   
+  8 |  8 |   
+  0 |    |   
+    |    |   
+    |  0 |   
+  1 |  4 |   
+  2 |  3 |   
+  3 |  2 |   
+  4 |  1 |   
+  5 |  0 |   
+  6 |  6 |   
+  7 |  7 |   
+  8 |  8 |   
+  0 |    |   
+    |    |   
+    |  0 |   
+  1 |  4 |  0
+  2 |  3 |  0
+  3 |  2 |  0
+  4 |  1 |  0
+  5 |  0 |  0
+  6 |  6 |  0
+  7 |  7 |  0
+  8 |  8 |  0
+  0 |    |  0
+    |    |  0
+    |  0 |  0
 (99 rows)
 
 --Testcase 32:
-SELECT '' AS "xxx", *
+SELECT *
   FROM J1_TBL CROSS JOIN J2_TBL a CROSS JOIN J2_TBL b;
- xxx | i | j |   t   | i | k  | i | k  
------+---+---+-------+---+----+---+----
-     | 1 | 4 | one   | 1 | -1 | 1 | -1
-     | 1 | 4 | one   | 1 | -1 | 2 |  2
-     | 1 | 4 | one   | 1 | -1 | 3 | -3
-     | 1 | 4 | one   | 1 | -1 | 2 |  4
-     | 1 | 4 | one   | 1 | -1 | 5 | -5
-     | 1 | 4 | one   | 1 | -1 | 5 | -5
-     | 1 | 4 | one   | 1 | -1 | 0 |   
-     | 1 | 4 | one   | 1 | -1 |   |   
-     | 1 | 4 | one   | 1 | -1 |   |  0
-     | 2 | 3 | two   | 1 | -1 | 1 | -1
-     | 2 | 3 | two   | 1 | -1 | 2 |  2
-     | 2 | 3 | two   | 1 | -1 | 3 | -3
-     | 2 | 3 | two   | 1 | -1 | 2 |  4
-     | 2 | 3 | two   | 1 | -1 | 5 | -5
-     | 2 | 3 | two   | 1 | -1 | 5 | -5
-     | 2 | 3 | two   | 1 | -1 | 0 |   
-     | 2 | 3 | two   | 1 | -1 |   |   
-     | 2 | 3 | two   | 1 | -1 |   |  0
-     | 3 | 2 | three | 1 | -1 | 1 | -1
-     | 3 | 2 | three | 1 | -1 | 2 |  2
-     | 3 | 2 | three | 1 | -1 | 3 | -3
-     | 3 | 2 | three | 1 | -1 | 2 |  4
-     | 3 | 2 | three | 1 | -1 | 5 | -5
-     | 3 | 2 | three | 1 | -1 | 5 | -5
-     | 3 | 2 | three | 1 | -1 | 0 |   
-     | 3 | 2 | three | 1 | -1 |   |   
-     | 3 | 2 | three | 1 | -1 |   |  0
-     | 4 | 1 | four  | 1 | -1 | 1 | -1
-     | 4 | 1 | four  | 1 | -1 | 2 |  2
-     | 4 | 1 | four  | 1 | -1 | 3 | -3
-     | 4 | 1 | four  | 1 | -1 | 2 |  4
-     | 4 | 1 | four  | 1 | -1 | 5 | -5
-     | 4 | 1 | four  | 1 | -1 | 5 | -5
-     | 4 | 1 | four  | 1 | -1 | 0 |   
-     | 4 | 1 | four  | 1 | -1 |   |   
-     | 4 | 1 | four  | 1 | -1 |   |  0
-     | 5 | 0 | five  | 1 | -1 | 1 | -1
-     | 5 | 0 | five  | 1 | -1 | 2 |  2
-     | 5 | 0 | five  | 1 | -1 | 3 | -3
-     | 5 | 0 | five  | 1 | -1 | 2 |  4
-     | 5 | 0 | five  | 1 | -1 | 5 | -5
-     | 5 | 0 | five  | 1 | -1 | 5 | -5
-     | 5 | 0 | five  | 1 | -1 | 0 |   
-     | 5 | 0 | five  | 1 | -1 |   |   
-     | 5 | 0 | five  | 1 | -1 |   |  0
-     | 6 | 6 | six   | 1 | -1 | 1 | -1
-     | 6 | 6 | six   | 1 | -1 | 2 |  2
-     | 6 | 6 | six   | 1 | -1 | 3 | -3
-     | 6 | 6 | six   | 1 | -1 | 2 |  4
-     | 6 | 6 | six   | 1 | -1 | 5 | -5
-     | 6 | 6 | six   | 1 | -1 | 5 | -5
-     | 6 | 6 | six   | 1 | -1 | 0 |   
-     | 6 | 6 | six   | 1 | -1 |   |   
-     | 6 | 6 | six   | 1 | -1 |   |  0
-     | 7 | 7 | seven | 1 | -1 | 1 | -1
-     | 7 | 7 | seven | 1 | -1 | 2 |  2
-     | 7 | 7 | seven | 1 | -1 | 3 | -3
-     | 7 | 7 | seven | 1 | -1 | 2 |  4
-     | 7 | 7 | seven | 1 | -1 | 5 | -5
-     | 7 | 7 | seven | 1 | -1 | 5 | -5
-     | 7 | 7 | seven | 1 | -1 | 0 |   
-     | 7 | 7 | seven | 1 | -1 |   |   
-     | 7 | 7 | seven | 1 | -1 |   |  0
-     | 8 | 8 | eight | 1 | -1 | 1 | -1
-     | 8 | 8 | eight | 1 | -1 | 2 |  2
-     | 8 | 8 | eight | 1 | -1 | 3 | -3
-     | 8 | 8 | eight | 1 | -1 | 2 |  4
-     | 8 | 8 | eight | 1 | -1 | 5 | -5
-     | 8 | 8 | eight | 1 | -1 | 5 | -5
-     | 8 | 8 | eight | 1 | -1 | 0 |   
-     | 8 | 8 | eight | 1 | -1 |   |   
-     | 8 | 8 | eight | 1 | -1 |   |  0
-     | 0 |   | zero  | 1 | -1 | 1 | -1
-     | 0 |   | zero  | 1 | -1 | 2 |  2
-     | 0 |   | zero  | 1 | -1 | 3 | -3
-     | 0 |   | zero  | 1 | -1 | 2 |  4
-     | 0 |   | zero  | 1 | -1 | 5 | -5
-     | 0 |   | zero  | 1 | -1 | 5 | -5
-     | 0 |   | zero  | 1 | -1 | 0 |   
-     | 0 |   | zero  | 1 | -1 |   |   
-     | 0 |   | zero  | 1 | -1 |   |  0
-     |   |   | null  | 1 | -1 | 1 | -1
-     |   |   | null  | 1 | -1 | 2 |  2
-     |   |   | null  | 1 | -1 | 3 | -3
-     |   |   | null  | 1 | -1 | 2 |  4
-     |   |   | null  | 1 | -1 | 5 | -5
-     |   |   | null  | 1 | -1 | 5 | -5
-     |   |   | null  | 1 | -1 | 0 |   
-     |   |   | null  | 1 | -1 |   |   
-     |   |   | null  | 1 | -1 |   |  0
-     |   | 0 | zero  | 1 | -1 | 1 | -1
-     |   | 0 | zero  | 1 | -1 | 2 |  2
-     |   | 0 | zero  | 1 | -1 | 3 | -3
-     |   | 0 | zero  | 1 | -1 | 2 |  4
-     |   | 0 | zero  | 1 | -1 | 5 | -5
-     |   | 0 | zero  | 1 | -1 | 5 | -5
-     |   | 0 | zero  | 1 | -1 | 0 |   
-     |   | 0 | zero  | 1 | -1 |   |   
-     |   | 0 | zero  | 1 | -1 |   |  0
-     | 1 | 4 | one   | 2 |  2 | 1 | -1
-     | 1 | 4 | one   | 2 |  2 | 2 |  2
-     | 1 | 4 | one   | 2 |  2 | 3 | -3
-     | 1 | 4 | one   | 2 |  2 | 2 |  4
-     | 1 | 4 | one   | 2 |  2 | 5 | -5
-     | 1 | 4 | one   | 2 |  2 | 5 | -5
-     | 1 | 4 | one   | 2 |  2 | 0 |   
-     | 1 | 4 | one   | 2 |  2 |   |   
-     | 1 | 4 | one   | 2 |  2 |   |  0
-     | 2 | 3 | two   | 2 |  2 | 1 | -1
-     | 2 | 3 | two   | 2 |  2 | 2 |  2
-     | 2 | 3 | two   | 2 |  2 | 3 | -3
-     | 2 | 3 | two   | 2 |  2 | 2 |  4
-     | 2 | 3 | two   | 2 |  2 | 5 | -5
-     | 2 | 3 | two   | 2 |  2 | 5 | -5
-     | 2 | 3 | two   | 2 |  2 | 0 |   
-     | 2 | 3 | two   | 2 |  2 |   |   
-     | 2 | 3 | two   | 2 |  2 |   |  0
-     | 3 | 2 | three | 2 |  2 | 1 | -1
-     | 3 | 2 | three | 2 |  2 | 2 |  2
-     | 3 | 2 | three | 2 |  2 | 3 | -3
-     | 3 | 2 | three | 2 |  2 | 2 |  4
-     | 3 | 2 | three | 2 |  2 | 5 | -5
-     | 3 | 2 | three | 2 |  2 | 5 | -5
-     | 3 | 2 | three | 2 |  2 | 0 |   
-     | 3 | 2 | three | 2 |  2 |   |   
-     | 3 | 2 | three | 2 |  2 |   |  0
-     | 4 | 1 | four  | 2 |  2 | 1 | -1
-     | 4 | 1 | four  | 2 |  2 | 2 |  2
-     | 4 | 1 | four  | 2 |  2 | 3 | -3
-     | 4 | 1 | four  | 2 |  2 | 2 |  4
-     | 4 | 1 | four  | 2 |  2 | 5 | -5
-     | 4 | 1 | four  | 2 |  2 | 5 | -5
-     | 4 | 1 | four  | 2 |  2 | 0 |   
-     | 4 | 1 | four  | 2 |  2 |   |   
-     | 4 | 1 | four  | 2 |  2 |   |  0
-     | 5 | 0 | five  | 2 |  2 | 1 | -1
-     | 5 | 0 | five  | 2 |  2 | 2 |  2
-     | 5 | 0 | five  | 2 |  2 | 3 | -3
-     | 5 | 0 | five  | 2 |  2 | 2 |  4
-     | 5 | 0 | five  | 2 |  2 | 5 | -5
-     | 5 | 0 | five  | 2 |  2 | 5 | -5
-     | 5 | 0 | five  | 2 |  2 | 0 |   
-     | 5 | 0 | five  | 2 |  2 |   |   
-     | 5 | 0 | five  | 2 |  2 |   |  0
-     | 6 | 6 | six   | 2 |  2 | 1 | -1
-     | 6 | 6 | six   | 2 |  2 | 2 |  2
-     | 6 | 6 | six   | 2 |  2 | 3 | -3
-     | 6 | 6 | six   | 2 |  2 | 2 |  4
-     | 6 | 6 | six   | 2 |  2 | 5 | -5
-     | 6 | 6 | six   | 2 |  2 | 5 | -5
-     | 6 | 6 | six   | 2 |  2 | 0 |   
-     | 6 | 6 | six   | 2 |  2 |   |   
-     | 6 | 6 | six   | 2 |  2 |   |  0
-     | 7 | 7 | seven | 2 |  2 | 1 | -1
-     | 7 | 7 | seven | 2 |  2 | 2 |  2
-     | 7 | 7 | seven | 2 |  2 | 3 | -3
-     | 7 | 7 | seven | 2 |  2 | 2 |  4
-     | 7 | 7 | seven | 2 |  2 | 5 | -5
-     | 7 | 7 | seven | 2 |  2 | 5 | -5
-     | 7 | 7 | seven | 2 |  2 | 0 |   
-     | 7 | 7 | seven | 2 |  2 |   |   
-     | 7 | 7 | seven | 2 |  2 |   |  0
-     | 8 | 8 | eight | 2 |  2 | 1 | -1
-     | 8 | 8 | eight | 2 |  2 | 2 |  2
-     | 8 | 8 | eight | 2 |  2 | 3 | -3
-     | 8 | 8 | eight | 2 |  2 | 2 |  4
-     | 8 | 8 | eight | 2 |  2 | 5 | -5
-     | 8 | 8 | eight | 2 |  2 | 5 | -5
-     | 8 | 8 | eight | 2 |  2 | 0 |   
-     | 8 | 8 | eight | 2 |  2 |   |   
-     | 8 | 8 | eight | 2 |  2 |   |  0
-     | 0 |   | zero  | 2 |  2 | 1 | -1
-     | 0 |   | zero  | 2 |  2 | 2 |  2
-     | 0 |   | zero  | 2 |  2 | 3 | -3
-     | 0 |   | zero  | 2 |  2 | 2 |  4
-     | 0 |   | zero  | 2 |  2 | 5 | -5
-     | 0 |   | zero  | 2 |  2 | 5 | -5
-     | 0 |   | zero  | 2 |  2 | 0 |   
-     | 0 |   | zero  | 2 |  2 |   |   
-     | 0 |   | zero  | 2 |  2 |   |  0
-     |   |   | null  | 2 |  2 | 1 | -1
-     |   |   | null  | 2 |  2 | 2 |  2
-     |   |   | null  | 2 |  2 | 3 | -3
-     |   |   | null  | 2 |  2 | 2 |  4
-     |   |   | null  | 2 |  2 | 5 | -5
-     |   |   | null  | 2 |  2 | 5 | -5
-     |   |   | null  | 2 |  2 | 0 |   
-     |   |   | null  | 2 |  2 |   |   
-     |   |   | null  | 2 |  2 |   |  0
-     |   | 0 | zero  | 2 |  2 | 1 | -1
-     |   | 0 | zero  | 2 |  2 | 2 |  2
-     |   | 0 | zero  | 2 |  2 | 3 | -3
-     |   | 0 | zero  | 2 |  2 | 2 |  4
-     |   | 0 | zero  | 2 |  2 | 5 | -5
-     |   | 0 | zero  | 2 |  2 | 5 | -5
-     |   | 0 | zero  | 2 |  2 | 0 |   
-     |   | 0 | zero  | 2 |  2 |   |   
-     |   | 0 | zero  | 2 |  2 |   |  0
-     | 1 | 4 | one   | 3 | -3 | 1 | -1
-     | 1 | 4 | one   | 3 | -3 | 2 |  2
-     | 1 | 4 | one   | 3 | -3 | 3 | -3
-     | 1 | 4 | one   | 3 | -3 | 2 |  4
-     | 1 | 4 | one   | 3 | -3 | 5 | -5
-     | 1 | 4 | one   | 3 | -3 | 5 | -5
-     | 1 | 4 | one   | 3 | -3 | 0 |   
-     | 1 | 4 | one   | 3 | -3 |   |   
-     | 1 | 4 | one   | 3 | -3 |   |  0
-     | 2 | 3 | two   | 3 | -3 | 1 | -1
-     | 2 | 3 | two   | 3 | -3 | 2 |  2
-     | 2 | 3 | two   | 3 | -3 | 3 | -3
-     | 2 | 3 | two   | 3 | -3 | 2 |  4
-     | 2 | 3 | two   | 3 | -3 | 5 | -5
-     | 2 | 3 | two   | 3 | -3 | 5 | -5
-     | 2 | 3 | two   | 3 | -3 | 0 |   
-     | 2 | 3 | two   | 3 | -3 |   |   
-     | 2 | 3 | two   | 3 | -3 |   |  0
-     | 3 | 2 | three | 3 | -3 | 1 | -1
-     | 3 | 2 | three | 3 | -3 | 2 |  2
-     | 3 | 2 | three | 3 | -3 | 3 | -3
-     | 3 | 2 | three | 3 | -3 | 2 |  4
-     | 3 | 2 | three | 3 | -3 | 5 | -5
-     | 3 | 2 | three | 3 | -3 | 5 | -5
-     | 3 | 2 | three | 3 | -3 | 0 |   
-     | 3 | 2 | three | 3 | -3 |   |   
-     | 3 | 2 | three | 3 | -3 |   |  0
-     | 4 | 1 | four  | 3 | -3 | 1 | -1
-     | 4 | 1 | four  | 3 | -3 | 2 |  2
-     | 4 | 1 | four  | 3 | -3 | 3 | -3
-     | 4 | 1 | four  | 3 | -3 | 2 |  4
-     | 4 | 1 | four  | 3 | -3 | 5 | -5
-     | 4 | 1 | four  | 3 | -3 | 5 | -5
-     | 4 | 1 | four  | 3 | -3 | 0 |   
-     | 4 | 1 | four  | 3 | -3 |   |   
-     | 4 | 1 | four  | 3 | -3 |   |  0
-     | 5 | 0 | five  | 3 | -3 | 1 | -1
-     | 5 | 0 | five  | 3 | -3 | 2 |  2
-     | 5 | 0 | five  | 3 | -3 | 3 | -3
-     | 5 | 0 | five  | 3 | -3 | 2 |  4
-     | 5 | 0 | five  | 3 | -3 | 5 | -5
-     | 5 | 0 | five  | 3 | -3 | 5 | -5
-     | 5 | 0 | five  | 3 | -3 | 0 |   
-     | 5 | 0 | five  | 3 | -3 |   |   
-     | 5 | 0 | five  | 3 | -3 |   |  0
-     | 6 | 6 | six   | 3 | -3 | 1 | -1
-     | 6 | 6 | six   | 3 | -3 | 2 |  2
-     | 6 | 6 | six   | 3 | -3 | 3 | -3
-     | 6 | 6 | six   | 3 | -3 | 2 |  4
-     | 6 | 6 | six   | 3 | -3 | 5 | -5
-     | 6 | 6 | six   | 3 | -3 | 5 | -5
-     | 6 | 6 | six   | 3 | -3 | 0 |   
-     | 6 | 6 | six   | 3 | -3 |   |   
-     | 6 | 6 | six   | 3 | -3 |   |  0
-     | 7 | 7 | seven | 3 | -3 | 1 | -1
-     | 7 | 7 | seven | 3 | -3 | 2 |  2
-     | 7 | 7 | seven | 3 | -3 | 3 | -3
-     | 7 | 7 | seven | 3 | -3 | 2 |  4
-     | 7 | 7 | seven | 3 | -3 | 5 | -5
-     | 7 | 7 | seven | 3 | -3 | 5 | -5
-     | 7 | 7 | seven | 3 | -3 | 0 |   
-     | 7 | 7 | seven | 3 | -3 |   |   
-     | 7 | 7 | seven | 3 | -3 |   |  0
-     | 8 | 8 | eight | 3 | -3 | 1 | -1
-     | 8 | 8 | eight | 3 | -3 | 2 |  2
-     | 8 | 8 | eight | 3 | -3 | 3 | -3
-     | 8 | 8 | eight | 3 | -3 | 2 |  4
-     | 8 | 8 | eight | 3 | -3 | 5 | -5
-     | 8 | 8 | eight | 3 | -3 | 5 | -5
-     | 8 | 8 | eight | 3 | -3 | 0 |   
-     | 8 | 8 | eight | 3 | -3 |   |   
-     | 8 | 8 | eight | 3 | -3 |   |  0
-     | 0 |   | zero  | 3 | -3 | 1 | -1
-     | 0 |   | zero  | 3 | -3 | 2 |  2
-     | 0 |   | zero  | 3 | -3 | 3 | -3
-     | 0 |   | zero  | 3 | -3 | 2 |  4
-     | 0 |   | zero  | 3 | -3 | 5 | -5
-     | 0 |   | zero  | 3 | -3 | 5 | -5
-     | 0 |   | zero  | 3 | -3 | 0 |   
-     | 0 |   | zero  | 3 | -3 |   |   
-     | 0 |   | zero  | 3 | -3 |   |  0
-     |   |   | null  | 3 | -3 | 1 | -1
-     |   |   | null  | 3 | -3 | 2 |  2
-     |   |   | null  | 3 | -3 | 3 | -3
-     |   |   | null  | 3 | -3 | 2 |  4
-     |   |   | null  | 3 | -3 | 5 | -5
-     |   |   | null  | 3 | -3 | 5 | -5
-     |   |   | null  | 3 | -3 | 0 |   
-     |   |   | null  | 3 | -3 |   |   
-     |   |   | null  | 3 | -3 |   |  0
-     |   | 0 | zero  | 3 | -3 | 1 | -1
-     |   | 0 | zero  | 3 | -3 | 2 |  2
-     |   | 0 | zero  | 3 | -3 | 3 | -3
-     |   | 0 | zero  | 3 | -3 | 2 |  4
-     |   | 0 | zero  | 3 | -3 | 5 | -5
-     |   | 0 | zero  | 3 | -3 | 5 | -5
-     |   | 0 | zero  | 3 | -3 | 0 |   
-     |   | 0 | zero  | 3 | -3 |   |   
-     |   | 0 | zero  | 3 | -3 |   |  0
-     | 1 | 4 | one   | 2 |  4 | 1 | -1
-     | 1 | 4 | one   | 2 |  4 | 2 |  2
-     | 1 | 4 | one   | 2 |  4 | 3 | -3
-     | 1 | 4 | one   | 2 |  4 | 2 |  4
-     | 1 | 4 | one   | 2 |  4 | 5 | -5
-     | 1 | 4 | one   | 2 |  4 | 5 | -5
-     | 1 | 4 | one   | 2 |  4 | 0 |   
-     | 1 | 4 | one   | 2 |  4 |   |   
-     | 1 | 4 | one   | 2 |  4 |   |  0
-     | 2 | 3 | two   | 2 |  4 | 1 | -1
-     | 2 | 3 | two   | 2 |  4 | 2 |  2
-     | 2 | 3 | two   | 2 |  4 | 3 | -3
-     | 2 | 3 | two   | 2 |  4 | 2 |  4
-     | 2 | 3 | two   | 2 |  4 | 5 | -5
-     | 2 | 3 | two   | 2 |  4 | 5 | -5
-     | 2 | 3 | two   | 2 |  4 | 0 |   
-     | 2 | 3 | two   | 2 |  4 |   |   
-     | 2 | 3 | two   | 2 |  4 |   |  0
-     | 3 | 2 | three | 2 |  4 | 1 | -1
-     | 3 | 2 | three | 2 |  4 | 2 |  2
-     | 3 | 2 | three | 2 |  4 | 3 | -3
-     | 3 | 2 | three | 2 |  4 | 2 |  4
-     | 3 | 2 | three | 2 |  4 | 5 | -5
-     | 3 | 2 | three | 2 |  4 | 5 | -5
-     | 3 | 2 | three | 2 |  4 | 0 |   
-     | 3 | 2 | three | 2 |  4 |   |   
-     | 3 | 2 | three | 2 |  4 |   |  0
-     | 4 | 1 | four  | 2 |  4 | 1 | -1
-     | 4 | 1 | four  | 2 |  4 | 2 |  2
-     | 4 | 1 | four  | 2 |  4 | 3 | -3
-     | 4 | 1 | four  | 2 |  4 | 2 |  4
-     | 4 | 1 | four  | 2 |  4 | 5 | -5
-     | 4 | 1 | four  | 2 |  4 | 5 | -5
-     | 4 | 1 | four  | 2 |  4 | 0 |   
-     | 4 | 1 | four  | 2 |  4 |   |   
-     | 4 | 1 | four  | 2 |  4 |   |  0
-     | 5 | 0 | five  | 2 |  4 | 1 | -1
-     | 5 | 0 | five  | 2 |  4 | 2 |  2
-     | 5 | 0 | five  | 2 |  4 | 3 | -3
-     | 5 | 0 | five  | 2 |  4 | 2 |  4
-     | 5 | 0 | five  | 2 |  4 | 5 | -5
-     | 5 | 0 | five  | 2 |  4 | 5 | -5
-     | 5 | 0 | five  | 2 |  4 | 0 |   
-     | 5 | 0 | five  | 2 |  4 |   |   
-     | 5 | 0 | five  | 2 |  4 |   |  0
-     | 6 | 6 | six   | 2 |  4 | 1 | -1
-     | 6 | 6 | six   | 2 |  4 | 2 |  2
-     | 6 | 6 | six   | 2 |  4 | 3 | -3
-     | 6 | 6 | six   | 2 |  4 | 2 |  4
-     | 6 | 6 | six   | 2 |  4 | 5 | -5
-     | 6 | 6 | six   | 2 |  4 | 5 | -5
-     | 6 | 6 | six   | 2 |  4 | 0 |   
-     | 6 | 6 | six   | 2 |  4 |   |   
-     | 6 | 6 | six   | 2 |  4 |   |  0
-     | 7 | 7 | seven | 2 |  4 | 1 | -1
-     | 7 | 7 | seven | 2 |  4 | 2 |  2
-     | 7 | 7 | seven | 2 |  4 | 3 | -3
-     | 7 | 7 | seven | 2 |  4 | 2 |  4
-     | 7 | 7 | seven | 2 |  4 | 5 | -5
-     | 7 | 7 | seven | 2 |  4 | 5 | -5
-     | 7 | 7 | seven | 2 |  4 | 0 |   
-     | 7 | 7 | seven | 2 |  4 |   |   
-     | 7 | 7 | seven | 2 |  4 |   |  0
-     | 8 | 8 | eight | 2 |  4 | 1 | -1
-     | 8 | 8 | eight | 2 |  4 | 2 |  2
-     | 8 | 8 | eight | 2 |  4 | 3 | -3
-     | 8 | 8 | eight | 2 |  4 | 2 |  4
-     | 8 | 8 | eight | 2 |  4 | 5 | -5
-     | 8 | 8 | eight | 2 |  4 | 5 | -5
-     | 8 | 8 | eight | 2 |  4 | 0 |   
-     | 8 | 8 | eight | 2 |  4 |   |   
-     | 8 | 8 | eight | 2 |  4 |   |  0
-     | 0 |   | zero  | 2 |  4 | 1 | -1
-     | 0 |   | zero  | 2 |  4 | 2 |  2
-     | 0 |   | zero  | 2 |  4 | 3 | -3
-     | 0 |   | zero  | 2 |  4 | 2 |  4
-     | 0 |   | zero  | 2 |  4 | 5 | -5
-     | 0 |   | zero  | 2 |  4 | 5 | -5
-     | 0 |   | zero  | 2 |  4 | 0 |   
-     | 0 |   | zero  | 2 |  4 |   |   
-     | 0 |   | zero  | 2 |  4 |   |  0
-     |   |   | null  | 2 |  4 | 1 | -1
-     |   |   | null  | 2 |  4 | 2 |  2
-     |   |   | null  | 2 |  4 | 3 | -3
-     |   |   | null  | 2 |  4 | 2 |  4
-     |   |   | null  | 2 |  4 | 5 | -5
-     |   |   | null  | 2 |  4 | 5 | -5
-     |   |   | null  | 2 |  4 | 0 |   
-     |   |   | null  | 2 |  4 |   |   
-     |   |   | null  | 2 |  4 |   |  0
-     |   | 0 | zero  | 2 |  4 | 1 | -1
-     |   | 0 | zero  | 2 |  4 | 2 |  2
-     |   | 0 | zero  | 2 |  4 | 3 | -3
-     |   | 0 | zero  | 2 |  4 | 2 |  4
-     |   | 0 | zero  | 2 |  4 | 5 | -5
-     |   | 0 | zero  | 2 |  4 | 5 | -5
-     |   | 0 | zero  | 2 |  4 | 0 |   
-     |   | 0 | zero  | 2 |  4 |   |   
-     |   | 0 | zero  | 2 |  4 |   |  0
-     | 1 | 4 | one   | 5 | -5 | 1 | -1
-     | 1 | 4 | one   | 5 | -5 | 2 |  2
-     | 1 | 4 | one   | 5 | -5 | 3 | -3
-     | 1 | 4 | one   | 5 | -5 | 2 |  4
-     | 1 | 4 | one   | 5 | -5 | 5 | -5
-     | 1 | 4 | one   | 5 | -5 | 5 | -5
-     | 1 | 4 | one   | 5 | -5 | 0 |   
-     | 1 | 4 | one   | 5 | -5 |   |   
-     | 1 | 4 | one   | 5 | -5 |   |  0
-     | 2 | 3 | two   | 5 | -5 | 1 | -1
-     | 2 | 3 | two   | 5 | -5 | 2 |  2
-     | 2 | 3 | two   | 5 | -5 | 3 | -3
-     | 2 | 3 | two   | 5 | -5 | 2 |  4
-     | 2 | 3 | two   | 5 | -5 | 5 | -5
-     | 2 | 3 | two   | 5 | -5 | 5 | -5
-     | 2 | 3 | two   | 5 | -5 | 0 |   
-     | 2 | 3 | two   | 5 | -5 |   |   
-     | 2 | 3 | two   | 5 | -5 |   |  0
-     | 3 | 2 | three | 5 | -5 | 1 | -1
-     | 3 | 2 | three | 5 | -5 | 2 |  2
-     | 3 | 2 | three | 5 | -5 | 3 | -3
-     | 3 | 2 | three | 5 | -5 | 2 |  4
-     | 3 | 2 | three | 5 | -5 | 5 | -5
-     | 3 | 2 | three | 5 | -5 | 5 | -5
-     | 3 | 2 | three | 5 | -5 | 0 |   
-     | 3 | 2 | three | 5 | -5 |   |   
-     | 3 | 2 | three | 5 | -5 |   |  0
-     | 4 | 1 | four  | 5 | -5 | 1 | -1
-     | 4 | 1 | four  | 5 | -5 | 2 |  2
-     | 4 | 1 | four  | 5 | -5 | 3 | -3
-     | 4 | 1 | four  | 5 | -5 | 2 |  4
-     | 4 | 1 | four  | 5 | -5 | 5 | -5
-     | 4 | 1 | four  | 5 | -5 | 5 | -5
-     | 4 | 1 | four  | 5 | -5 | 0 |   
-     | 4 | 1 | four  | 5 | -5 |   |   
-     | 4 | 1 | four  | 5 | -5 |   |  0
-     | 5 | 0 | five  | 5 | -5 | 1 | -1
-     | 5 | 0 | five  | 5 | -5 | 2 |  2
-     | 5 | 0 | five  | 5 | -5 | 3 | -3
-     | 5 | 0 | five  | 5 | -5 | 2 |  4
-     | 5 | 0 | five  | 5 | -5 | 5 | -5
-     | 5 | 0 | five  | 5 | -5 | 5 | -5
-     | 5 | 0 | five  | 5 | -5 | 0 |   
-     | 5 | 0 | five  | 5 | -5 |   |   
-     | 5 | 0 | five  | 5 | -5 |   |  0
-     | 6 | 6 | six   | 5 | -5 | 1 | -1
-     | 6 | 6 | six   | 5 | -5 | 2 |  2
-     | 6 | 6 | six   | 5 | -5 | 3 | -3
-     | 6 | 6 | six   | 5 | -5 | 2 |  4
-     | 6 | 6 | six   | 5 | -5 | 5 | -5
-     | 6 | 6 | six   | 5 | -5 | 5 | -5
-     | 6 | 6 | six   | 5 | -5 | 0 |   
-     | 6 | 6 | six   | 5 | -5 |   |   
-     | 6 | 6 | six   | 5 | -5 |   |  0
-     | 7 | 7 | seven | 5 | -5 | 1 | -1
-     | 7 | 7 | seven | 5 | -5 | 2 |  2
-     | 7 | 7 | seven | 5 | -5 | 3 | -3
-     | 7 | 7 | seven | 5 | -5 | 2 |  4
-     | 7 | 7 | seven | 5 | -5 | 5 | -5
-     | 7 | 7 | seven | 5 | -5 | 5 | -5
-     | 7 | 7 | seven | 5 | -5 | 0 |   
-     | 7 | 7 | seven | 5 | -5 |   |   
-     | 7 | 7 | seven | 5 | -5 |   |  0
-     | 8 | 8 | eight | 5 | -5 | 1 | -1
-     | 8 | 8 | eight | 5 | -5 | 2 |  2
-     | 8 | 8 | eight | 5 | -5 | 3 | -3
-     | 8 | 8 | eight | 5 | -5 | 2 |  4
-     | 8 | 8 | eight | 5 | -5 | 5 | -5
-     | 8 | 8 | eight | 5 | -5 | 5 | -5
-     | 8 | 8 | eight | 5 | -5 | 0 |   
-     | 8 | 8 | eight | 5 | -5 |   |   
-     | 8 | 8 | eight | 5 | -5 |   |  0
-     | 0 |   | zero  | 5 | -5 | 1 | -1
-     | 0 |   | zero  | 5 | -5 | 2 |  2
-     | 0 |   | zero  | 5 | -5 | 3 | -3
-     | 0 |   | zero  | 5 | -5 | 2 |  4
-     | 0 |   | zero  | 5 | -5 | 5 | -5
-     | 0 |   | zero  | 5 | -5 | 5 | -5
-     | 0 |   | zero  | 5 | -5 | 0 |   
-     | 0 |   | zero  | 5 | -5 |   |   
-     | 0 |   | zero  | 5 | -5 |   |  0
-     |   |   | null  | 5 | -5 | 1 | -1
-     |   |   | null  | 5 | -5 | 2 |  2
-     |   |   | null  | 5 | -5 | 3 | -3
-     |   |   | null  | 5 | -5 | 2 |  4
-     |   |   | null  | 5 | -5 | 5 | -5
-     |   |   | null  | 5 | -5 | 5 | -5
-     |   |   | null  | 5 | -5 | 0 |   
-     |   |   | null  | 5 | -5 |   |   
-     |   |   | null  | 5 | -5 |   |  0
-     |   | 0 | zero  | 5 | -5 | 1 | -1
-     |   | 0 | zero  | 5 | -5 | 2 |  2
-     |   | 0 | zero  | 5 | -5 | 3 | -3
-     |   | 0 | zero  | 5 | -5 | 2 |  4
-     |   | 0 | zero  | 5 | -5 | 5 | -5
-     |   | 0 | zero  | 5 | -5 | 5 | -5
-     |   | 0 | zero  | 5 | -5 | 0 |   
-     |   | 0 | zero  | 5 | -5 |   |   
-     |   | 0 | zero  | 5 | -5 |   |  0
-     | 1 | 4 | one   | 5 | -5 | 1 | -1
-     | 1 | 4 | one   | 5 | -5 | 2 |  2
-     | 1 | 4 | one   | 5 | -5 | 3 | -3
-     | 1 | 4 | one   | 5 | -5 | 2 |  4
-     | 1 | 4 | one   | 5 | -5 | 5 | -5
-     | 1 | 4 | one   | 5 | -5 | 5 | -5
-     | 1 | 4 | one   | 5 | -5 | 0 |   
-     | 1 | 4 | one   | 5 | -5 |   |   
-     | 1 | 4 | one   | 5 | -5 |   |  0
-     | 2 | 3 | two   | 5 | -5 | 1 | -1
-     | 2 | 3 | two   | 5 | -5 | 2 |  2
-     | 2 | 3 | two   | 5 | -5 | 3 | -3
-     | 2 | 3 | two   | 5 | -5 | 2 |  4
-     | 2 | 3 | two   | 5 | -5 | 5 | -5
-     | 2 | 3 | two   | 5 | -5 | 5 | -5
-     | 2 | 3 | two   | 5 | -5 | 0 |   
-     | 2 | 3 | two   | 5 | -5 |   |   
-     | 2 | 3 | two   | 5 | -5 |   |  0
-     | 3 | 2 | three | 5 | -5 | 1 | -1
-     | 3 | 2 | three | 5 | -5 | 2 |  2
-     | 3 | 2 | three | 5 | -5 | 3 | -3
-     | 3 | 2 | three | 5 | -5 | 2 |  4
-     | 3 | 2 | three | 5 | -5 | 5 | -5
-     | 3 | 2 | three | 5 | -5 | 5 | -5
-     | 3 | 2 | three | 5 | -5 | 0 |   
-     | 3 | 2 | three | 5 | -5 |   |   
-     | 3 | 2 | three | 5 | -5 |   |  0
-     | 4 | 1 | four  | 5 | -5 | 1 | -1
-     | 4 | 1 | four  | 5 | -5 | 2 |  2
-     | 4 | 1 | four  | 5 | -5 | 3 | -3
-     | 4 | 1 | four  | 5 | -5 | 2 |  4
-     | 4 | 1 | four  | 5 | -5 | 5 | -5
-     | 4 | 1 | four  | 5 | -5 | 5 | -5
-     | 4 | 1 | four  | 5 | -5 | 0 |   
-     | 4 | 1 | four  | 5 | -5 |   |   
-     | 4 | 1 | four  | 5 | -5 |   |  0
-     | 5 | 0 | five  | 5 | -5 | 1 | -1
-     | 5 | 0 | five  | 5 | -5 | 2 |  2
-     | 5 | 0 | five  | 5 | -5 | 3 | -3
-     | 5 | 0 | five  | 5 | -5 | 2 |  4
-     | 5 | 0 | five  | 5 | -5 | 5 | -5
-     | 5 | 0 | five  | 5 | -5 | 5 | -5
-     | 5 | 0 | five  | 5 | -5 | 0 |   
-     | 5 | 0 | five  | 5 | -5 |   |   
-     | 5 | 0 | five  | 5 | -5 |   |  0
-     | 6 | 6 | six   | 5 | -5 | 1 | -1
-     | 6 | 6 | six   | 5 | -5 | 2 |  2
-     | 6 | 6 | six   | 5 | -5 | 3 | -3
-     | 6 | 6 | six   | 5 | -5 | 2 |  4
-     | 6 | 6 | six   | 5 | -5 | 5 | -5
-     | 6 | 6 | six   | 5 | -5 | 5 | -5
-     | 6 | 6 | six   | 5 | -5 | 0 |   
-     | 6 | 6 | six   | 5 | -5 |   |   
-     | 6 | 6 | six   | 5 | -5 |   |  0
-     | 7 | 7 | seven | 5 | -5 | 1 | -1
-     | 7 | 7 | seven | 5 | -5 | 2 |  2
-     | 7 | 7 | seven | 5 | -5 | 3 | -3
-     | 7 | 7 | seven | 5 | -5 | 2 |  4
-     | 7 | 7 | seven | 5 | -5 | 5 | -5
-     | 7 | 7 | seven | 5 | -5 | 5 | -5
-     | 7 | 7 | seven | 5 | -5 | 0 |   
-     | 7 | 7 | seven | 5 | -5 |   |   
-     | 7 | 7 | seven | 5 | -5 |   |  0
-     | 8 | 8 | eight | 5 | -5 | 1 | -1
-     | 8 | 8 | eight | 5 | -5 | 2 |  2
-     | 8 | 8 | eight | 5 | -5 | 3 | -3
-     | 8 | 8 | eight | 5 | -5 | 2 |  4
-     | 8 | 8 | eight | 5 | -5 | 5 | -5
-     | 8 | 8 | eight | 5 | -5 | 5 | -5
-     | 8 | 8 | eight | 5 | -5 | 0 |   
-     | 8 | 8 | eight | 5 | -5 |   |   
-     | 8 | 8 | eight | 5 | -5 |   |  0
-     | 0 |   | zero  | 5 | -5 | 1 | -1
-     | 0 |   | zero  | 5 | -5 | 2 |  2
-     | 0 |   | zero  | 5 | -5 | 3 | -3
-     | 0 |   | zero  | 5 | -5 | 2 |  4
-     | 0 |   | zero  | 5 | -5 | 5 | -5
-     | 0 |   | zero  | 5 | -5 | 5 | -5
-     | 0 |   | zero  | 5 | -5 | 0 |   
-     | 0 |   | zero  | 5 | -5 |   |   
-     | 0 |   | zero  | 5 | -5 |   |  0
-     |   |   | null  | 5 | -5 | 1 | -1
-     |   |   | null  | 5 | -5 | 2 |  2
-     |   |   | null  | 5 | -5 | 3 | -3
-     |   |   | null  | 5 | -5 | 2 |  4
-     |   |   | null  | 5 | -5 | 5 | -5
-     |   |   | null  | 5 | -5 | 5 | -5
-     |   |   | null  | 5 | -5 | 0 |   
-     |   |   | null  | 5 | -5 |   |   
-     |   |   | null  | 5 | -5 |   |  0
-     |   | 0 | zero  | 5 | -5 | 1 | -1
-     |   | 0 | zero  | 5 | -5 | 2 |  2
-     |   | 0 | zero  | 5 | -5 | 3 | -3
-     |   | 0 | zero  | 5 | -5 | 2 |  4
-     |   | 0 | zero  | 5 | -5 | 5 | -5
-     |   | 0 | zero  | 5 | -5 | 5 | -5
-     |   | 0 | zero  | 5 | -5 | 0 |   
-     |   | 0 | zero  | 5 | -5 |   |   
-     |   | 0 | zero  | 5 | -5 |   |  0
-     | 1 | 4 | one   | 0 |    | 1 | -1
-     | 1 | 4 | one   | 0 |    | 2 |  2
-     | 1 | 4 | one   | 0 |    | 3 | -3
-     | 1 | 4 | one   | 0 |    | 2 |  4
-     | 1 | 4 | one   | 0 |    | 5 | -5
-     | 1 | 4 | one   | 0 |    | 5 | -5
-     | 1 | 4 | one   | 0 |    | 0 |   
-     | 1 | 4 | one   | 0 |    |   |   
-     | 1 | 4 | one   | 0 |    |   |  0
-     | 2 | 3 | two   | 0 |    | 1 | -1
-     | 2 | 3 | two   | 0 |    | 2 |  2
-     | 2 | 3 | two   | 0 |    | 3 | -3
-     | 2 | 3 | two   | 0 |    | 2 |  4
-     | 2 | 3 | two   | 0 |    | 5 | -5
-     | 2 | 3 | two   | 0 |    | 5 | -5
-     | 2 | 3 | two   | 0 |    | 0 |   
-     | 2 | 3 | two   | 0 |    |   |   
-     | 2 | 3 | two   | 0 |    |   |  0
-     | 3 | 2 | three | 0 |    | 1 | -1
-     | 3 | 2 | three | 0 |    | 2 |  2
-     | 3 | 2 | three | 0 |    | 3 | -3
-     | 3 | 2 | three | 0 |    | 2 |  4
-     | 3 | 2 | three | 0 |    | 5 | -5
-     | 3 | 2 | three | 0 |    | 5 | -5
-     | 3 | 2 | three | 0 |    | 0 |   
-     | 3 | 2 | three | 0 |    |   |   
-     | 3 | 2 | three | 0 |    |   |  0
-     | 4 | 1 | four  | 0 |    | 1 | -1
-     | 4 | 1 | four  | 0 |    | 2 |  2
-     | 4 | 1 | four  | 0 |    | 3 | -3
-     | 4 | 1 | four  | 0 |    | 2 |  4
-     | 4 | 1 | four  | 0 |    | 5 | -5
-     | 4 | 1 | four  | 0 |    | 5 | -5
-     | 4 | 1 | four  | 0 |    | 0 |   
-     | 4 | 1 | four  | 0 |    |   |   
-     | 4 | 1 | four  | 0 |    |   |  0
-     | 5 | 0 | five  | 0 |    | 1 | -1
-     | 5 | 0 | five  | 0 |    | 2 |  2
-     | 5 | 0 | five  | 0 |    | 3 | -3
-     | 5 | 0 | five  | 0 |    | 2 |  4
-     | 5 | 0 | five  | 0 |    | 5 | -5
-     | 5 | 0 | five  | 0 |    | 5 | -5
-     | 5 | 0 | five  | 0 |    | 0 |   
-     | 5 | 0 | five  | 0 |    |   |   
-     | 5 | 0 | five  | 0 |    |   |  0
-     | 6 | 6 | six   | 0 |    | 1 | -1
-     | 6 | 6 | six   | 0 |    | 2 |  2
-     | 6 | 6 | six   | 0 |    | 3 | -3
-     | 6 | 6 | six   | 0 |    | 2 |  4
-     | 6 | 6 | six   | 0 |    | 5 | -5
-     | 6 | 6 | six   | 0 |    | 5 | -5
-     | 6 | 6 | six   | 0 |    | 0 |   
-     | 6 | 6 | six   | 0 |    |   |   
-     | 6 | 6 | six   | 0 |    |   |  0
-     | 7 | 7 | seven | 0 |    | 1 | -1
-     | 7 | 7 | seven | 0 |    | 2 |  2
-     | 7 | 7 | seven | 0 |    | 3 | -3
-     | 7 | 7 | seven | 0 |    | 2 |  4
-     | 7 | 7 | seven | 0 |    | 5 | -5
-     | 7 | 7 | seven | 0 |    | 5 | -5
-     | 7 | 7 | seven | 0 |    | 0 |   
-     | 7 | 7 | seven | 0 |    |   |   
-     | 7 | 7 | seven | 0 |    |   |  0
-     | 8 | 8 | eight | 0 |    | 1 | -1
-     | 8 | 8 | eight | 0 |    | 2 |  2
-     | 8 | 8 | eight | 0 |    | 3 | -3
-     | 8 | 8 | eight | 0 |    | 2 |  4
-     | 8 | 8 | eight | 0 |    | 5 | -5
-     | 8 | 8 | eight | 0 |    | 5 | -5
-     | 8 | 8 | eight | 0 |    | 0 |   
-     | 8 | 8 | eight | 0 |    |   |   
-     | 8 | 8 | eight | 0 |    |   |  0
-     | 0 |   | zero  | 0 |    | 1 | -1
-     | 0 |   | zero  | 0 |    | 2 |  2
-     | 0 |   | zero  | 0 |    | 3 | -3
-     | 0 |   | zero  | 0 |    | 2 |  4
-     | 0 |   | zero  | 0 |    | 5 | -5
-     | 0 |   | zero  | 0 |    | 5 | -5
-     | 0 |   | zero  | 0 |    | 0 |   
-     | 0 |   | zero  | 0 |    |   |   
-     | 0 |   | zero  | 0 |    |   |  0
-     |   |   | null  | 0 |    | 1 | -1
-     |   |   | null  | 0 |    | 2 |  2
-     |   |   | null  | 0 |    | 3 | -3
-     |   |   | null  | 0 |    | 2 |  4
-     |   |   | null  | 0 |    | 5 | -5
-     |   |   | null  | 0 |    | 5 | -5
-     |   |   | null  | 0 |    | 0 |   
-     |   |   | null  | 0 |    |   |   
-     |   |   | null  | 0 |    |   |  0
-     |   | 0 | zero  | 0 |    | 1 | -1
-     |   | 0 | zero  | 0 |    | 2 |  2
-     |   | 0 | zero  | 0 |    | 3 | -3
-     |   | 0 | zero  | 0 |    | 2 |  4
-     |   | 0 | zero  | 0 |    | 5 | -5
-     |   | 0 | zero  | 0 |    | 5 | -5
-     |   | 0 | zero  | 0 |    | 0 |   
-     |   | 0 | zero  | 0 |    |   |   
-     |   | 0 | zero  | 0 |    |   |  0
-     | 1 | 4 | one   |   |    | 1 | -1
-     | 1 | 4 | one   |   |    | 2 |  2
-     | 1 | 4 | one   |   |    | 3 | -3
-     | 1 | 4 | one   |   |    | 2 |  4
-     | 1 | 4 | one   |   |    | 5 | -5
-     | 1 | 4 | one   |   |    | 5 | -5
-     | 1 | 4 | one   |   |    | 0 |   
-     | 1 | 4 | one   |   |    |   |   
-     | 1 | 4 | one   |   |    |   |  0
-     | 2 | 3 | two   |   |    | 1 | -1
-     | 2 | 3 | two   |   |    | 2 |  2
-     | 2 | 3 | two   |   |    | 3 | -3
-     | 2 | 3 | two   |   |    | 2 |  4
-     | 2 | 3 | two   |   |    | 5 | -5
-     | 2 | 3 | two   |   |    | 5 | -5
-     | 2 | 3 | two   |   |    | 0 |   
-     | 2 | 3 | two   |   |    |   |   
-     | 2 | 3 | two   |   |    |   |  0
-     | 3 | 2 | three |   |    | 1 | -1
-     | 3 | 2 | three |   |    | 2 |  2
-     | 3 | 2 | three |   |    | 3 | -3
-     | 3 | 2 | three |   |    | 2 |  4
-     | 3 | 2 | three |   |    | 5 | -5
-     | 3 | 2 | three |   |    | 5 | -5
-     | 3 | 2 | three |   |    | 0 |   
-     | 3 | 2 | three |   |    |   |   
-     | 3 | 2 | three |   |    |   |  0
-     | 4 | 1 | four  |   |    | 1 | -1
-     | 4 | 1 | four  |   |    | 2 |  2
-     | 4 | 1 | four  |   |    | 3 | -3
-     | 4 | 1 | four  |   |    | 2 |  4
-     | 4 | 1 | four  |   |    | 5 | -5
-     | 4 | 1 | four  |   |    | 5 | -5
-     | 4 | 1 | four  |   |    | 0 |   
-     | 4 | 1 | four  |   |    |   |   
-     | 4 | 1 | four  |   |    |   |  0
-     | 5 | 0 | five  |   |    | 1 | -1
-     | 5 | 0 | five  |   |    | 2 |  2
-     | 5 | 0 | five  |   |    | 3 | -3
-     | 5 | 0 | five  |   |    | 2 |  4
-     | 5 | 0 | five  |   |    | 5 | -5
-     | 5 | 0 | five  |   |    | 5 | -5
-     | 5 | 0 | five  |   |    | 0 |   
-     | 5 | 0 | five  |   |    |   |   
-     | 5 | 0 | five  |   |    |   |  0
-     | 6 | 6 | six   |   |    | 1 | -1
-     | 6 | 6 | six   |   |    | 2 |  2
-     | 6 | 6 | six   |   |    | 3 | -3
-     | 6 | 6 | six   |   |    | 2 |  4
-     | 6 | 6 | six   |   |    | 5 | -5
-     | 6 | 6 | six   |   |    | 5 | -5
-     | 6 | 6 | six   |   |    | 0 |   
-     | 6 | 6 | six   |   |    |   |   
-     | 6 | 6 | six   |   |    |   |  0
-     | 7 | 7 | seven |   |    | 1 | -1
-     | 7 | 7 | seven |   |    | 2 |  2
-     | 7 | 7 | seven |   |    | 3 | -3
-     | 7 | 7 | seven |   |    | 2 |  4
-     | 7 | 7 | seven |   |    | 5 | -5
-     | 7 | 7 | seven |   |    | 5 | -5
-     | 7 | 7 | seven |   |    | 0 |   
-     | 7 | 7 | seven |   |    |   |   
-     | 7 | 7 | seven |   |    |   |  0
-     | 8 | 8 | eight |   |    | 1 | -1
-     | 8 | 8 | eight |   |    | 2 |  2
-     | 8 | 8 | eight |   |    | 3 | -3
-     | 8 | 8 | eight |   |    | 2 |  4
-     | 8 | 8 | eight |   |    | 5 | -5
-     | 8 | 8 | eight |   |    | 5 | -5
-     | 8 | 8 | eight |   |    | 0 |   
-     | 8 | 8 | eight |   |    |   |   
-     | 8 | 8 | eight |   |    |   |  0
-     | 0 |   | zero  |   |    | 1 | -1
-     | 0 |   | zero  |   |    | 2 |  2
-     | 0 |   | zero  |   |    | 3 | -3
-     | 0 |   | zero  |   |    | 2 |  4
-     | 0 |   | zero  |   |    | 5 | -5
-     | 0 |   | zero  |   |    | 5 | -5
-     | 0 |   | zero  |   |    | 0 |   
-     | 0 |   | zero  |   |    |   |   
-     | 0 |   | zero  |   |    |   |  0
-     |   |   | null  |   |    | 1 | -1
-     |   |   | null  |   |    | 2 |  2
-     |   |   | null  |   |    | 3 | -3
-     |   |   | null  |   |    | 2 |  4
-     |   |   | null  |   |    | 5 | -5
-     |   |   | null  |   |    | 5 | -5
-     |   |   | null  |   |    | 0 |   
-     |   |   | null  |   |    |   |   
-     |   |   | null  |   |    |   |  0
-     |   | 0 | zero  |   |    | 1 | -1
-     |   | 0 | zero  |   |    | 2 |  2
-     |   | 0 | zero  |   |    | 3 | -3
-     |   | 0 | zero  |   |    | 2 |  4
-     |   | 0 | zero  |   |    | 5 | -5
-     |   | 0 | zero  |   |    | 5 | -5
-     |   | 0 | zero  |   |    | 0 |   
-     |   | 0 | zero  |   |    |   |   
-     |   | 0 | zero  |   |    |   |  0
-     | 1 | 4 | one   |   |  0 | 1 | -1
-     | 1 | 4 | one   |   |  0 | 2 |  2
-     | 1 | 4 | one   |   |  0 | 3 | -3
-     | 1 | 4 | one   |   |  0 | 2 |  4
-     | 1 | 4 | one   |   |  0 | 5 | -5
-     | 1 | 4 | one   |   |  0 | 5 | -5
-     | 1 | 4 | one   |   |  0 | 0 |   
-     | 1 | 4 | one   |   |  0 |   |   
-     | 1 | 4 | one   |   |  0 |   |  0
-     | 2 | 3 | two   |   |  0 | 1 | -1
-     | 2 | 3 | two   |   |  0 | 2 |  2
-     | 2 | 3 | two   |   |  0 | 3 | -3
-     | 2 | 3 | two   |   |  0 | 2 |  4
-     | 2 | 3 | two   |   |  0 | 5 | -5
-     | 2 | 3 | two   |   |  0 | 5 | -5
-     | 2 | 3 | two   |   |  0 | 0 |   
-     | 2 | 3 | two   |   |  0 |   |   
-     | 2 | 3 | two   |   |  0 |   |  0
-     | 3 | 2 | three |   |  0 | 1 | -1
-     | 3 | 2 | three |   |  0 | 2 |  2
-     | 3 | 2 | three |   |  0 | 3 | -3
-     | 3 | 2 | three |   |  0 | 2 |  4
-     | 3 | 2 | three |   |  0 | 5 | -5
-     | 3 | 2 | three |   |  0 | 5 | -5
-     | 3 | 2 | three |   |  0 | 0 |   
-     | 3 | 2 | three |   |  0 |   |   
-     | 3 | 2 | three |   |  0 |   |  0
-     | 4 | 1 | four  |   |  0 | 1 | -1
-     | 4 | 1 | four  |   |  0 | 2 |  2
-     | 4 | 1 | four  |   |  0 | 3 | -3
-     | 4 | 1 | four  |   |  0 | 2 |  4
-     | 4 | 1 | four  |   |  0 | 5 | -5
-     | 4 | 1 | four  |   |  0 | 5 | -5
-     | 4 | 1 | four  |   |  0 | 0 |   
-     | 4 | 1 | four  |   |  0 |   |   
-     | 4 | 1 | four  |   |  0 |   |  0
-     | 5 | 0 | five  |   |  0 | 1 | -1
-     | 5 | 0 | five  |   |  0 | 2 |  2
-     | 5 | 0 | five  |   |  0 | 3 | -3
-     | 5 | 0 | five  |   |  0 | 2 |  4
-     | 5 | 0 | five  |   |  0 | 5 | -5
-     | 5 | 0 | five  |   |  0 | 5 | -5
-     | 5 | 0 | five  |   |  0 | 0 |   
-     | 5 | 0 | five  |   |  0 |   |   
-     | 5 | 0 | five  |   |  0 |   |  0
-     | 6 | 6 | six   |   |  0 | 1 | -1
-     | 6 | 6 | six   |   |  0 | 2 |  2
-     | 6 | 6 | six   |   |  0 | 3 | -3
-     | 6 | 6 | six   |   |  0 | 2 |  4
-     | 6 | 6 | six   |   |  0 | 5 | -5
-     | 6 | 6 | six   |   |  0 | 5 | -5
-     | 6 | 6 | six   |   |  0 | 0 |   
-     | 6 | 6 | six   |   |  0 |   |   
-     | 6 | 6 | six   |   |  0 |   |  0
-     | 7 | 7 | seven |   |  0 | 1 | -1
-     | 7 | 7 | seven |   |  0 | 2 |  2
-     | 7 | 7 | seven |   |  0 | 3 | -3
-     | 7 | 7 | seven |   |  0 | 2 |  4
-     | 7 | 7 | seven |   |  0 | 5 | -5
-     | 7 | 7 | seven |   |  0 | 5 | -5
-     | 7 | 7 | seven |   |  0 | 0 |   
-     | 7 | 7 | seven |   |  0 |   |   
-     | 7 | 7 | seven |   |  0 |   |  0
-     | 8 | 8 | eight |   |  0 | 1 | -1
-     | 8 | 8 | eight |   |  0 | 2 |  2
-     | 8 | 8 | eight |   |  0 | 3 | -3
-     | 8 | 8 | eight |   |  0 | 2 |  4
-     | 8 | 8 | eight |   |  0 | 5 | -5
-     | 8 | 8 | eight |   |  0 | 5 | -5
-     | 8 | 8 | eight |   |  0 | 0 |   
-     | 8 | 8 | eight |   |  0 |   |   
-     | 8 | 8 | eight |   |  0 |   |  0
-     | 0 |   | zero  |   |  0 | 1 | -1
-     | 0 |   | zero  |   |  0 | 2 |  2
-     | 0 |   | zero  |   |  0 | 3 | -3
-     | 0 |   | zero  |   |  0 | 2 |  4
-     | 0 |   | zero  |   |  0 | 5 | -5
-     | 0 |   | zero  |   |  0 | 5 | -5
-     | 0 |   | zero  |   |  0 | 0 |   
-     | 0 |   | zero  |   |  0 |   |   
-     | 0 |   | zero  |   |  0 |   |  0
-     |   |   | null  |   |  0 | 1 | -1
-     |   |   | null  |   |  0 | 2 |  2
-     |   |   | null  |   |  0 | 3 | -3
-     |   |   | null  |   |  0 | 2 |  4
-     |   |   | null  |   |  0 | 5 | -5
-     |   |   | null  |   |  0 | 5 | -5
-     |   |   | null  |   |  0 | 0 |   
-     |   |   | null  |   |  0 |   |   
-     |   |   | null  |   |  0 |   |  0
-     |   | 0 | zero  |   |  0 | 1 | -1
-     |   | 0 | zero  |   |  0 | 2 |  2
-     |   | 0 | zero  |   |  0 | 3 | -3
-     |   | 0 | zero  |   |  0 | 2 |  4
-     |   | 0 | zero  |   |  0 | 5 | -5
-     |   | 0 | zero  |   |  0 | 5 | -5
-     |   | 0 | zero  |   |  0 | 0 |   
-     |   | 0 | zero  |   |  0 |   |   
-     |   | 0 | zero  |   |  0 |   |  0
+ i | j |   t   | i | k  | i | k  
+---+---+-------+---+----+---+----
+ 1 | 4 | one   | 1 | -1 | 1 | -1
+ 1 | 4 | one   | 1 | -1 | 2 |  2
+ 1 | 4 | one   | 1 | -1 | 3 | -3
+ 1 | 4 | one   | 1 | -1 | 2 |  4
+ 1 | 4 | one   | 1 | -1 | 5 | -5
+ 1 | 4 | one   | 1 | -1 | 5 | -5
+ 1 | 4 | one   | 1 | -1 | 0 |   
+ 1 | 4 | one   | 1 | -1 |   |   
+ 1 | 4 | one   | 1 | -1 |   |  0
+ 2 | 3 | two   | 1 | -1 | 1 | -1
+ 2 | 3 | two   | 1 | -1 | 2 |  2
+ 2 | 3 | two   | 1 | -1 | 3 | -3
+ 2 | 3 | two   | 1 | -1 | 2 |  4
+ 2 | 3 | two   | 1 | -1 | 5 | -5
+ 2 | 3 | two   | 1 | -1 | 5 | -5
+ 2 | 3 | two   | 1 | -1 | 0 |   
+ 2 | 3 | two   | 1 | -1 |   |   
+ 2 | 3 | two   | 1 | -1 |   |  0
+ 3 | 2 | three | 1 | -1 | 1 | -1
+ 3 | 2 | three | 1 | -1 | 2 |  2
+ 3 | 2 | three | 1 | -1 | 3 | -3
+ 3 | 2 | three | 1 | -1 | 2 |  4
+ 3 | 2 | three | 1 | -1 | 5 | -5
+ 3 | 2 | three | 1 | -1 | 5 | -5
+ 3 | 2 | three | 1 | -1 | 0 |   
+ 3 | 2 | three | 1 | -1 |   |   
+ 3 | 2 | three | 1 | -1 |   |  0
+ 4 | 1 | four  | 1 | -1 | 1 | -1
+ 4 | 1 | four  | 1 | -1 | 2 |  2
+ 4 | 1 | four  | 1 | -1 | 3 | -3
+ 4 | 1 | four  | 1 | -1 | 2 |  4
+ 4 | 1 | four  | 1 | -1 | 5 | -5
+ 4 | 1 | four  | 1 | -1 | 5 | -5
+ 4 | 1 | four  | 1 | -1 | 0 |   
+ 4 | 1 | four  | 1 | -1 |   |   
+ 4 | 1 | four  | 1 | -1 |   |  0
+ 5 | 0 | five  | 1 | -1 | 1 | -1
+ 5 | 0 | five  | 1 | -1 | 2 |  2
+ 5 | 0 | five  | 1 | -1 | 3 | -3
+ 5 | 0 | five  | 1 | -1 | 2 |  4
+ 5 | 0 | five  | 1 | -1 | 5 | -5
+ 5 | 0 | five  | 1 | -1 | 5 | -5
+ 5 | 0 | five  | 1 | -1 | 0 |   
+ 5 | 0 | five  | 1 | -1 |   |   
+ 5 | 0 | five  | 1 | -1 |   |  0
+ 6 | 6 | six   | 1 | -1 | 1 | -1
+ 6 | 6 | six   | 1 | -1 | 2 |  2
+ 6 | 6 | six   | 1 | -1 | 3 | -3
+ 6 | 6 | six   | 1 | -1 | 2 |  4
+ 6 | 6 | six   | 1 | -1 | 5 | -5
+ 6 | 6 | six   | 1 | -1 | 5 | -5
+ 6 | 6 | six   | 1 | -1 | 0 |   
+ 6 | 6 | six   | 1 | -1 |   |   
+ 6 | 6 | six   | 1 | -1 |   |  0
+ 7 | 7 | seven | 1 | -1 | 1 | -1
+ 7 | 7 | seven | 1 | -1 | 2 |  2
+ 7 | 7 | seven | 1 | -1 | 3 | -3
+ 7 | 7 | seven | 1 | -1 | 2 |  4
+ 7 | 7 | seven | 1 | -1 | 5 | -5
+ 7 | 7 | seven | 1 | -1 | 5 | -5
+ 7 | 7 | seven | 1 | -1 | 0 |   
+ 7 | 7 | seven | 1 | -1 |   |   
+ 7 | 7 | seven | 1 | -1 |   |  0
+ 8 | 8 | eight | 1 | -1 | 1 | -1
+ 8 | 8 | eight | 1 | -1 | 2 |  2
+ 8 | 8 | eight | 1 | -1 | 3 | -3
+ 8 | 8 | eight | 1 | -1 | 2 |  4
+ 8 | 8 | eight | 1 | -1 | 5 | -5
+ 8 | 8 | eight | 1 | -1 | 5 | -5
+ 8 | 8 | eight | 1 | -1 | 0 |   
+ 8 | 8 | eight | 1 | -1 |   |   
+ 8 | 8 | eight | 1 | -1 |   |  0
+ 0 |   | zero  | 1 | -1 | 1 | -1
+ 0 |   | zero  | 1 | -1 | 2 |  2
+ 0 |   | zero  | 1 | -1 | 3 | -3
+ 0 |   | zero  | 1 | -1 | 2 |  4
+ 0 |   | zero  | 1 | -1 | 5 | -5
+ 0 |   | zero  | 1 | -1 | 5 | -5
+ 0 |   | zero  | 1 | -1 | 0 |   
+ 0 |   | zero  | 1 | -1 |   |   
+ 0 |   | zero  | 1 | -1 |   |  0
+   |   | null  | 1 | -1 | 1 | -1
+   |   | null  | 1 | -1 | 2 |  2
+   |   | null  | 1 | -1 | 3 | -3
+   |   | null  | 1 | -1 | 2 |  4
+   |   | null  | 1 | -1 | 5 | -5
+   |   | null  | 1 | -1 | 5 | -5
+   |   | null  | 1 | -1 | 0 |   
+   |   | null  | 1 | -1 |   |   
+   |   | null  | 1 | -1 |   |  0
+   | 0 | zero  | 1 | -1 | 1 | -1
+   | 0 | zero  | 1 | -1 | 2 |  2
+   | 0 | zero  | 1 | -1 | 3 | -3
+   | 0 | zero  | 1 | -1 | 2 |  4
+   | 0 | zero  | 1 | -1 | 5 | -5
+   | 0 | zero  | 1 | -1 | 5 | -5
+   | 0 | zero  | 1 | -1 | 0 |   
+   | 0 | zero  | 1 | -1 |   |   
+   | 0 | zero  | 1 | -1 |   |  0
+ 1 | 4 | one   | 2 |  2 | 1 | -1
+ 1 | 4 | one   | 2 |  2 | 2 |  2
+ 1 | 4 | one   | 2 |  2 | 3 | -3
+ 1 | 4 | one   | 2 |  2 | 2 |  4
+ 1 | 4 | one   | 2 |  2 | 5 | -5
+ 1 | 4 | one   | 2 |  2 | 5 | -5
+ 1 | 4 | one   | 2 |  2 | 0 |   
+ 1 | 4 | one   | 2 |  2 |   |   
+ 1 | 4 | one   | 2 |  2 |   |  0
+ 2 | 3 | two   | 2 |  2 | 1 | -1
+ 2 | 3 | two   | 2 |  2 | 2 |  2
+ 2 | 3 | two   | 2 |  2 | 3 | -3
+ 2 | 3 | two   | 2 |  2 | 2 |  4
+ 2 | 3 | two   | 2 |  2 | 5 | -5
+ 2 | 3 | two   | 2 |  2 | 5 | -5
+ 2 | 3 | two   | 2 |  2 | 0 |   
+ 2 | 3 | two   | 2 |  2 |   |   
+ 2 | 3 | two   | 2 |  2 |   |  0
+ 3 | 2 | three | 2 |  2 | 1 | -1
+ 3 | 2 | three | 2 |  2 | 2 |  2
+ 3 | 2 | three | 2 |  2 | 3 | -3
+ 3 | 2 | three | 2 |  2 | 2 |  4
+ 3 | 2 | three | 2 |  2 | 5 | -5
+ 3 | 2 | three | 2 |  2 | 5 | -5
+ 3 | 2 | three | 2 |  2 | 0 |   
+ 3 | 2 | three | 2 |  2 |   |   
+ 3 | 2 | three | 2 |  2 |   |  0
+ 4 | 1 | four  | 2 |  2 | 1 | -1
+ 4 | 1 | four  | 2 |  2 | 2 |  2
+ 4 | 1 | four  | 2 |  2 | 3 | -3
+ 4 | 1 | four  | 2 |  2 | 2 |  4
+ 4 | 1 | four  | 2 |  2 | 5 | -5
+ 4 | 1 | four  | 2 |  2 | 5 | -5
+ 4 | 1 | four  | 2 |  2 | 0 |   
+ 4 | 1 | four  | 2 |  2 |   |   
+ 4 | 1 | four  | 2 |  2 |   |  0
+ 5 | 0 | five  | 2 |  2 | 1 | -1
+ 5 | 0 | five  | 2 |  2 | 2 |  2
+ 5 | 0 | five  | 2 |  2 | 3 | -3
+ 5 | 0 | five  | 2 |  2 | 2 |  4
+ 5 | 0 | five  | 2 |  2 | 5 | -5
+ 5 | 0 | five  | 2 |  2 | 5 | -5
+ 5 | 0 | five  | 2 |  2 | 0 |   
+ 5 | 0 | five  | 2 |  2 |   |   
+ 5 | 0 | five  | 2 |  2 |   |  0
+ 6 | 6 | six   | 2 |  2 | 1 | -1
+ 6 | 6 | six   | 2 |  2 | 2 |  2
+ 6 | 6 | six   | 2 |  2 | 3 | -3
+ 6 | 6 | six   | 2 |  2 | 2 |  4
+ 6 | 6 | six   | 2 |  2 | 5 | -5
+ 6 | 6 | six   | 2 |  2 | 5 | -5
+ 6 | 6 | six   | 2 |  2 | 0 |   
+ 6 | 6 | six   | 2 |  2 |   |   
+ 6 | 6 | six   | 2 |  2 |   |  0
+ 7 | 7 | seven | 2 |  2 | 1 | -1
+ 7 | 7 | seven | 2 |  2 | 2 |  2
+ 7 | 7 | seven | 2 |  2 | 3 | -3
+ 7 | 7 | seven | 2 |  2 | 2 |  4
+ 7 | 7 | seven | 2 |  2 | 5 | -5
+ 7 | 7 | seven | 2 |  2 | 5 | -5
+ 7 | 7 | seven | 2 |  2 | 0 |   
+ 7 | 7 | seven | 2 |  2 |   |   
+ 7 | 7 | seven | 2 |  2 |   |  0
+ 8 | 8 | eight | 2 |  2 | 1 | -1
+ 8 | 8 | eight | 2 |  2 | 2 |  2
+ 8 | 8 | eight | 2 |  2 | 3 | -3
+ 8 | 8 | eight | 2 |  2 | 2 |  4
+ 8 | 8 | eight | 2 |  2 | 5 | -5
+ 8 | 8 | eight | 2 |  2 | 5 | -5
+ 8 | 8 | eight | 2 |  2 | 0 |   
+ 8 | 8 | eight | 2 |  2 |   |   
+ 8 | 8 | eight | 2 |  2 |   |  0
+ 0 |   | zero  | 2 |  2 | 1 | -1
+ 0 |   | zero  | 2 |  2 | 2 |  2
+ 0 |   | zero  | 2 |  2 | 3 | -3
+ 0 |   | zero  | 2 |  2 | 2 |  4
+ 0 |   | zero  | 2 |  2 | 5 | -5
+ 0 |   | zero  | 2 |  2 | 5 | -5
+ 0 |   | zero  | 2 |  2 | 0 |   
+ 0 |   | zero  | 2 |  2 |   |   
+ 0 |   | zero  | 2 |  2 |   |  0
+   |   | null  | 2 |  2 | 1 | -1
+   |   | null  | 2 |  2 | 2 |  2
+   |   | null  | 2 |  2 | 3 | -3
+   |   | null  | 2 |  2 | 2 |  4
+   |   | null  | 2 |  2 | 5 | -5
+   |   | null  | 2 |  2 | 5 | -5
+   |   | null  | 2 |  2 | 0 |   
+   |   | null  | 2 |  2 |   |   
+   |   | null  | 2 |  2 |   |  0
+   | 0 | zero  | 2 |  2 | 1 | -1
+   | 0 | zero  | 2 |  2 | 2 |  2
+   | 0 | zero  | 2 |  2 | 3 | -3
+   | 0 | zero  | 2 |  2 | 2 |  4
+   | 0 | zero  | 2 |  2 | 5 | -5
+   | 0 | zero  | 2 |  2 | 5 | -5
+   | 0 | zero  | 2 |  2 | 0 |   
+   | 0 | zero  | 2 |  2 |   |   
+   | 0 | zero  | 2 |  2 |   |  0
+ 1 | 4 | one   | 3 | -3 | 1 | -1
+ 1 | 4 | one   | 3 | -3 | 2 |  2
+ 1 | 4 | one   | 3 | -3 | 3 | -3
+ 1 | 4 | one   | 3 | -3 | 2 |  4
+ 1 | 4 | one   | 3 | -3 | 5 | -5
+ 1 | 4 | one   | 3 | -3 | 5 | -5
+ 1 | 4 | one   | 3 | -3 | 0 |   
+ 1 | 4 | one   | 3 | -3 |   |   
+ 1 | 4 | one   | 3 | -3 |   |  0
+ 2 | 3 | two   | 3 | -3 | 1 | -1
+ 2 | 3 | two   | 3 | -3 | 2 |  2
+ 2 | 3 | two   | 3 | -3 | 3 | -3
+ 2 | 3 | two   | 3 | -3 | 2 |  4
+ 2 | 3 | two   | 3 | -3 | 5 | -5
+ 2 | 3 | two   | 3 | -3 | 5 | -5
+ 2 | 3 | two   | 3 | -3 | 0 |   
+ 2 | 3 | two   | 3 | -3 |   |   
+ 2 | 3 | two   | 3 | -3 |   |  0
+ 3 | 2 | three | 3 | -3 | 1 | -1
+ 3 | 2 | three | 3 | -3 | 2 |  2
+ 3 | 2 | three | 3 | -3 | 3 | -3
+ 3 | 2 | three | 3 | -3 | 2 |  4
+ 3 | 2 | three | 3 | -3 | 5 | -5
+ 3 | 2 | three | 3 | -3 | 5 | -5
+ 3 | 2 | three | 3 | -3 | 0 |   
+ 3 | 2 | three | 3 | -3 |   |   
+ 3 | 2 | three | 3 | -3 |   |  0
+ 4 | 1 | four  | 3 | -3 | 1 | -1
+ 4 | 1 | four  | 3 | -3 | 2 |  2
+ 4 | 1 | four  | 3 | -3 | 3 | -3
+ 4 | 1 | four  | 3 | -3 | 2 |  4
+ 4 | 1 | four  | 3 | -3 | 5 | -5
+ 4 | 1 | four  | 3 | -3 | 5 | -5
+ 4 | 1 | four  | 3 | -3 | 0 |   
+ 4 | 1 | four  | 3 | -3 |   |   
+ 4 | 1 | four  | 3 | -3 |   |  0
+ 5 | 0 | five  | 3 | -3 | 1 | -1
+ 5 | 0 | five  | 3 | -3 | 2 |  2
+ 5 | 0 | five  | 3 | -3 | 3 | -3
+ 5 | 0 | five  | 3 | -3 | 2 |  4
+ 5 | 0 | five  | 3 | -3 | 5 | -5
+ 5 | 0 | five  | 3 | -3 | 5 | -5
+ 5 | 0 | five  | 3 | -3 | 0 |   
+ 5 | 0 | five  | 3 | -3 |   |   
+ 5 | 0 | five  | 3 | -3 |   |  0
+ 6 | 6 | six   | 3 | -3 | 1 | -1
+ 6 | 6 | six   | 3 | -3 | 2 |  2
+ 6 | 6 | six   | 3 | -3 | 3 | -3
+ 6 | 6 | six   | 3 | -3 | 2 |  4
+ 6 | 6 | six   | 3 | -3 | 5 | -5
+ 6 | 6 | six   | 3 | -3 | 5 | -5
+ 6 | 6 | six   | 3 | -3 | 0 |   
+ 6 | 6 | six   | 3 | -3 |   |   
+ 6 | 6 | six   | 3 | -3 |   |  0
+ 7 | 7 | seven | 3 | -3 | 1 | -1
+ 7 | 7 | seven | 3 | -3 | 2 |  2
+ 7 | 7 | seven | 3 | -3 | 3 | -3
+ 7 | 7 | seven | 3 | -3 | 2 |  4
+ 7 | 7 | seven | 3 | -3 | 5 | -5
+ 7 | 7 | seven | 3 | -3 | 5 | -5
+ 7 | 7 | seven | 3 | -3 | 0 |   
+ 7 | 7 | seven | 3 | -3 |   |   
+ 7 | 7 | seven | 3 | -3 |   |  0
+ 8 | 8 | eight | 3 | -3 | 1 | -1
+ 8 | 8 | eight | 3 | -3 | 2 |  2
+ 8 | 8 | eight | 3 | -3 | 3 | -3
+ 8 | 8 | eight | 3 | -3 | 2 |  4
+ 8 | 8 | eight | 3 | -3 | 5 | -5
+ 8 | 8 | eight | 3 | -3 | 5 | -5
+ 8 | 8 | eight | 3 | -3 | 0 |   
+ 8 | 8 | eight | 3 | -3 |   |   
+ 8 | 8 | eight | 3 | -3 |   |  0
+ 0 |   | zero  | 3 | -3 | 1 | -1
+ 0 |   | zero  | 3 | -3 | 2 |  2
+ 0 |   | zero  | 3 | -3 | 3 | -3
+ 0 |   | zero  | 3 | -3 | 2 |  4
+ 0 |   | zero  | 3 | -3 | 5 | -5
+ 0 |   | zero  | 3 | -3 | 5 | -5
+ 0 |   | zero  | 3 | -3 | 0 |   
+ 0 |   | zero  | 3 | -3 |   |   
+ 0 |   | zero  | 3 | -3 |   |  0
+   |   | null  | 3 | -3 | 1 | -1
+   |   | null  | 3 | -3 | 2 |  2
+   |   | null  | 3 | -3 | 3 | -3
+   |   | null  | 3 | -3 | 2 |  4
+   |   | null  | 3 | -3 | 5 | -5
+   |   | null  | 3 | -3 | 5 | -5
+   |   | null  | 3 | -3 | 0 |   
+   |   | null  | 3 | -3 |   |   
+   |   | null  | 3 | -3 |   |  0
+   | 0 | zero  | 3 | -3 | 1 | -1
+   | 0 | zero  | 3 | -3 | 2 |  2
+   | 0 | zero  | 3 | -3 | 3 | -3
+   | 0 | zero  | 3 | -3 | 2 |  4
+   | 0 | zero  | 3 | -3 | 5 | -5
+   | 0 | zero  | 3 | -3 | 5 | -5
+   | 0 | zero  | 3 | -3 | 0 |   
+   | 0 | zero  | 3 | -3 |   |   
+   | 0 | zero  | 3 | -3 |   |  0
+ 1 | 4 | one   | 2 |  4 | 1 | -1
+ 1 | 4 | one   | 2 |  4 | 2 |  2
+ 1 | 4 | one   | 2 |  4 | 3 | -3
+ 1 | 4 | one   | 2 |  4 | 2 |  4
+ 1 | 4 | one   | 2 |  4 | 5 | -5
+ 1 | 4 | one   | 2 |  4 | 5 | -5
+ 1 | 4 | one   | 2 |  4 | 0 |   
+ 1 | 4 | one   | 2 |  4 |   |   
+ 1 | 4 | one   | 2 |  4 |   |  0
+ 2 | 3 | two   | 2 |  4 | 1 | -1
+ 2 | 3 | two   | 2 |  4 | 2 |  2
+ 2 | 3 | two   | 2 |  4 | 3 | -3
+ 2 | 3 | two   | 2 |  4 | 2 |  4
+ 2 | 3 | two   | 2 |  4 | 5 | -5
+ 2 | 3 | two   | 2 |  4 | 5 | -5
+ 2 | 3 | two   | 2 |  4 | 0 |   
+ 2 | 3 | two   | 2 |  4 |   |   
+ 2 | 3 | two   | 2 |  4 |   |  0
+ 3 | 2 | three | 2 |  4 | 1 | -1
+ 3 | 2 | three | 2 |  4 | 2 |  2
+ 3 | 2 | three | 2 |  4 | 3 | -3
+ 3 | 2 | three | 2 |  4 | 2 |  4
+ 3 | 2 | three | 2 |  4 | 5 | -5
+ 3 | 2 | three | 2 |  4 | 5 | -5
+ 3 | 2 | three | 2 |  4 | 0 |   
+ 3 | 2 | three | 2 |  4 |   |   
+ 3 | 2 | three | 2 |  4 |   |  0
+ 4 | 1 | four  | 2 |  4 | 1 | -1
+ 4 | 1 | four  | 2 |  4 | 2 |  2
+ 4 | 1 | four  | 2 |  4 | 3 | -3
+ 4 | 1 | four  | 2 |  4 | 2 |  4
+ 4 | 1 | four  | 2 |  4 | 5 | -5
+ 4 | 1 | four  | 2 |  4 | 5 | -5
+ 4 | 1 | four  | 2 |  4 | 0 |   
+ 4 | 1 | four  | 2 |  4 |   |   
+ 4 | 1 | four  | 2 |  4 |   |  0
+ 5 | 0 | five  | 2 |  4 | 1 | -1
+ 5 | 0 | five  | 2 |  4 | 2 |  2
+ 5 | 0 | five  | 2 |  4 | 3 | -3
+ 5 | 0 | five  | 2 |  4 | 2 |  4
+ 5 | 0 | five  | 2 |  4 | 5 | -5
+ 5 | 0 | five  | 2 |  4 | 5 | -5
+ 5 | 0 | five  | 2 |  4 | 0 |   
+ 5 | 0 | five  | 2 |  4 |   |   
+ 5 | 0 | five  | 2 |  4 |   |  0
+ 6 | 6 | six   | 2 |  4 | 1 | -1
+ 6 | 6 | six   | 2 |  4 | 2 |  2
+ 6 | 6 | six   | 2 |  4 | 3 | -3
+ 6 | 6 | six   | 2 |  4 | 2 |  4
+ 6 | 6 | six   | 2 |  4 | 5 | -5
+ 6 | 6 | six   | 2 |  4 | 5 | -5
+ 6 | 6 | six   | 2 |  4 | 0 |   
+ 6 | 6 | six   | 2 |  4 |   |   
+ 6 | 6 | six   | 2 |  4 |   |  0
+ 7 | 7 | seven | 2 |  4 | 1 | -1
+ 7 | 7 | seven | 2 |  4 | 2 |  2
+ 7 | 7 | seven | 2 |  4 | 3 | -3
+ 7 | 7 | seven | 2 |  4 | 2 |  4
+ 7 | 7 | seven | 2 |  4 | 5 | -5
+ 7 | 7 | seven | 2 |  4 | 5 | -5
+ 7 | 7 | seven | 2 |  4 | 0 |   
+ 7 | 7 | seven | 2 |  4 |   |   
+ 7 | 7 | seven | 2 |  4 |   |  0
+ 8 | 8 | eight | 2 |  4 | 1 | -1
+ 8 | 8 | eight | 2 |  4 | 2 |  2
+ 8 | 8 | eight | 2 |  4 | 3 | -3
+ 8 | 8 | eight | 2 |  4 | 2 |  4
+ 8 | 8 | eight | 2 |  4 | 5 | -5
+ 8 | 8 | eight | 2 |  4 | 5 | -5
+ 8 | 8 | eight | 2 |  4 | 0 |   
+ 8 | 8 | eight | 2 |  4 |   |   
+ 8 | 8 | eight | 2 |  4 |   |  0
+ 0 |   | zero  | 2 |  4 | 1 | -1
+ 0 |   | zero  | 2 |  4 | 2 |  2
+ 0 |   | zero  | 2 |  4 | 3 | -3
+ 0 |   | zero  | 2 |  4 | 2 |  4
+ 0 |   | zero  | 2 |  4 | 5 | -5
+ 0 |   | zero  | 2 |  4 | 5 | -5
+ 0 |   | zero  | 2 |  4 | 0 |   
+ 0 |   | zero  | 2 |  4 |   |   
+ 0 |   | zero  | 2 |  4 |   |  0
+   |   | null  | 2 |  4 | 1 | -1
+   |   | null  | 2 |  4 | 2 |  2
+   |   | null  | 2 |  4 | 3 | -3
+   |   | null  | 2 |  4 | 2 |  4
+   |   | null  | 2 |  4 | 5 | -5
+   |   | null  | 2 |  4 | 5 | -5
+   |   | null  | 2 |  4 | 0 |   
+   |   | null  | 2 |  4 |   |   
+   |   | null  | 2 |  4 |   |  0
+   | 0 | zero  | 2 |  4 | 1 | -1
+   | 0 | zero  | 2 |  4 | 2 |  2
+   | 0 | zero  | 2 |  4 | 3 | -3
+   | 0 | zero  | 2 |  4 | 2 |  4
+   | 0 | zero  | 2 |  4 | 5 | -5
+   | 0 | zero  | 2 |  4 | 5 | -5
+   | 0 | zero  | 2 |  4 | 0 |   
+   | 0 | zero  | 2 |  4 |   |   
+   | 0 | zero  | 2 |  4 |   |  0
+ 1 | 4 | one   | 5 | -5 | 1 | -1
+ 1 | 4 | one   | 5 | -5 | 2 |  2
+ 1 | 4 | one   | 5 | -5 | 3 | -3
+ 1 | 4 | one   | 5 | -5 | 2 |  4
+ 1 | 4 | one   | 5 | -5 | 5 | -5
+ 1 | 4 | one   | 5 | -5 | 5 | -5
+ 1 | 4 | one   | 5 | -5 | 0 |   
+ 1 | 4 | one   | 5 | -5 |   |   
+ 1 | 4 | one   | 5 | -5 |   |  0
+ 2 | 3 | two   | 5 | -5 | 1 | -1
+ 2 | 3 | two   | 5 | -5 | 2 |  2
+ 2 | 3 | two   | 5 | -5 | 3 | -3
+ 2 | 3 | two   | 5 | -5 | 2 |  4
+ 2 | 3 | two   | 5 | -5 | 5 | -5
+ 2 | 3 | two   | 5 | -5 | 5 | -5
+ 2 | 3 | two   | 5 | -5 | 0 |   
+ 2 | 3 | two   | 5 | -5 |   |   
+ 2 | 3 | two   | 5 | -5 |   |  0
+ 3 | 2 | three | 5 | -5 | 1 | -1
+ 3 | 2 | three | 5 | -5 | 2 |  2
+ 3 | 2 | three | 5 | -5 | 3 | -3
+ 3 | 2 | three | 5 | -5 | 2 |  4
+ 3 | 2 | three | 5 | -5 | 5 | -5
+ 3 | 2 | three | 5 | -5 | 5 | -5
+ 3 | 2 | three | 5 | -5 | 0 |   
+ 3 | 2 | three | 5 | -5 |   |   
+ 3 | 2 | three | 5 | -5 |   |  0
+ 4 | 1 | four  | 5 | -5 | 1 | -1
+ 4 | 1 | four  | 5 | -5 | 2 |  2
+ 4 | 1 | four  | 5 | -5 | 3 | -3
+ 4 | 1 | four  | 5 | -5 | 2 |  4
+ 4 | 1 | four  | 5 | -5 | 5 | -5
+ 4 | 1 | four  | 5 | -5 | 5 | -5
+ 4 | 1 | four  | 5 | -5 | 0 |   
+ 4 | 1 | four  | 5 | -5 |   |   
+ 4 | 1 | four  | 5 | -5 |   |  0
+ 5 | 0 | five  | 5 | -5 | 1 | -1
+ 5 | 0 | five  | 5 | -5 | 2 |  2
+ 5 | 0 | five  | 5 | -5 | 3 | -3
+ 5 | 0 | five  | 5 | -5 | 2 |  4
+ 5 | 0 | five  | 5 | -5 | 5 | -5
+ 5 | 0 | five  | 5 | -5 | 5 | -5
+ 5 | 0 | five  | 5 | -5 | 0 |   
+ 5 | 0 | five  | 5 | -5 |   |   
+ 5 | 0 | five  | 5 | -5 |   |  0
+ 6 | 6 | six   | 5 | -5 | 1 | -1
+ 6 | 6 | six   | 5 | -5 | 2 |  2
+ 6 | 6 | six   | 5 | -5 | 3 | -3
+ 6 | 6 | six   | 5 | -5 | 2 |  4
+ 6 | 6 | six   | 5 | -5 | 5 | -5
+ 6 | 6 | six   | 5 | -5 | 5 | -5
+ 6 | 6 | six   | 5 | -5 | 0 |   
+ 6 | 6 | six   | 5 | -5 |   |   
+ 6 | 6 | six   | 5 | -5 |   |  0
+ 7 | 7 | seven | 5 | -5 | 1 | -1
+ 7 | 7 | seven | 5 | -5 | 2 |  2
+ 7 | 7 | seven | 5 | -5 | 3 | -3
+ 7 | 7 | seven | 5 | -5 | 2 |  4
+ 7 | 7 | seven | 5 | -5 | 5 | -5
+ 7 | 7 | seven | 5 | -5 | 5 | -5
+ 7 | 7 | seven | 5 | -5 | 0 |   
+ 7 | 7 | seven | 5 | -5 |   |   
+ 7 | 7 | seven | 5 | -5 |   |  0
+ 8 | 8 | eight | 5 | -5 | 1 | -1
+ 8 | 8 | eight | 5 | -5 | 2 |  2
+ 8 | 8 | eight | 5 | -5 | 3 | -3
+ 8 | 8 | eight | 5 | -5 | 2 |  4
+ 8 | 8 | eight | 5 | -5 | 5 | -5
+ 8 | 8 | eight | 5 | -5 | 5 | -5
+ 8 | 8 | eight | 5 | -5 | 0 |   
+ 8 | 8 | eight | 5 | -5 |   |   
+ 8 | 8 | eight | 5 | -5 |   |  0
+ 0 |   | zero  | 5 | -5 | 1 | -1
+ 0 |   | zero  | 5 | -5 | 2 |  2
+ 0 |   | zero  | 5 | -5 | 3 | -3
+ 0 |   | zero  | 5 | -5 | 2 |  4
+ 0 |   | zero  | 5 | -5 | 5 | -5
+ 0 |   | zero  | 5 | -5 | 5 | -5
+ 0 |   | zero  | 5 | -5 | 0 |   
+ 0 |   | zero  | 5 | -5 |   |   
+ 0 |   | zero  | 5 | -5 |   |  0
+   |   | null  | 5 | -5 | 1 | -1
+   |   | null  | 5 | -5 | 2 |  2
+   |   | null  | 5 | -5 | 3 | -3
+   |   | null  | 5 | -5 | 2 |  4
+   |   | null  | 5 | -5 | 5 | -5
+   |   | null  | 5 | -5 | 5 | -5
+   |   | null  | 5 | -5 | 0 |   
+   |   | null  | 5 | -5 |   |   
+   |   | null  | 5 | -5 |   |  0
+   | 0 | zero  | 5 | -5 | 1 | -1
+   | 0 | zero  | 5 | -5 | 2 |  2
+   | 0 | zero  | 5 | -5 | 3 | -3
+   | 0 | zero  | 5 | -5 | 2 |  4
+   | 0 | zero  | 5 | -5 | 5 | -5
+   | 0 | zero  | 5 | -5 | 5 | -5
+   | 0 | zero  | 5 | -5 | 0 |   
+   | 0 | zero  | 5 | -5 |   |   
+   | 0 | zero  | 5 | -5 |   |  0
+ 1 | 4 | one   | 5 | -5 | 1 | -1
+ 1 | 4 | one   | 5 | -5 | 2 |  2
+ 1 | 4 | one   | 5 | -5 | 3 | -3
+ 1 | 4 | one   | 5 | -5 | 2 |  4
+ 1 | 4 | one   | 5 | -5 | 5 | -5
+ 1 | 4 | one   | 5 | -5 | 5 | -5
+ 1 | 4 | one   | 5 | -5 | 0 |   
+ 1 | 4 | one   | 5 | -5 |   |   
+ 1 | 4 | one   | 5 | -5 |   |  0
+ 2 | 3 | two   | 5 | -5 | 1 | -1
+ 2 | 3 | two   | 5 | -5 | 2 |  2
+ 2 | 3 | two   | 5 | -5 | 3 | -3
+ 2 | 3 | two   | 5 | -5 | 2 |  4
+ 2 | 3 | two   | 5 | -5 | 5 | -5
+ 2 | 3 | two   | 5 | -5 | 5 | -5
+ 2 | 3 | two   | 5 | -5 | 0 |   
+ 2 | 3 | two   | 5 | -5 |   |   
+ 2 | 3 | two   | 5 | -5 |   |  0
+ 3 | 2 | three | 5 | -5 | 1 | -1
+ 3 | 2 | three | 5 | -5 | 2 |  2
+ 3 | 2 | three | 5 | -5 | 3 | -3
+ 3 | 2 | three | 5 | -5 | 2 |  4
+ 3 | 2 | three | 5 | -5 | 5 | -5
+ 3 | 2 | three | 5 | -5 | 5 | -5
+ 3 | 2 | three | 5 | -5 | 0 |   
+ 3 | 2 | three | 5 | -5 |   |   
+ 3 | 2 | three | 5 | -5 |   |  0
+ 4 | 1 | four  | 5 | -5 | 1 | -1
+ 4 | 1 | four  | 5 | -5 | 2 |  2
+ 4 | 1 | four  | 5 | -5 | 3 | -3
+ 4 | 1 | four  | 5 | -5 | 2 |  4
+ 4 | 1 | four  | 5 | -5 | 5 | -5
+ 4 | 1 | four  | 5 | -5 | 5 | -5
+ 4 | 1 | four  | 5 | -5 | 0 |   
+ 4 | 1 | four  | 5 | -5 |   |   
+ 4 | 1 | four  | 5 | -5 |   |  0
+ 5 | 0 | five  | 5 | -5 | 1 | -1
+ 5 | 0 | five  | 5 | -5 | 2 |  2
+ 5 | 0 | five  | 5 | -5 | 3 | -3
+ 5 | 0 | five  | 5 | -5 | 2 |  4
+ 5 | 0 | five  | 5 | -5 | 5 | -5
+ 5 | 0 | five  | 5 | -5 | 5 | -5
+ 5 | 0 | five  | 5 | -5 | 0 |   
+ 5 | 0 | five  | 5 | -5 |   |   
+ 5 | 0 | five  | 5 | -5 |   |  0
+ 6 | 6 | six   | 5 | -5 | 1 | -1
+ 6 | 6 | six   | 5 | -5 | 2 |  2
+ 6 | 6 | six   | 5 | -5 | 3 | -3
+ 6 | 6 | six   | 5 | -5 | 2 |  4
+ 6 | 6 | six   | 5 | -5 | 5 | -5
+ 6 | 6 | six   | 5 | -5 | 5 | -5
+ 6 | 6 | six   | 5 | -5 | 0 |   
+ 6 | 6 | six   | 5 | -5 |   |   
+ 6 | 6 | six   | 5 | -5 |   |  0
+ 7 | 7 | seven | 5 | -5 | 1 | -1
+ 7 | 7 | seven | 5 | -5 | 2 |  2
+ 7 | 7 | seven | 5 | -5 | 3 | -3
+ 7 | 7 | seven | 5 | -5 | 2 |  4
+ 7 | 7 | seven | 5 | -5 | 5 | -5
+ 7 | 7 | seven | 5 | -5 | 5 | -5
+ 7 | 7 | seven | 5 | -5 | 0 |   
+ 7 | 7 | seven | 5 | -5 |   |   
+ 7 | 7 | seven | 5 | -5 |   |  0
+ 8 | 8 | eight | 5 | -5 | 1 | -1
+ 8 | 8 | eight | 5 | -5 | 2 |  2
+ 8 | 8 | eight | 5 | -5 | 3 | -3
+ 8 | 8 | eight | 5 | -5 | 2 |  4
+ 8 | 8 | eight | 5 | -5 | 5 | -5
+ 8 | 8 | eight | 5 | -5 | 5 | -5
+ 8 | 8 | eight | 5 | -5 | 0 |   
+ 8 | 8 | eight | 5 | -5 |   |   
+ 8 | 8 | eight | 5 | -5 |   |  0
+ 0 |   | zero  | 5 | -5 | 1 | -1
+ 0 |   | zero  | 5 | -5 | 2 |  2
+ 0 |   | zero  | 5 | -5 | 3 | -3
+ 0 |   | zero  | 5 | -5 | 2 |  4
+ 0 |   | zero  | 5 | -5 | 5 | -5
+ 0 |   | zero  | 5 | -5 | 5 | -5
+ 0 |   | zero  | 5 | -5 | 0 |   
+ 0 |   | zero  | 5 | -5 |   |   
+ 0 |   | zero  | 5 | -5 |   |  0
+   |   | null  | 5 | -5 | 1 | -1
+   |   | null  | 5 | -5 | 2 |  2
+   |   | null  | 5 | -5 | 3 | -3
+   |   | null  | 5 | -5 | 2 |  4
+   |   | null  | 5 | -5 | 5 | -5
+   |   | null  | 5 | -5 | 5 | -5
+   |   | null  | 5 | -5 | 0 |   
+   |   | null  | 5 | -5 |   |   
+   |   | null  | 5 | -5 |   |  0
+   | 0 | zero  | 5 | -5 | 1 | -1
+   | 0 | zero  | 5 | -5 | 2 |  2
+   | 0 | zero  | 5 | -5 | 3 | -3
+   | 0 | zero  | 5 | -5 | 2 |  4
+   | 0 | zero  | 5 | -5 | 5 | -5
+   | 0 | zero  | 5 | -5 | 5 | -5
+   | 0 | zero  | 5 | -5 | 0 |   
+   | 0 | zero  | 5 | -5 |   |   
+   | 0 | zero  | 5 | -5 |   |  0
+ 1 | 4 | one   | 0 |    | 1 | -1
+ 1 | 4 | one   | 0 |    | 2 |  2
+ 1 | 4 | one   | 0 |    | 3 | -3
+ 1 | 4 | one   | 0 |    | 2 |  4
+ 1 | 4 | one   | 0 |    | 5 | -5
+ 1 | 4 | one   | 0 |    | 5 | -5
+ 1 | 4 | one   | 0 |    | 0 |   
+ 1 | 4 | one   | 0 |    |   |   
+ 1 | 4 | one   | 0 |    |   |  0
+ 2 | 3 | two   | 0 |    | 1 | -1
+ 2 | 3 | two   | 0 |    | 2 |  2
+ 2 | 3 | two   | 0 |    | 3 | -3
+ 2 | 3 | two   | 0 |    | 2 |  4
+ 2 | 3 | two   | 0 |    | 5 | -5
+ 2 | 3 | two   | 0 |    | 5 | -5
+ 2 | 3 | two   | 0 |    | 0 |   
+ 2 | 3 | two   | 0 |    |   |   
+ 2 | 3 | two   | 0 |    |   |  0
+ 3 | 2 | three | 0 |    | 1 | -1
+ 3 | 2 | three | 0 |    | 2 |  2
+ 3 | 2 | three | 0 |    | 3 | -3
+ 3 | 2 | three | 0 |    | 2 |  4
+ 3 | 2 | three | 0 |    | 5 | -5
+ 3 | 2 | three | 0 |    | 5 | -5
+ 3 | 2 | three | 0 |    | 0 |   
+ 3 | 2 | three | 0 |    |   |   
+ 3 | 2 | three | 0 |    |   |  0
+ 4 | 1 | four  | 0 |    | 1 | -1
+ 4 | 1 | four  | 0 |    | 2 |  2
+ 4 | 1 | four  | 0 |    | 3 | -3
+ 4 | 1 | four  | 0 |    | 2 |  4
+ 4 | 1 | four  | 0 |    | 5 | -5
+ 4 | 1 | four  | 0 |    | 5 | -5
+ 4 | 1 | four  | 0 |    | 0 |   
+ 4 | 1 | four  | 0 |    |   |   
+ 4 | 1 | four  | 0 |    |   |  0
+ 5 | 0 | five  | 0 |    | 1 | -1
+ 5 | 0 | five  | 0 |    | 2 |  2
+ 5 | 0 | five  | 0 |    | 3 | -3
+ 5 | 0 | five  | 0 |    | 2 |  4
+ 5 | 0 | five  | 0 |    | 5 | -5
+ 5 | 0 | five  | 0 |    | 5 | -5
+ 5 | 0 | five  | 0 |    | 0 |   
+ 5 | 0 | five  | 0 |    |   |   
+ 5 | 0 | five  | 0 |    |   |  0
+ 6 | 6 | six   | 0 |    | 1 | -1
+ 6 | 6 | six   | 0 |    | 2 |  2
+ 6 | 6 | six   | 0 |    | 3 | -3
+ 6 | 6 | six   | 0 |    | 2 |  4
+ 6 | 6 | six   | 0 |    | 5 | -5
+ 6 | 6 | six   | 0 |    | 5 | -5
+ 6 | 6 | six   | 0 |    | 0 |   
+ 6 | 6 | six   | 0 |    |   |   
+ 6 | 6 | six   | 0 |    |   |  0
+ 7 | 7 | seven | 0 |    | 1 | -1
+ 7 | 7 | seven | 0 |    | 2 |  2
+ 7 | 7 | seven | 0 |    | 3 | -3
+ 7 | 7 | seven | 0 |    | 2 |  4
+ 7 | 7 | seven | 0 |    | 5 | -5
+ 7 | 7 | seven | 0 |    | 5 | -5
+ 7 | 7 | seven | 0 |    | 0 |   
+ 7 | 7 | seven | 0 |    |   |   
+ 7 | 7 | seven | 0 |    |   |  0
+ 8 | 8 | eight | 0 |    | 1 | -1
+ 8 | 8 | eight | 0 |    | 2 |  2
+ 8 | 8 | eight | 0 |    | 3 | -3
+ 8 | 8 | eight | 0 |    | 2 |  4
+ 8 | 8 | eight | 0 |    | 5 | -5
+ 8 | 8 | eight | 0 |    | 5 | -5
+ 8 | 8 | eight | 0 |    | 0 |   
+ 8 | 8 | eight | 0 |    |   |   
+ 8 | 8 | eight | 0 |    |   |  0
+ 0 |   | zero  | 0 |    | 1 | -1
+ 0 |   | zero  | 0 |    | 2 |  2
+ 0 |   | zero  | 0 |    | 3 | -3
+ 0 |   | zero  | 0 |    | 2 |  4
+ 0 |   | zero  | 0 |    | 5 | -5
+ 0 |   | zero  | 0 |    | 5 | -5
+ 0 |   | zero  | 0 |    | 0 |   
+ 0 |   | zero  | 0 |    |   |   
+ 0 |   | zero  | 0 |    |   |  0
+   |   | null  | 0 |    | 1 | -1
+   |   | null  | 0 |    | 2 |  2
+   |   | null  | 0 |    | 3 | -3
+   |   | null  | 0 |    | 2 |  4
+   |   | null  | 0 |    | 5 | -5
+   |   | null  | 0 |    | 5 | -5
+   |   | null  | 0 |    | 0 |   
+   |   | null  | 0 |    |   |   
+   |   | null  | 0 |    |   |  0
+   | 0 | zero  | 0 |    | 1 | -1
+   | 0 | zero  | 0 |    | 2 |  2
+   | 0 | zero  | 0 |    | 3 | -3
+   | 0 | zero  | 0 |    | 2 |  4
+   | 0 | zero  | 0 |    | 5 | -5
+   | 0 | zero  | 0 |    | 5 | -5
+   | 0 | zero  | 0 |    | 0 |   
+   | 0 | zero  | 0 |    |   |   
+   | 0 | zero  | 0 |    |   |  0
+ 1 | 4 | one   |   |    | 1 | -1
+ 1 | 4 | one   |   |    | 2 |  2
+ 1 | 4 | one   |   |    | 3 | -3
+ 1 | 4 | one   |   |    | 2 |  4
+ 1 | 4 | one   |   |    | 5 | -5
+ 1 | 4 | one   |   |    | 5 | -5
+ 1 | 4 | one   |   |    | 0 |   
+ 1 | 4 | one   |   |    |   |   
+ 1 | 4 | one   |   |    |   |  0
+ 2 | 3 | two   |   |    | 1 | -1
+ 2 | 3 | two   |   |    | 2 |  2
+ 2 | 3 | two   |   |    | 3 | -3
+ 2 | 3 | two   |   |    | 2 |  4
+ 2 | 3 | two   |   |    | 5 | -5
+ 2 | 3 | two   |   |    | 5 | -5
+ 2 | 3 | two   |   |    | 0 |   
+ 2 | 3 | two   |   |    |   |   
+ 2 | 3 | two   |   |    |   |  0
+ 3 | 2 | three |   |    | 1 | -1
+ 3 | 2 | three |   |    | 2 |  2
+ 3 | 2 | three |   |    | 3 | -3
+ 3 | 2 | three |   |    | 2 |  4
+ 3 | 2 | three |   |    | 5 | -5
+ 3 | 2 | three |   |    | 5 | -5
+ 3 | 2 | three |   |    | 0 |   
+ 3 | 2 | three |   |    |   |   
+ 3 | 2 | three |   |    |   |  0
+ 4 | 1 | four  |   |    | 1 | -1
+ 4 | 1 | four  |   |    | 2 |  2
+ 4 | 1 | four  |   |    | 3 | -3
+ 4 | 1 | four  |   |    | 2 |  4
+ 4 | 1 | four  |   |    | 5 | -5
+ 4 | 1 | four  |   |    | 5 | -5
+ 4 | 1 | four  |   |    | 0 |   
+ 4 | 1 | four  |   |    |   |   
+ 4 | 1 | four  |   |    |   |  0
+ 5 | 0 | five  |   |    | 1 | -1
+ 5 | 0 | five  |   |    | 2 |  2
+ 5 | 0 | five  |   |    | 3 | -3
+ 5 | 0 | five  |   |    | 2 |  4
+ 5 | 0 | five  |   |    | 5 | -5
+ 5 | 0 | five  |   |    | 5 | -5
+ 5 | 0 | five  |   |    | 0 |   
+ 5 | 0 | five  |   |    |   |   
+ 5 | 0 | five  |   |    |   |  0
+ 6 | 6 | six   |   |    | 1 | -1
+ 6 | 6 | six   |   |    | 2 |  2
+ 6 | 6 | six   |   |    | 3 | -3
+ 6 | 6 | six   |   |    | 2 |  4
+ 6 | 6 | six   |   |    | 5 | -5
+ 6 | 6 | six   |   |    | 5 | -5
+ 6 | 6 | six   |   |    | 0 |   
+ 6 | 6 | six   |   |    |   |   
+ 6 | 6 | six   |   |    |   |  0
+ 7 | 7 | seven |   |    | 1 | -1
+ 7 | 7 | seven |   |    | 2 |  2
+ 7 | 7 | seven |   |    | 3 | -3
+ 7 | 7 | seven |   |    | 2 |  4
+ 7 | 7 | seven |   |    | 5 | -5
+ 7 | 7 | seven |   |    | 5 | -5
+ 7 | 7 | seven |   |    | 0 |   
+ 7 | 7 | seven |   |    |   |   
+ 7 | 7 | seven |   |    |   |  0
+ 8 | 8 | eight |   |    | 1 | -1
+ 8 | 8 | eight |   |    | 2 |  2
+ 8 | 8 | eight |   |    | 3 | -3
+ 8 | 8 | eight |   |    | 2 |  4
+ 8 | 8 | eight |   |    | 5 | -5
+ 8 | 8 | eight |   |    | 5 | -5
+ 8 | 8 | eight |   |    | 0 |   
+ 8 | 8 | eight |   |    |   |   
+ 8 | 8 | eight |   |    |   |  0
+ 0 |   | zero  |   |    | 1 | -1
+ 0 |   | zero  |   |    | 2 |  2
+ 0 |   | zero  |   |    | 3 | -3
+ 0 |   | zero  |   |    | 2 |  4
+ 0 |   | zero  |   |    | 5 | -5
+ 0 |   | zero  |   |    | 5 | -5
+ 0 |   | zero  |   |    | 0 |   
+ 0 |   | zero  |   |    |   |   
+ 0 |   | zero  |   |    |   |  0
+   |   | null  |   |    | 1 | -1
+   |   | null  |   |    | 2 |  2
+   |   | null  |   |    | 3 | -3
+   |   | null  |   |    | 2 |  4
+   |   | null  |   |    | 5 | -5
+   |   | null  |   |    | 5 | -5
+   |   | null  |   |    | 0 |   
+   |   | null  |   |    |   |   
+   |   | null  |   |    |   |  0
+   | 0 | zero  |   |    | 1 | -1
+   | 0 | zero  |   |    | 2 |  2
+   | 0 | zero  |   |    | 3 | -3
+   | 0 | zero  |   |    | 2 |  4
+   | 0 | zero  |   |    | 5 | -5
+   | 0 | zero  |   |    | 5 | -5
+   | 0 | zero  |   |    | 0 |   
+   | 0 | zero  |   |    |   |   
+   | 0 | zero  |   |    |   |  0
+ 1 | 4 | one   |   |  0 | 1 | -1
+ 1 | 4 | one   |   |  0 | 2 |  2
+ 1 | 4 | one   |   |  0 | 3 | -3
+ 1 | 4 | one   |   |  0 | 2 |  4
+ 1 | 4 | one   |   |  0 | 5 | -5
+ 1 | 4 | one   |   |  0 | 5 | -5
+ 1 | 4 | one   |   |  0 | 0 |   
+ 1 | 4 | one   |   |  0 |   |   
+ 1 | 4 | one   |   |  0 |   |  0
+ 2 | 3 | two   |   |  0 | 1 | -1
+ 2 | 3 | two   |   |  0 | 2 |  2
+ 2 | 3 | two   |   |  0 | 3 | -3
+ 2 | 3 | two   |   |  0 | 2 |  4
+ 2 | 3 | two   |   |  0 | 5 | -5
+ 2 | 3 | two   |   |  0 | 5 | -5
+ 2 | 3 | two   |   |  0 | 0 |   
+ 2 | 3 | two   |   |  0 |   |   
+ 2 | 3 | two   |   |  0 |   |  0
+ 3 | 2 | three |   |  0 | 1 | -1
+ 3 | 2 | three |   |  0 | 2 |  2
+ 3 | 2 | three |   |  0 | 3 | -3
+ 3 | 2 | three |   |  0 | 2 |  4
+ 3 | 2 | three |   |  0 | 5 | -5
+ 3 | 2 | three |   |  0 | 5 | -5
+ 3 | 2 | three |   |  0 | 0 |   
+ 3 | 2 | three |   |  0 |   |   
+ 3 | 2 | three |   |  0 |   |  0
+ 4 | 1 | four  |   |  0 | 1 | -1
+ 4 | 1 | four  |   |  0 | 2 |  2
+ 4 | 1 | four  |   |  0 | 3 | -3
+ 4 | 1 | four  |   |  0 | 2 |  4
+ 4 | 1 | four  |   |  0 | 5 | -5
+ 4 | 1 | four  |   |  0 | 5 | -5
+ 4 | 1 | four  |   |  0 | 0 |   
+ 4 | 1 | four  |   |  0 |   |   
+ 4 | 1 | four  |   |  0 |   |  0
+ 5 | 0 | five  |   |  0 | 1 | -1
+ 5 | 0 | five  |   |  0 | 2 |  2
+ 5 | 0 | five  |   |  0 | 3 | -3
+ 5 | 0 | five  |   |  0 | 2 |  4
+ 5 | 0 | five  |   |  0 | 5 | -5
+ 5 | 0 | five  |   |  0 | 5 | -5
+ 5 | 0 | five  |   |  0 | 0 |   
+ 5 | 0 | five  |   |  0 |   |   
+ 5 | 0 | five  |   |  0 |   |  0
+ 6 | 6 | six   |   |  0 | 1 | -1
+ 6 | 6 | six   |   |  0 | 2 |  2
+ 6 | 6 | six   |   |  0 | 3 | -3
+ 6 | 6 | six   |   |  0 | 2 |  4
+ 6 | 6 | six   |   |  0 | 5 | -5
+ 6 | 6 | six   |   |  0 | 5 | -5
+ 6 | 6 | six   |   |  0 | 0 |   
+ 6 | 6 | six   |   |  0 |   |   
+ 6 | 6 | six   |   |  0 |   |  0
+ 7 | 7 | seven |   |  0 | 1 | -1
+ 7 | 7 | seven |   |  0 | 2 |  2
+ 7 | 7 | seven |   |  0 | 3 | -3
+ 7 | 7 | seven |   |  0 | 2 |  4
+ 7 | 7 | seven |   |  0 | 5 | -5
+ 7 | 7 | seven |   |  0 | 5 | -5
+ 7 | 7 | seven |   |  0 | 0 |   
+ 7 | 7 | seven |   |  0 |   |   
+ 7 | 7 | seven |   |  0 |   |  0
+ 8 | 8 | eight |   |  0 | 1 | -1
+ 8 | 8 | eight |   |  0 | 2 |  2
+ 8 | 8 | eight |   |  0 | 3 | -3
+ 8 | 8 | eight |   |  0 | 2 |  4
+ 8 | 8 | eight |   |  0 | 5 | -5
+ 8 | 8 | eight |   |  0 | 5 | -5
+ 8 | 8 | eight |   |  0 | 0 |   
+ 8 | 8 | eight |   |  0 |   |   
+ 8 | 8 | eight |   |  0 |   |  0
+ 0 |   | zero  |   |  0 | 1 | -1
+ 0 |   | zero  |   |  0 | 2 |  2
+ 0 |   | zero  |   |  0 | 3 | -3
+ 0 |   | zero  |   |  0 | 2 |  4
+ 0 |   | zero  |   |  0 | 5 | -5
+ 0 |   | zero  |   |  0 | 5 | -5
+ 0 |   | zero  |   |  0 | 0 |   
+ 0 |   | zero  |   |  0 |   |   
+ 0 |   | zero  |   |  0 |   |  0
+   |   | null  |   |  0 | 1 | -1
+   |   | null  |   |  0 | 2 |  2
+   |   | null  |   |  0 | 3 | -3
+   |   | null  |   |  0 | 2 |  4
+   |   | null  |   |  0 | 5 | -5
+   |   | null  |   |  0 | 5 | -5
+   |   | null  |   |  0 | 0 |   
+   |   | null  |   |  0 |   |   
+   |   | null  |   |  0 |   |  0
+   | 0 | zero  |   |  0 | 1 | -1
+   | 0 | zero  |   |  0 | 2 |  2
+   | 0 | zero  |   |  0 | 3 | -3
+   | 0 | zero  |   |  0 | 2 |  4
+   | 0 | zero  |   |  0 | 5 | -5
+   | 0 | zero  |   |  0 | 5 | -5
+   | 0 | zero  |   |  0 | 0 |   
+   | 0 | zero  |   |  0 |   |   
+   | 0 | zero  |   |  0 |   |  0
 (891 rows)
 
 --
@@ -1660,163 +1660,235 @@ SELECT '' AS "xxx", *
 --
 -- Inner equi-join on specified column
 --Testcase 33:
-SELECT '' AS "xxx", *
+SELECT *
   FROM J1_TBL INNER JOIN J2_TBL USING (i);
- xxx | i | j |   t   | k  
------+---+---+-------+----
-     | 0 |   | zero  |   
-     | 1 | 4 | one   | -1
-     | 2 | 3 | two   |  2
-     | 2 | 3 | two   |  4
-     | 3 | 2 | three | -3
-     | 5 | 0 | five  | -5
-     | 5 | 0 | five  | -5
+ i | j |   t   | k  
+---+---+-------+----
+ 0 |   | zero  |   
+ 1 | 4 | one   | -1
+ 2 | 3 | two   |  2
+ 2 | 3 | two   |  4
+ 3 | 2 | three | -3
+ 5 | 0 | five  | -5
+ 5 | 0 | five  | -5
 (7 rows)
 
 -- Same as above, slightly different syntax
 --Testcase 34:
-SELECT '' AS "xxx", *
+SELECT *
   FROM J1_TBL JOIN J2_TBL USING (i);
- xxx | i | j |   t   | k  
------+---+---+-------+----
-     | 0 |   | zero  |   
-     | 1 | 4 | one   | -1
-     | 2 | 3 | two   |  2
-     | 2 | 3 | two   |  4
-     | 3 | 2 | three | -3
-     | 5 | 0 | five  | -5
-     | 5 | 0 | five  | -5
+ i | j |   t   | k  
+---+---+-------+----
+ 0 |   | zero  |   
+ 1 | 4 | one   | -1
+ 2 | 3 | two   |  2
+ 2 | 3 | two   |  4
+ 3 | 2 | three | -3
+ 5 | 0 | five  | -5
+ 5 | 0 | five  | -5
 (7 rows)
 
 --Testcase 35:
-SELECT '' AS "xxx", *
+SELECT *
   FROM J1_TBL t1 (a, b, c) JOIN J2_TBL t2 (a, d) USING (a)
   ORDER BY a, d;
- xxx | a | b |   c   | d  
------+---+---+-------+----
-     | 0 |   | zero  |   
-     | 1 | 4 | one   | -1
-     | 2 | 3 | two   |  2
-     | 2 | 3 | two   |  4
-     | 3 | 2 | three | -3
-     | 5 | 0 | five  | -5
-     | 5 | 0 | five  | -5
+ a | b |   c   | d  
+---+---+-------+----
+ 0 |   | zero  |   
+ 1 | 4 | one   | -1
+ 2 | 3 | two   |  2
+ 2 | 3 | two   |  4
+ 3 | 2 | three | -3
+ 5 | 0 | five  | -5
+ 5 | 0 | five  | -5
 (7 rows)
 
 --Testcase 36:
-SELECT '' AS "xxx", *
+SELECT *
   FROM J1_TBL t1 (a, b, c) JOIN J2_TBL t2 (a, b) USING (b)
   ORDER BY b, t1.a;
- xxx | b | a |   c   | a 
------+---+---+-------+---
-     | 0 | 5 | five  |  
-     | 0 |   | zero  |  
-     | 2 | 3 | three | 2
-     | 4 | 1 | one   | 2
+ b | a |   c   | a 
+---+---+-------+---
+ 0 | 5 | five  |  
+ 0 |   | zero  |  
+ 2 | 3 | three | 2
+ 4 | 1 | one   | 2
 (4 rows)
+
+-- test join using aliases
+--Testcase 489:
+SELECT *
+  FROM J1_TBL JOIN J2_TBL USING (i) WHERE J1_TBL.t = 'one';  -- ok
+ i | j |  t  | k  
+---+---+-----+----
+ 1 | 4 | one | -1
+(1 row)
+
+--Testcase 490:
+SELECT *
+  FROM J1_TBL JOIN J2_TBL USING (i) AS x WHERE J1_TBL.t = 'one';  -- ok
+ i | j |  t  | k  
+---+---+-----+----
+ 1 | 4 | one | -1
+(1 row)
+
+--Testcase 491:
+SELECT *
+  FROM (J1_TBL JOIN J2_TBL USING (i)) AS x WHERE J1_TBL.t = 'one';  -- error
+ERROR:  invalid reference to FROM-clause entry for table "j1_tbl"
+LINE 2:   FROM (J1_TBL JOIN J2_TBL USING (i)) AS x WHERE J1_TBL.t = ...
+                                                         ^
+HINT:  There is an entry for table "j1_tbl", but it cannot be referenced from this part of the query.
+--Testcase 492:
+SELECT *
+  FROM J1_TBL JOIN J2_TBL USING (i) AS x WHERE x.i = 1;  -- ok
+ i | j |  t  | k  
+---+---+-----+----
+ 1 | 4 | one | -1
+(1 row)
+
+--Testcase 493:
+SELECT *
+  FROM J1_TBL JOIN J2_TBL USING (i) AS x WHERE x.t = 'one';  -- error
+ERROR:  column x.t does not exist
+LINE 2:   FROM J1_TBL JOIN J2_TBL USING (i) AS x WHERE x.t = 'one';
+                                                       ^
+--Testcase 494:
+SELECT *
+  FROM (J1_TBL JOIN J2_TBL USING (i) AS x) AS xx WHERE x.i = 1;  -- error (XXX could use better hint)
+ERROR:  missing FROM-clause entry for table "x"
+LINE 2: ...ROM (J1_TBL JOIN J2_TBL USING (i) AS x) AS xx WHERE x.i = 1;
+                                                               ^
+--Testcase 495:
+SELECT *
+  FROM J1_TBL a1 JOIN J2_TBL a2 USING (i) AS a1;  -- error
+ERROR:  table name "a1" specified more than once
+--Testcase 496:
+SELECT x.*
+  FROM J1_TBL JOIN J2_TBL USING (i) AS x WHERE J1_TBL.t = 'one';
+ i 
+---
+ 1
+(1 row)
+
+--Testcase 497:
+SELECT ROW(x.*)
+  FROM J1_TBL JOIN J2_TBL USING (i) AS x WHERE J1_TBL.t = 'one';
+ row 
+-----
+ (1)
+(1 row)
+
+--Testcase 498:
+SELECT row_to_json(x.*)
+  FROM J1_TBL JOIN J2_TBL USING (i) AS x WHERE J1_TBL.t = 'one';
+ row_to_json 
+-------------
+ {"i":1}
+(1 row)
 
 --
 -- NATURAL JOIN
 -- Inner equi-join on all columns with the same name
 --
 --Testcase 37:
-SELECT '' AS "xxx", *
+SELECT *
   FROM J1_TBL NATURAL JOIN J2_TBL;
- xxx | i | j |   t   | k  
------+---+---+-------+----
-     | 0 |   | zero  |   
-     | 1 | 4 | one   | -1
-     | 2 | 3 | two   |  2
-     | 2 | 3 | two   |  4
-     | 3 | 2 | three | -3
-     | 5 | 0 | five  | -5
-     | 5 | 0 | five  | -5
+ i | j |   t   | k  
+---+---+-------+----
+ 0 |   | zero  |   
+ 1 | 4 | one   | -1
+ 2 | 3 | two   |  2
+ 2 | 3 | two   |  4
+ 3 | 2 | three | -3
+ 5 | 0 | five  | -5
+ 5 | 0 | five  | -5
 (7 rows)
 
 --Testcase 38:
-SELECT '' AS "xxx", *
+SELECT *
   FROM J1_TBL t1 (a, b, c) NATURAL JOIN J2_TBL t2 (a, d);
- xxx | a | b |   c   | d  
------+---+---+-------+----
-     | 0 |   | zero  |   
-     | 1 | 4 | one   | -1
-     | 2 | 3 | two   |  2
-     | 2 | 3 | two   |  4
-     | 3 | 2 | three | -3
-     | 5 | 0 | five  | -5
-     | 5 | 0 | five  | -5
+ a | b |   c   | d  
+---+---+-------+----
+ 0 |   | zero  |   
+ 1 | 4 | one   | -1
+ 2 | 3 | two   |  2
+ 2 | 3 | two   |  4
+ 3 | 2 | three | -3
+ 5 | 0 | five  | -5
+ 5 | 0 | five  | -5
 (7 rows)
 
 --Testcase 39:
-SELECT '' AS "xxx", *
+SELECT *
   FROM J1_TBL t1 (a, b, c) NATURAL JOIN J2_TBL t2 (d, a);
- xxx | a | b |  c   | d 
------+---+---+------+---
-     | 0 |   | zero |  
-     | 2 | 3 | two  | 2
-     | 4 | 1 | four | 2
+ a | b |  c   | d 
+---+---+------+---
+ 0 |   | zero |  
+ 2 | 3 | two  | 2
+ 4 | 1 | four | 2
 (3 rows)
 
 -- mismatch number of columns
 -- currently, Postgres will fill in with underlying names
 --Testcase 40:
-SELECT '' AS "xxx", *
+SELECT *
   FROM J1_TBL t1 (a, b) NATURAL JOIN J2_TBL t2 (a);
- xxx | a | b |   t   | k  
------+---+---+-------+----
-     | 0 |   | zero  |   
-     | 1 | 4 | one   | -1
-     | 2 | 3 | two   |  2
-     | 2 | 3 | two   |  4
-     | 3 | 2 | three | -3
-     | 5 | 0 | five  | -5
-     | 5 | 0 | five  | -5
+ a | b |   t   | k  
+---+---+-------+----
+ 0 |   | zero  |   
+ 1 | 4 | one   | -1
+ 2 | 3 | two   |  2
+ 2 | 3 | two   |  4
+ 3 | 2 | three | -3
+ 5 | 0 | five  | -5
+ 5 | 0 | five  | -5
 (7 rows)
 
 --
 -- Inner joins (equi-joins)
 --
 --Testcase 41:
-SELECT '' AS "xxx", *
+SELECT *
   FROM J1_TBL JOIN J2_TBL ON (J1_TBL.i = J2_TBL.i);
- xxx | i | j |   t   | i | k  
------+---+---+-------+---+----
-     | 0 |   | zero  | 0 |   
-     | 1 | 4 | one   | 1 | -1
-     | 2 | 3 | two   | 2 |  2
-     | 2 | 3 | two   | 2 |  4
-     | 3 | 2 | three | 3 | -3
-     | 5 | 0 | five  | 5 | -5
-     | 5 | 0 | five  | 5 | -5
+ i | j |   t   | i | k  
+---+---+-------+---+----
+ 0 |   | zero  | 0 |   
+ 1 | 4 | one   | 1 | -1
+ 2 | 3 | two   | 2 |  2
+ 2 | 3 | two   | 2 |  4
+ 3 | 2 | three | 3 | -3
+ 5 | 0 | five  | 5 | -5
+ 5 | 0 | five  | 5 | -5
 (7 rows)
 
 --Testcase 42:
-SELECT '' AS "xxx", *
+SELECT *
   FROM J1_TBL JOIN J2_TBL ON (J1_TBL.i = J2_TBL.k);
- xxx | i | j |  t   | i | k 
------+---+---+------+---+---
-     | 0 |   | zero |   | 0
-     | 2 | 3 | two  | 2 | 2
-     | 4 | 1 | four | 2 | 4
+ i | j |  t   | i | k 
+---+---+------+---+---
+ 0 |   | zero |   | 0
+ 2 | 3 | two  | 2 | 2
+ 4 | 1 | four | 2 | 4
 (3 rows)
 
 --
 -- Non-equi-joins
 --
 --Testcase 43:
-SELECT '' AS "xxx", *
+SELECT *
   FROM J1_TBL JOIN J2_TBL ON (J1_TBL.i <= J2_TBL.k);
- xxx | i | j |   t   | i | k 
------+---+---+-------+---+---
-     | 1 | 4 | one   | 2 | 2
-     | 1 | 4 | one   | 2 | 4
-     | 2 | 3 | two   | 2 | 2
-     | 2 | 3 | two   | 2 | 4
-     | 3 | 2 | three | 2 | 4
-     | 4 | 1 | four  | 2 | 4
-     | 0 |   | zero  | 2 | 2
-     | 0 |   | zero  | 2 | 4
-     | 0 |   | zero  |   | 0
+ i | j |   t   | i | k 
+---+---+-------+---+---
+ 1 | 4 | one   | 2 | 2
+ 1 | 4 | one   | 2 | 4
+ 2 | 3 | two   | 2 | 2
+ 2 | 3 | two   | 2 | 4
+ 3 | 2 | three | 2 | 4
+ 4 | 1 | four  | 2 | 4
+ 0 |   | zero  | 2 | 2
+ 0 |   | zero  | 2 | 4
+ 0 |   | zero  |   | 0
 (9 rows)
 
 --
@@ -1824,138 +1896,138 @@ SELECT '' AS "xxx", *
 -- Note that OUTER is a noise word
 --
 --Testcase 44:
-SELECT '' AS "xxx", *
+SELECT *
   FROM J1_TBL LEFT OUTER JOIN J2_TBL USING (i)
   ORDER BY i, k, t;
- xxx | i | j |   t   | k  
------+---+---+-------+----
-     | 0 |   | zero  |   
-     | 1 | 4 | one   | -1
-     | 2 | 3 | two   |  2
-     | 2 | 3 | two   |  4
-     | 3 | 2 | three | -3
-     | 4 | 1 | four  |   
-     | 5 | 0 | five  | -5
-     | 5 | 0 | five  | -5
-     | 6 | 6 | six   |   
-     | 7 | 7 | seven |   
-     | 8 | 8 | eight |   
-     |   |   | null  |   
-     |   | 0 | zero  |   
+ i | j |   t   | k  
+---+---+-------+----
+ 0 |   | zero  |   
+ 1 | 4 | one   | -1
+ 2 | 3 | two   |  2
+ 2 | 3 | two   |  4
+ 3 | 2 | three | -3
+ 4 | 1 | four  |   
+ 5 | 0 | five  | -5
+ 5 | 0 | five  | -5
+ 6 | 6 | six   |   
+ 7 | 7 | seven |   
+ 8 | 8 | eight |   
+   |   | null  |   
+   | 0 | zero  |   
 (13 rows)
 
 --Testcase 45:
-SELECT '' AS "xxx", *
+SELECT *
   FROM J1_TBL LEFT JOIN J2_TBL USING (i)
   ORDER BY i, k, t;
- xxx | i | j |   t   | k  
------+---+---+-------+----
-     | 0 |   | zero  |   
-     | 1 | 4 | one   | -1
-     | 2 | 3 | two   |  2
-     | 2 | 3 | two   |  4
-     | 3 | 2 | three | -3
-     | 4 | 1 | four  |   
-     | 5 | 0 | five  | -5
-     | 5 | 0 | five  | -5
-     | 6 | 6 | six   |   
-     | 7 | 7 | seven |   
-     | 8 | 8 | eight |   
-     |   |   | null  |   
-     |   | 0 | zero  |   
+ i | j |   t   | k  
+---+---+-------+----
+ 0 |   | zero  |   
+ 1 | 4 | one   | -1
+ 2 | 3 | two   |  2
+ 2 | 3 | two   |  4
+ 3 | 2 | three | -3
+ 4 | 1 | four  |   
+ 5 | 0 | five  | -5
+ 5 | 0 | five  | -5
+ 6 | 6 | six   |   
+ 7 | 7 | seven |   
+ 8 | 8 | eight |   
+   |   | null  |   
+   | 0 | zero  |   
 (13 rows)
 
 --Testcase 46:
-SELECT '' AS "xxx", *
+SELECT *
   FROM J1_TBL RIGHT OUTER JOIN J2_TBL USING (i);
- xxx | i | j |   t   | k  
------+---+---+-------+----
-     | 0 |   | zero  |   
-     | 1 | 4 | one   | -1
-     | 2 | 3 | two   |  2
-     | 2 | 3 | two   |  4
-     | 3 | 2 | three | -3
-     | 5 | 0 | five  | -5
-     | 5 | 0 | five  | -5
-     |   |   |       |   
-     |   |   |       |  0
+ i | j |   t   | k  
+---+---+-------+----
+ 0 |   | zero  |   
+ 1 | 4 | one   | -1
+ 2 | 3 | two   |  2
+ 2 | 3 | two   |  4
+ 3 | 2 | three | -3
+ 5 | 0 | five  | -5
+ 5 | 0 | five  | -5
+   |   |       |   
+   |   |       |  0
 (9 rows)
 
 --Testcase 47:
-SELECT '' AS "xxx", *
+SELECT *
   FROM J1_TBL RIGHT JOIN J2_TBL USING (i);
- xxx | i | j |   t   | k  
------+---+---+-------+----
-     | 0 |   | zero  |   
-     | 1 | 4 | one   | -1
-     | 2 | 3 | two   |  2
-     | 2 | 3 | two   |  4
-     | 3 | 2 | three | -3
-     | 5 | 0 | five  | -5
-     | 5 | 0 | five  | -5
-     |   |   |       |   
-     |   |   |       |  0
+ i | j |   t   | k  
+---+---+-------+----
+ 0 |   | zero  |   
+ 1 | 4 | one   | -1
+ 2 | 3 | two   |  2
+ 2 | 3 | two   |  4
+ 3 | 2 | three | -3
+ 5 | 0 | five  | -5
+ 5 | 0 | five  | -5
+   |   |       |   
+   |   |       |  0
 (9 rows)
 
 --Testcase 48:
-SELECT '' AS "xxx", *
+SELECT *
   FROM J1_TBL FULL OUTER JOIN J2_TBL USING (i)
   ORDER BY i, k, t;
- xxx | i | j |   t   | k  
------+---+---+-------+----
-     | 0 |   | zero  |   
-     | 1 | 4 | one   | -1
-     | 2 | 3 | two   |  2
-     | 2 | 3 | two   |  4
-     | 3 | 2 | three | -3
-     | 4 | 1 | four  |   
-     | 5 | 0 | five  | -5
-     | 5 | 0 | five  | -5
-     | 6 | 6 | six   |   
-     | 7 | 7 | seven |   
-     | 8 | 8 | eight |   
-     |   |   |       |  0
-     |   |   | null  |   
-     |   | 0 | zero  |   
-     |   |   |       |   
+ i | j |   t   | k  
+---+---+-------+----
+ 0 |   | zero  |   
+ 1 | 4 | one   | -1
+ 2 | 3 | two   |  2
+ 2 | 3 | two   |  4
+ 3 | 2 | three | -3
+ 4 | 1 | four  |   
+ 5 | 0 | five  | -5
+ 5 | 0 | five  | -5
+ 6 | 6 | six   |   
+ 7 | 7 | seven |   
+ 8 | 8 | eight |   
+   |   |       |  0
+   |   | null  |   
+   | 0 | zero  |   
+   |   |       |   
 (15 rows)
 
 --Testcase 49:
-SELECT '' AS "xxx", *
+SELECT *
   FROM J1_TBL FULL JOIN J2_TBL USING (i)
   ORDER BY i, k, t;
- xxx | i | j |   t   | k  
------+---+---+-------+----
-     | 0 |   | zero  |   
-     | 1 | 4 | one   | -1
-     | 2 | 3 | two   |  2
-     | 2 | 3 | two   |  4
-     | 3 | 2 | three | -3
-     | 4 | 1 | four  |   
-     | 5 | 0 | five  | -5
-     | 5 | 0 | five  | -5
-     | 6 | 6 | six   |   
-     | 7 | 7 | seven |   
-     | 8 | 8 | eight |   
-     |   |   |       |  0
-     |   |   | null  |   
-     |   | 0 | zero  |   
-     |   |   |       |   
+ i | j |   t   | k  
+---+---+-------+----
+ 0 |   | zero  |   
+ 1 | 4 | one   | -1
+ 2 | 3 | two   |  2
+ 2 | 3 | two   |  4
+ 3 | 2 | three | -3
+ 4 | 1 | four  |   
+ 5 | 0 | five  | -5
+ 5 | 0 | five  | -5
+ 6 | 6 | six   |   
+ 7 | 7 | seven |   
+ 8 | 8 | eight |   
+   |   |       |  0
+   |   | null  |   
+   | 0 | zero  |   
+   |   |       |   
 (15 rows)
 
 --Testcase 50:
-SELECT '' AS "xxx", *
+SELECT *
   FROM J1_TBL LEFT JOIN J2_TBL USING (i) WHERE (k = 1);
- xxx | i | j | t | k 
------+---+---+---+---
+ i | j | t | k 
+---+---+---+---
 (0 rows)
 
 --Testcase 51:
-SELECT '' AS "xxx", *
+SELECT *
   FROM J1_TBL LEFT JOIN J2_TBL USING (i) WHERE (i = 1);
- xxx | i | j |  t  | k  
------+---+---+-----+----
-     | 1 | 4 | one | -1
+ i | j |  t  | k  
+---+---+-----+----
+ 1 | 4 | one | -1
 (1 row)
 
 --
@@ -2344,7 +2416,9 @@ select count(*) from tenk1 x where
 
 -- try that with GEQO too
 begin;
+--Testcase 499:
 set geqo = on;
+--Testcase 500:
 set geqo_threshold = 2;
 --Testcase 93:
 select count(*) from tenk1 x where
@@ -2642,6 +2716,7 @@ ERROR:  column t12.x does not exist
 LINE 1: select t12.x from t12 join t32 on (t12.a = t32.x);
                ^
 HINT:  Perhaps you meant to reference the column "t32.x".
+drop table t2a;
 --
 -- regression test for 8.1 merge right join bug
 --
@@ -2657,7 +2732,9 @@ CREATE FOREIGN TABLE tt2 ( tt2_id int4, joincol int4 ) SERVER sqlite_svr;
 INSERT INTO tt2 VALUES (21, 11);
 --Testcase 124:
 INSERT INTO tt2 VALUES (22, 11);
+--Testcase 501:
 set enable_hashjoin to off;
+--Testcase 502:
 set enable_nestloop to off;
 -- these should give the same results
 --Testcase 125:
@@ -2678,13 +2755,19 @@ select tt1.*, tt2.* from tt2 right join tt1 on tt1.joincol = tt2.joincol;
       2 |         |        |        
 (3 rows)
 
+--Testcase 503:
 reset enable_hashjoin;
+--Testcase 504:
 reset enable_nestloop;
 --
 -- regression test for bug #13908 (hash join with skew tuples & nbatch increase)
 --
+--Testcase 505:
 set work_mem to '64kB';
+--Testcase 506:
 set enable_mergejoin to off;
+--Testcase 507:
+set enable_resultcache to off;
 --Testcase 127:
 explain (costs off)
 select count(*) from tenk1 a, tenk1 b
@@ -2702,8 +2785,12 @@ select count(*) from tenk1 a, tenk1 b
  100000
 (1 row)
 
+--Testcase 508:
 reset work_mem;
+--Testcase 509:
 reset enable_mergejoin;
+--Testcase 510:
+reset enable_resultcache;
 --
 -- regression test for 8.2 bug with improper re-ordering of left joins
 --
@@ -2868,6 +2955,7 @@ where f2 = 53;
  53 |    |    | 
 (1 row)
 
+drop view zv1;
 --
 -- regression test for improper extraction of OR indexqual conditions
 -- (as seen in early 8.3.x releases)
@@ -2907,8 +2995,11 @@ execute foo(false);
 -- test for sane behavior with noncanonical merge clauses, per bug #4926
 --
 begin;
+--Testcase 511:
 set enable_mergejoin = 1;
+--Testcase 512:
 set enable_hashjoin = 0;
+--Testcase 513:
 set enable_nestloop = 0;
 --Testcase 403:
 create foreign table a1 (i integer) server sqlite_svr;
@@ -3263,6 +3354,70 @@ order by 1,2;
 (8 rows)
 
 --
+-- variant where a PlaceHolderVar is needed at a join, but not above the join
+--
+--Testcase 514:
+explain (costs off)
+select * from
+  int4_tbl as i41,
+  lateral
+    (select 1 as x from
+      (select i41.f1 as lat,
+              i42.f1 as loc from
+         int8_tbl as i81, int4_tbl as i42) as ss1
+      right join int4_tbl as i43 on (i43.f1 > 1)
+      where ss1.loc = ss1.lat) as ss2
+where i41.f1 > 0;
+                      QUERY PLAN                      
+------------------------------------------------------
+ Nested Loop
+   ->  Nested Loop
+         ->  Foreign Scan on int4_tbl i41
+         ->  Nested Loop
+               Join Filter: (i41.f1 = i42.f1)
+               ->  Foreign Scan on int8_tbl i81
+               ->  Materialize
+                     ->  Foreign Scan on int4_tbl i42
+   ->  Materialize
+         ->  Foreign Scan on int4_tbl i43
+(10 rows)
+
+--Testcase 515:
+select * from
+  int4_tbl as i41,
+  lateral
+    (select 1 as x from
+      (select i41.f1 as lat,
+              i42.f1 as loc from
+         int8_tbl as i81, int4_tbl as i42) as ss1
+      right join int4_tbl as i43 on (i43.f1 > 1)
+      where ss1.loc = ss1.lat) as ss2
+where i41.f1 > 0;
+     f1     | x 
+------------+---
+     123456 | 1
+     123456 | 1
+     123456 | 1
+     123456 | 1
+     123456 | 1
+     123456 | 1
+     123456 | 1
+     123456 | 1
+     123456 | 1
+     123456 | 1
+ 2147483647 | 1
+ 2147483647 | 1
+ 2147483647 | 1
+ 2147483647 | 1
+ 2147483647 | 1
+ 2147483647 | 1
+ 2147483647 | 1
+ 2147483647 | 1
+ 2147483647 | 1
+ 2147483647 | 1
+(20 rows)
+
+--
 -- test the corner cases FULL JOIN ON TRUE and FULL JOIN ON FALSE
 --
 --Testcase 182:
@@ -3530,6 +3685,44 @@ select * from
 ---+---+---
  1 | 2 | 2
 (1 row)
+
+-- Test proper handling of appendrel PHVs during useless-RTE removal
+--Testcase 516:
+explain (costs off)
+select * from
+  (select 0 as z) as t1
+  left join
+  (select true as a) as t2
+  on true,
+  lateral (select true as b
+           union all
+           select a as b) as t3
+where b;
+              QUERY PLAN               
+---------------------------------------
+ Nested Loop
+   ->  Result
+   ->  Append
+         ->  Result
+         ->  Result
+               One-Time Filter: (true)
+(6 rows)
+
+--Testcase 517:
+select * from
+  (select 0 as z) as t1
+  left join
+  (select true as a) as t2
+  on true,
+  lateral (select true as b
+           union all
+           select a as b) as t3
+where b;
+ z | a | b 
+---+---+---
+ 0 | t | t
+ 0 | t | t
+(2 rows)
 
   
 --
@@ -4424,10 +4617,13 @@ where t1.f1 = ss2.f1;
          ->  Foreign Scan on public.text_tbl t2
                Output: i8.q1, t2.f1
                SQLite query: SELECT `f1` FROM main."text_tbl" LIMIT 1
-   ->  Foreign Scan on public.text_tbl t3
-         Output: (i8.q1), t2.f1
-         SQLite query: SELECT NULL FROM main."text_tbl" LIMIT 1
-(14 rows)
+   ->  Result Cache
+         Output: ((i8.q1)), (t2.f1)
+         Cache Key: (i8.q1), t2.f1
+         ->  Foreign Scan on public.text_tbl t3
+               Output: (i8.q1), t2.f1
+               SQLite query: SELECT NULL FROM main."text_tbl" LIMIT 1
+(17 rows)
 
 --Testcase 222:
 select * from
@@ -4625,7 +4821,9 @@ explain (costs off)
 -- specifically that they don't re-use expressions computed below the join;
 -- we force a mergejoin so that coalesce(b.q1, 1) appears as a join input
 --
+--Testcase 518:
 set enable_hashjoin to off;
+--Testcase 519:
 set enable_nestloop to off;
 --Testcase 231:
 explain (verbose, costs off)
@@ -4670,7 +4868,9 @@ select a.q2, b.q1
   4567890123456789 | 4567890123456789
 (10 rows)
 
+--Testcase 520:
 reset enable_hashjoin;
+--Testcase 521:
 reset enable_nestloop;
 --
 -- test join removal
@@ -5100,6 +5300,49 @@ where ss.stringu2 !~* ss.case1;
 (1 row)
 
 rollback;
+-- test case to expose miscomputation of required relid set for a PHV
+--Testcase 522:
+explain (verbose, costs off)
+select i8.*, ss.v, t.unique2
+  from int8_tbl i8
+    left join int4_tbl i4 on i4.f1 = 1
+    left join lateral (select i4.f1 + 1 as v) as ss on true
+    left join tenk1 t on t.unique2 = ss.v
+where q2 = 456;
+                                          QUERY PLAN                                           
+-----------------------------------------------------------------------------------------------
+ Hash Right Join
+   Output: i8.q1, i8.q2, ((i4.f1 + 1)), t.unique2
+   Hash Cond: (t.unique2 = ((i4.f1 + 1)))
+   ->  Foreign Scan on public.tenk1 t
+         Output: t.unique2
+         SQLite query: SELECT `unique2` FROM main."tenk1"
+   ->  Hash
+         Output: i8.q1, i8.q2, ((i4.f1 + 1))
+         ->  Nested Loop Left Join
+               Output: i8.q1, i8.q2, (i4.f1 + 1)
+               ->  Foreign Scan on public.int8_tbl i8
+                     Output: i8.q1, i8.q2
+                     SQLite query: SELECT `q1`, `q2` FROM main."int8_tbl" WHERE ((`q2` = 456))
+               ->  Materialize
+                     Output: i4.f1
+                     ->  Foreign Scan on public.int4_tbl i4
+                           Output: i4.f1
+                           SQLite query: SELECT `f1` FROM main."int4_tbl" WHERE ((`f1` = 1))
+(18 rows)
+
+--Testcase 523:
+select i8.*, ss.v, t.unique2
+  from int8_tbl i8
+    left join int4_tbl i4 on i4.f1 = 1
+    left join lateral (select i4.f1 + 1 as v) as ss on true
+    left join tenk1 t on t.unique2 = ss.v
+where q2 = 456;
+ q1  | q2  | v | unique2 
+-----+-----+---+---------
+ 123 | 456 |   |        
+(1 row)
+
 -- bug #8444: we've historically allowed duplicate aliases within aliased JOINs
 --Testcase 267:
 select * from
@@ -6393,6 +6636,62 @@ HINT:  There is an entry for table "xx1", but it cannot be referenced from this 
 --drop table join_pt1;
 --drop table join_ut1;
 --
+-- test estimation behavior with multi-column foreign key and constant qual
+--
+begin;
+--Testcase 524:
+create table fkest (x integer, x10 integer, x10b integer, x100 integer);
+--Testcase 525:
+insert into fkest select x, x/10, x/10, x/100 from generate_series(1,1000) x;
+--Testcase 526:
+create unique index on fkest(x, x10, x100);
+analyze fkest;
+--Testcase 527:
+explain (costs off)
+select * from fkest f1
+  join fkest f2 on (f1.x = f2.x and f1.x10 = f2.x10b and f1.x100 = f2.x100)
+  join fkest f3 on f1.x = f3.x
+  where f1.x100 = 2;
+                        QUERY PLAN                         
+-----------------------------------------------------------
+ Nested Loop
+   ->  Hash Join
+         Hash Cond: ((f2.x = f1.x) AND (f2.x10b = f1.x10))
+         ->  Seq Scan on fkest f2
+               Filter: (x100 = 2)
+         ->  Hash
+               ->  Seq Scan on fkest f1
+                     Filter: (x100 = 2)
+   ->  Index Scan using fkest_x_x10_x100_idx on fkest f3
+         Index Cond: (x = f1.x)
+(10 rows)
+
+--Testcase 528:
+alter table fkest add constraint fk
+  foreign key (x, x10b, x100) references fkest (x, x10, x100);
+--Testcase 529:
+explain (costs off)
+select * from fkest f1
+  join fkest f2 on (f1.x = f2.x and f1.x10 = f2.x10b and f1.x100 = f2.x100)
+  join fkest f3 on f1.x = f3.x
+  where f1.x100 = 2;
+                     QUERY PLAN                      
+-----------------------------------------------------
+ Hash Join
+   Hash Cond: ((f2.x = f1.x) AND (f2.x10b = f1.x10))
+   ->  Hash Join
+         Hash Cond: (f3.x = f2.x)
+         ->  Seq Scan on fkest f3
+         ->  Hash
+               ->  Seq Scan on fkest f2
+                     Filter: (x100 = 2)
+   ->  Hash
+         ->  Seq Scan on fkest f1
+               Filter: (x100 = 2)
+(11 rows)
+
+rollback;
+--
 -- test that foreign key join estimation performs sanely for outer joins
 --
 begin;
@@ -6744,8 +7043,11 @@ left join j22 on j12.id1 = j22.id1 where j12.id2 = 1;
 -- validate logic in merge joins which skips mark and restore.
 -- it should only do this if all quals which were used to detect the unique
 -- are present as join quals, and not plain quals.
+--Testcase 530:
 set enable_nestloop to 0;
+--Testcase 531:
 set enable_hashjoin to 0;
+--Testcase 532:
 set enable_sort to 0;
 -- skip, cannot create index on foreign table
 -- create indexes that will be preferred over the PKs to perform the join
@@ -6814,8 +7116,11 @@ where j12.id1 % 1000 = 1 and j22.id1 % 1000 = 1 and j22.id1 >= any (array[1,5]);
    1 |   2 |   1 |   2
 (2 rows)
 
+--Testcase 533:
 reset enable_nestloop;
+--Testcase 534:
 reset enable_hashjoin;
+--Testcase 535:
 reset enable_sort;
 --drop table j1;
 --drop table j2;
@@ -6920,8 +7225,6 @@ begin
   end loop;
 end;
 $d$;
-NOTICE:  drop cascades to table t2a
-NOTICE:  drop cascades to view zv1
 --Testcase 487:
 DROP SERVER sqlite_svr;
 --Testcase 488:

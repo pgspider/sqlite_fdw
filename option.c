@@ -2,7 +2,7 @@
  *
  * SQLite Foreign Data Wrapper for PostgreSQL
  *
- * Portions Copyright (c) 2018, TOSHIBA CORPORATION
+ * Portions Copyright (c) 2021, TOSHIBA CORPORATION
  *
  * IDENTIFICATION
  *        option.c
@@ -60,6 +60,13 @@ static struct SqliteFdwOption valid_options[] =
 	{"key", AttributeRelationId},
 	{"column_name", AttributeRelationId},
 	{"column_type", AttributeRelationId},
+	/* truncatable is available on both server and table */
+	{"truncatable", ForeignServerRelationId},
+	{"truncatable", ForeignTableRelationId},
+	{"keep_connections", ForeignServerRelationId},
+	/* batch_size is available on both server and table */
+	{"batch_size", ForeignServerRelationId},
+	{"batch_size", ForeignTableRelationId},
 	/* Sentinel */
 	{NULL, InvalidOid}
 };
@@ -113,6 +120,24 @@ sqlite_fdw_validator(PG_FUNCTION_ARGS)
 					 errmsg("invalid option \"%s\"", def->defname),
 					 errhint("Valid options in this context are: %s", buf.len ? buf.data : "<none>")
 					 ));
+		}
+
+		/* Validate option value */
+		if (strcmp(def->defname, "truncatable") == 0 ||
+			strcmp(def->defname, "keep_connections") == 0)
+		{
+			defGetBoolean(def);
+		}
+		else if (strcmp(def->defname, "batch_size") == 0)
+		{
+			int			batch_size;
+
+			batch_size = strtol(defGetString(def), NULL, 10);
+			if (batch_size <= 0)
+				ereport(ERROR,
+						(errcode(ERRCODE_SYNTAX_ERROR),
+						 errmsg("%s requires a positive integer value",
+								def->defname)));
 		}
 	}
 	PG_RETURN_VOID();
