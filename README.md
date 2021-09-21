@@ -1,7 +1,7 @@
 # SQLite Foreign Data Wrapper for PostgreSQL
 This PostgreSQL extension is a Foreign Data Wrapper for [SQLite][1].
 
-The current version can work with PostgreSQL 9.6, 10, 11, 12 and 13.
+The current version can work with PostgreSQL 10, 11, 12, 13 and 14.
 
 ## Installation
 ### 1. Install SQLite library
@@ -74,16 +74,22 @@ SELECT * FROM t1;
 - Joins (left/right/inner) are pushdowned
 - Limit and Offset are pushdowned (*when all tables queried are fdw)
 - Transactions  
+- Support TRUNCATE by deparsing into DELETE statement without WHERE clause  
+- Allow control over whether foreign servers keep connections open after transaction completion. This is controlled by `keep_connections` and defaults to on  
+- Support list cached connections to foreign servers by using function sqlite_fdw_get_connections()  
+- Support discard cached connections to foreign servers by using function sqlite_fdw_disconnect(), sqlite_fdw_disconnect_all().  
+- Support Bulk Insert by using batch_size option  
 
 ## Limitations
 - `COPY` command for foreign tables is not supported
 - Insert into a partitioned table which has foreign partitions is not supported
+- TRUNCATE in sqlite_fdw always delete data of both parent and child tables (no matter user inputs `TRUNCATE table CASCADE` or `TRUNCATE table RESTRICT`) if there are foreign-keys references with "ON DELETE CASCADE" clause.
 ## Contributing
 Opening issues and pull requests on GitHub are welcome.
 
 ## License
 Copyright (c) 2017 - 2021, TOSHIBA Corporation  
-Copyright (c) 2011 - 2016, EnterpriseDB Corporation  
+Copyright (c) 2011 - 2016, EnterpriseDB Corporation
 
 Permission to use, copy, modify, and distribute this software and its documentation for any purpose, without fee, and without a written agreement is hereby granted, provided that the above copyright notice and this paragraph and the following two paragraphs appear in all copies.
 

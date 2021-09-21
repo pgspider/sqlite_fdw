@@ -216,11 +216,11 @@ UPDATE update_test t
 -----------------------------------------------------------------------------------------------
  Update on public.update_test t
    ->  Result
-         Output: t.i, ($1), ($2), t.c, ((SubPlan 1 (returns $1,$2))), t.i
+         Output: ($1), ($2), ((SubPlan 1 (returns $1,$2))), t.i, t.*
          One-Time Filter: (CURRENT_USER = SESSION_USER)
          ->  Foreign Scan on public.update_test t
-               Output: t.i, $1, $2, t.c, (SubPlan 1 (returns $1,$2)), t.i
-               SQLite query: SELECT `i`, `a`, `c` FROM main."update_test"
+               Output: $1, $2, (SubPlan 1 (returns $1,$2)), t.i, t.*
+               SQLite query: SELECT `i`, `a`, `b`, `c` FROM main."update_test"
                SubPlan 1 (returns $1,$2)
                  ->  Foreign Scan on public.update_test s
                        Output: s.b, s.a
@@ -243,17 +243,17 @@ SELECT a, b, char_length(c) FROM update_test;
 
 /* Skip, sqlite fdw does not support ON CONFLICT DO UPDATE
 -- Test ON CONFLICT DO UPDATE
-INSERT INTO upsert_test VALUES(1, 'Boo');
+INSERT INTO upsert_test VALUES(1, 'Boo'), (3, 'Zoo');
 -- uncorrelated  sub-select:
 WITH aaa AS (SELECT 1 AS a, 'Foo' AS b) INSERT INTO upsert_test
   VALUES (1, 'Bar') ON CONFLICT(a)
   DO UPDATE SET (b, a) = (SELECT b, a FROM aaa) RETURNING *;
 -- correlated sub-select:
-INSERT INTO upsert_test VALUES (1, 'Baz') ON CONFLICT(a)
+INSERT INTO upsert_test VALUES (1, 'Baz'), (3, 'Zaz') ON CONFLICT(a)
   DO UPDATE SET (b, a) = (SELECT b || ', Correlated', a from upsert_test i WHERE i.a = upsert_test.a)
   RETURNING *;
 -- correlated sub-select (EXCLUDED.* alias):
-INSERT INTO upsert_test VALUES (1, 'Bat') ON CONFLICT(a)
+INSERT INTO upsert_test VALUES (1, 'Bat'), (3, 'Zot') ON CONFLICT(a)
   DO UPDATE SET (b, a) = (SELECT b || ', Excluded', a from upsert_test i WHERE i.a = excluded.a)
   RETURNING *;
 
@@ -274,6 +274,29 @@ DROP FOREIGN TABLE update_test;
 DROP FOREIGN TABLE upsert_test;
 */
 /*Skip, sqlite fdw does not support create partition table
+-- Test ON CONFLICT DO UPDATE with partitioned table and non-identical children
+
+CREATE TABLE upsert_test (
+    a   INT PRIMARY KEY,
+    b   TEXT
+) PARTITION BY LIST (a);
+
+CREATE TABLE upsert_test_1 PARTITION OF upsert_test FOR VALUES IN (1);
+CREATE TABLE upsert_test_2 (b TEXT, a INT PRIMARY KEY);
+ALTER TABLE upsert_test ATTACH PARTITION upsert_test_2 FOR VALUES IN (2);
+
+INSERT INTO upsert_test VALUES(1, 'Boo'), (2, 'Zoo');
+-- uncorrelated sub-select:
+WITH aaa AS (SELECT 1 AS a, 'Foo' AS b) INSERT INTO upsert_test
+  VALUES (1, 'Bar') ON CONFLICT(a)
+  DO UPDATE SET (b, a) = (SELECT b, a FROM aaa) RETURNING *;
+-- correlated sub-select:
+WITH aaa AS (SELECT 1 AS ctea, ' Foo' AS cteb) INSERT INTO upsert_test
+  VALUES (1, 'Bar'), (2, 'Baz') ON CONFLICT(a)
+  DO UPDATE SET (b, a) = (SELECT upsert_test.b||cteb, upsert_test.a FROM aaa) RETURNING *;
+
+DROP TABLE upsert_test;
+
 ---------------------------
 -- UPDATE with row movement
 ---------------------------
@@ -644,6 +667,37 @@ UPDATE list_default set a = 'a' WHERE a = 'd';
 UPDATE list_default set a = 'x' WHERE a = 'd';
 
 DROP TABLE list_parted;
+
+-- Test retrieval of system columns with non-consistent partition row types.
+-- This is only partially supported, as seen in the results.
+
+create table utrtest (a int, b text) partition by list (a);
+create table utr1 (a int check (a in (1)), q text, b text);
+create table utr2 (a int check (a in (2)), b text);
+alter table utr1 drop column q;
+alter table utrtest attach partition utr1 for values in (1);
+alter table utrtest attach partition utr2 for values in (2);
+
+insert into utrtest values (1, 'foo')
+  returning *, tableoid::regclass, xmin = pg_current_xact_id()::xid as xmin_ok;
+insert into utrtest values (2, 'bar')
+  returning *, tableoid::regclass, xmin = pg_current_xact_id()::xid as xmin_ok;  -- fails
+insert into utrtest values (2, 'bar')
+  returning *, tableoid::regclass;
+
+update utrtest set b = b || b from (values (1), (2)) s(x) where a = s.x
+  returning *, tableoid::regclass, xmin = pg_current_xact_id()::xid as xmin_ok;
+
+update utrtest set a = 3 - a from (values (1), (2)) s(x) where a = s.x
+  returning *, tableoid::regclass, xmin = pg_current_xact_id()::xid as xmin_ok;  -- fails
+
+update utrtest set a = 3 - a from (values (1), (2)) s(x) where a = s.x
+  returning *, tableoid::regclass;
+
+delete from utrtest
+  returning *, tableoid::regclass, xmax = pg_current_xact_id()::xid as xmax_ok;
+
+drop table utrtest;
 
 --------------
 -- Some more update-partition-key test scenarios below. This time use list
