@@ -19,8 +19,6 @@ DROP TABLE IF EXISTS loct5;
 DROP TABLE IF EXISTS loct6;
 DROP TABLE IF EXISTS loct7;
 DROP TABLE IF EXISTS t1_constraint;
-<<<<<<< HEAD:sql/init_data/init_post.sql
-=======
 DROP TABLE IF EXISTS tru_rtable0;
 DROP TABLE IF EXISTS tru_pk_table;
 DROP TABLE IF EXISTS tru_fk_table;
@@ -28,7 +26,6 @@ DROP TABLE IF EXISTS tru_rtable_parent;
 DROP TABLE IF EXISTS tru_rtable_child;
 DROP TABLE IF EXISTS loct_empty;
 DROP TABLE IF EXISTS batch_table;
->>>>>>> origin/RELEASE_21A:sql/init_data/init_post.sql
 
 CREATE TABLE "T 0" (
 	"C 1" int,
