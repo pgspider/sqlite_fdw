@@ -2,7 +2,7 @@
  *
  * SQLite Foreign Data Wrapper for PostgreSQL
  *
- * Portions Copyright (c) 2018, TOSHIBA CORPORATION
+ * Portions Copyright (c) 2021, TOSHIBA CORPORATION
  *
  * IDENTIFICATION
  *        deparse.c
@@ -35,6 +35,7 @@
 #include "utils/syscache.h"
 #include "utils/timestamp.h"
 #include "utils/typcache.h"
+#include "commands/tablecmds.h"
 
 /*
  * Global context for sqlite_foreign_expr_walker's search of an expression tree.
@@ -1541,7 +1542,8 @@ sqlite_deparse_range_tbl_ref(StringInfo buf, PlannerInfo *root, RelOptInfo *fore
 void
 sqlite_deparse_insert(StringInfo buf, PlannerInfo *root,
 					  Index rtindex, Relation rel,
-					  List *targetAttrs, bool doNothing)
+					  List *targetAttrs, bool doNothing,
+					  int *values_end_len)
 {
 	AttrNumber	pindex;
 	bool		first;
@@ -1584,7 +1586,56 @@ sqlite_deparse_insert(StringInfo buf, PlannerInfo *root,
 	}
 	else
 		appendStringInfoString(buf, " DEFAULT VALUES");
+	*values_end_len = buf->len;
 }
+
+#if PG_VERSION_NUM >= 140000
+/*
+ * rebuild remote INSERT statement
+ *
+ * Provided a number of rows in a batch, builds INSERT statement with the
+ * right number of parameters.
+ */
+void
+sqlite_rebuild_insert(StringInfo buf, char *orig_query,
+					  int values_end_len, int num_cols,
+					  int num_rows)
+{
+	int			i,
+				j;
+	bool		first;
+
+	/* Make sure the values_end_len is sensible */
+	Assert((values_end_len > 0) && (values_end_len <= strlen(orig_query)));
+
+	/* Copy up to the end of the first record from the original query */
+	appendBinaryStringInfo(buf, orig_query, values_end_len);
+
+	/*
+	 * Add records to VALUES clause (we already have parameters for the first
+	 * row, so start at the right offset).
+	 */
+	for (i = 0; i < num_rows; i++)
+	{
+		appendStringInfoString(buf, ", (");
+
+		first = true;
+		for (j = 0; j < num_cols; j++)
+		{
+			if (!first)
+				appendStringInfoString(buf, ", ");
+			first = false;
+
+			appendStringInfo(buf, "?");
+		}
+
+		appendStringInfoChar(buf, ')');
+	}
+
+	/* Copy stuff after VALUES clause from the original query */
+	appendStringInfoString(buf, orig_query + values_end_len);
+}
+#endif
 
 void
 sqlite_deparse_analyze(StringInfo sql, char *dbname, char *relname)
@@ -1717,6 +1768,30 @@ sqlite_append_where_clause(StringInfo buf,
 	}
 }
 
+#if PG_VERSION_NUM >= 140000
+/*
+ * TRUNCATE in SQLite is supported by use DELETE FROM without WHERE condition.
+ */
+void
+sqlite_deparse_truncate(StringInfo buf,
+						List *rels)
+{
+	ListCell   *cell;
+	Relation	rel;
+
+	appendStringInfoString(buf, "PRAGMA foreign_keys = ON;");
+
+	foreach(cell, rels)
+	{
+		appendStringInfoString(buf, "DELETE FROM ");
+
+		rel = lfirst(cell);
+
+		sqlite_deparse_relation(buf, rel);
+		appendStringInfoChar(buf, ';');
+	}
+}
+#endif
 
 /*
  * Construct name to use for given column, and emit it into buf.
@@ -2015,9 +2090,8 @@ sqlite_deparse_direct_update_sql(StringInfo buf, PlannerInfo *root,
 	deparse_expr_cxt context;
 	int			nestlevel;
 	bool		first;
-	ListCell	*lc;
-	ListCell	*lc2;
-
+	ListCell   *lc;
+	ListCell   *lc2;
 
 	/* Set up context struct for recursion */
 	context.root = root;
@@ -2039,14 +2113,15 @@ sqlite_deparse_direct_update_sql(StringInfo buf, PlannerInfo *root,
 	forboth(lc, targetlist, lc2, targetAttrs)
 	{
 		int			attnum = lfirst_int(lc2);
+		TargetEntry *tle;
 #if (PG_VERSION_NUM >= 140000)
-		TargetEntry	*tle = lfirst_node(TargetEntry, lc);
-		
+		tle = lfirst_node(TargetEntry, lc);
+
 		/* update's new-value expressions shouldn't be resjunk */
 		Assert(!tle->resjunk);
 #else
-		(void)lc;
-		TargetEntry	*tle = get_tle_by_resno(targetlist, attnum);
+		(void) lc;
+		tle = get_tle_by_resno(targetlist, attnum);
 #endif
 
 		if (!tle)
@@ -2472,8 +2547,6 @@ sqlite_deparse_op_expr(OpExpr *node, deparse_expr_cxt *context)
 	HeapTuple	tuple;
 	Form_pg_operator form;
 	char		oprkind;
-	ListCell   *leftarg = NULL;
-	ListCell   *rightarg = NULL;
 
 	/* Retrieve information about the operator from system catalog. */
 	tuple = SearchSysCache1(OPEROID, ObjectIdGetDatum(node->opno));
@@ -2483,25 +2556,18 @@ sqlite_deparse_op_expr(OpExpr *node, deparse_expr_cxt *context)
 	oprkind = form->oprkind;
 
 	/* Sanity check. */
-	Assert((oprkind == 'r' && list_length(node->args) == 1) ||
-		   (oprkind == 'l' && list_length(node->args) == 1) ||
+	Assert((oprkind == 'l' && list_length(node->args) == 1) ||
 		   (oprkind == 'b' && list_length(node->args) == 2));
 
 	/* Always parenthesize the expression. */
 	appendStringInfoChar(buf, '(');
 
-	if (oprkind == 'r' || oprkind == 'b')
-		leftarg = list_head(node->args);
-	if (oprkind == 'l' || oprkind == 'b')
-		rightarg = list_tail(node->args);
-
 	/* Deparse left operand. */
-	if (oprkind == 'r' || oprkind == 'b')
+	if (oprkind == 'b')
 	{
-		if (oprkind == 'b')
-			context->complementarynode = lfirst(rightarg);
+		context->complementarynode = llast(node->args);
 
-		sqlite_deparse_expr(lfirst(leftarg), context);
+		sqlite_deparse_expr(linitial(node->args), context);
 		appendStringInfoChar(buf, ' ');
 	}
 
@@ -2509,14 +2575,11 @@ sqlite_deparse_op_expr(OpExpr *node, deparse_expr_cxt *context)
 	sqlite_deparse_operator_name(buf, form);
 
 	/* Deparse right operand. */
-	if (oprkind == 'l' || oprkind == 'b')
-	{
-		appendStringInfoChar(buf, ' ');
-		if (oprkind == 'b')
-			context->complementarynode = lfirst(leftarg);
+	appendStringInfoChar(buf, ' ');
+	if (oprkind == 'b')
+		context->complementarynode = linitial(node->args);
 
-		sqlite_deparse_expr(lfirst(rightarg), context);
-	}
+	sqlite_deparse_expr(llast(node->args), context);
 
 	appendStringInfoChar(buf, ')');
 

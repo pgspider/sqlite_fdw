@@ -2,7 +2,7 @@
  *
  * SQLite Foreign Data Wrapper for PostgreSQL
  *
- * Portions Copyright (c) 2018, TOSHIBA CORPORATION
+ * Portions Copyright (c) 2021, TOSHIBA CORPORATION
  *
  * IDENTIFICATION
  *        sqlite_fdw.c
@@ -102,6 +102,53 @@ enum FdwPathPrivateIndex
 };
 
 /*
+ * Indexes of FDW-private information stored in fdw_private lists.
+ *
+ * These items are indexed with the enum FdwScanPrivateIndex, so an item
+ * can be fetched with list_nth().  For example, to get the SELECT statement:
+ *		sql = strVal(list_nth(fdw_private, FdwScanPrivateSelectSql));
+ */
+enum FdwScanPrivateIndex
+{
+	/* SQL statement to execute remotely (as a String node) */
+	FdwScanPrivateSelectSql,
+	/* Integer list of attribute numbers retrieved by the SELECT */
+	FdwScanPrivateRetrievedAttrs,
+	/* Integer representing UPDATE/DELETE target */
+	FdwScanPrivateForUpdate,
+#if (PG_VERSION_NUM < 100000)
+	/* rtindex */
+	FdwScanPrivateRtIndex,
+#endif
+
+	/*
+	 * String describing join i.e. names of relations being joined and types
+	 * of join, added when the scan is join
+	 */
+	FdwScanPrivateRelations
+};
+
+/*
+ * Similarly, this enum describes what's kept in the fdw_private list for
+ * a ModifyTable node referencing a sqlite_fdw foreign table.  We store:
+ *
+ * 1) INSERT/UPDATE/DELETE statement text to be sent to the remote server
+ * 2) Integer list of target attribute numbers for INSERT/UPDATE
+ *	  (NIL for a DELETE)
+ * 3) Length till the end of VALUES clause for INSERT
+ *	  (-1 for a DELETE/UPDATE)
+ */
+enum FdwModifyPrivateIndex
+{
+	/* SQL statement to execute remotely (as a String node) */
+	FdwModifyPrivateUpdateSql,
+	/* Integer list of target attribute numbers for INSERT/UPDATE */
+	FdwModifyPrivateTargetAttnums,
+	/* Length till the end of VALUES clause (as an integer Value node) */
+	FdwModifyPrivateLen
+};
+
+/*
  * Similarly, this enum describes what's kept in the fdw_private list for
  * a ForeignScan node that modifies a foreign table directly.  We store:
  *
@@ -180,7 +227,14 @@ static TupleTableSlot *sqliteExecForeignInsert(EState *estate,
 											   ResultRelInfo *rinfo,
 											   TupleTableSlot *slot,
 											   TupleTableSlot *planSlot);
-
+#if PG_VERSION_NUM >= 140000
+static TupleTableSlot **sqliteExecForeignBatchInsert(EState *estate,
+													 ResultRelInfo *resultRelInfo,
+													 TupleTableSlot **slots,
+													 TupleTableSlot **planSlots,
+													 int *numSlots);
+static int	sqliteGetForeignModifyBatchSize(ResultRelInfo *resultRelInfo);
+#endif
 static TupleTableSlot *sqliteExecForeignUpdate(EState *estate,
 											   ResultRelInfo *rinfo,
 											   TupleTableSlot *slot,
@@ -210,7 +264,6 @@ static void sqliteExplainForeignModify(ModifyTableState *mtstate,
 									   List *fdw_private,
 									   int subplan_index,
 									   struct ExplainState *es);
-
 static bool sqlitePlanDirectModify(PlannerInfo *root,
 								   ModifyTable *plan,
 								   Index resultRelation,
@@ -220,7 +273,11 @@ static TupleTableSlot *sqliteIterateDirectModify(ForeignScanState *node);
 static void sqliteEndDirectModify(ForeignScanState *node);
 static void sqliteExplainDirectModify(ForeignScanState *node,
 									  struct ExplainState *es);
-
+#if PG_VERSION_NUM >= 140000
+static void sqliteExecForeignTruncate(List *rels,
+									  DropBehavior behavior,
+									  bool restart_seqs);
+#endif
 static bool sqliteAnalyzeForeignTable(Relation relation,
 									  AcquireSampleRowsFunc *func,
 									  BlockNumber *totalpages);
@@ -249,6 +306,13 @@ static void
 
 static void sqlite_prepare_wrapper(sqlite3 * db, char *query, sqlite3_stmt * *result, const char **pzTail);
 static void sqlite_to_pg_type(StringInfo str, char *typname);
+
+static TupleTableSlot **sqlite_execute_insert(EState *estate,
+											  ResultRelInfo *resultRelInfo,
+											  CmdType operation,
+											  TupleTableSlot **slots,
+											  TupleTableSlot **planSlots,
+											  int *numSlots);
 
 static void sqlite_prepare_query_params(PlanState *node,
 										List *fdw_exprs,
@@ -320,6 +384,9 @@ static bool sqlite_all_baserels_are_foreign(PlannerInfo *root);
 static void sqlite_add_paths_with_pathkeys_for_rel(PlannerInfo *root, RelOptInfo *rel, List *fdw_private, Path *epq_path);
 static List *sqlite_get_useful_pathkeys_for_relation(PlannerInfo *root,
 													 RelOptInfo *rel);
+#if PG_VERSION_NUM >= 140000
+static int	sqlite_get_batch_size_option(Relation rel);
+#endif
 
 /* Callback argument for sqlite_ec_member_matches_foreign */
 typedef struct
@@ -368,6 +435,10 @@ sqlite_fdw_handler(PG_FUNCTION_ARGS)
 	fdwroutine->PlanForeignModify = sqlitePlanForeignModify;
 	fdwroutine->BeginForeignModify = sqliteBeginForeignModify;
 	fdwroutine->ExecForeignInsert = sqliteExecForeignInsert;
+#if PG_VERSION_NUM >= 140000
+	fdwroutine->ExecForeignBatchInsert = sqliteExecForeignBatchInsert;
+	fdwroutine->GetForeignModifyBatchSize = sqliteGetForeignModifyBatchSize;
+#endif
 	fdwroutine->ExecForeignUpdate = sqliteExecForeignUpdate;
 	fdwroutine->ExecForeignDelete = sqliteExecForeignDelete;
 	fdwroutine->EndForeignModify = sqliteEndForeignModify;
@@ -383,7 +454,10 @@ sqlite_fdw_handler(PG_FUNCTION_ARGS)
 	fdwroutine->ExplainForeignScan = sqliteExplainForeignScan;
 	fdwroutine->ExplainForeignModify = sqliteExplainForeignModify;
 	fdwroutine->ExplainDirectModify = sqliteExplainDirectModify;
-
+#if PG_VERSION_NUM >= 140000
+	/* Support function for TRUNCATE */
+	fdwroutine->ExecForeignTruncate = sqliteExecForeignTruncate;
+#endif
 	/* suport for Direct Modification */
 	fdwroutine->PlanDirectModify = sqlitePlanDirectModify;
 	fdwroutine->BeginDirectModify = sqliteBeginDirectModify;
@@ -555,7 +629,7 @@ sqliteGetForeignRelSize(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntable
 		if (baserel->tuples < 0)
 #else
 		if (baserel->pages == 0 && baserel->tuples == 0)
-#endif	
+#endif
 		{
 			baserel->pages = 10;
 			baserel->tuples =
@@ -1061,9 +1135,7 @@ sqliteGetForeignPlan(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntableid,
 	 * local_exprs list, since appendWhereClause expects a list of
 	 * RestrictInfos.
 	 */
-	if ((baserel->reloptkind == RELOPT_BASEREL ||
-		 baserel->reloptkind == RELOPT_OTHER_MEMBER_REL) &&
-		fpinfo->is_tlist_func_pushdown == false)
+	if (IS_SIMPLE_REL(baserel) && fpinfo->is_tlist_func_pushdown == false)
 	{
 		foreach(lc, scan_clauses)
 		{
@@ -1177,6 +1249,48 @@ sqliteGetForeignPlan(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntableid,
 		 */
 		if (outer_plan)
 		{
+			int			next_resno = list_length(fdw_scan_tlist) + 1;
+
+			foreach(lc, tlist)
+			{
+				TargetEntry *tlist_tle = lfirst_node(TargetEntry, lc);
+
+				if (!IsA(tlist_tle->expr, Const))
+				{
+					TargetEntry *tle;
+
+					tle = makeTargetEntry(copyObject(tlist_tle->expr),
+										  next_resno++,
+										  NULL,
+										  false);
+					fdw_scan_tlist = lappend(fdw_scan_tlist, tle);
+				}
+			}
+
+			foreach(lc, fpinfo->local_conds)
+			{
+				RestrictInfo *rinfo = lfirst_node(RestrictInfo, lc);
+
+				fdw_scan_tlist = add_to_flat_tlist(fdw_scan_tlist,
+												   pull_var_clause((Node *) rinfo->clause,
+																   PVC_RECURSE_PLACEHOLDERS));
+			}
+		}
+		else
+		{
+			fdw_scan_tlist = sqlite_build_tlist_to_deparse(baserel);
+		}
+
+		/*
+		 * Ensure that the outer plan produces a tuple whose descriptor
+		 * matches our scan tuple slot. This is safe because all scans and
+		 * joins support projection, so we never need to insert a Result node.
+		 * Also, remove the local conditions from outer plan's quals, lest
+		 * they will be evaluated twice, once by the local plan and once by
+		 * the scan.
+		 */
+		if (outer_plan)
+		{
 			ListCell   *lc;
 
 			/*
@@ -1232,7 +1346,9 @@ sqliteGetForeignPlan(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntableid,
 	 * Items in the list must match enum FdwScanPrivateIndex, above.
 	 */
 	fdw_private = list_make3(makeString(sql.data), retrieved_attrs, makeInteger(for_update));
+#if (PG_VERSION_NUM < 100000)
 	fdw_private = lappend(fdw_private, makeInteger(root->all_baserels == NULL ? -2 : bms_next_member(root->all_baserels, -1)));
+#endif
 	if (IS_JOIN_REL(baserel) || IS_UPPER_REL(baserel))
 		fdw_private = lappend(fdw_private,
 							  makeString(fpinfo->relation_name));
@@ -1265,7 +1381,8 @@ sqlite_get_tupdesc_for_join_scan_tuples(ForeignScanState *node)
 	ForeignScan *fsplan = (ForeignScan *) node->ss.ps.plan;
 	EState	   *estate = node->ss.ps.state;
 	TupleDesc	tupdesc;
-	int i;
+	int			i;
+
 	/*
 	 * The core code has already set up a scan tuple slot based on
 	 * fsplan->fdw_scan_tlist, and this slot's tupdesc is mostly good enough,
@@ -1334,7 +1451,7 @@ sqliteBeginForeignScan(ForeignScanState *node, int eflags)
 	/*
 	 * We'll save private state in node->fdw_state.
 	 */
-	festate = (SqliteFdwExecState *) palloc(sizeof(SqliteFdwExecState));
+	festate = (SqliteFdwExecState *) palloc0(sizeof(SqliteFdwExecState));
 	node->fdw_state = (void *) festate;
 	festate->rowidx = 0;
 
@@ -1348,13 +1465,14 @@ sqliteBeginForeignScan(ForeignScanState *node, int eflags)
 		rtindex = fsplan->scan.scanrelid;
 	else
 	{
-		rtindex = intVal(list_nth(fsplan->fdw_private, 3));
+		rtindex = bms_next_member(fsplan->fs_relids, -1);
+#if (PG_VERSION_NUM < 100000)
+		/* PostgreSQL version 9.6.x need to get rtindex from ForeignPlan */
 		if (rtindex == -2)
-		{
-			rtindex = bms_next_member(fsplan->fs_relids, -1);
-		}
+			rtindex = intVal(list_nth(fsplan->fdw_private, FdwScanPrivateRtIndex));
+#endif
 	}
-	rte = rt_fetch(rtindex, estate->es_range_table);
+	rte = exec_rt_fetch(rtindex, estate);
 
 	/* Get info about foreign table. */
 	festate->rel = node->ss.ss_currentRelation;
@@ -1365,12 +1483,12 @@ sqliteBeginForeignScan(ForeignScanState *node, int eflags)
 	 * Get the already connected connection, otherwise connect and get the
 	 * connection handle.
 	 */
-	conn = sqlite_get_connection(server);
+	conn = sqlite_get_connection(server, false);
 
 	/* Stash away the state info we have already */
-	festate->query = strVal(list_nth(fsplan->fdw_private, 0));
-	festate->retrieved_attrs = list_nth(fsplan->fdw_private, 1);
-	festate->for_update = intVal(list_nth(fsplan->fdw_private, 2)) ? true : false;
+	festate->query = strVal(list_nth(fsplan->fdw_private, FdwScanPrivateSelectSql));
+	festate->retrieved_attrs = list_nth(fsplan->fdw_private, FdwScanPrivateRetrievedAttrs);
+	festate->for_update = intVal(list_nth(fsplan->fdw_private, FdwScanPrivateForUpdate)) ? true : false;
 	festate->conn = conn;
 	festate->cursor_exists = false;
 
@@ -1662,7 +1780,7 @@ sqliteAddForeignUpdateTargets(
 							  0);
 #if (PG_VERSION_NUM >= 140000)
 				add_row_identity_var(root, var, rtindex, pstrdup(NameStr(att->attname)));
-#else				
+#else
 				/* Wrap it in a resjunk TLE with the right name ... */
 				tle = makeTargetEntry((Expr *) var,
 									  list_length(parsetree->targetList) + 1,
@@ -1708,6 +1826,7 @@ sqlitePlanForeignModify(PlannerInfo *root,
 	int			i;
 	List	   *condAttr = NULL;
 	bool		doNothing = false;
+	int			values_end_len = -1;
 
 	elog(DEBUG1, "sqlite_fdw : %s", __func__);
 
@@ -1805,7 +1924,7 @@ sqlitePlanForeignModify(PlannerInfo *root,
 	switch (operation)
 	{
 		case CMD_INSERT:
-			sqlite_deparse_insert(&sql, root, resultRelation, rel, targetAttrs, doNothing);
+			sqlite_deparse_insert(&sql, root, resultRelation, rel, targetAttrs, doNothing, &values_end_len);
 			break;
 		case CMD_UPDATE:
 			sqlite_deparse_update(&sql, root, resultRelation, rel, targetAttrs, condAttr);
@@ -1818,7 +1937,7 @@ sqlitePlanForeignModify(PlannerInfo *root,
 			break;
 	}
 	table_close(rel, NoLock);
-	return list_make2(makeString(sql.data), targetAttrs);
+	return list_make3(makeString(sql.data), targetAttrs, makeInteger(values_end_len));
 }
 
 
@@ -1839,7 +1958,7 @@ sqliteBeginForeignModify(ModifyTableState *mtstate,
 	Oid			foreignTableId = InvalidOid;
 	ForeignTable *table;
 	ForeignServer *server;
-	Plan		*subplan;
+	Plan	   *subplan;
 	int			i;
 
 	elog(DEBUG1, " sqlite_fdw : %s", __func__);
@@ -1864,9 +1983,11 @@ sqliteBeginForeignModify(ModifyTableState *mtstate,
 	fmstate = (SqliteFdwExecState *) palloc0(sizeof(SqliteFdwExecState));
 	fmstate->rel = rel;
 
-	fmstate->conn = sqlite_get_connection(server);
-	fmstate->query = strVal(list_nth(fdw_private, 0));
-	fmstate->retrieved_attrs = (List *) list_nth(fdw_private, 1);
+	fmstate->conn = sqlite_get_connection(server, false);
+	fmstate->query = strVal(list_nth(fdw_private, FdwModifyPrivateUpdateSql));
+	fmstate->retrieved_attrs = (List *) list_nth(fdw_private, FdwModifyPrivateTargetAttnums);
+	fmstate->values_end = intVal(list_nth(fdw_private, FdwModifyPrivateLen));
+	fmstate->orig_query = pstrdup(fmstate->query);
 
 	n_params = list_length(fmstate->retrieved_attrs) + 1;
 	fmstate->p_flinfo = (FmgrInfo *) palloc0(sizeof(FmgrInfo) * n_params);
@@ -1890,9 +2011,17 @@ sqliteBeginForeignModify(ModifyTableState *mtstate,
 		fmstate->p_nums++;
 	}
 	Assert(fmstate->p_nums <= n_params);
+
+#if (PG_VERSION_NUM >= 140000)
+	/* Set batch_size from foreign server/table options. */
+	fmstate->batch_size = sqlite_get_batch_size_option(rel);
+#endif
+
 	n_params = list_length(fmstate->retrieved_attrs);
 	/* Initialize sqlite statment */
 	fmstate->stmt = NULL;
+
+	fmstate->num_slots = 1;
 	/* Prepare sqlite statment */
 	sqlite_prepare_wrapper(fmstate->conn, fmstate->query, &fmstate->stmt, NULL);
 	resultRelInfo->ri_FdwState = fmstate;
@@ -1939,49 +2068,98 @@ sqliteExecForeignInsert(EState *estate,
 						TupleTableSlot *slot,
 						TupleTableSlot *planSlot)
 {
-	SqliteFdwExecState *fmstate = (SqliteFdwExecState *) resultRelInfo->ri_FdwState;
-	ListCell   *lc;
-	Datum		value = 0;
-	MemoryContext oldcontext;
-	int			rc = SQLITE_OK;
-	int			nestlevel;
-	int			bindnum = 0;
+	TupleTableSlot **rslot;
+	int			numSlots = 1;
 
-	elog(DEBUG1, "sqlite_fdw : %s", __func__);
+	rslot = sqlite_execute_insert(estate, resultRelInfo, CMD_INSERT,
+								  &slot, &planSlot, &numSlots);
 
-
-	oldcontext = MemoryContextSwitchTo(fmstate->temp_cxt);
-
-	nestlevel = sqlite_set_transmission_modes();
-	foreach(lc, fmstate->retrieved_attrs)
-	{
-		int			attnum = lfirst_int(lc) - 1;
-		Oid			type = TupleDescAttr(slot->tts_tupleDescriptor, attnum)->atttypid;
-		bool		isnull;
-
-		value = slot_getattr(slot, attnum + 1, &isnull);
-		sqlite_bind_sql_var(type, bindnum, value, fmstate->stmt, &isnull);
-		bindnum++;
-	}
-	sqlite_reset_transmission_modes(nestlevel);
-
-	/* Execute the query */
-	rc = sqlite3_step(fmstate->stmt);
-	if (rc != SQLITE_DONE)
-	{
-		sqlitefdw_report_error(ERROR, fmstate->stmt, fmstate->conn, NULL, rc);
-	}
-	sqlite3_reset(fmstate->stmt);
-	MemoryContextSwitchTo(oldcontext);
-	MemoryContextReset(fmstate->temp_cxt);
-
-	return slot;
+	return rslot ? *rslot : NULL;
 }
 
 #if PG_VERSION_NUM >= 140000
 /*
+ * sqliteExecForeignBatchInsert
+ *		Insert multiple rows into a foreign table
+ */
+static TupleTableSlot **
+sqliteExecForeignBatchInsert(EState *estate,
+							 ResultRelInfo *resultRelInfo,
+							 TupleTableSlot **slots,
+							 TupleTableSlot **planSlots,
+							 int *numSlots)
+{
+	TupleTableSlot **rslot;
+
+	rslot = sqlite_execute_insert(estate, resultRelInfo, CMD_INSERT,
+								  slots, planSlots, numSlots);
+
+	return rslot;
+}
+
+/*
+ * sqliteGetForeignModifyBatchSize
+ *		Determine the maximum number of tuples that can be inserted in bulk
+ *
+ * Returns the batch size specified for server or table. When batching is not
+ * allowed (e.g. for tables with AFTER ROW triggers or with RETURNING clause),
+ * returns 1.
+ */
+static int
+sqliteGetForeignModifyBatchSize(ResultRelInfo *resultRelInfo)
+{
+	int			batch_size;
+	int			limitVal;
+#if SQLITE_VERSION_NUMBER < 3008008
+	int			limitRow;
+#endif
+	SqliteFdwExecState *fmstate = resultRelInfo->ri_FdwState ?
+	(SqliteFdwExecState *) resultRelInfo->ri_FdwState :
+	NULL;
+
+	/* should be called only once */
+	Assert(resultRelInfo->ri_BatchSize == 0);
+
+	/*
+	 * In EXPLAIN without ANALYZE, ri_fdwstate is NULL, so we have to lookup
+	 * the option directly in server/table options. Otherwise just use the
+	 * value we determined earlier.
+	 */
+	if (fmstate)
+	{
+		batch_size = fmstate->batch_size;
+		limitVal = (sqlite3_limit(fmstate->conn, SQLITE_LIMIT_VARIABLE_NUMBER, -1) / fmstate->p_nums);
+#if SQLITE_VERSION_NUMBER < 3008008
+		limitRow = (sqlite3_limit(fmstate->conn, SQLITE_LIMIT_COMPOUND_SELECT, -1));
+#endif
+	}
+	else
+		batch_size = sqlite_get_batch_size_option(resultRelInfo->ri_RelationDesc);
+
+	/*
+	 * The batch size is used specified for server/table. Make sure we don't
+	 * exceed this limit by using the maximum batch_size possible.
+	 */
+	if (fmstate && fmstate->p_nums > 0)
+
+		/*
+		 * If version of SQLite is less than 3.8.8, Bulk insert into SQLite
+		 * database has limit of 500 rows. So need use
+		 * SQLITE_MAX_COMPOUND_SELECT to check maximum batch_size.
+		 */
+#if SQLITE_VERSION_NUMBER < 3008008
+		batch_size = Min(batch_size, Min(limitVal, limitRow));
+#else
+		batch_size = Min(batch_size, limitVal);
+#endif
+
+	/* Otherwise use the batch size specified for server/table. */
+	return batch_size;
+}
+
+/*
  * sqlite_find_modifytable_subplan
- *		Helper routine for postgresPlanDirectModify to find the
+ *		Helper routine for sqlitePlanDirectModify to find the
  *		ModifyTable subplan node that scans the specified RTI.
  *
  * Returns NULL if the subplan couldn't be identified.  That's not a fatal
@@ -1989,9 +2167,9 @@ sqliteExecForeignInsert(EState *estate,
  */
 static ForeignScan *
 sqlite_find_modifytable_subplan(PlannerInfo *root,
-						 ModifyTable *plan,
-						 Index rtindex,
-						 int subplan_index)
+								ModifyTable *plan,
+								Index rtindex,
+								int subplan_index)
 {
 	Plan	   *subplan = outerPlan(plan);
 
@@ -2617,6 +2795,480 @@ sqliteExplainForeignScan(ForeignScanState *node,
 	}
 }
 
+	/*
+	 * Update the operation info.
+	 */
+	fscan->operation = operation;
+#if PG_VERSION_NUM >= 140000
+	fscan->resultRelation = resultRelation;
+#endif
+
+	/*
+	 * Update the fdw_exprs list that will be available to the executor.
+	 */
+	fscan->fdw_exprs = params_list;
+
+	/*
+	 * Update the fdw_private list that will be available to the executor.
+	 * Items in the list must match enum FdwDirectModifyPrivateIndex, above.
+	 */
+	fscan->fdw_private = list_make4(makeString(sql.data),
+									makeInteger(0),
+									retrieved_attrs,
+									makeInteger(plan->canSetTag));
+
+	/*
+	 * Update the foreign-join-related fields.
+	 */
+	if (fscan->scan.scanrelid == 0)
+	{
+		/* No need for the outer subplan. */
+		fscan->scan.plan.lefttree = NULL;
+	}
+
+	table_close(rel, NoLock);
+	return true;
+}
+
+/*
+ * sqliteBeginDirectModify
+ *		Prepare a direct foreign table modification
+ */
+static void
+sqliteBeginDirectModify(ForeignScanState *node, int eflags)
+{
+	ForeignScan *fsplan = (ForeignScan *) node->ss.ps.plan;
+	EState	   *estate = node->ss.ps.state;
+	SqliteFdwDirectModifyState *dmstate;
+	Index		rtindex;
+	ForeignTable *table;
+	ForeignServer *server;
+	int			numParams;
+
+	elog(DEBUG1, "sqlite_fdw : %s", __func__);
+
+	/*
+	 * Do nothing in EXPLAIN (no ANALYZE) case.  node->fdw_state stays NULL.
+	 */
+	if (eflags & EXEC_FLAG_EXPLAIN_ONLY)
+		return;
+
+	/*
+	 * We'll save private state in node->fdw_state.
+	 */
+	dmstate = (SqliteFdwDirectModifyState *) palloc0(sizeof(SqliteFdwDirectModifyState));
+	node->fdw_state = (void *) dmstate;
+
+	/*
+	 * Identify which user to do the remote access as.  This should match what
+	 * ExecCheckRTEPerms() does.
+	 */
+#if (PG_VERSION_NUM >= 140000)
+	rtindex = node->resultRelInfo->ri_RangeTableIndex;
+#else
+	rtindex = estate->es_result_relation_info->ri_RangeTableIndex;
+#endif
+
+	/* Get info about foreign table. */
+	if (fsplan->scan.scanrelid == 0)
+		dmstate->rel = ExecOpenScanRelation(estate, rtindex, eflags);
+	else
+		dmstate->rel = node->ss.ss_currentRelation;
+	table = GetForeignTable(RelationGetRelid(dmstate->rel));
+	server = GetForeignServer(table->serverid);
+
+	/*
+	 * Get connection to the foreign server.  Connection manager will
+	 * establish new connection if necessary.
+	 */
+	dmstate->conn = sqlite_get_connection(server, false);
+
+	/* Update the foreign-join-related fields. */
+	if (fsplan->scan.scanrelid == 0)
+	{
+		/* Save info about foreign table. */
+		dmstate->resultRel = dmstate->rel;
+
+		/*
+		 * Set dmstate->rel to NULL to teach get_returning_data() and
+		 * make_tuple_from_result_row() that columns fetched from the remote
+		 * server are described by fdw_scan_tlist of the foreign-scan plan
+		 * node, not the tuple descriptor for the target relation.
+		 */
+		dmstate->rel = NULL;
+	}
+
+	/* Initialize state variable */
+	dmstate->num_tuples = -1;	/* -1 means not set yet */
+
+	/* Get private info created by planner functions. */
+	dmstate->query = strVal(list_nth(fsplan->fdw_private,
+									 FdwDirectModifyPrivateUpdateSql));
+	dmstate->has_returning = intVal(list_nth(fsplan->fdw_private,
+											 FdwDirectModifyPrivateHasReturning));
+	dmstate->retrieved_attrs = (List *) list_nth(fsplan->fdw_private,
+												 FdwDirectModifyPrivateRetrievedAttrs);
+	dmstate->set_processed = intVal(list_nth(fsplan->fdw_private,
+											 FdwDirectModifyPrivateSetProcessed));
+
+	/* Create context for per-tuple temp workspace. */
+	dmstate->temp_cxt = AllocSetContextCreate(estate->es_query_cxt,
+											  "sqlite_fdw temporary data",
+											  ALLOCSET_SMALL_SIZES);
+
+	/* Initialize the Sqlite statement */
+	dmstate->stmt = NULL;
+
+	/* Prepare Sqlite statement */
+	sqlite_prepare_wrapper(dmstate->conn, dmstate->query, &dmstate->stmt, NULL);
+
+	/*
+	 * Prepare for processing of parameters used in remote query, if any.
+	 */
+	numParams = list_length(fsplan->fdw_exprs);
+	dmstate->numParams = numParams;
+	if (numParams > 0)
+		sqlite_prepare_query_params((PlanState *) node,
+									fsplan->fdw_exprs,
+									numParams,
+									&dmstate->param_flinfo,
+									&dmstate->param_exprs,
+									&dmstate->param_values,
+									&dmstate->param_types);
+}
+
+/*
+ * sqliteIterateDirectModify
+ *		Execute a direct foreign table modification
+ */
+static TupleTableSlot *
+sqliteIterateDirectModify(ForeignScanState *node)
+{
+	SqliteFdwDirectModifyState *dmstate = (SqliteFdwDirectModifyState *) node->fdw_state;
+	EState	   *estate = node->ss.ps.state;
+	TupleTableSlot *slot = node->ss.ss_ScanTupleSlot;
+	Instrumentation *instr = node->ss.ps.instrument;
+
+	elog(DEBUG1, "sqlite_fdw : %s", __func__);
+
+	Assert(!dmstate->has_returning);
+
+	/*
+	 * If this is the first call after Begin, execute the statement.
+	 */
+	if (dmstate->num_tuples == -1)
+		sqlite_execute_dml_stmt(node);
+
+	/* Increment the command es_processed count if necessary. */
+	if (dmstate->set_processed)
+		estate->es_processed += dmstate->num_tuples;
+
+	/* Increment the tuple count for EXPLAIN ANALYZE if necessary. */
+	if (instr)
+		instr->tuplecount += dmstate->num_tuples;
+
+	return ExecClearTuple(slot);
+}
+
+/*
+ * sqliteEndDirectModify
+ *		Finish a direct foreign table modification
+ */
+static void
+sqliteEndDirectModify(ForeignScanState *node)
+{
+	SqliteFdwDirectModifyState *dmstate = (SqliteFdwDirectModifyState *) node->fdw_state;
+
+	elog(DEBUG1, "sqlite_fdw : %s", __func__);
+
+	/* if dmstate is NULL, we are in EXPLAIN; nothing to do */
+	if (dmstate == NULL)
+		return;
+
+	if (dmstate->stmt)
+	{
+		sqlite3_finalize(dmstate->stmt);
+		dmstate->stmt = NULL;
+	}
+}
+
+/*
+ * sqliteExplainDirectModify
+ *		Produce extra output for EXPLAIN of a ForeignScan that modifies a
+ *		foreign table directly
+ */
+static void
+sqliteExplainDirectModify(ForeignScanState *node,
+						  struct ExplainState *es)
+{
+	List	   *fdw_private;
+	char	   *sql;
+
+	elog(DEBUG1, "sqlite_fdw : %s", __func__);
+
+	if (es->verbose)
+	{
+		fdw_private = ((ForeignScan *) node->ss.ps.plan)->fdw_private;
+		sql = strVal(list_nth(fdw_private, FdwDirectModifyPrivateUpdateSql));
+		ExplainPropertyText("SQLite query", sql, es);
+	}
+}
+
+#if PG_VERSION_NUM >= 140000
+/*
+ * sqliteExecForeignTruncate
+ *		Truncate one or more foreign tables
+ */
+static void
+sqliteExecForeignTruncate(List *rels,
+						  DropBehavior behavior,
+						  bool restart_seqs)
+{
+	Oid			serverid = InvalidOid;
+	sqlite3    *conn = NULL;
+	StringInfoData sql;
+	ListCell   *lc;
+	bool		server_truncatable = true;
+
+	/*
+	 * By default, all sqlite_fdw foreign tables are assumed truncatable. This
+	 * can be overridden by a per-server setting, which in turn can be
+	 * overridden by a per-table setting.
+	 */
+	foreach(lc, rels)
+	{
+		ForeignServer *server = NULL;
+		Relation	rel = lfirst(lc);
+		ForeignTable *table = GetForeignTable(RelationGetRelid(rel));
+		ListCell   *cell;
+		bool		truncatable;
+
+		/*
+		 * First time through, determine whether the foreign server allows
+		 * truncates. Since all specified foreign tables are assumed to belong
+		 * to the same foreign server, this result can be used for other
+		 * foreign tables.
+		 */
+		if (!OidIsValid(serverid))
+		{
+			serverid = table->serverid;
+			server = GetForeignServer(serverid);
+
+			foreach(cell, server->options)
+			{
+				DefElem    *defel = (DefElem *) lfirst(cell);
+
+				if (strcmp(defel->defname, "truncatable") == 0)
+				{
+					server_truncatable = defGetBoolean(defel);
+					break;
+				}
+			}
+		}
+
+		/*
+		 * Confirm that all specified foreign tables belong to the same
+		 * foreign server.
+		 */
+		Assert(table->serverid == serverid);
+
+		/* Determine whether this foreign table allows truncations */
+		truncatable = server_truncatable;
+		foreach(cell, table->options)
+		{
+			DefElem    *defel = (DefElem *) lfirst(cell);
+
+			if (strcmp(defel->defname, "truncatable") == 0)
+			{
+				truncatable = defGetBoolean(defel);
+				break;
+			}
+		}
+
+		if (!truncatable)
+			ereport(ERROR,
+					(errcode(ERRCODE_OBJECT_NOT_IN_PREREQUISITE_STATE),
+					 errmsg("foreign table \"%s\" does not allow truncates",
+							RelationGetRelationName(rel))));
+	}
+	Assert(OidIsValid(serverid));
+
+	/*
+	 * Get connection to the foreign server.  Connection manager will
+	 * establish new connection if necessary.
+	 */
+	conn = sqlite_get_connection(GetForeignServer(serverid), true);
+
+	/*
+	 * TRUNCATE does not support in SQLite, so convert into DELETE FROM to
+	 * delete each table.
+	 */
+	initStringInfo(&sql);
+	sqlite_deparse_truncate(&sql, rels);
+
+	/* Issue the DELETE statement without WHERE clause to remote server */
+	sqlite_do_sql_command(conn, sql.data, ERROR);
+
+	pfree(sql.data);
+}
+#endif
+
+static void
+bindJunkColumnValue(SqliteFdwExecState * fmstate,
+					TupleTableSlot *slot,
+					TupleTableSlot *planSlot,
+					Oid foreignTableId,
+					int bindnum)
+{
+	int			i;
+	Datum		value;
+	Oid			typeoid;
+
+	/* Bind where condition using junk column */
+	for (i = 0; i < slot->tts_tupleDescriptor->natts; ++i)
+	{
+		Form_pg_attribute att = TupleDescAttr(slot->tts_tupleDescriptor, i);
+		AttrNumber	attrno = att->attnum;
+		List	   *options;
+		ListCell   *option;
+
+		/* look for the "key" option on this column */
+		if (fmstate->junk_idx[i] == InvalidAttrNumber)
+			continue;
+		options = GetForeignColumnOptions(foreignTableId, attrno);
+		foreach(option, options)
+		{
+			DefElem    *def = (DefElem *) lfirst(option);
+			bool		is_null = false;
+
+			if (IS_KEY_COLUMN(def))
+			{
+				/* Get the id that was passed up as a resjunk column */
+				value = ExecGetJunkAttribute(planSlot, fmstate->junk_idx[i], &is_null);
+				typeoid = att->atttypid;
+
+				/* Bind qual */
+				sqlite_bind_sql_var(typeoid, bindnum, value, fmstate->stmt, &is_null);
+				bindnum++;
+			}
+		}
+
+	}
+}
+
+/*
+ * sqliteExecForeignUpdate
+ *		Update one row in a foreign table
+ */
+static TupleTableSlot *
+sqliteExecForeignUpdate(EState *estate,
+						ResultRelInfo *resultRelInfo,
+						TupleTableSlot *slot,
+						TupleTableSlot *planSlot)
+{
+
+	SqliteFdwExecState *fmstate = (SqliteFdwExecState *) resultRelInfo->ri_FdwState;
+	Relation	rel = resultRelInfo->ri_RelationDesc;
+	Oid			foreignTableId = RelationGetRelid(rel);
+	ListCell   *lc = NULL;
+	int			bindnum = 0;
+	int			i = 0;
+	int			rc = 0;
+
+	elog(DEBUG1, "sqlite_fdw : %s", __func__);
+
+	/* Bind the values */
+	foreach(lc, fmstate->retrieved_attrs)
+	{
+		int			attnum = lfirst_int(lc);
+		Oid			type;
+		bool		is_null;
+		Datum		value = 0;
+
+		/* first attribute cannot be in target list attribute */
+		type = TupleDescAttr(slot->tts_tupleDescriptor, attnum - 1)->atttypid;
+
+		value = slot_getattr(slot, attnum, &is_null);
+
+		sqlite_bind_sql_var(type, bindnum, value, fmstate->stmt, &is_null);
+		bindnum++;
+		i++;
+	}
+
+	bindJunkColumnValue(fmstate, slot, planSlot, foreignTableId, bindnum);
+
+	/* Execute the query */
+	rc = sqlite3_step(fmstate->stmt);
+	if (rc != SQLITE_DONE)
+	{
+		sqlitefdw_report_error(ERROR, fmstate->stmt, fmstate->conn, NULL, rc);
+	}
+
+	sqlite3_reset(fmstate->stmt);
+
+	/* Return NULL if nothing was updated on the remote end */
+	return slot;
+}
+
+static TupleTableSlot *
+sqliteExecForeignDelete(EState *estate,
+						ResultRelInfo *resultRelInfo,
+						TupleTableSlot *slot,
+						TupleTableSlot *planSlot)
+{
+	SqliteFdwExecState *fmstate = (SqliteFdwExecState *) resultRelInfo->ri_FdwState;
+	Relation	rel = resultRelInfo->ri_RelationDesc;
+	Oid			foreignTableId = RelationGetRelid(rel);
+	int			rc = 0;
+
+	elog(DEBUG1, "sqlite_fdw : %s", __func__);
+
+	bindJunkColumnValue(fmstate, slot, planSlot, foreignTableId, 0);
+
+	/* Execute the query */
+	rc = sqlite3_step(fmstate->stmt);
+	if (rc != SQLITE_DONE)
+	{
+		sqlitefdw_report_error(ERROR, fmstate->stmt, fmstate->conn, NULL, rc);
+	}
+	sqlite3_reset(fmstate->stmt);
+	/* Return NULL if nothing was updated on the remote end */
+	return slot;
+}
+
+
+static void
+sqliteEndForeignModify(EState *estate,
+					   ResultRelInfo *resultRelInfo)
+{
+
+	SqliteFdwExecState *fmstate = (SqliteFdwExecState *) resultRelInfo->ri_FdwState;
+
+	elog(DEBUG1, "sqlite_fdw : %s", __func__);
+	if (fmstate && fmstate->stmt)
+	{
+		sqlite3_finalize(fmstate->stmt);
+		fmstate->stmt = NULL;
+	}
+}
+
+
+static void
+sqliteExplainForeignScan(ForeignScanState *node,
+						 struct ExplainState *es)
+{
+	ForeignScan *plan = castNode(ForeignScan, node->ss.ps.plan);
+	List	   *fdw_private = plan->fdw_private;
+	char	   *sql = strVal(list_nth(fdw_private, FdwScanPrivateSelectSql));
+
+	elog(DEBUG1, "sqlite_fdw : %s", __func__);
+
+	if (es->verbose)
+	{
+		ExplainPropertyText("SQLite query", sql, es);
+	}
+}
+
 
 static void
 sqliteExplainForeignModify(ModifyTableState *mtstate,
@@ -2626,6 +3278,18 @@ sqliteExplainForeignModify(ModifyTableState *mtstate,
 						   struct ExplainState *es)
 {
 	elog(DEBUG1, "sqlite_fdw : %s", __func__);
+
+#if PG_VERSION_NUM >= 140000
+	if (es->verbose)
+	{
+		/*
+		 * For INSERT we should always have batch size >= 1, but UPDATE and
+		 * DELETE don't support batching so don't show the property.
+		 */
+		if (rinfo->ri_BatchSize > 0)
+			ExplainPropertyInteger("Batch Size", NULL, rinfo->ri_BatchSize, es);
+	}
+#endif
 }
 
 
@@ -2675,7 +3339,7 @@ sqliteImportForeignSchema(ImportForeignSchemaStmt *stmt,
 	}
 
 	server = GetForeignServerByName(stmt->server_name, false);
-	db = sqlite_get_connection(server);
+	db = sqlite_get_connection(server, false);
 
 	PG_TRY();
 	{
@@ -3364,6 +4028,21 @@ sqlite_foreign_grouping_ok(PlannerInfo *root, RelOptInfo *grouped_rel)
 	if (query->groupingSets)
 		return false;
 
+#if (PG_VERSION_NUM < 100000)
+	if (root->query_level > 1)
+	{
+		if (root->all_baserels != NULL)
+		{
+			Query	   *query = root->parent_root->parse;
+			int			rtindex = bms_next_member(root->all_baserels, -1);
+
+			if (rtindex != -2 && list_length(query->rtable) >= rtindex &&
+				getrelid(rtindex, query->rtable) == 0)
+				return false;
+		}
+	}
+#endif
+
 	/* Get the fpinfo of the underlying scan relation. */
 	ofpinfo = (SqliteFdwRelationInfo *) fpinfo->outerrel->fdw_private;
 
@@ -4026,24 +4705,19 @@ sqlite_add_foreign_final_paths(PlannerInfo *root, RelOptInfo *input_rel,
 		!sqlite_is_foreign_expr(root, input_rel, (Expr *) parse->limitCount))
 		return;
 
-	/* Safe to push down */
-	fpinfo->pushdown_safe = true;
-
-	/* Use small cost to push down limit always */
-	rows = width = startup_cost = total_cost = 1;
-	/* Now update this information in the fpinfo */
-	fpinfo->rows = rows;
-	fpinfo->width = width;
-	fpinfo->startup_cost = startup_cost;
-	fpinfo->total_cost = total_cost;
-
-	/*
-	 * Build the fdw_private list that will be used by sqliteGetForeignPlan.
-	 * Items in the list must match order in enum FdwPathPrivateIndex.
-	 */
-#if (PG_VERSION_NUM >= 120000)
-	fdw_private = list_make2(makeInteger(has_final_sort),
-							 makeInteger(extra->limit_needed));
+#if (PG_VERSION_NUM >= 100000)
+			rinfo = make_restrictinfo(
+#if PG_VERSION_NUM >= 140000
+									  root,
+#endif
+									  expr,
+									  true,
+									  false,
+									  false,
+									  root->qual_security_level,
+									  grouped_rel->relids,
+									  NULL,
+									  NULL);
 #else
 	fdw_private = list_make2(makeInteger(has_final_sort),
 							 makeInteger(has_limit));
@@ -4169,7 +4843,7 @@ sqlite_estimate_path_cost_size(PlannerInfo *root,
 										   false, &retrieved_attrs, NULL);
 
 		/* Get the remote estimate */
-		conn = sqlite_get_connection(fpinfo->server);
+		conn = sqlite_get_connection(fpinfo->server, false);
 
 		sqlite_get_remote_estimate(sql.data, conn, &rows, &width,
 								   &startup_cost, &total_cost);
@@ -4385,8 +5059,8 @@ sqlite_estimate_path_cost_size(PlannerInfo *root,
 				 * to use a translated version of havingQual.
 				 */
 				get_agg_clause_costs(root, (Node *) root->parse->havingQual,
-									 AGGSPLIT_SIMPLE, &aggcosts);	
-#endif				 
+									 AGGSPLIT_SIMPLE, &aggcosts);
+#endif
 			}
 
 			/*
@@ -4398,9 +5072,9 @@ sqlite_estimate_path_cost_size(PlannerInfo *root,
 																	fpinfo->grouped_tlist),
 											input_rows, NULL
 #if PG_VERSION_NUM >= 140000
-											, NULL
+											,NULL
 #endif
-											);
+				);
 
 			/*
 			 * Get the retrieved_rows and rows estimates.  If there are HAVING
@@ -4763,6 +5437,83 @@ sqlite_reset_transmission_modes(int nestlevel)
 }
 
 /*
+ * sqlite_execute_insert
+ *		Perform execute sqliteExecForeignInsert, sqliteExecForeignBatchInsert
+ */
+static TupleTableSlot **
+sqlite_execute_insert(EState *estate,
+					  ResultRelInfo *resultRelInfo,
+					  CmdType operation,
+					  TupleTableSlot **slots,
+					  TupleTableSlot **planSlots,
+					  int *numSlots)
+{
+	SqliteFdwExecState *fmstate = (SqliteFdwExecState *) resultRelInfo->ri_FdwState;
+	ListCell   *lc;
+	Datum		value = 0;
+	MemoryContext oldcontext;
+#if PG_VERSION_NUM >= 140000
+	StringInfoData sql;
+#endif
+	int			rc = SQLITE_OK;
+	int			nestlevel;
+	int			bindnum = 0;
+	int			i;
+
+	elog(DEBUG1, "sqlite_fdw : %s", __func__);
+
+	oldcontext = MemoryContextSwitchTo(fmstate->temp_cxt);
+
+	nestlevel = sqlite_set_transmission_modes();
+
+	Assert(operation == CMD_INSERT);
+
+#if PG_VERSION_NUM >= 140000
+	if (fmstate->num_slots != *numSlots)
+	{
+		sqlite3_finalize(fmstate->stmt);
+		fmstate->stmt = NULL;
+
+		initStringInfo(&sql);
+		sqlite_rebuild_insert(&sql, fmstate->orig_query,
+							  fmstate->values_end,
+							  fmstate->p_nums, *numSlots - 1);
+		fmstate->query = sql.data;
+		fmstate->num_slots = *numSlots;
+
+		sqlite_prepare_wrapper(fmstate->conn, fmstate->query, &fmstate->stmt, NULL);
+	}
+#endif
+
+	for (i = 0; i < *numSlots; i++)
+	{
+		foreach(lc, fmstate->retrieved_attrs)
+		{
+			int			attnum = lfirst_int(lc) - 1;
+			Oid			type = TupleDescAttr(slots[i]->tts_tupleDescriptor, attnum)->atttypid;
+			bool		isnull;
+
+			value = slot_getattr(slots[i], attnum + 1, &isnull);
+			sqlite_bind_sql_var(type, bindnum, value, fmstate->stmt, &isnull);
+			bindnum++;
+		}
+	}
+	sqlite_reset_transmission_modes(nestlevel);
+
+	/* Execute the query */
+	rc = sqlite3_step(fmstate->stmt);
+	if (rc != SQLITE_DONE)
+	{
+		sqlitefdw_report_error(ERROR, fmstate->stmt, fmstate->conn, NULL, rc);
+	}
+	sqlite3_reset(fmstate->stmt);
+	MemoryContextSwitchTo(oldcontext);
+	MemoryContextReset(fmstate->temp_cxt);
+
+	return slots;
+}
+
+/*
  * Prepare for processing of parameters used in remote query.
  */
 static void
@@ -5038,3 +5789,47 @@ sqlite_find_em_expr_for_input_target(PlannerInfo *root,
 	elog(ERROR, "could not find pathkey item to sort");
 	return NULL;				/* keep compiler quiet */
 }
+
+#if PG_VERSION_NUM >= 140000
+/*
+ * Determine batch size for a given foreign table. The option specified for
+ * a table has precedence.
+ */
+static int
+sqlite_get_batch_size_option(Relation rel)
+{
+	Oid			foreigntableid = RelationGetRelid(rel);
+	ForeignTable *table;
+	ForeignServer *server;
+	List	   *options;
+	ListCell   *lc;
+
+	/* we use 1 by default, which means "no batching" */
+	int			batch_size = 1;
+
+	/*
+	 * Load options for table and server. We append server options after table
+	 * options, because table options take precedence.
+	 */
+	table = GetForeignTable(foreigntableid);
+	server = GetForeignServer(table->serverid);
+
+	options = NIL;
+	options = list_concat(options, table->options);
+	options = list_concat(options, server->options);
+
+	/* See if either table or server specifies batch_size. */
+	foreach(lc, options)
+	{
+		DefElem    *def = (DefElem *) lfirst(lc);
+
+		if (strcmp(def->defname, "batch_size") == 0)
+		{
+			batch_size = strtol(defGetString(def), NULL, 10);
+			break;
+		}
+	}
+
+	return batch_size;
+}
+#endif

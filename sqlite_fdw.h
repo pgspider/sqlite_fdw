@@ -2,7 +2,7 @@
  *
  * SQLite Foreign Data Wrapper for PostgreSQL
  *
- * Portions Copyright (c) 2018, TOSHIBA CORPORATION
+ * Portions Copyright (c) 2021, TOSHIBA CORPORATION
  *
  * IDENTIFICATION
  *        sqlite_fdw.h
@@ -46,10 +46,11 @@
 #if (PG_VERSION_NUM < 120000)
 #define table_close(rel, lock)	heap_close(rel, lock)
 #define table_open(rel, lock)	heap_open(rel, lock)
+#define exec_rt_fetch(rtindex, estate)	rt_fetch(rtindex, estate->es_range_table)
 #endif
 
 /* Code version is updated at new release. */
-#define CODE_VERSION   20000
+#define CODE_VERSION   20100
 
 #if (PG_VERSION_NUM < 100000)
 /*
@@ -131,6 +132,12 @@ typedef struct SQLiteFdwExecState
 	int			p_nums;			/* number of parameters to transmit */
 	FmgrInfo   *p_flinfo;		/* output conversion functions for them */
 
+	/* batch operation stuff */
+	int			num_slots;		/* number of slots to insert */
+
+	char	   *orig_query;		/* original text of INSERT command */
+	int			values_end;		/* length up to the end of VALUES */
+
 	sqlite_opt *sqliteFdwOptions;	/* SQLite FDW options */
 
 	List	   *attr_list;		/* query attribute list */
@@ -141,6 +148,8 @@ typedef struct SQLiteFdwExecState
 	int64		rowidx;			/* current index of rows */
 	bool	  **rows_isnull;	/* is null */
 	bool		for_update;		/* true if this scan is update target */
+	int			batch_size;		/* value of FDW option "batch_size" */
+
 	/* working memory context */
 	MemoryContext temp_cxt;		/* context for per-tuple temporary data */
 	AttrNumber *junk_idx;
@@ -300,7 +309,11 @@ extern void sqlite_deparse_select_stmt_for_rel(StringInfo buf, PlannerInfo *root
 											   List *tlist, List *remote_conds, List *pathkeys,
 											   bool has_final_sort, bool has_limit, bool is_subquery,
 											   List **retrieved_attrs, List **params_list);
-extern void sqlite_deparse_insert(StringInfo buf, PlannerInfo *root, Index rtindex, Relation rel, List *targetAttrs, bool doNothing);
+extern void sqlite_deparse_insert(StringInfo buf, PlannerInfo *root, Index rtindex, Relation rel, List *targetAttrs, bool doNothing, int *values_end_len);
+#if PG_VERSION_NUM >= 140000
+extern void sqlite_rebuild_insert(StringInfo buf, char *orig_query, int values_end_len, int num_cols, int num_rows);
+extern void sqlite_deparse_truncate(StringInfo buf, List *rels);
+#endif
 extern void sqlite_deparse_update(StringInfo buf, PlannerInfo *root, Index rtindex, Relation rel, List *targetAttrs, List *attname);
 extern void sqlite_deparse_direct_update_sql(StringInfo buf, PlannerInfo *root,
 											 Index rtindex, Relation rel,
@@ -332,7 +345,7 @@ extern void sqlite_classify_conditions(PlannerInfo *root,
 									   List **local_conds);
 
 /* connection.c headers */
-sqlite3    *sqlite_get_connection(ForeignServer *server);
+sqlite3    *sqlite_get_connection(ForeignServer *server, bool truncatable);
 sqlite3    *sqlite_connect(char *svr_address, char *svr_username, char *svr_password, char *svr_database,
 						   int svr_port, bool svr_sa, char *svr_init_command,
 						   char *ssl_key, char *ssl_cert, char *ssl_ca, char *ssl_capath,
@@ -344,4 +357,5 @@ void		sqlitefdw_report_error(int elevel, sqlite3_stmt * stmt, sqlite3 * conn, co
 Datum		sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, AttInMetadata *attinmeta);
 
 void		sqlite_bind_sql_var(Oid type, int attnum, Datum value, sqlite3_stmt * stmt, bool *isnull);
+extern void sqlite_do_sql_command(sqlite3 * conn, const char *sql, int level);
 #endif							/* SQLITE_FDW_H */

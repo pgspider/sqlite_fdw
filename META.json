@@ -2,7 +2,7 @@
    "name": "sqlite_fdw",
    "abstract": "Foreign Data Wrapper for SQLite databases",
    "description": "PostgreSQL extension which implements a Foreign Data Wrapper (FDW) for SQLite databases.",
-   "version": "2.0.0",
+   "version": "2.1.0",
    "maintainer": "pgspider",
    "license": "postgresql",
    "provides": {
@@ -10,7 +10,7 @@
          "abstract": "Foreign Data Wrapper for SQLite databases",
          "file": "sqlite_fdw.c",
          "docfile": "README.md",
-         "version": "2.0.0"
+         "version": "2.1.0"
       }
    },
    "prereqs": {
