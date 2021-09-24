@@ -4641,22 +4641,7 @@ SELECT * FROM ft1 ORDER BY c1 LIMIT 1;
   1 |  1 | 00001 | Fri Jan 02 00:00:00 1970 PST | Fri Jan 02 00:00:00 1970 | 1  | 1          | foo
 (1 row)
 
---Testcase 567:
-explain (verbose, costs off) select * from ft3 where f2 = 'foo' COLLATE "C";
-                       QUERY PLAN                        
----------------------------------------------------------
- Foreign Scan on public.ft3
-   Output: f1, f2, f3
-   Filter: (ft3.f2 = 'foo'::text COLLATE "C")
-   SQLite query: SELECT `f1`, `f2`, `f3` FROM main."ft3"
-(4 rows)
-
---Testcase 568:
-explain (verbose, costs off) select * from ft3 f, loct3 l
-  where f.f3 = l.f3 COLLATE "POSIX" and l.f1 = 'foo';
-ERROR:  relation "loct3" does not exist
-LINE 1: explain (verbose, costs off) select * from ft3 f, loct3 l
-                                                          ^
+COMMIT;
 -- ===================================================================
 -- test handling of collations
 -- ===================================================================
@@ -6759,13 +6744,6 @@ SELECT * FROM ft1 ORDER BY c6 ASC NULLS FIRST, c1 OFFSET 15 LIMIT 10;
    40 |  42 | 00040_trig_update | Tue Feb 10 00:00:00 1970 PST | Tue Feb 10 00:00:00 1970 | 0    | 0          | foo
 (10 rows)
 
-RESET constraint_exclusion;
--- local check constraint is not actually enforced
---Testcase 595:
-INSERT INTO ft1(c1, c2) VALUES(1111, 2);
---Testcase 596:
-UPDATE ft1 SET c2 = c2 + 1 WHERE c1 = 1;
-ALTER FOREIGN TABLE ft1 DROP CONSTRAINT ft1_c2negative;
 -- ===================================================================
 -- test check constraints
 -- ===================================================================
