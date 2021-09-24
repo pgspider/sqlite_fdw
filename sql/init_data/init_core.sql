@@ -261,6 +261,8 @@ CREATE TABLE num_exp_log10 (id int4, expected numeric, primary key (id));
 CREATE TABLE num_exp_power_10_ln (id int4, expected numeric, primary key (id));
 
 CREATE TABLE num_result (id1 int4, id2 int4, result numeric, primary key (id1, id2));
+CREATE TABLE v (id int4, x numeric, val float8, primary key (id));
+INSERT INTO v(x) VALUES ('1e340'), ('-1e340');
 CREATE TABLE fract_only (id int, val numeric(4,4));
 CREATE TABLE ceil_floor_round (a numeric primary key);
 CREATE TABLE width_bucket_tbl (id1 numeric, id2 numeric, id3 numeric, id4 int, id integer primary key autoincrement);
