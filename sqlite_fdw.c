@@ -304,7 +304,11 @@ static void
 #endif
 );
 
-static void sqlite_prepare_wrapper(sqlite3 * db, char *query, sqlite3_stmt * *result, const char **pzTail);
+static void sqlite_prepare_wrapper(ForeignServer *server,
+								   sqlite3 * db, char *query,
+								   sqlite3_stmt * *result,
+								   const char **pzTail,
+								   bool is_cache);
 static void sqlite_to_pg_type(StringInfo str, char *typname);
 
 static TupleTableSlot **sqlite_execute_insert(EState *estate,
@@ -484,8 +488,8 @@ sqlite_fdw_version(PG_FUNCTION_ARGS)
 
 /* Wrapper for sqlite3_prepare */
 static void
-sqlite_prepare_wrapper(sqlite3 * db, char *query, sqlite3_stmt * *stmt,
-					   const char **pzTail)
+sqlite_prepare_wrapper(ForeignServer *server, sqlite3 * db, char *query, sqlite3_stmt * *stmt,
+					   const char **pzTail, bool is_cache)
 {
 	int			rc;
 
@@ -498,6 +502,9 @@ sqlite_prepare_wrapper(sqlite3 * db, char *query, sqlite3_stmt * *stmt,
 				 errmsg("SQL error during prepare: %s %s", sqlite3_errmsg(db), query)
 				 ));
 	}
+	/* cache stmt to finalize at last */
+	if (is_cache)
+		sqlite_cache_stmt(server, stmt);
 }
 
 
@@ -1451,12 +1458,6 @@ sqliteBeginForeignScan(ForeignScanState *node, int eflags)
 	festate->conn = conn;
 	festate->cursor_exists = false;
 
-	festate->temp_cxt = AllocSetContextCreate(estate->es_query_cxt,
-											  "sqlite_fdw temporary data",
-											  ALLOCSET_SMALL_MINSIZE,
-											  ALLOCSET_SMALL_INITSIZE,
-											  ALLOCSET_SMALL_MAXSIZE);
-
 	/*
 	 * Get info we'll need for converting data fetched from the foreign server
 	 * into local representation and error reporting during that process.
@@ -1482,7 +1483,7 @@ sqliteBeginForeignScan(ForeignScanState *node, int eflags)
 	festate->stmt = NULL;
 
 	/* Prepare Sqlite statement */
-	sqlite_prepare_wrapper(festate->conn, festate->query, &festate->stmt, NULL);
+	sqlite_prepare_wrapper(server, festate->conn, festate->query, &festate->stmt, NULL, true);
 
 	/* Prepare for output conversion of parameters used in remote query. */
 	numParams = list_length(fsplan->fdw_exprs);
@@ -1660,7 +1661,6 @@ sqliteEndForeignScan(ForeignScanState *node)
 
 	if (festate->stmt)
 	{
-		sqlite3_finalize(festate->stmt);
 		festate->stmt = NULL;
 	}
 }
@@ -1944,6 +1944,7 @@ sqliteBeginForeignModify(ModifyTableState *mtstate,
 
 	fmstate->conn = sqlite_get_connection(server, false);
 	fmstate->query = strVal(list_nth(fdw_private, FdwModifyPrivateUpdateSql));
+	fmstate->target_attrs = (List *) list_nth(fdw_private, FdwModifyPrivateTargetAttnums);
 	fmstate->retrieved_attrs = (List *) list_nth(fdw_private, FdwModifyPrivateTargetAttnums);
 	fmstate->values_end = intVal(list_nth(fdw_private, FdwModifyPrivateLen));
 	fmstate->orig_query = pstrdup(fmstate->query);
@@ -1964,7 +1965,15 @@ sqliteBeginForeignModify(ModifyTableState *mtstate,
 		Form_pg_attribute attr = TupleDescAttr(RelationGetDescr(rel), attnum - 1);
 
 		Assert(!attr->attisdropped);
-
+#if PG_VERSION_NUM >= 140000
+		/* Ignore generated columns; */
+		if (attr->attgenerated)
+		{
+			if (list_length(fmstate->retrieved_attrs) >= 1)
+				fmstate->p_nums = 1;
+			continue;
+		}
+#endif
 		getTypeOutputInfo(attr->atttypid, &typefnoid, &isvarlena);
 		fmgr_info(typefnoid, &fmstate->p_flinfo[fmstate->p_nums]);
 		fmstate->p_nums++;
@@ -1982,7 +1991,8 @@ sqliteBeginForeignModify(ModifyTableState *mtstate,
 
 	fmstate->num_slots = 1;
 	/* Prepare sqlite statment */
-	sqlite_prepare_wrapper(fmstate->conn, fmstate->query, &fmstate->stmt, NULL);
+	sqlite_prepare_wrapper(server, fmstate->conn, fmstate->query, &fmstate->stmt, NULL, true);
+
 	resultRelInfo->ri_FdwState = fmstate;
 
 	fmstate->junk_idx = palloc0(RelationGetDescr(rel)->natts * sizeof(AttrNumber));
@@ -2155,7 +2165,9 @@ sqlite_find_modifytable_subplan(PlannerInfo *root,
 		if (subplan_index < list_length(appendplan->appendplans))
 			subplan = (Plan *) list_nth(appendplan->appendplans, subplan_index);
 	}
-	else if (IsA(subplan, Result) && IsA(outerPlan(subplan), Append))
+	else if (IsA(subplan, Result) &&
+			 outerPlan(subplan) != NULL &&
+			 IsA(outerPlan(subplan), Append))
 	{
 		Append	   *appendplan = (Append *) outerPlan(subplan);
 
@@ -2505,7 +2517,7 @@ sqliteBeginDirectModify(ForeignScanState *node, int eflags)
 	dmstate->stmt = NULL;
 
 	/* Prepare Sqlite statement */
-	sqlite_prepare_wrapper(dmstate->conn, dmstate->query, &dmstate->stmt, NULL);
+	sqlite_prepare_wrapper(server, dmstate->conn, dmstate->query, &dmstate->stmt, NULL, true);
 
 	/*
 	 * Prepare for processing of parameters used in remote query, if any.
@@ -2572,7 +2584,6 @@ sqliteEndDirectModify(ForeignScanState *node)
 
 	if (dmstate->stmt)
 	{
-		sqlite3_finalize(dmstate->stmt);
 		dmstate->stmt = NULL;
 	}
 }
@@ -2769,7 +2780,14 @@ sqliteExecForeignUpdate(EState *estate,
 		Oid			type;
 		bool		is_null;
 		Datum		value = 0;
+#if PG_VERSION_NUM >= 140000
+		TupleDesc	tupdesc = RelationGetDescr(fmstate->rel);
+		Form_pg_attribute attr = TupleDescAttr(tupdesc, attnum - 1);
 
+		/* Ignore generated columns and skip bind value */
+		if (attr->attgenerated)
+			continue;
+#endif
 		/* first attribute cannot be in target list attribute */
 		type = TupleDescAttr(slot->tts_tupleDescriptor, attnum - 1)->atttypid;
 
@@ -2832,7 +2850,6 @@ sqliteEndForeignModify(EState *estate,
 	elog(DEBUG1, "sqlite_fdw : %s", __func__);
 	if (fmstate && fmstate->stmt)
 	{
-		sqlite3_finalize(fmstate->stmt);
 		fmstate->stmt = NULL;
 	}
 }
@@ -2957,7 +2974,7 @@ sqliteImportForeignSchema(ImportForeignSchemaStmt *stmt,
 			appendStringInfoChar(&buf, ')');
 		}
 
-		sqlite_prepare_wrapper(db, buf.data, (sqlite3_stmt * *) & sql_stmt, NULL);
+		sqlite_prepare_wrapper(server, db, buf.data, (sqlite3_stmt * *) & sql_stmt, NULL, false);
 
 		/* Scan all rows for this table */
 		for (;;)
@@ -2987,7 +3004,7 @@ sqliteImportForeignSchema(ImportForeignSchemaStmt *stmt,
 			query = palloc0(strlen(table) + 30);
 			sprintf(query, "PRAGMA table_info(%s)", quote_identifier(table));
 
-			sqlite_prepare_wrapper(db, query, (sqlite3_stmt * *) & pragma_stmt, NULL);
+			sqlite_prepare_wrapper(server, db, query, (sqlite3_stmt * *) & pragma_stmt, NULL, false);
 
 			for (;;)
 			{
@@ -5043,7 +5060,8 @@ sqlite_execute_insert(EState *estate,
 	Datum		value = 0;
 	MemoryContext oldcontext;
 #if PG_VERSION_NUM >= 140000
-	StringInfoData sql;
+	Relation	rel = resultRelInfo->ri_RelationDesc;
+	TupleDesc	tupdesc = RelationGetDescr(rel);
 #endif
 	int			rc = SQLITE_OK;
 	int			nestlevel;
@@ -5061,17 +5079,22 @@ sqlite_execute_insert(EState *estate,
 #if PG_VERSION_NUM >= 140000
 	if (fmstate->num_slots != *numSlots)
 	{
-		sqlite3_finalize(fmstate->stmt);
+		StringInfoData sql;
+		ForeignTable *table;
+		ForeignServer *server;
+
+		table = GetForeignTable(RelationGetRelid(fmstate->rel));
+		server = GetForeignServer(table->serverid);
 		fmstate->stmt = NULL;
 
 		initStringInfo(&sql);
-		sqlite_rebuild_insert(&sql, fmstate->orig_query,
-							  fmstate->values_end,
+		sqlite_rebuild_insert(&sql, fmstate->rel, fmstate->orig_query,
+							  fmstate->target_attrs, fmstate->values_end,
 							  fmstate->p_nums, *numSlots - 1);
 		fmstate->query = sql.data;
 		fmstate->num_slots = *numSlots;
 
-		sqlite_prepare_wrapper(fmstate->conn, fmstate->query, &fmstate->stmt, NULL);
+		sqlite_prepare_wrapper(server, fmstate->conn, fmstate->query, &fmstate->stmt, NULL, true);
 	}
 #endif
 
@@ -5082,6 +5105,13 @@ sqlite_execute_insert(EState *estate,
 			int			attnum = lfirst_int(lc) - 1;
 			Oid			type = TupleDescAttr(slots[i]->tts_tupleDescriptor, attnum)->atttypid;
 			bool		isnull;
+#if PG_VERSION_NUM >= 140000
+			Form_pg_attribute attr = TupleDescAttr(tupdesc, attnum);
+
+			/* Ignore generated columns and skip bind value */
+			if (attr->attgenerated)
+				continue;
+#endif
 
 			value = slot_getattr(slots[i], attnum + 1, &isnull);
 			sqlite_bind_sql_var(type, bindnum, value, fmstate->stmt, &isnull);
@@ -5415,7 +5445,7 @@ sqlite_get_batch_size_option(Relation rel)
 
 		if (strcmp(def->defname, "batch_size") == 0)
 		{
-			batch_size = strtol(defGetString(def), NULL, 10);
+			(void) parse_int(defGetString(def), &batch_size, 0, NULL);
 			break;
 		}
 	}

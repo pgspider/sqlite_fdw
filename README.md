@@ -79,9 +79,11 @@ SELECT * FROM t1;
 - Support list cached connections to foreign servers by using function sqlite_fdw_get_connections()  
 - Support discard cached connections to foreign servers by using function sqlite_fdw_disconnect(), sqlite_fdw_disconnect_all().  
 - Support Bulk Insert by using batch_size option  
+- Support Insert/Update with generated column  
 
 ## Limitations
 - `COPY` command for foreign tables is not supported
+- IMPORT of generated column is not supported
 - Insert into a partitioned table which has foreign partitions is not supported
 - TRUNCATE in sqlite_fdw always delete data of both parent and child tables (no matter user inputs `TRUNCATE table CASCADE` or `TRUNCATE table RESTRICT`) if there are foreign-keys references with "ON DELETE CASCADE" clause.
 ## Contributing

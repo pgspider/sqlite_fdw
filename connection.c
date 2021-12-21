@@ -48,6 +48,7 @@ typedef struct ConnCacheEntry
 	bool		truncatable;	/* check table can truncate or not */
 	bool		invalidated;	/* true if reconnect is pending */
 	Oid			serverid;		/* foreign server OID used to get server name */
+	List	   *stmtList;		/* list stmt associated with conn */
 	uint32		server_hashvalue;	/* hash value of foreign server OID */
 	uint32		mapping_hashvalue;	/* hash value of user mapping OID */
 } ConnCacheEntry;
@@ -76,6 +77,8 @@ static void sqlitefdw_inval_callback(Datum arg, int cacheid, uint32 hashvalue);
 #if PG_VERSION_NUM >= 140000
 static bool sqlite_disconnect_cached_connections(Oid serverid);
 #endif
+static void sqlite_finalize_list_stmt(List **list);
+static List *sqlite_append_stmt_to_list(List *list, sqlite3_stmt * stmt);
 
 /*
  * sqlite_get_connection:
@@ -187,6 +190,7 @@ sqlite_make_new_connection(ConnCacheEntry *entry, ForeignServer *server)
 	entry->serverid = server->serverid;
 	entry->xact_depth = 0;
 	entry->invalidated = false;
+	entry->stmtList = NULL;
 	entry->keep_connections = true;
 	entry->server_hashvalue =
 		GetSysCacheHashValue1(FOREIGNSERVEROID,
@@ -240,16 +244,11 @@ sqlite_cleanup_connection(void)
 	hash_seq_init(&scan, ConnectionHash);
 	while ((entry = (ConnCacheEntry *) hash_seq_search(&scan)))
 	{
-		sqlite3_stmt *cur = NULL;
-
 		if (entry->conn == NULL)
 			continue;
 
-		while ((cur = sqlite3_next_stmt(entry->conn, cur)) != NULL)
-		{
-			elog(DEBUG1, "finalize %s", sqlite3_sql(cur));
-			sqlite3_finalize(cur);
-		}
+		sqlite_finalize_list_stmt(&entry->stmtList);
+
 		elog(DEBUG1, "disconnecting sqlite_fdw connection %p", entry->conn);
 		rc = sqlite3_close(entry->conn);
 		entry->conn = NULL;
@@ -359,10 +358,6 @@ sqlitefdw_report_error(int elevel, sqlite3_stmt * stmt, sqlite3 * conn,
 		if (sql)
 			sql = pstrdup(sqlite3_sql(stmt));
 	}
-
-	if (stmt)
-		sqlite3_finalize(stmt);
-
 	ereport(ERROR,
 			(errcode(sqlstate),
 			 errmsg("failed to execute remote SQL: rc=%d %s \n   sql=%s",
@@ -412,6 +407,8 @@ sqlitefdw_xact_callback(XactEvent event, void *arg)
 					/* Commit all remote transactions during pre-commit */
 					if (!sqlite3_get_autocommit(entry->conn))
 						sqlite_do_sql_command(entry->conn, "COMMIT", ERROR);
+					/* Finalize all prepared statements */
+					sqlite_finalize_list_stmt(&entry->stmtList);
 					break;
 				case XACT_EVENT_PRE_PREPARE:
 
@@ -437,15 +434,10 @@ sqlitefdw_xact_callback(XactEvent event, void *arg)
 				case XACT_EVENT_PARALLEL_ABORT:
 				case XACT_EVENT_ABORT:
 					{
-						sqlite3_stmt *cur = NULL;
-
 						elog(DEBUG3, "abort transaction");
 
 						/* Finalize all prepared statements */
-						while ((cur = sqlite3_next_stmt(entry->conn, NULL)) != NULL)
-						{
-							sqlite3_finalize(cur);
-						}
+						sqlite_finalize_list_stmt(&entry->stmtList);
 
 						/*
 						 * rollback if in transaction because SQLite may
@@ -880,6 +872,7 @@ sqlite_disconnect_cached_connections(Oid serverid)
 			else
 			{
 				elog(DEBUG3, "discarding sqlite_fdw connection %p", entry->conn);
+				sqlite_finalize_list_stmt(&entry->stmtList);
 				sqlite3_close(entry->conn);
 				entry->conn = NULL;
 				result = true;
@@ -889,3 +882,61 @@ sqlite_disconnect_cached_connections(Oid serverid)
 	return result;
 }
 #endif
+
+/*
+ * cache sqlite3 statement to finalize at the end of transaction
+ */
+void
+sqlite_cache_stmt(ForeignServer *server, sqlite3_stmt * *stmt)
+{
+	bool		found;
+	ConnCacheEntry *entry;
+	ConnCacheKey key = server->serverid;
+
+	/*
+	 * Find cached entry for requested connection.
+	 */
+	entry = hash_search(ConnectionHash, &key, HASH_ENTER, &found);
+
+	/* We must always have found the entry */
+	Assert(found);
+
+	entry->stmtList = sqlite_append_stmt_to_list(entry->stmtList, *stmt);
+}
+
+/*
+ * finalize all sqlite statement
+ */
+static void
+sqlite_finalize_list_stmt(List **list)
+{
+	ListCell   *lc;
+
+	foreach(lc, *list)
+	{
+		sqlite3_stmt *stmt = (sqlite3_stmt *) lfirst(lc);
+
+		elog(DEBUG1, "sqlite_fdw: finalize %s", sqlite3_sql(stmt));
+		sqlite3_finalize(stmt);
+	}
+
+	list_free(*list);
+	*list = NULL;
+}
+
+/*
+ * append sqlite3 stmt to the head of linked list
+ */
+static List *
+sqlite_append_stmt_to_list(List *list, sqlite3_stmt * stmt)
+{
+	/*
+	 * CurrentMemoryContext is released before cleanup transaction (when the
+	 * list is called), so, use TopMemoryContext instead.
+	 */
+	MemoryContext oldcontext = MemoryContextSwitchTo(TopMemoryContext);
+
+	list = lappend(list, stmt);
+	MemoryContextSwitchTo(oldcontext);
+	return list;
+}
