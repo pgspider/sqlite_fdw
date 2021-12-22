@@ -33,6 +33,7 @@
 #include "storage/fd.h"
 #include "utils/array.h"
 #include "utils/builtins.h"
+#include "utils/guc.h"
 #include "utils/rel.h"
 #include "utils/lsyscache.h"
 #include "optimizer/cost.h"
@@ -130,13 +131,23 @@ sqlite_fdw_validator(PG_FUNCTION_ARGS)
 		}
 		else if (strcmp(def->defname, "batch_size") == 0)
 		{
-			int			batch_size;
+			char	   *value;
+			int			int_val;
+			bool		is_parsed;
 
-			batch_size = strtol(defGetString(def), NULL, 10);
-			if (batch_size <= 0)
+			value = defGetString(def);
+			is_parsed = parse_int(value, &int_val, 0, NULL);
+
+			if (!is_parsed)
 				ereport(ERROR,
-						(errcode(ERRCODE_SYNTAX_ERROR),
-						 errmsg("%s requires a positive integer value",
+						(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+						 errmsg("invalid value for integer option \"%s\": %s",
+								def->defname, value)));
+
+			if (int_val <= 0)
+				ereport(ERROR,
+						(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+						 errmsg("\"%s\" must be an integer value greater than zero",
 								def->defname)));
 		}
 	}

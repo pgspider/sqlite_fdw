@@ -1545,6 +1545,10 @@ sqlite_deparse_insert(StringInfo buf, PlannerInfo *root,
 					  List *targetAttrs, bool doNothing,
 					  int *values_end_len)
 {
+#if PG_VERSION_NUM >= 140000
+	TupleDesc	tupdesc = RelationGetDescr(rel);
+	bool		all_columns_generated = true;
+#endif
 	AttrNumber	pindex;
 	bool		first;
 	ListCell   *lc;
@@ -1552,7 +1556,34 @@ sqlite_deparse_insert(StringInfo buf, PlannerInfo *root,
 	appendStringInfo(buf, "INSERT %sINTO ", doNothing ? "OR IGNORE " : "");
 	sqlite_deparse_relation(buf, rel);
 
+#if PG_VERSION_NUM >= 140000
+
+	/*
+	 * Check all columns in table that they are all generated column or not.
+	 * If true, we will skip all columns and just add 'DEFAULT VALUES'. If
+	 * not, we still push down other columns which are not generated column.
+	 */
 	if (targetAttrs)
+	{
+		foreach(lc, targetAttrs)
+		{
+			int			attnum = linitial_int(targetAttrs);
+			Form_pg_attribute attr = TupleDescAttr(tupdesc, attnum - 1);
+
+			if (!attr->attgenerated)
+			{
+				all_columns_generated = false;
+				break;
+			}
+		}
+	}
+#endif
+
+#if (PG_VERSION_NUM >= 140000)
+	if (targetAttrs && !all_columns_generated)
+#else
+	if (targetAttrs)
+#endif
 	{
 		appendStringInfoChar(buf, '(');
 
@@ -1560,12 +1591,20 @@ sqlite_deparse_insert(StringInfo buf, PlannerInfo *root,
 		foreach(lc, targetAttrs)
 		{
 			int			attnum = lfirst_int(lc);
+#if PG_VERSION_NUM >= 140000
+			Form_pg_attribute attr = TupleDescAttr(tupdesc, attnum - 1);
 
-			if (!first)
-				appendStringInfoString(buf, ", ");
-			first = false;
+			if (!attr->attgenerated)
+			{
+#endif
+				if (!first)
+					appendStringInfoString(buf, ", ");
+				first = false;
 
-			sqlite_deparse_column_ref(buf, rtindex, attnum, root, false);
+				sqlite_deparse_column_ref(buf, rtindex, attnum, root, false);
+#if PG_VERSION_NUM >= 140000
+			}
+#endif
 		}
 
 		appendStringInfoString(buf, ") VALUES (");
@@ -1574,12 +1613,21 @@ sqlite_deparse_insert(StringInfo buf, PlannerInfo *root,
 		first = true;
 		foreach(lc, targetAttrs)
 		{
-			if (!first)
-				appendStringInfoString(buf, ", ");
-			first = false;
+#if PG_VERSION_NUM >= 140000
+			int			attnum = lfirst_int(lc);
+			Form_pg_attribute attr = TupleDescAttr(tupdesc, attnum - 1);
 
-			appendStringInfo(buf, "?");
-			pindex++;
+			if (!attr->attgenerated)
+			{
+#endif
+				if (!first)
+					appendStringInfoString(buf, ", ");
+				first = false;
+				appendStringInfo(buf, "?");
+				pindex++;
+#if PG_VERSION_NUM >= 140000
+			}
+#endif
 		}
 
 		appendStringInfoChar(buf, ')');
@@ -1597,13 +1645,14 @@ sqlite_deparse_insert(StringInfo buf, PlannerInfo *root,
  * right number of parameters.
  */
 void
-sqlite_rebuild_insert(StringInfo buf, char *orig_query,
-					  int values_end_len, int num_cols,
+sqlite_rebuild_insert(StringInfo buf, Relation rel, char *orig_query,
+					  List *target_attrs, int values_end_len, int num_params,
 					  int num_rows)
 {
-	int			i,
-				j;
+	TupleDesc	tupdesc = RelationGetDescr(rel);
+	int			i;
 	bool		first;
+	ListCell   *lc;
 
 	/* Make sure the values_end_len is sensible */
 	Assert((values_end_len > 0) && (values_end_len <= strlen(orig_query)));
@@ -1620,13 +1669,19 @@ sqlite_rebuild_insert(StringInfo buf, char *orig_query,
 		appendStringInfoString(buf, ", (");
 
 		first = true;
-		for (j = 0; j < num_cols; j++)
+		foreach(lc, target_attrs)
 		{
-			if (!first)
-				appendStringInfoString(buf, ", ");
-			first = false;
+			int			attnum = lfirst_int(lc);
+			Form_pg_attribute attr = TupleDescAttr(tupdesc, attnum - 1);
 
-			appendStringInfo(buf, "?");
+			if (!attr->attgenerated)
+			{
+				if (!first)
+					appendStringInfoString(buf, ", ");
+				first = false;
+
+				appendStringInfo(buf, "?");
+			}
 		}
 
 		appendStringInfoChar(buf, ')');
@@ -2028,6 +2083,9 @@ sqlite_deparse_update(StringInfo buf, PlannerInfo *root,
 					  Index rtindex, Relation rel,
 					  List *targetAttrs, List *attnums)
 {
+#if PG_VERSION_NUM >= 140000
+	TupleDesc	tupdesc = RelationGetDescr(rel);
+#endif
 	AttrNumber	pindex;
 	bool		first;
 	ListCell   *lc;
@@ -2042,14 +2100,21 @@ sqlite_deparse_update(StringInfo buf, PlannerInfo *root,
 	foreach(lc, targetAttrs)
 	{
 		int			attnum = lfirst_int(lc);
+#if PG_VERSION_NUM >= 140000
+		Form_pg_attribute attr = TupleDescAttr(tupdesc, attnum - 1);
 
-		if (!first)
-			appendStringInfoString(buf, ", ");
-		first = false;
-
-		sqlite_deparse_column_ref(buf, rtindex, attnum, root, false);
-		appendStringInfo(buf, " = ?");
-		pindex++;
+		if (!attr->attgenerated)
+		{
+#endif
+			if (!first)
+				appendStringInfoString(buf, ", ");
+			first = false;
+			sqlite_deparse_column_ref(buf, rtindex, attnum, root, false);
+			appendStringInfo(buf, " = ?");
+			pindex++;
+#if PG_VERSION_NUM >= 140000
+		}
+#endif
 	}
 	i = 0;
 	foreach(lc, attnums)
