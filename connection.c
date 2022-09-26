@@ -2,7 +2,7 @@
  *
  * SQLite Foreign Data Wrapper for PostgreSQL
  *
- * Portions Copyright (c) 2021, TOSHIBA CORPORATION
+ * Portions Copyright (c) 2018, TOSHIBA CORPORATION
  *
  * IDENTIFICATION
  *        connection.c
@@ -59,7 +59,7 @@ typedef struct ConnCacheEntry
 static HTAB *ConnectionHash = NULL;
 
 /* tracks whether any work is needed in callback functions */
-static bool xact_got_connection = false;
+static volatile bool xact_got_connection = false;
 
 PG_FUNCTION_INFO_V1(sqlite_fdw_get_connections);
 PG_FUNCTION_INFO_V1(sqlite_fdw_disconnect);
@@ -69,11 +69,13 @@ static void sqlite_make_new_connection(ConnCacheEntry *entry, ForeignServer *ser
 void		sqlite_do_sql_command(sqlite3 * conn, const char *sql, int level);
 static void sqlite_begin_remote_xact(ConnCacheEntry *entry);
 static void sqlitefdw_xact_callback(XactEvent event, void *arg);
+static void sqlitefdw_reset_xact_state(ConnCacheEntry *entry, bool toplevel);
 static void sqlitefdw_subxact_callback(SubXactEvent event,
 									   SubTransactionId mySubid,
 									   SubTransactionId parentSubid,
 									   void *arg);
 static void sqlitefdw_inval_callback(Datum arg, int cacheid, uint32 hashvalue);
+static void sqlitefdw_abort_cleanup(ConnCacheEntry *entry, bool toplevel);
 #if PG_VERSION_NUM >= 140000
 static bool sqlite_disconnect_cached_connections(Oid serverid);
 #endif
@@ -434,23 +436,30 @@ sqlitefdw_xact_callback(XactEvent event, void *arg)
 				case XACT_EVENT_PARALLEL_ABORT:
 				case XACT_EVENT_ABORT:
 					{
-						elog(DEBUG3, "abort transaction");
-
-						/* Finalize all prepared statements */
-						sqlite_finalize_list_stmt(&entry->stmtList);
-
-						/*
-						 * rollback if in transaction because SQLite may
-						 * already rollback
-						 */
-						if (!sqlite3_get_autocommit(entry->conn))
-							sqlite_do_sql_command(entry->conn, "ROLLBACK", WARNING);
-
+						sqlitefdw_abort_cleanup(entry, true);
 						break;
 					}
 			}
 		}
 
+		/* Reset state to show we're out of a transaction */
+		sqlitefdw_reset_xact_state(entry, true);
+	}
+
+	/*
+	 * Regardless of the event type, we can now mark ourselves as out of the
+	 * transaction.  (Note: if we are here during PRE_COMMIT or PRE_PREPARE,
+	 * this saves a useless scan of the hashtable during COMMIT or PREPARE.)
+	 */
+	xact_got_connection = false;
+}
+
+/*
+ * sqlitefdw_reset_xact_state --- Reset state to show we're out of a (sub)transaction
+ */
+static void
+sqlitefdw_reset_xact_state(ConnCacheEntry *entry, bool toplevel) {
+	if (toplevel) {
 		/* Reset state to show we're out of a transaction */
 		entry->xact_depth = 0;
 
@@ -467,16 +476,11 @@ sqlitefdw_xact_callback(XactEvent event, void *arg)
 			sqlite3_close(entry->conn);
 			entry->conn = NULL;
 		}
+	} else {
+		/* Reset state to show we're out of a subtransaction */
+		entry->xact_depth--;
 	}
-
-	/*
-	 * Regardless of the event type, we can now mark ourselves as out of the
-	 * transaction.  (Note: if we are here during PRE_COMMIT or PRE_PREPARE,
-	 * this saves a useless scan of the hashtable during COMMIT or PREPARE.)
-	 */
-	xact_got_connection = false;
 }
-
 /*
  * sqlitefdw_subxact_callback --- cleanup at subtransaction end.
  */
@@ -538,15 +542,11 @@ sqlitefdw_subxact_callback(SubXactEvent event, SubTransactionId mySubid,
 		else
 		{
 			/* Rollback all remote subtransactions during abort */
-			snprintf(sql, sizeof(sql),
-					 "ROLLBACK TO SAVEPOINT s%d; RELEASE SAVEPOINT s%d",
-					 curlevel, curlevel);
-			if (!sqlite3_get_autocommit(entry->conn))
-				sqlite_do_sql_command(entry->conn, sql, ERROR);
+			sqlitefdw_abort_cleanup(entry, false);
 		}
 
 		/* OK, we're outta that level of subtransaction */
-		entry->xact_depth--;
+		sqlitefdw_reset_xact_state(entry, false);
 	}
 }
 
@@ -628,13 +628,18 @@ sqlite_fdw_get_connections(PG_FUNCTION_ARGS)
 #else
 #define SQLITE_FDW_GET_CONNECTIONS_COLS	2
 	ReturnSetInfo *rsinfo = (ReturnSetInfo *) fcinfo->resultinfo;
+	HASH_SEQ_STATUS scan;
+	ConnCacheEntry *entry;
+#if PG_VERSION_NUM < 150000
 	TupleDesc	tupdesc;
 	Tuplestorestate *tupstore;
 	MemoryContext per_query_ctx;
 	MemoryContext oldcontext;
-	HASH_SEQ_STATUS scan;
-	ConnCacheEntry *entry;
+#endif
 
+#if PG_VERSION_NUM >= 150000
+	SetSingleFuncCall(fcinfo, 0);
+#else
 	/* check to see if caller supports us returning a tuplestore */
 	if (rsinfo == NULL || !IsA(rsinfo, ReturnSetInfo))
 		ereport(ERROR,
@@ -659,12 +664,15 @@ sqlite_fdw_get_connections(PG_FUNCTION_ARGS)
 	rsinfo->setDesc = tupdesc;
 
 	MemoryContextSwitchTo(oldcontext);
+#endif
 
 	/* If cache doesn't exist, we return no records */
 	if (!ConnectionHash)
 	{
+#if PG_VERSION_NUM < 150000
 		/* clean up and return the tuplestore */
 		tuplestore_donestoring(tupstore);
+#endif
 
 		PG_RETURN_VOID();
 	}
@@ -728,12 +736,17 @@ sqlite_fdw_get_connections(PG_FUNCTION_ARGS)
 			values[0] = CStringGetTextDatum(server->servername);
 
 		values[1] = BoolGetDatum(!entry->invalidated);
-
+#if PG_VERSION_NUM >= 150000
+		tuplestore_putvalues(rsinfo->setResult, rsinfo->setDesc, values, nulls);
+#else 
 		tuplestore_putvalues(tupstore, tupdesc, values, nulls);
+#endif
 	}
 
+#if PG_VERSION_NUM < 150000
 	/* clean up and return the tuplestore */
 	tuplestore_donestoring(tupstore);
+#endif
 
 	PG_RETURN_VOID();
 #endif
@@ -790,6 +803,41 @@ sqlite_fdw_disconnect_all(PG_FUNCTION_ARGS)
 #else
 	PG_RETURN_BOOL(sqlite_disconnect_cached_connections(InvalidOid));
 #endif
+}
+
+/*
+ * Abort remote transaction or subtransaction.
+ *
+ * "toplevel" should be set to true if toplevel (main) transaction is
+ * rollbacked, false otherwise.
+ */
+static void
+sqlitefdw_abort_cleanup(ConnCacheEntry *entry, bool toplevel)
+{
+	if (toplevel)
+	{
+		elog(DEBUG3, "abort transaction");
+
+		/* Finalize all prepared statements */
+		sqlite_finalize_list_stmt(&entry->stmtList);
+
+		/*
+		* rollback if in transaction because SQLite may
+		* already rollback
+		*/
+		if (!sqlite3_get_autocommit(entry->conn))
+			sqlite_do_sql_command(entry->conn, "ROLLBACK", WARNING);
+	}
+	else
+	{
+		char		sql[100];
+		int			curlevel = GetCurrentTransactionNestLevel();
+		snprintf(sql, sizeof(sql),
+					"ROLLBACK TO SAVEPOINT s%d; RELEASE SAVEPOINT s%d",
+					curlevel, curlevel);
+		if (!sqlite3_get_autocommit(entry->conn))
+			sqlite_do_sql_command(entry->conn, sql, ERROR);
+	}
 }
 
 #if PG_VERSION_NUM >= 140000

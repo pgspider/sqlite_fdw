@@ -1,0 +1,780 @@
+SET datestyle=ISO;
+SET timezone='Japan';
+--Testcase 1:
+CREATE EXTENSION sqlite_fdw;
+--Testcase 2:
+CREATE SERVER server1 FOREIGN DATA WRAPPER sqlite_fdw
+OPTIONS (database '/tmp/sqlitefdw_test_selectfunc.db');
+--CREATE USER MAPPING FOR CURRENT_USER SERVER server1 OPTIONS(user 'user', password 'pass');
+--IMPORT FOREIGN SCHEMA public FROM SERVER server1 INTO public OPTIONS(import_time_text 'false');
+--Testcase 3:
+CREATE FOREIGN TABLE s3(id text OPTIONS (key 'true'), time timestamp, tag1 text, value1 float, value2 int, value3 float, value4 int, str1 text, str2 text) SERVER server1;
+-- s3 (value1 as float8, value2 as bigint)
+--Testcase 4:
+\d s3;
+                              Foreign table "public.s3"
+ Column |            Type             | Collation | Nullable | Default | FDW options  
+--------+-----------------------------+-----------+----------+---------+--------------
+ id     | text                        |           |          |         | (key 'true')
+ time   | timestamp without time zone |           |          |         | 
+ tag1   | text                        |           |          |         | 
+ value1 | double precision            |           |          |         | 
+ value2 | integer                     |           |          |         | 
+ value3 | double precision            |           |          |         | 
+ value4 | integer                     |           |          |         | 
+ str1   | text                        |           |          |         | 
+ str2   | text                        |           |          |         | 
+Server: server1
+
+--Testcase 5:
+SELECT * FROM s3;
+ id |        time         | tag1 | value1 | value2 | value3 | value4 |   str1    |   str2    
+----+---------------------+------+--------+--------+--------+--------+-----------+-----------
+ 0  | 1970-01-01 00:00:00 | a    |    0.1 |    100 |   -0.1 |   -100 | ---XYZ--- |    XYZ   
+ 1  | 1970-01-01 00:00:01 | a    |    0.2 |    100 |   -0.2 |   -100 | ---XYZ--- |    XYZ   
+ 2  | 1970-01-01 00:00:02 | a    |    0.3 |    100 |   -0.3 |   -100 | ---XYZ--- |    XYZ   
+ 3  | 1970-01-01 00:00:03 | b    |    1.1 |    200 |   -1.1 |   -200 | ---XYZ--- |    XYZ   
+ 4  | 1970-01-01 00:00:04 | b    |    2.2 |    200 |   -2.2 |   -200 | ---XYZ--- |    XYZ   
+ 5  | 1970-01-01 00:00:05 | b    |    3.3 |    200 |   -3.3 |   -200 | ---XYZ--- |    XYZ   
+(6 rows)
+
+-- select float8() (not pushdown, remove float8, explain)
+-- EXPLAIN VERBOSE
+-- SELECT float8(value1), float8(value2), float8(value3), float8(value4) FROM s3;
+-- sqlite fdw does not support
+-- select float8() (not pushdown, remove float8, result)
+-- SELECT float8(value1), float8(value2), float8(value3), float8(value4) FROM s3;
+-- sqlite fdw does not support
+-- select sqrt (builtin function, explain)
+-- EXPLAIN VERBOSE
+-- SELECT sqrt(value1), sqrt(value2) FROM s3;
+-- sqlite fdw does not have sqrt()
+-- select sqrt (buitin function, result)
+-- SELECT sqrt(value1), sqrt(value2) FROM s3;
+-- sqlite fdw does not have sqrt()
+-- select sqrt (builtin function,, not pushdown constraints, explain)
+-- EXPLAIN VERBOSE
+-- SELECT sqrt(value1), sqrt(value2) FROM s3 WHERE to_hex(value2) != '64';
+-- sqlite fdw does not have sqrt()
+-- select sqrt (builtin function, not pushdown constraints, result)
+-- SELECT sqrt(value1), sqrt(value2) FROM s3 WHERE to_hex(value2) != '64';
+-- sqlite fdw does not have sqrt()
+-- select sqrt (builtin function, pushdown constraints, explain)
+-- EXPLAIN VERBOSE
+-- SELECT sqrt(value1), sqrt(value2) FROM s3 WHERE value2 != 200;
+-- sqlite fdw does not have sqrt()
+-- select sqrt (builtin function, pushdown constraints, result)
+-- SELECT sqrt(value1), sqrt(value2) FROM s3 WHERE value2 != 200;
+-- sqlite fdw does not have sqrt()
+-- select abs (builtin function, explain)
+--Testcase 6:
+EXPLAIN VERBOSE
+SELECT abs(value1), abs(value2), abs(value3), abs(value4) FROM s3;
+                                  QUERY PLAN                                  
+------------------------------------------------------------------------------
+ Foreign Scan on public.s3  (cost=10.00..1723.06 rows=1706 width=24)
+   Output: abs(value1), abs(value2), abs(value3), abs(value4)
+   SQLite query: SELECT `value1`, `value2`, `value3`, `value4` FROM main."s3"
+(3 rows)
+
+-- select abs (buitin function, result)
+--Testcase 7:
+SELECT abs(value1), abs(value2), abs(value3), abs(value4) FROM s3;
+ abs | abs | abs | abs 
+-----+-----+-----+-----
+ 0.1 | 100 | 0.1 | 100
+ 0.2 | 100 | 0.2 | 100
+ 0.3 | 100 | 0.3 | 100
+ 1.1 | 200 | 1.1 | 200
+ 2.2 | 200 | 2.2 | 200
+ 3.3 | 200 | 3.3 | 200
+(6 rows)
+
+-- select abs (builtin function, not pushdown constraints, explain)
+--Testcase 8:
+EXPLAIN VERBOSE
+SELECT abs(value1), abs(value2), abs(value3), abs(value4) FROM s3 WHERE to_hex(value2) != '64';
+                                  QUERY PLAN                                  
+------------------------------------------------------------------------------
+ Foreign Scan on public.s3  (cost=10.00..1713.97 rows=1697 width=24)
+   Output: abs(value1), abs(value2), abs(value3), abs(value4)
+   Filter: (to_hex(s3.value2) <> '64'::text)
+   SQLite query: SELECT `value1`, `value2`, `value3`, `value4` FROM main."s3"
+(4 rows)
+
+-- select abs (builtin function, not pushdown constraints, result)
+--Testcase 9:
+SELECT abs(value1), abs(value2), abs(value3), abs(value4) FROM s3 WHERE to_hex(value2) != '64';
+ abs | abs | abs | abs 
+-----+-----+-----+-----
+ 1.1 | 200 | 1.1 | 200
+ 2.2 | 200 | 2.2 | 200
+ 3.3 | 200 | 3.3 | 200
+(3 rows)
+
+-- select abs (builtin function, pushdown constraints, explain)
+--Testcase 10:
+EXPLAIN VERBOSE
+SELECT abs(value1), abs(value2), abs(value3), abs(value4) FROM s3 WHERE value2 != 200;
+                                               QUERY PLAN                                               
+--------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.s3  (cost=10.00..1713.97 rows=1697 width=24)
+   Output: abs(value1), abs(value2), abs(value3), abs(value4)
+   SQLite query: SELECT `value1`, `value2`, `value3`, `value4` FROM main."s3" WHERE ((`value2` <> 200))
+(3 rows)
+
+-- select abs (builtin function, pushdown constraints, result)
+--Testcase 11:
+SELECT abs(value1), abs(value2), abs(value3), abs(value4) FROM s3 WHERE value2 != 200;
+ abs | abs | abs | abs 
+-----+-----+-----+-----
+ 0.1 | 100 | 0.1 | 100
+ 0.2 | 100 | 0.2 | 100
+ 0.3 | 100 | 0.3 | 100
+(3 rows)
+
+-- select log (builtin function, need to swap arguments, numeric cast, explain)
+-- log_<base>(v) : postgresql (base, v), sqlite (v, base)
+-- EXPLAIN VERBOSE
+-- SELECT log(value1::numeric, value2::numeric) FROM s3 WHERE value1 != 1;
+-- sqlite fdw does not have log()
+-- select log (builtin function, need to swap arguments, numeric cast, result)
+-- SELECT log(value1::numeric, value2::numeric) FROM s3 WHERE value1 != 1;
+-- sqlite fdw does not have log()
+-- select log (stub function, need to swap arguments, float8, explain)
+-- EXPLAIN VERBOSE
+-- SELECT log(value1, 0.1) FROM s3 WHERE value1 != 1;
+-- sqlite fdw does not have log()
+-- select log (stub function, need to swap arguments, float8, result)
+-- SELECT log(value1, 0.1) FROM s3 WHERE value1 != 1;
+-- sqlite fdw does not have log()
+-- select log (stub function, need to swap arguments, bigint, explain)
+-- EXPLAIN VERBOSE
+-- SELECT log(value2, 3) FROM s3 WHERE value1 != 1;
+-- sqlite fdw does not have log()
+-- select log (stub function, need to swap arguments, bigint, result)
+-- SELECT log(value2, 3) FROM s3 WHERE value1 != 1;
+-- sqlite fdw does not have log()
+-- select log (stub function, need to swap arguments, mix type, explain)
+-- EXPLAIN VERBOSE
+-- SELECT log(value1, value2) FROM s3 WHERE value1 != 1;
+-- sqlite fdw does not have log()
+-- select log (stub function, need to swap arguments, mix type, result)
+-- SELECT log(value1, value2) FROM s3 WHERE value1 != 1;
+-- sqlite fdw does not have log()
+-- select log2 (stub function, explain)
+-- EXPLAIN VERBOSE
+-- SELECT log2(value1),log2(value2) FROM s3;
+-- sqlite fdw does not have log2()
+-- select log2 (stub function, result)
+-- SELECT log2(value1),log2(value2) FROM s3;
+-- sqlite fdw does not have log2()
+-- select spread (stub agg function, explain)
+-- EXPLAIN VERBOSE
+-- SELECT spread(value1),spread(value2),spread(value3),spread(value4) FROM s3;
+-- sqlite fdw does not have spread()
+-- select spread (stub agg function, result)
+-- SELECT spread(value1),spread(value2),spread(value3),spread(value4) FROM s3;
+-- sqlite fdw does not have spread()
+-- select spread (stub agg function, raise exception if not expected type)
+-- SELECT spread(value1::numeric),spread(value2::numeric),spread(value3::numeric),spread(value4::numeric) FROM s3;
+-- sqlite fdw does not have spread()
+-- select abs as nest function with agg (pushdown, explain)
+--Testcase 12:
+EXPLAIN VERBOSE
+SELECT sum(value3),abs(sum(value3)) FROM s3;
+                               QUERY PLAN                                
+-------------------------------------------------------------------------
+ Foreign Scan  (cost=1.00..1.00 rows=1 width=16)
+   Output: (sum(value3)), (abs(sum(value3)))
+   SQLite query: SELECT sum(`value3`), abs(sum(`value3`)) FROM main."s3"
+(3 rows)
+
+-- select abs as nest function with agg (pushdown, result)
+--Testcase 13:
+SELECT sum(value3),abs(sum(value3)) FROM s3;
+ sum  | abs 
+------+-----
+ -7.2 | 7.2
+(1 row)
+
+-- select abs as nest with log2 (pushdown, explain)
+-- EXPLAIN VERBOSE
+-- SELECT abs(log2(value1)),abs(log2(1/value1)) FROM s3;
+-- sqlite fdw does not have log2()
+-- select abs as nest with log2 (pushdown, result)
+-- SELECT abs(log2(value1)),abs(log2(1/value1)) FROM s3;
+-- sqlite fdw does not have log2()
+-- select abs with non pushdown func and explicit constant (explain)
+--Testcase 14:
+EXPLAIN VERBOSE
+SELECT abs(value3), pi(), 4.1 FROM s3;
+                             QUERY PLAN                              
+---------------------------------------------------------------------
+ Foreign Scan on public.s3  (cost=10.00..2566.40 rows=2560 width=48)
+   Output: abs(value3), '3.141592653589793'::double precision, 4.1
+   SQLite query: SELECT `value3` FROM main."s3"
+(3 rows)
+
+-- select abs with non pushdown func and explicit constant (result)
+--Testcase 15:
+SELECT abs(value3), pi(), 4.1 FROM s3;
+ abs |        pi         | ?column? 
+-----+-------------------+----------
+ 0.1 | 3.141592653589793 |      4.1
+ 0.2 | 3.141592653589793 |      4.1
+ 0.3 | 3.141592653589793 |      4.1
+ 1.1 | 3.141592653589793 |      4.1
+ 2.2 | 3.141592653589793 |      4.1
+ 3.3 | 3.141592653589793 |      4.1
+(6 rows)
+
+-- select sqrt as nest function with agg and explicit constant (pushdown, explain)
+-- EXPLAIN VERBOSE
+-- SELECT sqrt(count(value1)), pi(), 4.1 FROM s3;
+-- sqlite fdw does not have sqrt()
+-- select sqrt as nest function with agg and explicit constant (pushdown, result)
+-- SELECT sqrt(count(value1)), pi(), 4.1 FROM s3;
+-- sqlite fdw does not have sqrt()
+-- select sqrt as nest function with agg and explicit constant and tag (error, explain)
+-- EXPLAIN VERBOSE
+-- SELECT sqrt(count(value1)), pi(), 4.1, tag1 FROM s3;
+-- sqlite fdw does not have sqrt()
+-- select spread (stub agg function and group by influx_time() and tag) (explain)
+-- EXPLAIN VERBOSE
+-- SELECT spread("value1"),influx_time(time, interval '1s'),tag1 FROM s3 WHERE time >= to_timestamp(0) and time <= to_timestamp(4) GROUP BY influx_time(time, interval '1s'), tag1;
+-- sqlite fdw does not have spread() and influx_time()
+-- select spread (stub agg function and group by influx_time() and tag) (result)
+-- SELECT spread("value1"),influx_time(time, interval '1s'),tag1 FROM s3 WHERE time >= to_timestamp(0) and time <= to_timestamp(4) GROUP BY influx_time(time, interval '1s'), tag1;
+-- sqlite fdw does not have spread() and influx_time()
+-- select spread (stub agg function and group by tag only) (result)
+-- SELECT tag1,spread("value1") FROM s3 WHERE time >= to_timestamp(0) and time <= to_timestamp(4) GROUP BY tag1;
+-- sqlite fdw does not have spread()
+-- select spread (stub agg function and other aggs) (result)
+-- SELECT sum("value1"),spread("value1"),count("value1") FROM s3;
+-- sqlite fdw does not have spread()
+-- select abs with order by (explain)
+--Testcase 16:
+EXPLAIN VERBOSE
+SELECT value1, abs(1-value1) FROM s3 order by abs(1-value1);
+                                         QUERY PLAN                                         
+--------------------------------------------------------------------------------------------
+ Foreign Scan on public.s3  (cost=10.00..10.05 rows=10 width=16)
+   Output: value1, abs(('1'::double precision - value1))
+   SQLite query: SELECT `value1` FROM main."s3" ORDER BY abs((1 - `value1`)) ASC NULLS LAST
+(3 rows)
+
+-- select abs with order by (result)
+--Testcase 17:
+SELECT value1, abs(1-value1) FROM s3 order by abs(1-value1);
+ value1 |         abs         
+--------+---------------------
+    1.1 | 0.10000000000000009
+    0.3 |                 0.7
+    0.2 |                 0.8
+    0.1 |                 0.9
+    2.2 |  1.2000000000000002
+    3.3 |                 2.3
+(6 rows)
+
+-- select abs with order by index (result)
+--Testcase 18:
+SELECT value1, abs(1-value1) FROM s3 order by 2,1;
+ value1 |         abs         
+--------+---------------------
+    1.1 | 0.10000000000000009
+    0.3 |                 0.7
+    0.2 |                 0.8
+    0.1 |                 0.9
+    2.2 |  1.2000000000000002
+    3.3 |                 2.3
+(6 rows)
+
+-- select abs with order by index (result)
+--Testcase 19:
+SELECT value1, abs(1-value1) FROM s3 order by 1,2;
+ value1 |         abs         
+--------+---------------------
+    0.1 |                 0.9
+    0.2 |                 0.8
+    0.3 |                 0.7
+    1.1 | 0.10000000000000009
+    2.2 |  1.2000000000000002
+    3.3 |                 2.3
+(6 rows)
+
+-- select abs and as
+--Testcase 20:
+SELECT abs(value3) as abs1 FROM s3;
+ abs1 
+------
+  0.1
+  0.2
+  0.3
+  1.1
+  2.2
+  3.3
+(6 rows)
+
+-- select spread over join query (explain)
+-- EXPLAIN VERBOSE
+-- SELECT spread(t1.value1), spread(t2.value1) FROM s3 t1 INNER JOIN s3 t2 ON (t1.value1 = t2.value1) where t1.value1 = 0.1;
+-- sqlite fdw does not have spread()
+-- select spread over join query (result, stub call error)
+-- SELECT spread(t1.value1), spread(t2.value1) FROM s3 t1 INNER JOIN s3 t2 ON (t1.value1 = t2.value1) where t1.value1 = 0.1;
+-- sqlite fdw does not have spread()
+-- select spread with having (explain)
+-- EXPLAIN VERBOSE
+-- SELECT spread(value1) FROM s3 HAVING spread(value1) > 100;
+-- sqlite fdw does not have spread()
+-- select spread with having (explain, cannot pushdown, stub call error)
+-- SELECT spread(value1) FROM s3 HAVING spread(value1) > 100;
+-- sqlite fdw does not have spread()
+-- select abs with arithmetic and tag in the middle (explain)
+--Testcase 21:
+EXPLAIN VERBOSE
+SELECT abs(value1) + 1, value2, tag1, sqrt(value2) FROM s3;
+                                           QUERY PLAN                                            
+-------------------------------------------------------------------------------------------------
+ Foreign Scan on public.s3  (cost=10.00..1216.04 rows=1204 width=52)
+   Output: (abs(value1) + '1'::double precision), value2, tag1, sqrt((value2)::double precision)
+   SQLite query: SELECT `tag1`, `value1`, `value2` FROM main."s3"
+(3 rows)
+
+-- select abs with arithmetic and tag in the middle (result)
+--Testcase 22:
+SELECT abs(value1) + 1, value2, tag1, sqrt(value2) FROM s3;
+ ?column? | value2 | tag1 |        sqrt        
+----------+--------+------+--------------------
+      1.1 |    100 | a    |                 10
+      1.2 |    100 | a    |                 10
+      1.3 |    100 | a    |                 10
+      2.1 |    200 | b    | 14.142135623730951
+      3.2 |    200 | b    | 14.142135623730951
+      4.3 |    200 | b    | 14.142135623730951
+(6 rows)
+
+-- select with order by limit (explain)
+--Testcase 23:
+EXPLAIN VERBOSE
+SELECT abs(value1), abs(value3), sqrt(value2) FROM s3 ORDER BY abs(value3) LIMIT 1;
+                                                    QUERY PLAN                                                    
+------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.s3  (cost=1.00..1.00 rows=1 width=24)
+   Output: abs(value1), abs(value3), sqrt((value2)::double precision)
+   SQLite query: SELECT `value1`, `value2`, `value3` FROM main."s3" ORDER BY abs(`value3`) ASC NULLS LAST LIMIT 1
+(3 rows)
+
+-- select with order by limit (explain)
+--Testcase 24:
+SELECT abs(value1), abs(value3), sqrt(value2) FROM s3 ORDER BY abs(value3) LIMIT 1;
+ abs | abs | sqrt 
+-----+-----+------
+ 0.1 | 0.1 |   10
+(1 row)
+
+-- select mixing with non pushdown func (all not pushdown, explain)
+--Testcase 25:
+EXPLAIN VERBOSE
+SELECT abs(value1), sqrt(value2), upper(tag1) FROM s3;
+                              QUERY PLAN                              
+----------------------------------------------------------------------
+ Foreign Scan on public.s3  (cost=10.00..1216.04 rows=1204 width=48)
+   Output: abs(value1), sqrt((value2)::double precision), upper(tag1)
+   SQLite query: SELECT `tag1`, `value1`, `value2` FROM main."s3"
+(3 rows)
+
+-- select mixing with non pushdown func (result)
+--Testcase 26:
+SELECT abs(value1), sqrt(value2), upper(tag1) FROM s3;
+ abs |        sqrt        | upper 
+-----+--------------------+-------
+ 0.1 |                 10 | A
+ 0.2 |                 10 | A
+ 0.3 |                 10 | A
+ 1.1 | 14.142135623730951 | B
+ 2.2 | 14.142135623730951 | B
+ 3.3 | 14.142135623730951 | B
+(6 rows)
+
+-- sqlite data prep
+-- sqlite pushdown supported functions (explain)
+--Testcase 27:
+EXPLAIN VERBOSE
+SELECT abs(value3), length(tag1), lower(str1), ltrim(str2), ltrim(str1, '-'), replace(str1, 'XYZ', 'ABC'), round(value3), rtrim(str1, '-'), rtrim(str2), substr(str1, 4), substr(str1, 4, 3) FROM s3;
+                                                                                                       QUERY PLAN                                                                                                        
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.s3  (cost=10.00..657.60 rows=640 width=276)
+   Output: abs(value3), length(tag1), lower(str1), ltrim(str2), ltrim(str1, '-'::text), replace(str1, 'XYZ'::text, 'ABC'::text), round(value3), rtrim(str1, '-'::text), rtrim(str2), substr(str1, 4), substr(str1, 4, 3)
+   SQLite query: SELECT `tag1`, `value3`, `str1`, `str2` FROM main."s3"
+(3 rows)
+
+-- sqlite pushdown supported functions (result)
+--Testcase 28:
+SELECT abs(value3), length(tag1), lower(str1), ltrim(str2), ltrim(str1, '-'), replace(str1, 'XYZ', 'ABC'), round(value3), rtrim(str1, '-'), rtrim(str2), substr(str1, 4), substr(str1, 4, 3) FROM s3;
+ abs | length |   lower   | ltrim  | ltrim  |  replace  | round | rtrim  | rtrim  | substr | substr 
+-----+--------+-----------+--------+--------+-----------+-------+--------+--------+--------+--------
+ 0.1 |      1 | ---xyz--- | XYZ    | XYZ--- | ---ABC--- |    -0 | ---XYZ |    XYZ | XYZ--- | XYZ
+ 0.2 |      1 | ---xyz--- | XYZ    | XYZ--- | ---ABC--- |    -0 | ---XYZ |    XYZ | XYZ--- | XYZ
+ 0.3 |      1 | ---xyz--- | XYZ    | XYZ--- | ---ABC--- |    -0 | ---XYZ |    XYZ | XYZ--- | XYZ
+ 1.1 |      1 | ---xyz--- | XYZ    | XYZ--- | ---ABC--- |    -1 | ---XYZ |    XYZ | XYZ--- | XYZ
+ 2.2 |      1 | ---xyz--- | XYZ    | XYZ--- | ---ABC--- |    -2 | ---XYZ |    XYZ | XYZ--- | XYZ
+ 3.3 |      1 | ---xyz--- | XYZ    | XYZ--- | ---ABC--- |    -3 | ---XYZ |    XYZ | XYZ--- | XYZ
+(6 rows)
+
+-- sqlite pushdown nest functions (explain)
+--Testcase 32:
+EXPLAIN VERBOSE
+SELECT round(abs(value2), 0) FROM s3;
+                             QUERY PLAN                              
+---------------------------------------------------------------------
+ Foreign Scan on public.s3  (cost=10.00..2946.94 rows=2925 width=32)
+   Output: round((abs(value2))::numeric, 0)
+   SQLite query: SELECT `value2` FROM main."s3"
+(3 rows)
+
+-- sqlite pushdown nest functions (result)
+--Testcase 33:
+SELECT round(abs(value2), 0) FROM s3;
+ round 
+-------
+   100
+   100
+   100
+   200
+   200
+   200
+(6 rows)
+
+-- select mod (builtin function, explain)
+--Testcase 34:
+EXPLAIN VERBOSE
+SELECT value1, mod(value2, 2), mod(value4, 2), mod(5, 2) FROM s3;
+                             QUERY PLAN                              
+---------------------------------------------------------------------
+ Foreign Scan on public.s3  (cost=10.00..2058.24 rows=2048 width=20)
+   Output: value1, mod(value2, 2), mod(value4, 2), 1
+   SQLite query: SELECT `value1`, `value2`, `value4` FROM main."s3"
+(3 rows)
+
+-- select mod (builtin function, result)
+--Testcase 35:
+SELECT value1, mod(value2, 2), mod(value4, 2), mod(5, 2) FROM s3;
+ value1 | mod | mod | mod 
+--------+-----+-----+-----
+    0.1 |   0 |   0 |   1
+    0.2 |   0 |   0 |   1
+    0.3 |   0 |   0 |   1
+    1.1 |   0 |   0 |   1
+    2.2 |   0 |   0 |   1
+    3.3 |   0 |   0 |   1
+(6 rows)
+
+-- select mod (builtin function, not pushdown constraints, explain)
+--Testcase 36:
+EXPLAIN VERBOSE
+SELECT mod(value2, 2), mod(value4, 2), mod(5, 2) FROM s3 WHERE to_hex(value2) = '64';
+                           QUERY PLAN                            
+-----------------------------------------------------------------
+ Foreign Scan on public.s3  (cost=10.00..13.06 rows=13 width=12)
+   Output: mod(value2, 2), mod(value4, 2), 1
+   Filter: (to_hex(s3.value2) = '64'::text)
+   SQLite query: SELECT `value2`, `value4` FROM main."s3"
+(4 rows)
+
+-- select mod (builtin function, not pushdown constraints, result)
+--Testcase 37:
+SELECT mod(value2, 2), mod(value4, 2), mod(5, 2) FROM s3 WHERE to_hex(value2) = '64';
+ mod | mod | mod 
+-----+-----+-----
+   0 |   0 |   1
+   0 |   0 |   1
+   0 |   0 |   1
+(3 rows)
+
+-- select mod (builtin function, pushdown constraints, explain)
+--Testcase 38:
+EXPLAIN VERBOSE
+SELECT mod(value2, 2), mod(value4, 2), mod(5, 2) FROM s3 WHERE value2 != 200;
+                                     QUERY PLAN                                     
+------------------------------------------------------------------------------------
+ Foreign Scan on public.s3  (cost=10.00..2559.74 rows=2547 width=12)
+   Output: mod(value2, 2), mod(value4, 2), 1
+   SQLite query: SELECT `value2`, `value4` FROM main."s3" WHERE ((`value2` <> 200))
+(3 rows)
+
+-- select mod (builtin function, pushdown constraints, result)
+--Testcase 39:
+SELECT mod(value2, 2), mod(value4, 2), mod(5, 2) FROM s3 WHERE value2 != 200;
+ mod | mod | mod 
+-----+-----+-----
+   0 |   0 |   1
+   0 |   0 |   1
+   0 |   0 |   1
+(3 rows)
+
+-- select mod (builtin function, mod in constraints, explain)
+--Testcase 40:
+EXPLAIN VERBOSE
+SELECT mod(value2, 2), mod(value4, 2), mod(5, 2) FROM s3 WHERE mod(value2, 2) != 1;
+                                        QUERY PLAN                                        
+------------------------------------------------------------------------------------------
+ Foreign Scan on public.s3  (cost=10.00..2559.74 rows=2547 width=12)
+   Output: mod(value2, 2), mod(value4, 2), 1
+   SQLite query: SELECT `value2`, `value4` FROM main."s3" WHERE ((mod(`value2`, 2) <> 1))
+(3 rows)
+
+-- select mod (builtin function, mod in constraints, result)
+--Testcase 41:
+SELECT mod(value2, 2), mod(value4, 2), mod(5, 2) FROM s3 WHERE mod(value2, 2) != 1;
+ mod | mod | mod 
+-----+-----+-----
+   0 |   0 |   1
+   0 |   0 |   1
+   0 |   0 |   1
+   0 |   0 |   1
+   0 |   0 |   1
+   0 |   0 |   1
+(6 rows)
+
+-- select mod (builtin function, mod in constraints, explain)
+--Testcase 42:
+EXPLAIN VERBOSE
+SELECT mod(value2, 2), mod(value4, 2), mod(5, 2) FROM s3 WHERE mod(5, 2) > value1;
+                                   QUERY PLAN                                    
+---------------------------------------------------------------------------------
+ Foreign Scan on public.s3  (cost=10.00..857.26 rows=853 width=12)
+   Output: mod(value2, 2), mod(value4, 2), 1
+   SQLite query: SELECT `value2`, `value4` FROM main."s3" WHERE ((1 > `value1`))
+(3 rows)
+
+-- select mod (builtin function, mod in constraints, result)
+--Testcase 43:
+SELECT mod(value2, 2), mod(value4, 2), mod(5, 2) FROM s3 WHERE mod(5, 2) > value1;
+ mod | mod | mod 
+-----+-----+-----
+   0 |   0 |   1
+   0 |   0 |   1
+   0 |   0 |   1
+(3 rows)
+
+-- select mod as nest function with agg (pushdown, explain)
+--Testcase 44:
+EXPLAIN VERBOSE
+SELECT sum(value3),mod(sum(value2), 2) FROM s3;
+                                 QUERY PLAN                                 
+----------------------------------------------------------------------------
+ Foreign Scan  (cost=1.00..1.00 rows=1 width=16)
+   Output: (sum(value3)), (mod(sum(value2), '2'::bigint))
+   SQLite query: SELECT sum(`value3`), mod(sum(`value2`), 2) FROM main."s3"
+(3 rows)
+
+-- select mod as nest function with agg (pushdown, result)
+--Testcase 45:
+SELECT sum(value3),mod(sum(value2), 2) FROM s3;
+ sum  | mod 
+------+-----
+ -7.2 |   0
+(1 row)
+
+-- select mod as nest with abs (pushdown, explain)
+--Testcase 46:
+EXPLAIN VERBOSE
+SELECT value1, mod(abs(value2), 2),mod(abs(1/value2), 2) FROM s3;
+                             QUERY PLAN                              
+---------------------------------------------------------------------
+ Foreign Scan on public.s3  (cost=10.00..2303.44 rows=2275 width=16)
+   Output: value1, mod(abs(value2), 2), mod(abs((1 / value2)), 2)
+   SQLite query: SELECT `value1`, `value2` FROM main."s3"
+(3 rows)
+
+-- select mod as nest with abs (pushdown, result)
+--Testcase 47:
+SELECT value1, mod(abs(value2), 2),mod(abs(1/value2), 2) FROM s3;
+ value1 | mod | mod 
+--------+-----+-----
+    0.1 |   0 |   0
+    0.2 |   0 |   0
+    0.3 |   0 |   0
+    1.1 |   0 |   0
+    2.2 |   0 |   0
+    3.3 |   0 |   0
+(6 rows)
+
+-- select mod with non pushdown func and explicit constant (explain)
+--Testcase 48:
+EXPLAIN VERBOSE
+SELECT value1, mod(value2, 2), pi(), 4.1 FROM s3;
+                                  QUERY PLAN                                  
+------------------------------------------------------------------------------
+ Foreign Scan on public.s3  (cost=10.00..2280.69 rows=2275 width=52)
+   Output: value1, mod(value2, 2), '3.141592653589793'::double precision, 4.1
+   SQLite query: SELECT `value1`, `value2` FROM main."s3"
+(3 rows)
+
+-- select mod with non pushdown func and explicit constant (result)
+--Testcase 49:
+SELECT value1, mod(value2, 2), pi(), 4.1 FROM s3;
+ value1 | mod |        pi         | ?column? 
+--------+-----+-------------------+----------
+    0.1 |   0 | 3.141592653589793 |      4.1
+    0.2 |   0 | 3.141592653589793 |      4.1
+    0.3 |   0 | 3.141592653589793 |      4.1
+    1.1 |   0 | 3.141592653589793 |      4.1
+    2.2 |   0 | 3.141592653589793 |      4.1
+    3.3 |   0 | 3.141592653589793 |      4.1
+(6 rows)
+
+-- select mod with order by (explain)
+--Testcase 50:
+EXPLAIN VERBOSE
+SELECT value1, mod((1-value2), 2) FROM s3 ORDER BY mod((1-value2), 2);
+                                               QUERY PLAN                                                
+---------------------------------------------------------------------------------------------------------
+ Foreign Scan on public.s3  (cost=10.00..10.05 rows=10 width=12)
+   Output: value1, mod((1 - value2), 2)
+   SQLite query: SELECT `value1`, `value2` FROM main."s3" ORDER BY mod((1 - `value2`), 2) ASC NULLS LAST
+(3 rows)
+
+-- select mod with order by (result)
+--Testcase 51:
+SELECT value1, mod((1-value2), 2) FROM s3 ORDER BY mod((1-value2), 2);
+ value1 | mod 
+--------+-----
+    0.1 |  -1
+    0.2 |  -1
+    0.3 |  -1
+    1.1 |  -1
+    2.2 |  -1
+    3.3 |  -1
+(6 rows)
+
+-- select mod with order by index (result)
+--Testcase 52:
+SELECT value1, mod((1-value2), 2) FROM s3 ORDER BY 2,1;
+ value1 | mod 
+--------+-----
+    0.1 |  -1
+    0.2 |  -1
+    0.3 |  -1
+    1.1 |  -1
+    2.2 |  -1
+    3.3 |  -1
+(6 rows)
+
+-- select mod with order by index (result)
+--Testcase 53:
+SELECT value1, mod((1-value2), 2) FROM s3 ORDER BY 1,2;
+ value1 | mod 
+--------+-----
+    0.1 |  -1
+    0.2 |  -1
+    0.3 |  -1
+    1.1 |  -1
+    2.2 |  -1
+    3.3 |  -1
+(6 rows)
+
+-- select mod with group by (explain)
+--Testcase 54:
+EXPLAIN VERBOSE
+SELECT value1, mod((1-value2), 2) FROM s3 GROUP BY value1, mod((1-value2), 2);
+                                      QUERY PLAN                                      
+--------------------------------------------------------------------------------------
+ Foreign Scan  (cost=1.00..1.00 rows=1 width=12)
+   Output: value1, (mod((1 - value2), 2))
+   SQLite query: SELECT `value1`, mod((1 - `value2`), 2) FROM main."s3" GROUP BY 1, 2
+(3 rows)
+
+-- select mod with group by (result)
+--Testcase 55:
+SELECT value1, mod((1-value2), 2) FROM s3 GROUP BY value1, mod((1-value2), 2);
+ value1 | mod 
+--------+-----
+    0.1 |  -1
+    0.2 |  -1
+    0.3 |  -1
+    1.1 |  -1
+    2.2 |  -1
+    3.3 |  -1
+(6 rows)
+
+-- select mod with group by index (result)
+--Testcase 56:
+SELECT value1, mod((1-value2), 2) FROM s3 GROUP BY 2,1;
+ value1 | mod 
+--------+-----
+    0.1 |  -1
+    0.2 |  -1
+    0.3 |  -1
+    1.1 |  -1
+    2.2 |  -1
+    3.3 |  -1
+(6 rows)
+
+-- select mod with group by index (result)
+--Testcase 57:
+SELECT value1, mod((1-value2), 2) FROM s3 GROUP BY 1,2;
+ value1 | mod 
+--------+-----
+    0.1 |  -1
+    0.2 |  -1
+    0.3 |  -1
+    1.1 |  -1
+    2.2 |  -1
+    3.3 |  -1
+(6 rows)
+
+-- select mod with group by having (explain)
+--Testcase 58:
+EXPLAIN VERBOSE
+SELECT value1, mod((1-value2), 2) FROM s3 GROUP BY value1, mod((1-value2), 2) HAVING avg(value1) > 0;
+                                                    QUERY PLAN                                                     
+-------------------------------------------------------------------------------------------------------------------
+ Foreign Scan  (cost=1.00..1.00 rows=1 width=12)
+   Output: value1, (mod((1 - value2), 2))
+   SQLite query: SELECT `value1`, mod((1 - `value2`), 2) FROM main."s3" GROUP BY 1, 2 HAVING ((avg(`value1`) > 0))
+(3 rows)
+
+-- select mod with group by having (result)
+--Testcase 59:
+SELECT value1, mod((1-value2), 2) FROM s3 GROUP BY value1, mod((1-value2), 2) HAVING avg(value1) > 0;
+ value1 | mod 
+--------+-----
+    0.1 |  -1
+    0.2 |  -1
+    0.3 |  -1
+    1.1 |  -1
+    2.2 |  -1
+    3.3 |  -1
+(6 rows)
+
+-- select mod with group by index having (result)
+--Testcase 60:
+SELECT value1, mod((1-value2), 2) FROM s3 GROUP BY 1,2 HAVING value1 > 1;
+ value1 | mod 
+--------+-----
+    1.1 |  -1
+    2.2 |  -1
+    3.3 |  -1
+(3 rows)
+
+-- select mod and as
+--Testcase 61:
+SELECT value1, mod(value2, 2) as mod1 FROM s3;
+ value1 | mod1 
+--------+------
+    0.1 |    0
+    0.2 |    0
+    0.3 |    0
+    1.1 |    0
+    2.2 |    0
+    3.3 |    0
+(6 rows)
+
+--Testcase 29:
+DROP FOREIGN TABLE s3;
+--Testcase 30:
+DROP SERVER server1;
+--Testcase 31:
+DROP EXTENSION sqlite_fdw;

@@ -10,6 +10,8 @@ DROP TABLE IF EXISTS INT8_TBL;
 DROP TABLE IF EXISTS test_having;
 DROP TABLE IF EXISTS onek;
 DROP TABLE IF EXISTS tenk1;
+DROP TABLE IF EXISTS btg;
+DROP TABLE IF EXISTS num_typemod_test;
 
 CREATE TABLE FLOAT4_TBL (f1  REAL);
 CREATE TABLE FLOAT4_TMP (f1  REAL, id integer primary key autoincrement);
@@ -156,6 +158,8 @@ CREATE TABLE dates (
 	date_as_number	FLOAT8
 );
 
+CREATE TABLE btg(id int primary key, p int, v text, c float, d float, e int);
+
 .separator "\t"
 .import /tmp/onek.data onek
 .import /tmp/onek.data onek2
@@ -259,6 +263,7 @@ CREATE TABLE num_exp_sqrt (id int4, expected numeric, primary key (id));
 CREATE TABLE num_exp_ln (id int4, expected numeric, primary key (id));
 CREATE TABLE num_exp_log10 (id int4, expected numeric, primary key (id));
 CREATE TABLE num_exp_power_10_ln (id int4, expected numeric, primary key (id));
+CREATE TABLE num_variance (a numeric);
 
 CREATE TABLE num_result (id1 int4, id2 int4, result numeric, primary key (id1, id2));
 CREATE TABLE v (id int4, x numeric, val float8, primary key (id));
@@ -271,6 +276,13 @@ CREATE TABLE num_input_test (n1 numeric);
 
 CREATE TABLE num_tmp (n1 numeric, n2 numeric, id integer primary key autoincrement);
 CREATE TABLE to_number_tbl(a text, id integer primary key autoincrement);
+CREATE TABLE num_typemod_test (
+  millions numeric(3, -6),
+  thousands numeric(3, -3),
+  units numeric(3, 0),
+  thousandths numeric(3, 3),
+  millionths numeric(3, 6)
+);
 
 -- FOR join.sql
 

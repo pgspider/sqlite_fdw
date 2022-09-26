@@ -11,5 +11,5 @@ sqlite3 /tmp/sqlitefdw_test_selectfunc.db < sql/init_data/init_selectfunc.sql
 sed -i 's/REGRESS =.*/REGRESS = extra\/sqlite_fdw_post extra\/float4 extra\/float8 extra\/int4 extra\/int8 extra\/numeric extra\/join extra\/limit extra\/aggregates extra\/prepare extra\/select_having extra\/select extra\/insert extra\/update extra\/timestamp sqlite_fdw type aggregate selectfunc /' Makefile
 
 make clean
-make
-make check | tee make_check.out
+make $1
+make check $1 | tee make_check.out
