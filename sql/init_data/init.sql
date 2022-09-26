@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS numbers;
 DROP TABLE IF EXISTS limittest;
 DROP TABLE IF EXISTS grem1_1;
 DROP TABLE IF EXISTS grem1_2;
+DROP TABLE IF EXISTS case_exp;
 
 CREATE TABLE department(department_id int primary key, department_name text);
 CREATE TABLE employee(emp_id int primary key, emp_name text, emp_dept_id int);
@@ -18,6 +19,7 @@ CREATE TABLE noprimary(a integer, b text);
 CREATE TABLE limittest(id int primary key, x integer, y text);
 create table grem1_1 (a int primary key, b int generated always as (a * 2) stored);
 create table grem1_2 (a int primary key, b int generated always as (a * 2) stored, c int generated always as (a * 3) stored, d int generated always as (a * 4) stored);
+CREATE TABLE case_exp(c1 int primary key, c3 text, c6 varchar(10));
 
 CREATE TABLE "type_STRING" (col text primary key);
 CREATE TABLE "type_BOOLEAN" (col boolean primary key);

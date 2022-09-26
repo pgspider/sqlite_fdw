@@ -2,7 +2,7 @@
  *
  * SQLite Foreign Data Wrapper for PostgreSQL
  *
- * Portions Copyright (c) 2021, TOSHIBA CORPORATION
+ * Portions Copyright (c) 2018, TOSHIBA CORPORATION
  *
  * IDENTIFICATION
  *        sqlite_fdw.h
@@ -50,7 +50,7 @@
 #endif
 
 /* Code version is updated at new release. */
-#define CODE_VERSION   20101
+#define CODE_VERSION   20200
 
 #if (PG_VERSION_NUM < 100000)
 /*
@@ -288,14 +288,19 @@ extern bool sqlite_is_foreign_expr(PlannerInfo *root,
 extern bool sqlite_is_foreign_param(PlannerInfo *root,
 									RelOptInfo *baserel,
 									Expr *expr);
+extern bool sqlite_is_foreign_pathkey(PlannerInfo *root,
+									  RelOptInfo *baserel,
+									  PathKey *pathkey);
 extern bool sqlite_is_foreign_function_tlist(PlannerInfo *root,
 											 RelOptInfo *baserel,
 											 List *tlist);
+extern bool sqlite_is_builtin(Oid objectId);
 
-extern Expr *sqlite_find_em_expr_for_rel(EquivalenceClass *ec, RelOptInfo *rel);
-extern Expr *sqlite_find_em_expr_for_input_target(PlannerInfo *root,
+extern EquivalenceMember *sqlite_find_em_for_rel(PlannerInfo *root,
+									EquivalenceClass *ec,
+									RelOptInfo *rel);
+extern EquivalenceMember *sqlite_find_em_for_rel_target(PlannerInfo *root,
 												  EquivalenceClass *ec,
-												  PathTarget *target,
 												  RelOptInfo *fallbackRel);
 
 /* in sqlite_fdw.c */

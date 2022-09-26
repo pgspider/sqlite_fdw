@@ -2,7 +2,7 @@
  *
  * SQLite Foreign Data Wrapper for PostgreSQL
  *
- * Portions Copyright (c) 2021, TOSHIBA CORPORATION
+ * Portions Copyright (c) 2018, TOSHIBA CORPORATION
  *
  * IDENTIFICATION
  *        deparse.c
@@ -22,6 +22,7 @@
 #include "catalog/pg_collation.h"
 #include "catalog/pg_namespace.h"
 #include "catalog/pg_operator.h"
+#include "catalog/pg_opfamily.h"
 #include "catalog/pg_proc.h"
 #include "catalog/pg_type.h"
 #include "commands/defrem.h"
@@ -100,7 +101,8 @@ typedef struct deparse_expr_cxt
  */
 static bool sqlite_foreign_expr_walker(Node *node,
 									   foreign_glob_cxt *glob_cxt,
-									   foreign_loc_cxt *outer_cxt);
+									   foreign_loc_cxt *outer_cxt,
+									   foreign_loc_cxt *case_arg_cxt);
 
 /*
  * Functions to construct string representation of a node tree.
@@ -118,6 +120,7 @@ static void sqlite_deparse_scalar_array_op_expr(ScalarArrayOpExpr *node,
 static void sqlite_deparse_relabel_type(RelabelType *node, deparse_expr_cxt *context);
 static void sqlite_deparse_bool_expr(BoolExpr *node, deparse_expr_cxt *context);
 static void sqlite_deparse_null_test(NullTest *node, deparse_expr_cxt *context);
+static void sqlite_deparse_case_expr(CaseExpr *node, deparse_expr_cxt *context);
 static void sqlite_deparse_array_expr(ArrayExpr *node, deparse_expr_cxt *context);
 static void sqlite_print_remote_param(int paramindex, Oid paramtype, int32 paramtypmod,
 									  deparse_expr_cxt *context);
@@ -145,6 +148,8 @@ static void sqlite_append_group_by_clause(List *tlist, deparse_expr_cxt *context
 static void sqlite_append_agg_order_by(List *orderList, List *targetList,
 									   deparse_expr_cxt *context);
 static void sqlite_append_order_by_clause(List *pathkeys, bool has_final_sort, deparse_expr_cxt *context);
+static void sqlite_append_order_by_suffix(Oid sortop, Oid sortcoltype, bool nulls_first,
+										  deparse_expr_cxt *context);
 static void sqlite_append_function_name(Oid funcid, deparse_expr_cxt *context);
 const char *sqlite_get_jointype_name(JoinType jointype);
 static Node *sqlite_deparse_sort_group_clause(Index ref, List *tlist, bool force_colno,
@@ -162,7 +167,6 @@ static void sqlite_get_relation_column_alias_ids(Var *node, RelOptInfo *foreignr
 static char *sqlite_quote_identifier(const char *s, char q);
 static bool sqlite_contain_immutable_functions_walker(Node *node, void *context);
 static bool sqlite_is_valid_type(Oid type);
-static bool sqlite_is_builtin(Oid objectId);
 
 /*
  * Append remote name of specified foreign table to buf.
@@ -246,7 +250,7 @@ sqlite_is_foreign_expr(PlannerInfo *root,
 		glob_cxt.relids = baserel->relids;
 	loc_cxt.collation = InvalidOid;
 	loc_cxt.state = FDW_COLLATE_NONE;
-	if (!sqlite_foreign_expr_walker((Node *) expr, &glob_cxt, &loc_cxt))
+	if (!sqlite_foreign_expr_walker((Node *) expr, &glob_cxt, &loc_cxt, NULL))
 		return false;
 
 	/*
@@ -341,6 +345,32 @@ sqlite_is_valid_type(Oid type)
 	return false;
 }
 
+/* 
+ * Returns true if it's safe to push down the sort expression described by
+ * 'pathkey' to the foreign server.
+ */
+bool
+sqlite_is_foreign_pathkey(PlannerInfo *root,
+				   RelOptInfo *baserel,
+				   PathKey *pathkey)
+{
+	EquivalenceClass *pathkey_ec = pathkey->pk_eclass;
+
+	/*
+	 * is_foreign_expr would detect volatile expressions as well, but checking
+	 * ec_has_volatile here saves some cycles.
+	 */
+	if (pathkey_ec->ec_has_volatile)
+		return false;
+
+	/* can't push down the sort if the pathkey's opfamily is not built-in */
+	if (!sqlite_is_builtin(pathkey->pk_opfamily))
+		return false;
+
+	/* can push if a suitable EC member exists */
+	return (sqlite_find_em_for_rel(root, pathkey_ec, baserel) != NULL);
+}
+
 /*
  * Check if expression is safe to execute remotely, and return true if so.
  *
@@ -356,7 +386,8 @@ sqlite_is_valid_type(Oid type)
 static bool
 sqlite_foreign_expr_walker(Node *node,
 						   foreign_glob_cxt *glob_cxt,
-						   foreign_loc_cxt *outer_cxt)
+						   foreign_loc_cxt *outer_cxt,
+						   foreign_loc_cxt *case_arg_cxt)
 {
 	bool		check_type = true;
 	foreign_loc_cxt inner_cxt;
@@ -453,18 +484,25 @@ sqlite_foreign_expr_walker(Node *node,
 			{
 				CaseTestExpr *c = (CaseTestExpr *) node;
 
-				/*
-				 * If the expr has nondefault collation, either it's of a
-				 * non-builtin type, or it reflects folding of a CollateExpr;
-				 * either way, it's unsafe to send to the remote.
-				 */
-				if (c->collation != InvalidOid &&
-					c->collation != DEFAULT_COLLATION_OID)
+				/* Punt if we seem not to be inside a CASE arg WHEN. */
+				if (!case_arg_cxt)
 					return false;
 
-				/* Otherwise, we can consider that it doesn't set collation */
-				collation = InvalidOid;
-				state = FDW_COLLATE_NONE;
+				/*
+				 * Otherwise, any nondefault collation attached to the
+				 * CaseTestExpr node must be derived from foreign Var(s) in
+				 * the CASE arg.
+				 */
+				collation = c->collation;
+				if (collation == InvalidOid)
+					state = FDW_COLLATE_NONE;
+				else if (case_arg_cxt->state == FDW_COLLATE_SAFE &&
+						 collation == case_arg_cxt->collation)
+					state = FDW_COLLATE_SAFE;
+				else if (collation == DEFAULT_COLLATION_OID)
+					state = FDW_COLLATE_NONE;
+				else
+					state = FDW_COLLATE_UNSAFE;
 			}
 			break;
 		case T_Param:
@@ -541,13 +579,14 @@ sqlite_foreign_expr_walker(Node *node,
 					  || strcmp(opername, "replace") == 0
 					  || strcmp(opername, "round") == 0
 					  || strcmp(opername, "rtrim") == 0
-					  || strcmp(opername, "substr") == 0))
+					  || strcmp(opername, "substr") == 0
+					  || strcmp(opername, "mod") == 0))
 				{
 					return false;
 				}
 
 				if (!sqlite_foreign_expr_walker((Node *) func->args,
-												glob_cxt, &inner_cxt))
+												glob_cxt, &inner_cxt, case_arg_cxt))
 					return false;
 
 
@@ -622,7 +661,7 @@ sqlite_foreign_expr_walker(Node *node,
 				 * Recurse to input subexpressions.
 				 */
 				if (!sqlite_foreign_expr_walker((Node *) oe->args,
-												glob_cxt, &inner_cxt))
+												glob_cxt, &inner_cxt, case_arg_cxt))
 					return false;
 
 				/*
@@ -660,7 +699,7 @@ sqlite_foreign_expr_walker(Node *node,
 				 * Recurse to input subexpressions.
 				 */
 				if (!sqlite_foreign_expr_walker((Node *) oe->args,
-												glob_cxt, &inner_cxt))
+												glob_cxt, &inner_cxt, case_arg_cxt))
 					return false;
 
 				/*
@@ -686,7 +725,7 @@ sqlite_foreign_expr_walker(Node *node,
 				 * Recurse to input subexpression.
 				 */
 				if (!sqlite_foreign_expr_walker((Node *) r->arg,
-												glob_cxt, &inner_cxt))
+												glob_cxt, &inner_cxt, case_arg_cxt))
 					return false;
 
 				/*
@@ -711,7 +750,7 @@ sqlite_foreign_expr_walker(Node *node,
 				 * Recurse to input subexpressions.
 				 */
 				if (!sqlite_foreign_expr_walker((Node *) b->args,
-												glob_cxt, &inner_cxt))
+												glob_cxt, &inner_cxt, case_arg_cxt))
 					return false;
 
 				/* Output is always boolean and so noncollatable. */
@@ -727,7 +766,7 @@ sqlite_foreign_expr_walker(Node *node,
 				 * Recurse to input subexpressions.
 				 */
 				if (!sqlite_foreign_expr_walker((Node *) nt->arg,
-												glob_cxt, &inner_cxt))
+												glob_cxt, &inner_cxt, case_arg_cxt))
 					return false;
 
 				/* Output is always boolean and so noncollatable. */
@@ -746,7 +785,7 @@ sqlite_foreign_expr_walker(Node *node,
 				foreach(lc, l)
 				{
 					if (!sqlite_foreign_expr_walker((Node *) lfirst(lc),
-													glob_cxt, &inner_cxt))
+													glob_cxt, &inner_cxt, case_arg_cxt))
 						return false;
 				}
 
@@ -773,38 +812,103 @@ sqlite_foreign_expr_walker(Node *node,
 				foreach(lc, coalesce->args)
 				{
 					if (!sqlite_foreign_expr_walker((Node *) lfirst(lc),
-													glob_cxt, &inner_cxt))
+													glob_cxt, &inner_cxt, case_arg_cxt))
 						return false;
 				}
 			}
 			break;
 		case T_CaseExpr:
 			{
+				CaseExpr   *ce = (CaseExpr *) node;
+				foreign_loc_cxt arg_cxt;
+				foreign_loc_cxt tmp_cxt;
 				ListCell   *lc;
 
-				/* Recurse to condition subexpressions. */
-				foreach(lc, ((CaseExpr *) node)->args)
+				/*
+				 * Recurse to CASE's arg expression, if any.  Its collation
+				 * has to be saved aside for use while examining CaseTestExprs
+				 * within the WHEN expressions.
+				 */
+				arg_cxt.collation = InvalidOid;
+				arg_cxt.state = FDW_COLLATE_NONE;
+				if (ce->arg)
 				{
-					if (!sqlite_foreign_expr_walker((Node *) lfirst(lc),
-													glob_cxt, &inner_cxt))
+					if (!sqlite_foreign_expr_walker((Node *) ce->arg,
+											 glob_cxt, &arg_cxt, case_arg_cxt))
 						return false;
 				}
-			}
-			break;
-		case T_CaseWhen:
-			{
-				CaseWhen   *whenExpr = (CaseWhen *) node;
 
-				/* Recurse to condition expression. */
-				if (!sqlite_foreign_expr_walker((Node *) whenExpr->expr,
-												glob_cxt, &inner_cxt))
+				/* Examine the CaseWhen subexpressions. */
+				foreach(lc, ce->args)
+				{
+					CaseWhen   *cw = lfirst_node(CaseWhen, lc);
+
+					if (ce->arg)
+					{
+						/*
+						 * In a CASE-with-arg, the parser should have produced
+						 * WHEN clauses of the form "CaseTestExpr = RHS",
+						 * possibly with an implicit coercion inserted above
+						 * the CaseTestExpr.  However in an expression that's
+						 * been through the optimizer, the WHEN clause could
+						 * be almost anything (since the equality operator
+						 * could have been expanded into an inline function).
+						 * In such cases forbid pushdown, because
+						 * deparseCaseExpr can't handle it.
+						 */
+						Node	   *whenExpr = (Node *) cw->expr;
+						List	   *opArgs;
+
+						if (!IsA(whenExpr, OpExpr))
+							return false;
+
+						opArgs = ((OpExpr *) whenExpr)->args;
+						if (list_length(opArgs) != 2 ||
+							!IsA(strip_implicit_coercions(linitial(opArgs)),
+								 CaseTestExpr))
+							return false;
+					}
+
+					/*
+					 * Recurse to WHEN expression, passing down the arg info.
+					 * Its collation doesn't affect the result (really, it
+					 * should be boolean and thus not have a collation).
+					 */
+					tmp_cxt.collation = InvalidOid;
+					tmp_cxt.state = FDW_COLLATE_NONE;
+					if (!sqlite_foreign_expr_walker((Node *) cw->expr,
+											 glob_cxt, &tmp_cxt, &arg_cxt))
+						return false;
+
+					/* Recurse to THEN expression. */
+					if (!sqlite_foreign_expr_walker((Node *) cw->result,
+											 glob_cxt, &inner_cxt, case_arg_cxt))
+						return false;
+				}
+
+				/* Recurse to ELSE expression. */
+				if (!sqlite_foreign_expr_walker((Node *) ce->defresult,
+										 glob_cxt, &inner_cxt, case_arg_cxt))
 					return false;
-				/* Recurse to result expression. */
-				if (!sqlite_foreign_expr_walker((Node *) whenExpr->result,
-												glob_cxt, &inner_cxt))
-					return false;
-				/* Don't apply exprType() to the case when expr. */
-				check_type = false;
+
+				/*
+				 * Detect whether node is introducing a collation not derived
+				 * from a foreign Var.  (If so, we just mark it unsafe for now
+				 * rather than immediately returning false, since the parent
+				 * node might not care.)  This is the same as for function
+				 * nodes, except that the input collation is derived from only
+				 * the THEN and ELSE subexpressions.
+				 */
+				collation = ce->casecollid;
+				if (collation == InvalidOid)
+					state = FDW_COLLATE_NONE;
+				else if (inner_cxt.state == FDW_COLLATE_SAFE &&
+						 collation == inner_cxt.collation)
+					state = FDW_COLLATE_SAFE;
+				else if (collation == DEFAULT_COLLATION_OID)
+					state = FDW_COLLATE_NONE;
+				else
+					state = FDW_COLLATE_UNSAFE;
 			}
 			break;
 		case T_Aggref:
@@ -864,7 +968,7 @@ sqlite_foreign_expr_walker(Node *node,
 						n = (Node *) tle->expr;
 					}
 
-					if (!sqlite_foreign_expr_walker(n, glob_cxt, &inner_cxt))
+					if (!sqlite_foreign_expr_walker(n, glob_cxt, &inner_cxt, case_arg_cxt))
 						return false;
 				}
 
@@ -909,7 +1013,7 @@ sqlite_foreign_expr_walker(Node *node,
 				 * Recurse to input subexpressions.
 				 */
 				if (!sqlite_foreign_expr_walker((Node *) a->elements,
-												glob_cxt, &inner_cxt))
+												glob_cxt, &inner_cxt, case_arg_cxt))
 					return false;
 
 				/*
@@ -2990,7 +3094,7 @@ sqlite_deparse_array_expr(ArrayExpr *node, deparse_expr_cxt *context)
 }
 
 /*
- * Deparse given CASE expression
+ * Deparse CASE expression
  */
 static void
 sqlite_deparse_case_expr(CaseExpr *node, deparse_expr_cxt *context)
@@ -3000,11 +3104,11 @@ sqlite_deparse_case_expr(CaseExpr *node, deparse_expr_cxt *context)
 
 	appendStringInfoString(buf, "CASE ");
 
-	/* If CASE arg WHEN then appen arg before continuing */
+	/* If this is a CASE arg WHEN then emit the arg expression */
 	if (node->arg != NULL)
 		sqlite_deparse_expr(node->arg, context);
 
-	/* Add individual cases */
+	/* Add each condition/result of the CASE clause */
 	foreach(lc, node->args)
 	{
 		CaseWhen   *whenclause = (CaseWhen *) lfirst(lc);
@@ -3014,14 +3118,18 @@ sqlite_deparse_case_expr(CaseExpr *node, deparse_expr_cxt *context)
 		if (node->arg == NULL)	/* CASE WHEN */
 			sqlite_deparse_expr(whenclause->expr, context);
 		else					/* CASE arg WHEN */
-			sqlite_deparse_expr(lsecond(((OpExpr *) whenclause->expr)->args), context);
+		{
+			/* Ignore the CaseTestExpr and equality operator. */
+			sqlite_deparse_expr(lsecond(castNode(OpExpr, whenclause->expr)->args),
+								context);
+		}
 
 		/* THEN */
 		appendStringInfoString(buf, " THEN ");
 		sqlite_deparse_expr(whenclause->result, context);
 	}
 
-	/* add ELSE if needed */
+	/* add ELSE if present */
 	if (node->defresult != NULL)
 	{
 		appendStringInfoString(buf, " ELSE ");
@@ -3113,10 +3221,14 @@ sqlite_print_remote_placeholder(Oid paramtype, int32 paramtypmod,
  * be known to the remote server, if it's of an older version.  But keeping
  * track of that would be a huge exercise.
  */
-static bool
+bool
 sqlite_is_builtin(Oid oid)
 {
+#if PG_VERSION_NUM >= 120000
+	return (oid < FirstGenbkiObjectId);
+#else 
 	return (oid < FirstBootstrapObjectId);
+#endif
 }
 
 /*
@@ -3265,58 +3377,34 @@ sqlite_append_agg_order_by(List *orderList, List *targetList, deparse_expr_cxt *
 	{
 		SortGroupClause *srt = (SortGroupClause *) lfirst(lc);
 		Node	   *sortexpr;
-		Oid			sortcoltype;
-		TypeCacheEntry *typentry;
 
 		if (!first)
 			appendStringInfoString(buf, ", ");
 		first = false;
 
+		/* Deparse the sort expression proper. */
 		sortexpr = sqlite_deparse_sort_group_clause(srt->tleSortGroupRef, targetList, false,
 													context);
-		sortcoltype = exprType(sortexpr);
-		/* See whether operator is default < or > for datatype */
-		typentry = lookup_type_cache(sortcoltype,
-									 TYPECACHE_LT_OPR | TYPECACHE_GT_OPR);
-		if (srt->sortop == typentry->lt_opr)
-			appendStringInfoString(buf, " ASC");
-		else if (srt->sortop == typentry->gt_opr)
-			appendStringInfoString(buf, " DESC");
-		else
-		{
-			HeapTuple	opertup;
-			Form_pg_operator operform;
-
-			appendStringInfoString(buf, " USING ");
-
-			/* Append operator name. */
-			opertup = SearchSysCache1(OPEROID, ObjectIdGetDatum(srt->sortop));
-			if (!HeapTupleIsValid(opertup))
-				elog(ERROR, "cache lookup failed for operator %u", srt->sortop);
-			operform = (Form_pg_operator) GETSTRUCT(opertup);
-			sqlite_deparse_operator_name(buf, operform);
-			ReleaseSysCache(opertup);
-		}
-
-		if (srt->nulls_first)
-			appendStringInfoString(buf, " NULLS FIRST");
-		else
-			appendStringInfoString(buf, " NULLS LAST");
+		/* Add decoration as needed. */
+		sqlite_append_order_by_suffix(srt->sortop, exprType(sortexpr), srt->nulls_first, context);
 	}
 }
 
 /*
- * Deparse ORDER BY clause according to the given pathkeys for given base
- * relation. From given pathkeys expressions belonging entirely to the given
- * base relation are obtained and deparsed.
+ * Deparse ORDER BY clause defined by the given pathkeys.
+ *
+ * The clause should use Vars from context->scanrel if !has_final_sort,
+ * or from context->foreignrel's targetlist if has_final_sort.
+ *
+ * We find a suitable pathkey expression (some earlier step
+ * should have verified that there is one) and deparse it.
  */
 static void
 sqlite_append_order_by_clause(List *pathkeys, bool has_final_sort, deparse_expr_cxt *context)
 {
 	ListCell   *lcell;
 	int			nestlevel;
-	char	   *delim = " ";
-	RelOptInfo *baserel = context->scanrel;
+	const char	   *delim = " ";
 	StringInfo	buf = context->buf;
 
 	/* Make sure any constants in the exprs are printed portably */
@@ -3329,28 +3417,52 @@ sqlite_append_order_by_clause(List *pathkeys, bool has_final_sort, deparse_expr_
 		Expr	   *em_expr;
 		int			sqliteVersion = sqlite3_libversion_number();
 
+		EquivalenceMember *em;
+		Oid			oprid;
 		if (has_final_sort)
 		{
 			/*
 			 * By construction, context->foreignrel is the input relation to
 			 * the final sort.
 			 */
-			em_expr = sqlite_find_em_expr_for_input_target(context->root,
+			em = sqlite_find_em_for_rel_target(context->root,
 														   pathkey->pk_eclass,
-														   context->foreignrel->reltarget,
-														   baserel);
+														   context->foreignrel);
 		}
 		else
-			em_expr = sqlite_find_em_expr_for_rel(pathkey->pk_eclass, baserel);
+			em = sqlite_find_em_for_rel(context->root, pathkey->pk_eclass, context->scanrel);
+		/*
+		 * We don't expect any error here; it would mean that shippability
+		 * wasn't verified earlier.  For the same reason, we don't recheck
+		 * shippability of the sort operator.
+		 */
+		if (em == NULL)
+			elog(ERROR, "could not find pathkey item to sort");
 
-		Assert(em_expr != NULL);
+		em_expr = em->em_expr;
+
+		/*
+		 * Lookup the operator corresponding to the strategy in the opclass.
+		 * The datatype used by the opfamily is not necessarily the same as
+		 * the expression type (for array types for example).
+		 */
+		oprid = get_opfamily_member(pathkey->pk_opfamily,
+									em->em_datatype,
+									em->em_datatype,
+									pathkey->pk_strategy);
+		if (!OidIsValid(oprid))
+			elog(ERROR, "missing operator %d(%u,%u) in opfamily %u",
+				 pathkey->pk_strategy, em->em_datatype, em->em_datatype,
+				 pathkey->pk_opfamily);
 
 		appendStringInfoString(buf, delim);
 		sqlite_deparse_expr(em_expr, context);
-		if (pathkey->pk_strategy == BTLessStrategyNumber)
-			appendStringInfoString(buf, " ASC");
-		else
-			appendStringInfoString(buf, " DESC");
+		/*
+		 * Here we need to use the expression's actual type to discover
+		 * whether the desired operator will be the default or not.
+		 */
+		sqlite_append_order_by_suffix(oprid, exprType((Node *) em_expr),
+							pathkey->pk_nulls_first, context);
 
 		/*
 		 * In SQLITE3 Release v3.30.0 (2019-10-04) NULLS FIRST/LAST is
@@ -3358,14 +3470,7 @@ sqlite_append_order_by_clause(List *pathkeys, bool has_final_sort, deparse_expr_
 		 * https://www.sqlite.org/changes.html
 		 * https://www.sqlite.org/lang_select.html#orderby
 		 */
-		if (sqliteVersion >= 3030000)
-		{
-			if (pathkey->pk_nulls_first)
-				appendStringInfoString(buf, " NULLS FIRST");
-			else
-				appendStringInfoString(buf, " NULLS LAST");
-		}
-		else
+		if (sqliteVersion < 3030000)
 		{
 			/*
 			 * If we need a different behaviour than SQLite default...we show
@@ -3377,10 +3482,50 @@ sqlite_append_order_by_clause(List *pathkeys, bool has_final_sort, deparse_expr_
 			else if (pathkey->pk_nulls_first && pathkey->pk_strategy != BTLessStrategyNumber)
 				elog(WARNING, "Current Sqlite Version (%d) does not support NULLS FIRST for ORDER BY DESC, degraded emitted query to ORDER BY DESC NULLS LAST (default sqlite behaviour).", sqliteVersion);
 		}
-
 		delim = ", ";
 	}
 	sqlite_reset_transmission_modes(nestlevel);
+}
+
+/*
+ * Append the ASC, DESC, USING <OPERATOR> and NULLS FIRST / NULLS LAST parts
+ * of an ORDER BY clause.
+ */
+static void sqlite_append_order_by_suffix(Oid sortop, Oid sortcoltype, 
+										  bool nulls_first,
+										  deparse_expr_cxt *context)
+{
+	StringInfo	buf = context->buf;
+	TypeCacheEntry *typentry;
+
+	/* See whether operator is default < or > for sort expr's datatype. */
+	typentry = lookup_type_cache(sortcoltype,
+								 TYPECACHE_LT_OPR | TYPECACHE_GT_OPR);
+
+	if (sortop == typentry->lt_opr)
+		appendStringInfoString(buf, " ASC");
+	else if (sortop == typentry->gt_opr)
+		appendStringInfoString(buf, " DESC");
+	else
+	{
+		HeapTuple	opertup;
+		Form_pg_operator operform;
+
+		appendStringInfoString(buf, " USING ");
+
+		/* Append operator name. */
+		opertup = SearchSysCache1(OPEROID, ObjectIdGetDatum(sortop));
+		if (!HeapTupleIsValid(opertup))
+			elog(ERROR, "cache lookup failed for operator %u", sortop);
+		operform = (Form_pg_operator) GETSTRUCT(opertup);
+		sqlite_deparse_operator_name(buf, operform);
+		ReleaseSysCache(opertup);
+	}
+
+	if (nulls_first)
+		appendStringInfoString(buf, " NULLS FIRST");
+	else
+		appendStringInfoString(buf, " NULLS LAST");
 }
 
 /*
@@ -3698,7 +3843,7 @@ sqlite_is_foreign_function_tlist(PlannerInfo *root,
 		loc_cxt.collation = InvalidOid;
 		loc_cxt.state = FDW_COLLATE_NONE;
 
-		if (!sqlite_foreign_expr_walker((Node *) tle->expr, &glob_cxt, &loc_cxt))
+		if (!sqlite_foreign_expr_walker((Node *) tle->expr, &glob_cxt, &loc_cxt, NULL))
 			return false;
 
 		/*

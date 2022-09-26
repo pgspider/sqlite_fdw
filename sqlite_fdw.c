@@ -2,7 +2,7 @@
  *
  * SQLite Foreign Data Wrapper for PostgreSQL
  *
- * Portions Copyright (c) 2021, TOSHIBA CORPORATION
+ * Portions Copyright (c) 2018, TOSHIBA CORPORATION
  *
  * IDENTIFICATION
  *        sqlite_fdw.c
@@ -75,8 +75,10 @@ PG_MODULE_MAGIC;
  */
 #define DEFAULT_ROW_ESTIMATE 1000000
 #define DEFAULTE_NUM_ROWS    1000
-#define IS_KEY_COLUMN(A)	((strcmp(A->defname, "key") == 0) && \
-							 (strcmp(((Value *)(A->arg))->val.str, "true") == 0))
+#define IS_KEY_COLUMN(A)		((strcmp(A->defname, "key") == 0) && \
+								 (strcmp(strVal(A->arg), "true") == 0))
+
+
 /* Default CPU cost to start up a foreign query. */
 #define DEFAULT_FDW_STARTUP_COST	100.0
 
@@ -144,7 +146,7 @@ enum FdwModifyPrivateIndex
 	FdwModifyPrivateUpdateSql,
 	/* Integer list of target attribute numbers for INSERT/UPDATE */
 	FdwModifyPrivateTargetAttnums,
-	/* Length till the end of VALUES clause (as an integer Value node) */
+	/* Length till the end of VALUES clause (as an Integer node) */
 	FdwModifyPrivateLen
 };
 
@@ -161,11 +163,11 @@ enum FdwDirectModifyPrivateIndex
 {
 	/* SQL statement to execute remotely (as a String node) */
 	FdwDirectModifyPrivateUpdateSql,
-	/* has-returning flag (as an integer Value node) */
+	/* has-returning flag (as a Boolean node) */
 	FdwDirectModifyPrivateHasReturning,
 	/* Integer list of attribute numbers retrieved by RETURNING */
 	FdwDirectModifyPrivateRetrievedAttrs,
-	/* set-processed flag (as an integer Value node) */
+	/* set-processed flag (as a Boolean node) */
 	FdwDirectModifyPrivateSetProcessed
 };
 
@@ -700,22 +702,14 @@ sqlite_get_useful_pathkeys_for_relation(PlannerInfo *root, RelOptInfo *rel)
 		foreach(lc, root->query_pathkeys)
 		{
 			PathKey    *pathkey = (PathKey *) lfirst(lc);
-			EquivalenceClass *pathkey_ec = pathkey->pk_eclass;
-			Expr	   *em_expr;
-
 			/*
 			 * The planner and executor don't have any clever strategy for
 			 * taking data sorted by a prefix of the query's pathkeys and
 			 * getting it to be sorted by all of those pathkeys. We'll just
 			 * end up resorting the entire data set.  So, unless we can push
 			 * down all of the query pathkeys, forget it.
-			 *
-			 * is_foreign_expr would detect volatile expressions as well, but
-			 * checking ec_has_volatile here saves some cycles.
 			 */
-			if (pathkey_ec->ec_has_volatile ||
-				!(em_expr = sqlite_find_em_expr_for_rel(pathkey_ec, rel)) ||
-				!sqlite_is_foreign_expr(root, rel, em_expr))
+			if (!sqlite_is_foreign_pathkey(root, rel, pathkey))
 			{
 				query_pathkeys_ok = false;
 				break;
@@ -874,7 +868,11 @@ sqliteGetForeignPaths(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntableid
 	 * is not calling GetForeignUpperPaths
 	 */
 	if (limit_needed(root->parse) && !root->parse->limitOffset && !sqlite_all_baserels_are_foreign(root))
+#if PG_VERSION_NUM >= 150000
+		fdw_private = list_make2(makeBoolean(false), makeBoolean(true));
+#else
 		fdw_private = list_make2(makeInteger(false), makeInteger(true));
+#endif
 
 	/* Create a ForeignPath node and add it as only possible path */
 	add_path(baserel, (Path *)
@@ -1112,8 +1110,14 @@ sqliteGetForeignPlan(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntableid,
 	 */
 	if (best_path->fdw_private)
 	{
+#if PG_VERSION_NUM >= 150000
+        has_final_sort = boolVal(list_nth(best_path->fdw_private, FdwPathPrivateHasFinalSort));
+        has_limit = boolVal(list_nth(best_path->fdw_private, FdwPathPrivateHasLimit));
+		
+#else
 		has_final_sort = intVal(list_nth(best_path->fdw_private, FdwPathPrivateHasFinalSort));
 		has_limit = intVal(list_nth(best_path->fdw_private, FdwPathPrivateHasLimit));
+#endif
 	}
 
 	/*
@@ -2071,8 +2075,8 @@ sqliteExecForeignBatchInsert(EState *estate,
  *		Determine the maximum number of tuples that can be inserted in bulk
  *
  * Returns the batch size specified for server or table. When batching is not
- * allowed (e.g. for tables with AFTER ROW triggers or with RETURNING clause),
- * returns 1.
+ * allowed (e.g. for tables with BEFORE/AFTER ROW triggers or with RETURNING
+ * clause), returns 1.
  */
 static int
 sqliteGetForeignModifyBatchSize(ResultRelInfo *resultRelInfo)
@@ -2104,6 +2108,24 @@ sqliteGetForeignModifyBatchSize(ResultRelInfo *resultRelInfo)
 	}
 	else
 		batch_size = sqlite_get_batch_size_option(resultRelInfo->ri_RelationDesc);
+
+	/*
+	 * Disable batching when there are any BEFORE/AFTER ROW
+	 * INSERT triggers on the foreign table.
+	 *
+	 * When there are any BEFORE ROW INSERT triggers on the table, we can't
+	 * support it, because such triggers might query the table we're inserting
+	 * into and act differently if the tuples that have already been processed
+	 * and prepared for insertion are not there.
+	 */
+	if (resultRelInfo->ri_TrigDesc &&
+#if PG_VERSION_NUM >= 150000
+		 (resultRelInfo->ri_TrigDesc->trig_insert_before_row ||
+		  resultRelInfo->ri_TrigDesc->trig_insert_after_row))
+#else
+		 resultRelInfo->ri_TrigDesc->trig_insert_after_row)
+#endif
+		return 1;
 
 	/*
 	 * The batch size is used specified for server/table. Make sure we don't
@@ -2410,9 +2432,15 @@ sqlitePlanDirectModify(PlannerInfo *root,
 	 * Items in the list must match enum FdwDirectModifyPrivateIndex, above.
 	 */
 	fscan->fdw_private = list_make4(makeString(sql.data),
+#if PG_VERSION_NUM >= 150000
+									makeBoolean((retrieved_attrs != NIL)),
+									retrieved_attrs,
+									makeBoolean(plan->canSetTag));
+#else
 									makeInteger(0),
 									retrieved_attrs,
 									makeInteger(plan->canSetTag));
+#endif
 
 	/*
 	 * Update the foreign-join-related fields.
@@ -2501,12 +2529,19 @@ sqliteBeginDirectModify(ForeignScanState *node, int eflags)
 	/* Get private info created by planner functions. */
 	dmstate->query = strVal(list_nth(fsplan->fdw_private,
 									 FdwDirectModifyPrivateUpdateSql));
+#if (PG_VERSION_NUM >= 150000)
+	dmstate->has_returning = boolVal(list_nth(fsplan->fdw_private,
+											 FdwDirectModifyPrivateHasReturning));
+	dmstate->set_processed = boolVal(list_nth(fsplan->fdw_private,
+											 FdwDirectModifyPrivateSetProcessed));
+#else
 	dmstate->has_returning = intVal(list_nth(fsplan->fdw_private,
 											 FdwDirectModifyPrivateHasReturning));
-	dmstate->retrieved_attrs = (List *) list_nth(fsplan->fdw_private,
-												 FdwDirectModifyPrivateRetrievedAttrs);
 	dmstate->set_processed = intVal(list_nth(fsplan->fdw_private,
 											 FdwDirectModifyPrivateSetProcessed));
+#endif
+	dmstate->retrieved_attrs = (List *) list_nth(fsplan->fdw_private,
+												 FdwDirectModifyPrivateRetrievedAttrs);
 
 	/* Create context for per-tuple temp workspace. */
 	dmstate->temp_cxt = AllocSetContextCreate(estate->es_query_cxt,
@@ -3618,13 +3653,19 @@ static bool
 sqlite_foreign_grouping_ok(PlannerInfo *root, RelOptInfo *grouped_rel)
 {
 	Query	   *query = root->parse;
-	PathTarget *grouping_target = root->upper_targets[UPPERREL_GROUP_AGG];
+	PathTarget *grouping_target;
 	SqliteFdwRelationInfo *fpinfo = (SqliteFdwRelationInfo *) grouped_rel->fdw_private;
 	SqliteFdwRelationInfo *ofpinfo;
 	List	   *aggvars;
 	ListCell   *lc;
 	int			i;
 	List	   *tlist = NIL;
+
+#if PG_VERSION_NUM < 110000
+	grouping_target = root->upper_targets[UPPERREL_GROUP_AGG];
+#else
+	grouping_target = grouped_rel->reltarget;
+#endif
 
 	/* Grouping Sets are not pushable */
 	if (query->groupingSets)
@@ -4093,9 +4134,6 @@ sqlite_add_foreign_ordered_paths(PlannerInfo *root, RelOptInfo *input_rel,
 	{
 		PathKey    *pathkey = (PathKey *) lfirst(lc);
 		EquivalenceClass *pathkey_ec = pathkey->pk_eclass;
-		Expr	   *sort_expr;
-		RelOptInfo *fallback_rel = (input_rel->reloptkind == RELOPT_UPPER_REL) ?
-		ifpinfo->outerrel : input_rel;
 
 		/*
 		 * is_foreign_expr would detect volatile expressions as well, but
@@ -4104,14 +4142,19 @@ sqlite_add_foreign_ordered_paths(PlannerInfo *root, RelOptInfo *input_rel,
 		if (pathkey_ec->ec_has_volatile)
 			return;
 
-		/* Get the sort expression for the pathkey_ec */
-		sort_expr = sqlite_find_em_expr_for_input_target(root,
-														 pathkey_ec,
-														 input_rel->reltarget,
-														 fallback_rel);
+		/*
+		 * Can't push down the sort if pathkey's opfamily is not built-in.
+		 */
+		if (!sqlite_is_builtin(pathkey->pk_opfamily))
+			return;
 
-		/* If it's unsafe to remote, we cannot push down the final sort */
-		if (!sqlite_is_foreign_expr(root, input_rel, sort_expr))
+		/*
+		 * The EC must contain a shippable EM that is computed in input_rel's
+		 * reltarget, else we can't push down the sort.
+		 */
+		if (sqlite_find_em_for_rel_target(root,
+								   pathkey_ec,
+								   input_rel) == NULL)
 			return;
 	}
 
@@ -4130,7 +4173,11 @@ sqlite_add_foreign_ordered_paths(PlannerInfo *root, RelOptInfo *input_rel,
 	 * Build the fdw_private list that will be used by sqliteGetForeignPlan.
 	 * Items in the list must match order in enum FdwPathPrivateIndex.
 	 */
+#if (PG_VERSION_NUM >= 150000)
+	fdw_private = list_make2(makeBoolean(true), makeBoolean(false));
+#else		
 	fdw_private = list_make2(makeInteger(true), makeInteger(false));
+#endif
 
 #if (PG_VERSION_NUM >= 120000)
 	/* Create foreign ordering path */
@@ -4322,7 +4369,10 @@ sqlite_add_foreign_final_paths(PlannerInfo *root, RelOptInfo *input_rel,
 	 * Build the fdw_private list that will be used by sqliteGetForeignPlan.
 	 * Items in the list must match order in enum FdwPathPrivateIndex.
 	 */
-#if (PG_VERSION_NUM >= 120000)
+#if (PG_VERSION_NUM >= 150000)
+	fdw_private = list_make2(makeBoolean(has_final_sort),
+							 makeBoolean(extra->limit_needed));
+#elif (PG_VERSION_NUM >= 120000)
 	fdw_private = list_make2(makeInteger(has_final_sort),
 							 makeInteger(extra->limit_needed));
 #else
@@ -5308,47 +5358,57 @@ sqlite_execute_dml_stmt(ForeignScanState *node)
 }
 
 /*
- * Find an equivalence class member expression, all of whose Vars, come from
- * the indicated relation.
+ * Given an EquivalenceClass and a foreign relation, find an EC member
+ * that can be used to sort the relation remotely according to a pathkey
+ * using this EC.
+ *
+ * If there is more than one suitable candidate, return an arbitrary
+ * one of them.  If there is none, return NULL.
+ *
+ * This checks that the EC member expression uses only Vars from the given
+ * rel and is shippable.  Caller must separately verify that the pathkey's
+ * ordering operator is shippable.
  */
-Expr *
-sqlite_find_em_expr_for_rel(EquivalenceClass *ec, RelOptInfo *rel)
+EquivalenceMember *
+sqlite_find_em_for_rel(PlannerInfo *root, EquivalenceClass *ec, RelOptInfo *rel)
 {
-	ListCell   *lc_em;
+	ListCell   *lc;
 
-	foreach(lc_em, ec->ec_members)
+	foreach(lc, ec->ec_members)
 	{
-		EquivalenceMember *em = lfirst(lc_em);
+		EquivalenceMember *em = (EquivalenceMember *) lfirst(lc);
 
+		/*
+		 * Note we require !bms_is_empty, else we'd accept constant
+		 * expressions which are not suitable for the purpose.
+		 */
 		if (bms_is_subset(em->em_relids, rel->relids) &&
-			!bms_is_empty(em->em_relids))
-		{
-			/*
-			 * If there is more than one equivalence member whose Vars are
-			 * taken entirely from this relation, we'll be content to choose
-			 * any one of those.
-			 */
-			return em->em_expr;
-		}
+			!bms_is_empty(em->em_relids) &&
+			sqlite_is_foreign_expr(root, rel, em->em_expr))
+			return em;
 	}
 
-	/* We didn't find any suitable equivalence class expression */
 	return NULL;
 }
 
 /*
- * Find an equivalence class member expression to be computed as a sort column
- * in the given target.
+ * Find an EquivalenceClass member that is to be computed as a sort column
+ * in the given rel's reltarget, and is shippable.
+ *
+ * If there is more than one suitable candidate, return an arbitrary
+ * one of them.  If there is none, return NULL.
+ *
+ * This checks that the EC member expression uses only Vars from the given
+ * rel and is shippable.  Caller must separately verify that the pathkey's
+ * ordering operator is shippable.
  */
-Expr *
-sqlite_find_em_expr_for_input_target(PlannerInfo *root,
-									 EquivalenceClass *ec,
-									 PathTarget *target,
-									 RelOptInfo *fallbackRel)
+EquivalenceMember *
+sqlite_find_em_for_rel_target(PlannerInfo *root, EquivalenceClass *ec,
+					   RelOptInfo *rel)
 {
+	PathTarget *target = rel->reltarget;
 	ListCell   *lc1;
 	int			i;
-	Expr	   *fallback_expr;
 
 	i = 0;
 	foreach(lc1, target->exprs)
@@ -5389,25 +5449,18 @@ sqlite_find_em_expr_for_input_target(PlannerInfo *root,
 			while (em_expr && IsA(em_expr, RelabelType))
 				em_expr = ((RelabelType *) em_expr)->arg;
 
-			if (equal(em_expr, expr))
-				return em->em_expr;
+			if (!equal(em_expr, expr))
+				continue;
+
+			/* Check that expression (including relabels!) is shippable */
+			if (sqlite_is_foreign_expr(root, rel, em->em_expr))
+				return em;
 		}
 
 		i++;
 	}
 
-	/*
-	 * We add this method as fallback in versions prior to PG11/12 because
-	 * target->sortgrouprefs its not filled and this function always fails
-	 * because cannot find sort expression.
-	 */
-	fallback_expr = sqlite_find_em_expr_for_rel(ec, fallbackRel);
-
-	if (fallback_expr)
-		return fallback_expr;
-
-	elog(ERROR, "could not find pathkey item to sort");
-	return NULL;				/* keep compiler quiet */
+	return NULL;
 }
 
 #if PG_VERSION_NUM >= 140000
