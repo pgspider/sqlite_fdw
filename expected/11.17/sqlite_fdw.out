@@ -1473,14 +1473,14 @@ SELECT * FROM noprimary;
 SELECT * FROM public.sqlite_fdw_version();
  sqlite_fdw_version 
 --------------------
-              20200
+              20300
 (1 row)
 
 --Testcase 155:
 SELECT sqlite_fdw_version();
  sqlite_fdw_version 
 --------------------
-              20200
+              20300
 (1 row)
 
 -- issue #44 github

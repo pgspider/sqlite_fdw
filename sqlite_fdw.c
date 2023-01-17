@@ -740,6 +740,57 @@ sqlite_add_paths_with_pathkeys_for_rel(PlannerInfo *root, RelOptInfo *rel, List 
 
 	useful_pathkeys_list = sqlite_get_useful_pathkeys_for_relation(root, rel);
 
+#if PG_VERSION_NUM >= 150000
+	/*
+	 * Before creating sorted paths, arrange for the passed-in EPQ path, if
+	 * any, to return columns needed by the parent ForeignScan node so that
+	 * they will propagate up through Sort nodes injected below, if necessary.
+	 */
+	if (epq_path != NULL && useful_pathkeys_list != NIL)
+	{
+		SqliteFdwRelationInfo *fpinfo = (SqliteFdwRelationInfo *) rel->fdw_private;
+		PathTarget *target = copy_pathtarget(epq_path->pathtarget);
+
+		/* Include columns required for evaluating PHVs in the tlist. */
+		add_new_columns_to_pathtarget(target,
+									  pull_var_clause((Node *) target->exprs,
+													  PVC_RECURSE_PLACEHOLDERS));
+
+		/* Include columns required for evaluating the local conditions. */
+		foreach(lc, fpinfo->local_conds)
+		{
+			RestrictInfo *rinfo = lfirst_node(RestrictInfo, lc);
+
+			add_new_columns_to_pathtarget(target,
+										  pull_var_clause((Node *) rinfo->clause,
+														  PVC_RECURSE_PLACEHOLDERS));
+		}
+
+		/*
+		 * If we have added any new columns, adjust the tlist of the EPQ path.
+		 *
+		 * Note: the plan created using this path will only be used to execute
+		 * EPQ checks, where accuracy of the plan cost and width estimates
+		 * would not be important, so we do not do set_pathtarget_cost_width()
+		 * for the new pathtarget here.  See also postgresGetForeignPlan().
+		 */
+		if (list_length(target->exprs) > list_length(epq_path->pathtarget->exprs))
+		{
+			/* The EPQ path is a join path, so it is projection-capable. */
+			Assert(is_projection_capable_path(epq_path));
+
+			/*
+			 * Use create_projection_path() here, so as to avoid modifying it
+			 * in place.
+			 */
+			epq_path = (Path *) create_projection_path(root,
+													   rel,
+													   epq_path,
+													   target);
+		}
+	}
+#endif
+
 	/* Create one path for each set of pathkeys we found above. */
 	foreach(lc, useful_pathkeys_list)
 	{
@@ -2111,20 +2162,18 @@ sqliteGetForeignModifyBatchSize(ResultRelInfo *resultRelInfo)
 
 	/*
 	 * Disable batching when there are any BEFORE/AFTER ROW
-	 * INSERT triggers on the foreign table.
+	 * INSERT triggers on the foreign table, or there are any
+	 * WITH CHECK OPTION constraints from parent views.
 	 *
 	 * When there are any BEFORE ROW INSERT triggers on the table, we can't
 	 * support it, because such triggers might query the table we're inserting
 	 * into and act differently if the tuples that have already been processed
 	 * and prepared for insertion are not there.
 	 */
-	if (resultRelInfo->ri_TrigDesc &&
-#if PG_VERSION_NUM >= 150000
+	if (resultRelInfo->ri_WithCheckOptions != NIL ||
+		(resultRelInfo->ri_TrigDesc &&
 		 (resultRelInfo->ri_TrigDesc->trig_insert_before_row ||
-		  resultRelInfo->ri_TrigDesc->trig_insert_after_row))
-#else
-		 resultRelInfo->ri_TrigDesc->trig_insert_after_row)
-#endif
+		  resultRelInfo->ri_TrigDesc->trig_insert_after_row)))
 		return 1;
 
 	/*
@@ -2738,7 +2787,7 @@ sqliteExecForeignTruncate(List *rels,
 	sqlite_deparse_truncate(&sql, rels);
 
 	/* Issue the DELETE statement without WHERE clause to remote server */
-	sqlite_do_sql_command(conn, sql.data, ERROR);
+	sqlite_do_sql_command(conn, sql.data, ERROR, NULL);
 
 	pfree(sql.data);
 }
@@ -5080,6 +5129,14 @@ sqlite_set_transmission_modes(void)
 		(void) set_config_option("extra_float_digits", "3",
 								 PGC_USERSET, PGC_S_SESSION,
 								 GUC_ACTION_SAVE, true, 0, false);
+
+	/*
+	 * In addition force restrictive search_path, in case there are any
+	 * regproc or similar constants to be printed.
+	 */
+	(void) set_config_option("search_path", "pg_catalog",
+							 PGC_USERSET, PGC_S_SESSION,
+							 GUC_ACTION_SAVE, true, 0, false);
 
 	return nestlevel;
 }

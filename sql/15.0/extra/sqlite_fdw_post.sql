@@ -447,6 +447,18 @@ SELECT * FROM ft1 WHERE CASE c3 WHEN c6 THEN true ELSE c3 < 'bar' END;
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT * FROM ft1 WHERE CASE c3 COLLATE "C" WHEN c6 THEN true ELSE c3 < 'bar' END;
 
+-- check schema-qualification of regconfig constant
+--Testcase 984:
+CREATE TEXT SEARCH CONFIGURATION public.custom_search
+  (COPY = pg_catalog.english);
+--Testcase 985:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT c1, to_tsvector('custom_search'::regconfig, c3) FROM ft1
+WHERE c1 = 642 AND length(to_tsvector('custom_search'::regconfig, c3)) > 0;
+--Testcase 986:
+SELECT c1, to_tsvector('custom_search'::regconfig, c3) FROM ft1
+WHERE c1 = 642 AND length(to_tsvector('custom_search'::regconfig, c3)) > 0;
+
 -- ===================================================================
 -- JOIN queries
 -- ===================================================================
@@ -613,7 +625,7 @@ SELECT t1.c1, t2.c2, t1.c3 FROM ft1 t1 FULL JOIN ft2 t2 ON (t1.c1 = t2.c1) WHERE
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT t1.c1, t2.c2, t1.c3 FROM ft1 t1 FULL JOIN ft2 t2 ON (t1.c1 = t2.c1) WHERE sqlite_fdw_abs(t1.c1) > 0 OFFSET 10 LIMIT 10;
 --Testcase 777:
-ALTER SERVER loopback OPTIONS (ADD extensions 'postgres_fdw');
+-- ALTER SERVER loopback OPTIONS (ADD extensions 'postgres_fdw');
 -- join two tables with FOR UPDATE clause
 -- tests whole-row reference for row marks
 --Testcase 111:
@@ -753,6 +765,22 @@ SELECT * FROM ft1, ft2, ft4, ft5, local_tbl WHERE ft1.c1 = ft2.c1 AND ft1.c2 = f
 RESET enable_nestloop;
 --Testcase 781:
 RESET enable_hashjoin;
+
+-- test that add_paths_with_pathkeys_for_rel() arranges for the epq_path to
+-- return columns needed by the parent ForeignScan node
+-- This does not work as SQLite FDW does not support use_remote_estimate
+--Testcase 987:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM local_tbl LEFT JOIN (SELECT ft1.*, COALESCE(ft1.c3 || ft2.c3, 'foobar') FROM ft1 INNER JOIN ft2 ON (ft1.c1 = ft2.c1 AND ft1.c1 < 100)) ss ON (local_tbl.c1 = ss.c1) ORDER BY local_tbl.c1 FOR UPDATE OF local_tbl;
+
+-- ALTER SERVER loopback OPTIONS (DROP extensions);
+-- ALTER SERVER loopback OPTIONS (ADD fdw_startup_cost '10000.0');
+--Testcase 988:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM local_tbl LEFT JOIN (SELECT ft1.* FROM ft1 INNER JOIN ft2 ON (ft1.c1 = ft2.c1 AND ft1.c1 < 100 AND ft1.c1 = sqlite_fdw_abs(ft2.c2))) ss ON (local_tbl.c3 = ss.c3) ORDER BY local_tbl.c1 FOR UPDATE OF local_tbl;
+-- ALTER SERVER loopback OPTIONS (DROP fdw_startup_cost);
+-- ALTER SERVER loopback OPTIONS (ADD extensions 'postgres_fdw');
+
 --DROP TABLE local_tbl;
 
 -- check join pushdown in situations where multiple userids are involved
@@ -1970,6 +1998,17 @@ UPDATE rw_view SET b = b + 15; -- ok
 --Testcase 610:
 SELECT * FROM foreign_tbl;
 
+-- We don't allow batch insert when there are any WCO constraints
+ALTER SERVER sqlite_svr OPTIONS (ADD batch_size '10');
+--Testcase 989:
+EXPLAIN (VERBOSE, COSTS OFF)
+INSERT INTO rw_view VALUES (0, 15), (1, 5);
+--Testcase 990:
+INSERT INTO rw_view VALUES (0, 15), (1, 5); -- should fail
+--Testcase 991:
+SELECT * FROM foreign_tbl;
+ALTER SERVER sqlite_svr OPTIONS (DROP batch_size);
+
 --Testcase 611:
 DROP FOREIGN TABLE foreign_tbl CASCADE;
 --Testcase 612:
@@ -2024,6 +2063,17 @@ UPDATE rw_view SET b = b + 15;
 UPDATE rw_view SET b = b + 15; -- ok
 --Testcase 627:
 SELECT * FROM foreign_tbl;
+
+-- We don't allow batch insert when there are any WCO constraints
+ALTER SERVER sqlite_svr OPTIONS (ADD batch_size '10');
+--Testcase 992:
+EXPLAIN (VERBOSE, COSTS OFF)
+INSERT INTO rw_view VALUES (0, 15), (1, 5);
+--Testcase 993:
+INSERT INTO rw_view VALUES (0, 15), (1, 5); -- should fail
+--Testcase 994:
+SELECT * FROM foreign_tbl;
+ALTER SERVER sqlite_svr OPTIONS (DROP batch_size);
 
 --Testcase 628:
 DROP TRIGGER row_before_insupd_trigger ON foreign_tbl;
@@ -3965,7 +4015,6 @@ SELECT COUNT(*) FROM ftable;
 ALTER FOREIGN TABLE ftable OPTIONS ( SET batch_size '10' );
 --Testcase 978:
 CREATE TRIGGER trig_row_before BEFORE INSERT ON ftable
---Testcase 979:
 FOR EACH ROW EXECUTE PROCEDURE trigger_data(23,'skidoo');
 --Testcase 980:
 EXPLAIN (VERBOSE, COSTS OFF) INSERT INTO ftable VALUES (3), (4);

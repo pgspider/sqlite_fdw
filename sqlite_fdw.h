@@ -50,7 +50,7 @@
 #endif
 
 /* Code version is updated at new release. */
-#define CODE_VERSION   20200
+#define CODE_VERSION   20300
 
 #if (PG_VERSION_NUM < 100000)
 /*
@@ -364,5 +364,5 @@ void		sqlite_cache_stmt(ForeignServer *server, sqlite3_stmt * *stmt);
 Datum		sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, AttInMetadata *attinmeta);
 
 void		sqlite_bind_sql_var(Oid type, int attnum, Datum value, sqlite3_stmt * stmt, bool *isnull);
-extern void sqlite_do_sql_command(sqlite3 * conn, const char *sql, int level);
+extern void sqlite_do_sql_command(sqlite3 * conn, const char *sql, int level, List **busy_connection);
 #endif							/* SQLITE_FDW_H */

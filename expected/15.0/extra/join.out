@@ -2124,8 +2124,8 @@ USING (name);
 ------+----+----
  bb   | 12 | 13
  cc   | 22 | 23
- ee   | 42 |   
  dd   |    | 33
+ ee   | 42 |   
 (4 rows)
 
 -- Cases with non-nullable expressions in subquery results;
@@ -2162,8 +2162,8 @@ NATURAL FULL JOIN
 ------+------+------+------+------
  bb   |   12 |    2 |   13 |    3
  cc   |   22 |    2 |   23 |    3
- ee   |   42 |    2 |      |     
  dd   |      |      |   33 |    3
+ ee   |   42 |    2 |      |     
 (4 rows)
 
 --Testcase 67:
@@ -2716,6 +2716,44 @@ ERROR:  column t12.x does not exist
 LINE 1: select t12.x from t12 join t32 on (t12.a = t32.x);
                ^
 HINT:  Perhaps you meant to reference the column "t32.x".
+-- Test matching of locking clause with wrong alias
+--Testcase 540:
+select t12.*, t22.*, unnamed_join.* from
+  t12 join t22 on (t12.a = t22.a), t32 as unnamed_join
+  for update of unnamed_join;
+ a | b | a | b | x | y 
+---+---+---+---+---+---
+(0 rows)
+
+--Testcase 541:
+select foo.*, unnamed_join.* from
+  t12 join t22 using (a) as foo, t32 as unnamed_join
+  for update of unnamed_join;
+ a | x | y 
+---+---+---
+(0 rows)
+
+--Testcase 542:
+select foo.*, unnamed_join.* from
+  t12 join t22 using (a) as foo, t32 as unnamed_join
+  for update of foo;
+ERROR:  FOR UPDATE cannot be applied to a join
+LINE 3:   for update of foo;
+                        ^
+--Testcase 543:
+select bar.*, unnamed_join.* from
+  (t12 join t22 using (a) as foo) as bar, t32 as unnamed_join
+  for update of foo;
+ERROR:  relation "foo" in FOR UPDATE clause not found in FROM clause
+LINE 3:   for update of foo;
+                        ^
+--Testcase 544:
+select bar.*, unnamed_join.* from
+  (t12 join t22 using (a) as foo) as bar, t32 as unnamed_join
+  for update of bar;
+ERROR:  FOR UPDATE cannot be applied to a join
+LINE 3:   for update of bar;
+                        ^
 --Testcase 536:
 drop table t2a;
 --
@@ -4170,15 +4208,18 @@ select a.unique1, b.unique1, c.unique1, coalesce(b.twothousand, a.twothousand)
 -------------------------------------------------------------------
  Hash Left Join
    Hash Cond: (COALESCE(b.twothousand, a.twothousand) = c.unique2)
-   ->  Hash Right Join
-         Hash Cond: (b.thousand = a.unique1)
+   ->  Merge Left Join
+         Merge Cond: (a.unique1 = b.thousand)
          Filter: (COALESCE(b.twothousand, a.twothousand) = 44)
-         ->  Foreign Scan on tenk1 b
-         ->  Hash
+         ->  Sort
+               Sort Key: a.unique1
                ->  Foreign Scan on tenk1 a
+         ->  Sort
+               Sort Key: b.thousand
+               ->  Foreign Scan on tenk1 b
    ->  Hash
          ->  Foreign Scan on tenk1 c
-(10 rows)
+(13 rows)
 
 --Testcase 208:
 select a.unique1, b.unique1, c.unique1, coalesce(b.twothousand, a.twothousand)
@@ -4350,69 +4391,63 @@ select t1.* from
   on (t1.f1 = b1.d1)
   left join int4_tbl i4
   on (i8.q2 = i4.f1);
-                                                           QUERY PLAN                                                           
---------------------------------------------------------------------------------------------------------------------------------
- Merge Right Join
+                                                     QUERY PLAN                                                     
+--------------------------------------------------------------------------------------------------------------------
+ Hash Left Join
    Output: t1.f1
-   Merge Cond: (i4.f1 = i8.q2)
-   ->  Sort
+   Hash Cond: (i8.q2 = i4.f1)
+   ->  Nested Loop Left Join
+         Output: t1.f1, i8.q2
+         Join Filter: (t1.f1 = '***'::text)
+         ->  Foreign Scan on public.text_tbl t1
+               Output: t1.f1
+               SQLite query: SELECT `f1` FROM main."text_tbl"
+         ->  Materialize
+               Output: i8.q2
+               ->  Merge Left Join
+                     Output: i8.q2
+                     Merge Cond: (i8b1.q2 = (NULL::integer))
+                     ->  Sort
+                           Output: i8b1.q2
+                           Sort Key: i8b1.q2
+                           ->  Foreign Scan on public.int8_tbl i8b1
+                                 Output: i8b1.q2
+                                 SQLite query: SELECT `q2` FROM main."int8_tbl"
+                     ->  Materialize
+                           Output: i8.q2, (NULL::integer)
+                           ->  Sort
+                                 Output: i8.q2, (NULL::integer)
+                                 Sort Key: (NULL::integer)
+                                 ->  Merge Left Join
+                                       Output: i8.q2, (NULL::integer)
+                                       Merge Cond: (i8.q1 = i8b2.q1)
+                                       ->  Sort
+                                             Output: i8.q1, i8.q2
+                                             Sort Key: i8.q1
+                                             ->  Foreign Scan on public.int8_tbl i8
+                                                   Output: i8.q1, i8.q2
+                                                   SQLite query: SELECT `q1`, `q2` FROM main."int8_tbl"
+                                       ->  Materialize
+                                             Output: i8b2.q1, (NULL::integer)
+                                             ->  Sort
+                                                   Output: i8b2.q1, (NULL::integer)
+                                                   Sort Key: i8b2.q1
+                                                   ->  Nested Loop
+                                                         Output: i8b2.q1, NULL::integer
+                                                         ->  Foreign Scan on public.int4_tbl i4b2
+                                                               Output: i4b2.f1
+                                                               SQLite query: SELECT NULL FROM main."int4_tbl"
+                                                         ->  Materialize
+                                                               Output: i8b2.q1
+                                                               ->  Foreign Scan on public.int8_tbl i8b2
+                                                                     Output: i8b2.q1
+                                                                     SQLite query: SELECT `q1` FROM main."int8_tbl"
+   ->  Hash
          Output: i4.f1
-         Sort Key: i4.f1
          ->  Foreign Scan on public.int4_tbl i4
                Output: i4.f1
                SQLite query: SELECT `f1` FROM main."int4_tbl"
-   ->  Materialize
-         Output: t1.f1, i8.q2
-         ->  Sort
-               Output: t1.f1, i8.q2
-               Sort Key: i8.q2
-               ->  Nested Loop Left Join
-                     Output: t1.f1, i8.q2
-                     Join Filter: (t1.f1 = '***'::text)
-                     ->  Foreign Scan on public.text_tbl t1
-                           Output: t1.f1
-                           SQLite query: SELECT `f1` FROM main."text_tbl"
-                     ->  Materialize
-                           Output: i8.q2
-                           ->  Merge Left Join
-                                 Output: i8.q2
-                                 Merge Cond: (i8b1.q2 = (NULL::integer))
-                                 ->  Sort
-                                       Output: i8b1.q2
-                                       Sort Key: i8b1.q2
-                                       ->  Foreign Scan on public.int8_tbl i8b1
-                                             Output: i8b1.q2
-                                             SQLite query: SELECT `q2` FROM main."int8_tbl"
-                                 ->  Materialize
-                                       Output: i8.q2, (NULL::integer)
-                                       ->  Sort
-                                             Output: i8.q2, (NULL::integer)
-                                             Sort Key: (NULL::integer)
-                                             ->  Merge Left Join
-                                                   Output: i8.q2, (NULL::integer)
-                                                   Merge Cond: (i8.q1 = i8b2.q1)
-                                                   ->  Sort
-                                                         Output: i8.q1, i8.q2
-                                                         Sort Key: i8.q1
-                                                         ->  Foreign Scan on public.int8_tbl i8
-                                                               Output: i8.q1, i8.q2
-                                                               SQLite query: SELECT `q1`, `q2` FROM main."int8_tbl"
-                                                   ->  Materialize
-                                                         Output: i8b2.q1, (NULL::integer)
-                                                         ->  Sort
-                                                               Output: i8b2.q1, (NULL::integer)
-                                                               Sort Key: i8b2.q1
-                                                               ->  Nested Loop
-                                                                     Output: i8b2.q1, NULL::integer
-                                                                     ->  Foreign Scan on public.int4_tbl i4b2
-                                                                           Output: i4b2.f1
-                                                                           SQLite query: SELECT NULL FROM main."int4_tbl"
-                                                                     ->  Materialize
-                                                                           Output: i8b2.q1
-                                                                           ->  Foreign Scan on public.int8_tbl i8b2
-                                                                                 Output: i8b2.q1
-                                                                                 SQLite query: SELECT `q1` FROM main."int8_tbl"
-(60 rows)
+(54 rows)
 
 --Testcase 214:
 select t1.* from
@@ -4820,14 +4855,17 @@ explain (costs off)
 --Testcase 230:
 explain (costs off)
   select * from tenk1 a full join tenk1 b using(unique2) where unique2 = 42;
-              QUERY PLAN              
---------------------------------------
- Hash Full Join
-   Hash Cond: (a.unique2 = b.unique2)
-   ->  Foreign Scan on tenk1 a
-   ->  Hash
+              QUERY PLAN               
+---------------------------------------
+ Merge Full Join
+   Merge Cond: (a.unique2 = b.unique2)
+   ->  Sort
+         Sort Key: a.unique2
+         ->  Foreign Scan on tenk1 a
+   ->  Sort
+         Sort Key: b.unique2
          ->  Foreign Scan on tenk1 b
-(5 rows)
+(8 rows)
 
 --
 -- test that quals attached to an outer join have correct semantics,
@@ -6266,43 +6304,37 @@ select * from
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Nested Loop
    Output: c.q1, c.q2, a.q1, a.q2, b.q1, (COALESCE(b.q2, '42'::bigint)), d.q1, (COALESCE((COALESCE(b.q2, '42'::bigint)), d.q2)), ((COALESCE((COALESCE(b.q2, '42'::bigint)), d.q2)))
-   ->  Merge Left Join
+   ->  Hash Right Join
          Output: c.q1, c.q2, a.q1, a.q2, b.q1, d.q1, (COALESCE(b.q2, '42'::bigint)), (COALESCE((COALESCE(b.q2, '42'::bigint)), d.q2))
-         Merge Cond: (c.q2 = d.q1)
-         ->  Sort
+         Hash Cond: (d.q1 = c.q2)
+         ->  Nested Loop
+               Output: a.q1, a.q2, b.q1, d.q1, (COALESCE(b.q2, '42'::bigint)), (COALESCE((COALESCE(b.q2, '42'::bigint)), d.q2))
+               ->  Merge Left Join
+                     Output: a.q1, a.q2, b.q1, (COALESCE(b.q2, '42'::bigint))
+                     Merge Cond: (a.q2 = b.q1)
+                     ->  Sort
+                           Output: a.q1, a.q2
+                           Sort Key: a.q2
+                           ->  Foreign Scan on public.int8_tbl a
+                                 Output: a.q1, a.q2
+                                 SQLite query: SELECT `q1`, `q2` FROM main."int8_tbl"
+                     ->  Sort
+                           Output: b.q1, (COALESCE(b.q2, '42'::bigint))
+                           Sort Key: b.q1
+                           ->  Foreign Scan on public.int8_tbl b
+                                 Output: b.q1, COALESCE(b.q2, '42'::bigint)
+                                 SQLite query: SELECT `q1`, `q2` FROM main."int8_tbl"
+               ->  Foreign Scan on public.int8_tbl d
+                     Output: d.q1, COALESCE((COALESCE(b.q2, '42'::bigint)), d.q2)
+                     SQLite query: SELECT `q1`, `q2` FROM main."int8_tbl"
+         ->  Hash
                Output: c.q1, c.q2
-               Sort Key: c.q2
                ->  Foreign Scan on public.int8_tbl c
                      Output: c.q1, c.q2
                      SQLite query: SELECT `q1`, `q2` FROM main."int8_tbl"
-         ->  Materialize
-               Output: a.q1, a.q2, b.q1, d.q1, (COALESCE(b.q2, '42'::bigint)), (COALESCE((COALESCE(b.q2, '42'::bigint)), d.q2))
-               ->  Sort
-                     Output: a.q1, a.q2, b.q1, d.q1, (COALESCE(b.q2, '42'::bigint)), (COALESCE((COALESCE(b.q2, '42'::bigint)), d.q2))
-                     Sort Key: d.q1
-                     ->  Nested Loop
-                           Output: a.q1, a.q2, b.q1, d.q1, (COALESCE(b.q2, '42'::bigint)), (COALESCE((COALESCE(b.q2, '42'::bigint)), d.q2))
-                           ->  Merge Left Join
-                                 Output: a.q1, a.q2, b.q1, (COALESCE(b.q2, '42'::bigint))
-                                 Merge Cond: (a.q2 = b.q1)
-                                 ->  Sort
-                                       Output: a.q1, a.q2
-                                       Sort Key: a.q2
-                                       ->  Foreign Scan on public.int8_tbl a
-                                             Output: a.q1, a.q2
-                                             SQLite query: SELECT `q1`, `q2` FROM main."int8_tbl"
-                                 ->  Sort
-                                       Output: b.q1, (COALESCE(b.q2, '42'::bigint))
-                                       Sort Key: b.q1
-                                       ->  Foreign Scan on public.int8_tbl b
-                                             Output: b.q1, COALESCE(b.q2, '42'::bigint)
-                                             SQLite query: SELECT `q1`, `q2` FROM main."int8_tbl"
-                           ->  Foreign Scan on public.int8_tbl d
-                                 Output: d.q1, COALESCE((COALESCE(b.q2, '42'::bigint)), d.q2)
-                                 SQLite query: SELECT `q1`, `q2` FROM main."int8_tbl"
    ->  Result
          Output: (COALESCE((COALESCE(b.q2, '42'::bigint)), d.q2))
-(38 rows)
+(32 rows)
 
 -- case that breaks the old ph_may_need optimization
 --Testcase 462:
