@@ -299,7 +299,7 @@ Please specify `table` option if SQLite table name is different from foreign tab
 	CREATE FOREIGN TABLE t1 (
 	  a integer,
 	  b text)
-    SERVER sqlite_server
+	SERVER sqlite_server
 	OPTIONS (
 	  table 't1_sqlite'
 	);
