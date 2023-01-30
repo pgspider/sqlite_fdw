@@ -275,7 +275,7 @@ Examples
 ### Install the extension:
 
 ```sql
-    CREATE EXTENSION sqlite_fdw;
+	CREATE EXTENSION sqlite_fdw;
 ```
 
 ### Create a foreign server with appropriate configuration:
