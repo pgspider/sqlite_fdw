@@ -127,9 +127,9 @@ Usage
 
 ## CREATE USER MAPPING options
 
-`sqlite_fdw` no need any `CREATE USER MAPPING` command.
+There is no user or password conceptions in SQlite, hence `sqlite_fdw` no need any `CREATE USER MAPPING` command.
 
-Just ensure `postgres` OS user have permissions for reading or writing on SQLite database file.
+Just ensure `postgres` OS user have permissions for reading or writing on SQLite database file. There is no other access problem than OS access permissions to SQLite database file.
 
 
 ## CREATE FOREIGN TABLE options
@@ -300,7 +300,9 @@ Please specify SQLite database path using `database` option.
 	  );
 ```
 
-### No need user mapping
+### User mapping
+
+There is no user or password conceptions in SQlite, hence `sqlite_fdw` no need any `CREATE USER MAPPING` command.
 
 ### Create foreign table
 Please specify `table` option if SQLite table name is different from foreign table name.
