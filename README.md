@@ -17,7 +17,9 @@ Contents
 8. [Character set handling](#character-set-handling)
 9. [Examples](#examples)
 10. [Limitations](#limitations)
-11. [Useful links](#useful-links)
+11. [Tests](#tests)
+12. [Contributing](#contributing)
+13. [Useful links](#useful-links)
 
 Features
 --------
@@ -374,6 +376,10 @@ Limitations
 - SQLite promises to preserve the 15 most significant digits of a floating point value. The big value which exceed 15 most significant digits may become different value after inserted.
 - SQLite does not support `Numeric` type as PostgreSQL. Therefore, it does not allow to store numbers with too high precision and scale. Error out of range occurs.
 
+Tests
+-----
+*Yet not described*. Some tests as `psql` expected outputs can be found in [expected](expected) directory.
+ 
 Contributing
 ------------
 
