@@ -66,7 +66,7 @@ PG_FUNCTION_INFO_V1(sqlite_fdw_disconnect);
 PG_FUNCTION_INFO_V1(sqlite_fdw_disconnect_all);
 
 static void sqlite_make_new_connection(ConnCacheEntry *entry, ForeignServer *server);
-void		sqlite_do_sql_command(sqlite3 * conn, const char *sql, int level);
+void		sqlite_do_sql_command(sqlite3 * conn, const char *sql, int level, List **busy_connection);
 static void sqlite_begin_remote_xact(ConnCacheEntry *entry);
 static void sqlitefdw_xact_callback(XactEvent event, void *arg);
 static void sqlitefdw_reset_xact_state(ConnCacheEntry *entry, bool toplevel);
@@ -75,12 +75,19 @@ static void sqlitefdw_subxact_callback(SubXactEvent event,
 									   SubTransactionId parentSubid,
 									   void *arg);
 static void sqlitefdw_inval_callback(Datum arg, int cacheid, uint32 hashvalue);
-static void sqlitefdw_abort_cleanup(ConnCacheEntry *entry, bool toplevel);
+static void sqlitefdw_abort_cleanup(ConnCacheEntry *entry, bool toplevel, List **busy_connection);
 #if PG_VERSION_NUM >= 140000
 static bool sqlite_disconnect_cached_connections(Oid serverid);
 #endif
 static void sqlite_finalize_list_stmt(List **list);
 static List *sqlite_append_stmt_to_list(List *list, sqlite3_stmt * stmt);
+
+typedef struct BusyHandlerArg
+{
+	sqlite3    *conn;
+	const char *sql;
+	int			level;
+} BusyHandlerArg;
 
 /*
  * sqlite_get_connection:
@@ -264,18 +271,33 @@ sqlite_cleanup_connection(void)
 	}
 }
 
-
 /*
  * Convenience subroutine to issue a non-data-returning SQL command to remote
  */
 void
-sqlite_do_sql_command(sqlite3 * conn, const char *sql, int level)
+sqlite_do_sql_command(sqlite3 * conn, const char *sql, int level, List **busy_connection)
 {
 	char	   *err = NULL;
+	int			rc;
 
 	elog(DEBUG3, "sqlite_fdw do_sql_command %s", sql);
 
-	if (sqlite3_exec(conn, sql, NULL, NULL, &err) != SQLITE_OK)
+	rc = sqlite3_exec(conn, sql, NULL, NULL, &err);
+
+	if (busy_connection && rc == SQLITE_BUSY)
+	{
+		/* Busy case will be handled later, not here */
+		BusyHandlerArg *arg = palloc0(sizeof(BusyHandlerArg));
+
+		arg->conn = conn;
+		arg->sql = sql;
+		arg->level = level;
+		*busy_connection = lappend(*busy_connection, arg);
+
+		return;
+	}
+
+	if (rc != SQLITE_OK)
 	{
 		char	   *perr = NULL;
 
@@ -319,7 +341,7 @@ sqlite_begin_remote_xact(ConnCacheEntry *entry)
 
 		sql = "BEGIN";
 
-		sqlite_do_sql_command(entry->conn, sql, ERROR);
+		sqlite_do_sql_command(entry->conn, sql, ERROR, NULL);
 		entry->xact_depth = 1;
 
 	}
@@ -334,7 +356,7 @@ sqlite_begin_remote_xact(ConnCacheEntry *entry)
 		char		sql[64];
 
 		snprintf(sql, sizeof(sql), "SAVEPOINT s%d", entry->xact_depth + 1);
-		sqlite_do_sql_command(entry->conn, sql, ERROR);
+		sqlite_do_sql_command(entry->conn, sql, ERROR, NULL);
 		entry->xact_depth++;
 	}
 }
@@ -377,6 +399,8 @@ sqlitefdw_xact_callback(XactEvent event, void *arg)
 {
 	HASH_SEQ_STATUS scan;
 	ConnCacheEntry *entry;
+	ListCell *lc;
+	List *busy_connection = NIL;
 
 	/* Quick exit if no connections were touched in this transaction. */
 	if (!xact_got_connection)
@@ -408,7 +432,7 @@ sqlitefdw_xact_callback(XactEvent event, void *arg)
 
 					/* Commit all remote transactions during pre-commit */
 					if (!sqlite3_get_autocommit(entry->conn))
-						sqlite_do_sql_command(entry->conn, "COMMIT", ERROR);
+						sqlite_do_sql_command(entry->conn, "COMMIT", ERROR, &busy_connection);
 					/* Finalize all prepared statements */
 					sqlite_finalize_list_stmt(&entry->stmtList);
 					break;
@@ -436,7 +460,7 @@ sqlitefdw_xact_callback(XactEvent event, void *arg)
 				case XACT_EVENT_PARALLEL_ABORT:
 				case XACT_EVENT_ABORT:
 					{
-						sqlitefdw_abort_cleanup(entry, true);
+						sqlitefdw_abort_cleanup(entry, true, &busy_connection);
 						break;
 					}
 			}
@@ -445,6 +469,20 @@ sqlitefdw_xact_callback(XactEvent event, void *arg)
 		/* Reset state to show we're out of a transaction */
 		sqlitefdw_reset_xact_state(entry, true);
 	}
+
+	/* Execute again the query after server is available */
+	foreach(lc, busy_connection)
+	{
+		BusyHandlerArg *arg = lfirst(lc);
+
+		/*
+		 * If there is still error, we can not do anything more, just raise it.
+		 * requireBusyHandler is set to false, and NULL busy_connection list.
+		 */
+		sqlite_do_sql_command(arg->conn, arg->sql, arg->level, NULL);
+	}
+
+	list_free(busy_connection);
 
 	/*
 	 * Regardless of the event type, we can now mark ourselves as out of the
@@ -491,6 +529,8 @@ sqlitefdw_subxact_callback(SubXactEvent event, SubTransactionId mySubid,
 	HASH_SEQ_STATUS scan;
 	ConnCacheEntry *entry;
 	int			curlevel;
+	ListCell 	   *lc;
+	List *busy_connection = NIL;
 
 	/* Nothing to do at subxact start, nor after commit. */
 	if (!(event == SUBXACT_EVENT_PRE_COMMIT_SUB ||
@@ -529,7 +569,7 @@ sqlitefdw_subxact_callback(SubXactEvent event, SubTransactionId mySubid,
 		{
 			/* Commit all remote subtransactions during pre-commit */
 			snprintf(sql, sizeof(sql), "RELEASE SAVEPOINT s%d", curlevel);
-			sqlite_do_sql_command(entry->conn, sql, ERROR);
+			sqlite_do_sql_command(entry->conn, sql, ERROR, &busy_connection);
 
 		}
 		else if (in_error_recursion_trouble())
@@ -542,12 +582,26 @@ sqlitefdw_subxact_callback(SubXactEvent event, SubTransactionId mySubid,
 		else
 		{
 			/* Rollback all remote subtransactions during abort */
-			sqlitefdw_abort_cleanup(entry, false);
+			sqlitefdw_abort_cleanup(entry, false, &busy_connection);
 		}
 
 		/* OK, we're outta that level of subtransaction */
 		sqlitefdw_reset_xact_state(entry, false);
 	}
+
+	/* Execute again the query after server is available */
+	foreach(lc, busy_connection)
+	{
+		BusyHandlerArg *arg = lfirst(lc);
+
+		/*
+		 * If there is still error, we can not do anything more, just raise it.
+		 * requireBusyHandler is set to false, and NULL busy_connection list.
+		 */
+		sqlite_do_sql_command(arg->conn, arg->sql, arg->level, NULL);
+	}
+
+	list_free(busy_connection);
 }
 
 /*
@@ -812,7 +866,7 @@ sqlite_fdw_disconnect_all(PG_FUNCTION_ARGS)
  * rollbacked, false otherwise.
  */
 static void
-sqlitefdw_abort_cleanup(ConnCacheEntry *entry, bool toplevel)
+sqlitefdw_abort_cleanup(ConnCacheEntry *entry, bool toplevel, List **busy_connection)
 {
 	if (toplevel)
 	{
@@ -826,7 +880,7 @@ sqlitefdw_abort_cleanup(ConnCacheEntry *entry, bool toplevel)
 		* already rollback
 		*/
 		if (!sqlite3_get_autocommit(entry->conn))
-			sqlite_do_sql_command(entry->conn, "ROLLBACK", WARNING);
+			sqlite_do_sql_command(entry->conn, "ROLLBACK", WARNING, busy_connection);
 	}
 	else
 	{
@@ -836,7 +890,7 @@ sqlitefdw_abort_cleanup(ConnCacheEntry *entry, bool toplevel)
 					"ROLLBACK TO SAVEPOINT s%d; RELEASE SAVEPOINT s%d",
 					curlevel, curlevel);
 		if (!sqlite3_get_autocommit(entry->conn))
-			sqlite_do_sql_command(entry->conn, sql, ERROR);
+			sqlite_do_sql_command(entry->conn, sql, ERROR, busy_connection);
 	}
 }
 

@@ -1147,6 +1147,30 @@ SELECT * FROM ft1 WHERE CASE c3 COLLATE "C" WHEN c6 THEN true ELSE c3 < 'bar' EN
    SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
 (4 rows)
 
+-- check schema-qualification of regconfig constant
+--Testcase 984:
+CREATE TEXT SEARCH CONFIGURATION public.custom_search
+  (COPY = pg_catalog.english);
+--Testcase 985:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT c1, to_tsvector('custom_search'::regconfig, c3) FROM ft1
+WHERE c1 = 642 AND length(to_tsvector('custom_search'::regconfig, c3)) > 0;
+                                QUERY PLAN                                
+--------------------------------------------------------------------------
+ Foreign Scan on public.ft1
+   Output: c1, to_tsvector('custom_search'::regconfig, c3)
+   Filter: (length(to_tsvector('custom_search'::regconfig, ft1.c3)) > 0)
+   SQLite query: SELECT `C 1`, `c3` FROM main."T 1" WHERE ((`C 1` = 642))
+(4 rows)
+
+--Testcase 986:
+SELECT c1, to_tsvector('custom_search'::regconfig, c3) FROM ft1
+WHERE c1 = 642 AND length(to_tsvector('custom_search'::regconfig, c3)) > 0;
+ c1  | to_tsvector 
+-----+-------------
+ 642 | '00642':1
+(1 row)
+
 -- ===================================================================
 -- JOIN queries
 -- ===================================================================
@@ -1580,8 +1604,8 @@ SELECT t1.c1, ss.a, ss.b FROM (SELECT c1 FROM ft4 WHERE c1 between 50 and 60) t1
 --Testcase 91:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT t1.c1, ss.a, ss.b FROM (SELECT c1 FROM "S 1"."T 3" WHERE c1 = 50) t1 INNER JOIN (SELECT t2.c1, t3.c1 FROM (SELECT c1 FROM ft4 WHERE c1 between 50 and 60) t2 FULL JOIN (SELECT c1 FROM ft5 WHERE c1 between 50 and 60) t3 ON (t2.c1 = t3.c1) WHERE t2.c1 IS NULL OR t2.c1 IS NOT NULL) ss(a, b) ON (TRUE) ORDER BY t1.c1, ss.a, ss.b FOR UPDATE OF t1;
-                                                          QUERY PLAN                                                           
--------------------------------------------------------------------------------------------------------------------------------
+                                                             QUERY PLAN                                                              
+-------------------------------------------------------------------------------------------------------------------------------------
  LockRows
    Output: "T 3".c1, ft4.c1, ft5.c1, "T 3".*, ft4.*, ft5.*
    ->  Sort
@@ -1592,19 +1616,25 @@ SELECT t1.c1, ss.a, ss.b FROM (SELECT c1 FROM "S 1"."T 3" WHERE c1 = 50) t1 INNE
                ->  Foreign Scan on "S 1"."T 3"
                      Output: "T 3".c1, "T 3".*
                      SQLite query: SELECT `c1`, `c2`, `c3` FROM main."T 3" WHERE ((`c1` = 50))
-               ->  Hash Full Join
+               ->  Materialize
                      Output: ft4.c1, ft4.*, ft5.c1, ft5.*
-                     Hash Cond: (ft4.c1 = ft5.c1)
-                     Filter: ((ft4.c1 IS NULL) OR (ft4.c1 IS NOT NULL))
-                     ->  Foreign Scan on public.ft4
-                           Output: ft4.c1, ft4.*
-                           SQLite query: SELECT `c1`, `c2`, `c3` FROM main."T 3" WHERE ((`c1` >= 50)) AND ((`c1` <= 60))
-                     ->  Hash
-                           Output: ft5.c1, ft5.*
-                           ->  Foreign Scan on public.ft5
+                     ->  Merge Full Join
+                           Output: ft4.c1, ft4.*, ft5.c1, ft5.*
+                           Merge Cond: (ft4.c1 = ft5.c1)
+                           Filter: ((ft4.c1 IS NULL) OR (ft4.c1 IS NOT NULL))
+                           ->  Sort
+                                 Output: ft4.c1, ft4.*
+                                 Sort Key: ft4.c1
+                                 ->  Foreign Scan on public.ft4
+                                       Output: ft4.c1, ft4.*
+                                       SQLite query: SELECT `c1`, `c2`, `c3` FROM main."T 3" WHERE ((`c1` >= 50)) AND ((`c1` <= 60))
+                           ->  Sort
                                  Output: ft5.c1, ft5.*
-                                 SQLite query: SELECT `c1`, `c2`, `c3` FROM main."T 4" WHERE ((`c1` >= 50)) AND ((`c1` <= 60))
-(22 rows)
+                                 Sort Key: ft5.c1
+                                 ->  Foreign Scan on public.ft5
+                                       Output: ft5.c1, ft5.*
+                                       SQLite query: SELECT `c1`, `c2`, `c3` FROM main."T 4" WHERE ((`c1` >= 50)) AND ((`c1` <= 60))
+(28 rows)
 
 --Testcase 92:
 SELECT t1.c1, ss.a, ss.b FROM (SELECT c1 FROM "S 1"."T 3" WHERE c1 = 50) t1 INNER JOIN (SELECT t2.c1, t3.c1 FROM (SELECT c1 FROM ft4 WHERE c1 between 50 and 60) t2 FULL JOIN (SELECT c1 FROM ft5 WHERE c1 between 50 and 60) t3 ON (t2.c1 = t3.c1) WHERE t2.c1 IS NULL OR t2.c1 IS NOT NULL) ss(a, b) ON (TRUE) ORDER BY t1.c1, ss.a, ss.b FOR UPDATE OF t1;
@@ -2016,8 +2046,7 @@ SELECT t1.c1, t2.c2, t1.c3 FROM ft1 t1 FULL JOIN ft2 t2 ON (t1.c1 = t2.c1) WHERE
 (14 rows)
 
 --Testcase 777:
-ALTER SERVER loopback OPTIONS (ADD extensions 'postgres_fdw');
-ERROR:  server "loopback" does not exist
+-- ALTER SERVER loopback OPTIONS (ADD extensions 'postgres_fdw');
 -- join two tables with FOR UPDATE clause
 -- tests whole-row reference for row marks
 --Testcase 111:
@@ -2751,6 +2780,79 @@ SELECT * FROM ft1, ft2, ft4, ft5, local_tbl WHERE ft1.c1 = ft2.c1 AND ft1.c2 = f
 RESET enable_nestloop;
 --Testcase 781:
 RESET enable_hashjoin;
+-- test that add_paths_with_pathkeys_for_rel() arranges for the epq_path to
+-- return columns needed by the parent ForeignScan node
+-- This does not work as SQLite FDW does not support use_remote_estimate
+--Testcase 987:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM local_tbl LEFT JOIN (SELECT ft1.*, COALESCE(ft1.c3 || ft2.c3, 'foobar') FROM ft1 INNER JOIN ft2 ON (ft1.c1 = ft2.c1 AND ft1.c1 < 100)) ss ON (local_tbl.c1 = ss.c1) ORDER BY local_tbl.c1 FOR UPDATE OF local_tbl;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 QUERY PLAN                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ LockRows
+   Output: local_tbl.c1, local_tbl.c2, local_tbl.c3, ft1.c1, ft1.c2, ft1.c3, ft1.c4, ft1.c5, ft1.c6, ft1.c7, ft1.c8, (COALESCE((ft1.c3 || ft2.c3), 'foobar'::text)), local_tbl.ctid, ft1.*, ft2.*
+   ->  Merge Left Join
+         Output: local_tbl.c1, local_tbl.c2, local_tbl.c3, ft1.c1, ft1.c2, ft1.c3, ft1.c4, ft1.c5, ft1.c6, ft1.c7, ft1.c8, (COALESCE((ft1.c3 || ft2.c3), 'foobar'::text)), local_tbl.ctid, ft1.*, ft2.*
+         Merge Cond: (local_tbl.c1 = ft1.c1)
+         ->  Index Scan using local_tbl_pkey on public.local_tbl
+               Output: local_tbl.c1, local_tbl.c2, local_tbl.c3, local_tbl.ctid
+         ->  Sort
+               Output: ft1.c1, ft1.c2, ft1.c3, ft1.c4, ft1.c5, ft1.c6, ft1.c7, ft1.c8, ft1.*, ft2.*, (COALESCE((ft1.c3 || ft2.c3), 'foobar'::text))
+               Sort Key: ft1.c1
+               ->  Foreign Scan
+                     Output: ft1.c1, ft1.c2, ft1.c3, ft1.c4, ft1.c5, ft1.c6, ft1.c7, ft1.c8, ft1.*, ft2.*, COALESCE((ft1.c3 || ft2.c3), 'foobar'::text)
+                     SQLite query: SELECT r4.`C 1`, r4.`c2`, r4.`c3`, r4.`c4`, r4.`c5`, r4.`c6`, r4.`c7`, r4.`c8`, CASE WHEN ( r4.`C 1` IS NOT NULL) OR ( r4.`c2` IS NOT NULL) OR ( r4.`c3` IS NOT NULL) OR ( r4.`c4` IS NOT NULL) OR ( r4.`c5` IS NOT NULL) OR ( r4.`c6` IS NOT NULL) OR ( r4.`c7` IS NOT NULL) OR ( r4.`c8` IS NOT NULL) THEN ("(" || COALESCE(r4.`C 1`, '') || "," || COALESCE(r4.`c2`, '') || "," || COALESCE(r4.`c3`, '') || "," || COALESCE(r4.`c4`, '') || "," || COALESCE(r4.`c5`, '') || "," || COALESCE(r4.`c6`, '') || "," || COALESCE(r4.`c7`, '') || "," || COALESCE(r4.`c8`, '')|| ")") END, CASE WHEN ( r5.`C 1` IS NOT NULL) OR ( r5.`c2` IS NOT NULL) OR ( r5.`c3` IS NOT NULL) OR ( r5.`c4` IS NOT NULL) OR ( r5.`c5` IS NOT NULL) OR ( r5.`c6` IS NOT NULL) OR ( r5.`c7` IS NOT NULL) OR ( r5.`c8` IS NOT NULL) THEN ("(" || COALESCE(r5.`C 1`, '') || "," || COALESCE(r5.`c2`, '') || "," || COALESCE(r5.`c3`, '') || "," || COALESCE(r5.`c4`, '') || "," || COALESCE(r5.`c5`, '') || "," || COALESCE(r5.`c6`, '') || "," || COALESCE(r5.`c7`, '') || "," || COALESCE(r5.`c8`, '')|| ")") END, r5.`c3` FROM (main."T 1" r4 INNER JOIN main."T 1" r5 ON (((r4.`C 1` = r5.`C 1`)) AND ((r4.`C 1` < 100))))
+                     ->  Hash Join
+                           Output: ft1.c1, ft1.c2, ft1.c3, ft1.c4, ft1.c5, ft1.c6, ft1.c7, ft1.c8, ft1.*, ft2.*, ft2.c3
+                           Hash Cond: (ft1.c1 = ft2.c1)
+                           ->  Foreign Scan on public.ft1
+                                 Output: ft1.c1, ft1.c2, ft1.c3, ft1.c4, ft1.c5, ft1.c6, ft1.c7, ft1.c8, ft1.*
+                                 SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1" WHERE ((`C 1` < 100))
+                           ->  Hash
+                                 Output: ft2.*, ft2.c1, ft2.c3
+                                 ->  Foreign Scan on public.ft2
+                                       Output: ft2.*, ft2.c1, ft2.c3
+                                       SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
+(24 rows)
+
+-- ALTER SERVER loopback OPTIONS (DROP extensions);
+-- ALTER SERVER loopback OPTIONS (ADD fdw_startup_cost '10000.0');
+--Testcase 988:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM local_tbl LEFT JOIN (SELECT ft1.* FROM ft1 INNER JOIN ft2 ON (ft1.c1 = ft2.c1 AND ft1.c1 < 100 AND ft1.c1 = sqlite_fdw_abs(ft2.c2))) ss ON (local_tbl.c3 = ss.c3) ORDER BY local_tbl.c1 FOR UPDATE OF local_tbl;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 QUERY PLAN                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ LockRows
+   Output: local_tbl.c1, local_tbl.c2, local_tbl.c3, ft1.c1, ft1.c2, ft1.c3, ft1.c4, ft1.c5, ft1.c6, ft1.c7, ft1.c8, local_tbl.ctid, ft1.*, ft2.*
+   ->  Nested Loop Left Join
+         Output: local_tbl.c1, local_tbl.c2, local_tbl.c3, ft1.c1, ft1.c2, ft1.c3, ft1.c4, ft1.c5, ft1.c6, ft1.c7, ft1.c8, local_tbl.ctid, ft1.*, ft2.*
+         Join Filter: (local_tbl.c3 = ft1.c3)
+         ->  Index Scan using local_tbl_pkey on public.local_tbl
+               Output: local_tbl.c1, local_tbl.c2, local_tbl.c3, local_tbl.ctid
+         ->  Materialize
+               Output: ft1.c1, ft1.c2, ft1.c3, ft1.c4, ft1.c5, ft1.c6, ft1.c7, ft1.c8, ft1.*, ft2.*
+               ->  Foreign Scan
+                     Output: ft1.c1, ft1.c2, ft1.c3, ft1.c4, ft1.c5, ft1.c6, ft1.c7, ft1.c8, ft1.*, ft2.*
+                     Filter: (ft1.c1 = sqlite_fdw_abs(ft2.c2))
+                     SQLite query: SELECT r4.`C 1`, r4.`c2`, r4.`c3`, r4.`c4`, r4.`c5`, r4.`c6`, r4.`c7`, r4.`c8`, CASE WHEN ( r4.`C 1` IS NOT NULL) OR ( r4.`c2` IS NOT NULL) OR ( r4.`c3` IS NOT NULL) OR ( r4.`c4` IS NOT NULL) OR ( r4.`c5` IS NOT NULL) OR ( r4.`c6` IS NOT NULL) OR ( r4.`c7` IS NOT NULL) OR ( r4.`c8` IS NOT NULL) THEN ("(" || COALESCE(r4.`C 1`, '') || "," || COALESCE(r4.`c2`, '') || "," || COALESCE(r4.`c3`, '') || "," || COALESCE(r4.`c4`, '') || "," || COALESCE(r4.`c5`, '') || "," || COALESCE(r4.`c6`, '') || "," || COALESCE(r4.`c7`, '') || "," || COALESCE(r4.`c8`, '')|| ")") END, CASE WHEN ( r5.`C 1` IS NOT NULL) OR ( r5.`c2` IS NOT NULL) OR ( r5.`c3` IS NOT NULL) OR ( r5.`c4` IS NOT NULL) OR ( r5.`c5` IS NOT NULL) OR ( r5.`c6` IS NOT NULL) OR ( r5.`c7` IS NOT NULL) OR ( r5.`c8` IS NOT NULL) THEN ("(" || COALESCE(r5.`C 1`, '') || "," || COALESCE(r5.`c2`, '') || "," || COALESCE(r5.`c3`, '') || "," || COALESCE(r5.`c4`, '') || "," || COALESCE(r5.`c5`, '') || "," || COALESCE(r5.`c6`, '') || "," || COALESCE(r5.`c7`, '') || "," || COALESCE(r5.`c8`, '')|| ")") END, r5.`c2` FROM (main."T 1" r4 INNER JOIN main."T 1" r5 ON (((r4.`C 1` = r5.`C 1`)) AND ((r4.`C 1` < 100))))
+                     ->  Merge Join
+                           Output: ft1.c1, ft1.c2, ft1.c3, ft1.c4, ft1.c5, ft1.c6, ft1.c7, ft1.c8, ft1.*, ft2.*, ft2.c2
+                           Merge Cond: ((ft1.c1 = (sqlite_fdw_abs(ft2.c2))) AND (ft1.c1 = ft2.c1))
+                           ->  Sort
+                                 Output: ft1.c1, ft1.c2, ft1.c3, ft1.c4, ft1.c5, ft1.c6, ft1.c7, ft1.c8, ft1.*
+                                 Sort Key: ft1.c1
+                                 ->  Foreign Scan on public.ft1
+                                       Output: ft1.c1, ft1.c2, ft1.c3, ft1.c4, ft1.c5, ft1.c6, ft1.c7, ft1.c8, ft1.*
+                                       SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1" WHERE ((`C 1` < 100))
+                           ->  Sort
+                                 Output: ft2.*, ft2.c1, ft2.c2, (sqlite_fdw_abs(ft2.c2))
+                                 Sort Key: (sqlite_fdw_abs(ft2.c2)), ft2.c1
+                                 ->  Foreign Scan on public.ft2
+                                       Output: ft2.*, ft2.c1, ft2.c2, sqlite_fdw_abs(ft2.c2)
+                                       SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
+(28 rows)
+
+-- ALTER SERVER loopback OPTIONS (DROP fdw_startup_cost);
+-- ALTER SERVER loopback OPTIONS (ADD extensions 'postgres_fdw');
 --DROP TABLE local_tbl;
 -- check join pushdown in situations where multiple userids are involved
 --Testcase 508:
@@ -7308,6 +7410,31 @@ SELECT * FROM foreign_tbl;
  20 | 30
 (1 row)
 
+-- We don't allow batch insert when there are any WCO constraints
+ALTER SERVER sqlite_svr OPTIONS (ADD batch_size '10');
+--Testcase 989:
+EXPLAIN (VERBOSE, COSTS OFF)
+INSERT INTO rw_view VALUES (0, 15), (1, 5);
+                       QUERY PLAN                       
+--------------------------------------------------------
+ Insert on public.foreign_tbl
+   Batch Size: 1
+   ->  Values Scan on "*VALUES*"
+         Output: "*VALUES*".column1, "*VALUES*".column2
+(4 rows)
+
+--Testcase 990:
+INSERT INTO rw_view VALUES (0, 15), (1, 5); -- should fail
+ERROR:  new row violates check option for view "rw_view"
+DETAIL:  Failing row contains (11, 5).
+--Testcase 991:
+SELECT * FROM foreign_tbl;
+ a  | b  
+----+----
+ 20 | 30
+(1 row)
+
+ALTER SERVER sqlite_svr OPTIONS (DROP batch_size);
 --Testcase 611:
 DROP FOREIGN TABLE foreign_tbl CASCADE;
 NOTICE:  drop cascades to view rw_view
@@ -7414,6 +7541,29 @@ SELECT * FROM foreign_tbl;
  40 | 50
 (1 row)
 
+-- We don't allow batch insert when there are any WCO constraints
+ALTER SERVER sqlite_svr OPTIONS (ADD batch_size '10');
+--Testcase 992:
+EXPLAIN (VERBOSE, COSTS OFF)
+INSERT INTO rw_view VALUES (0, 15), (1, 5);
+                       QUERY PLAN                       
+--------------------------------------------------------
+ Insert on public.parent_tbl
+   ->  Values Scan on "*VALUES*"
+         Output: "*VALUES*".column1, "*VALUES*".column2
+(3 rows)
+
+--Testcase 993:
+INSERT INTO rw_view VALUES (0, 15), (1, 5); -- should fail
+ERROR:  Not support partition insert
+--Testcase 994:
+SELECT * FROM foreign_tbl;
+ a  | b  
+----+----
+ 40 | 50
+(1 row)
+
+ALTER SERVER sqlite_svr OPTIONS (DROP batch_size);
 --Testcase 628:
 DROP TRIGGER row_before_insupd_trigger ON foreign_tbl;
 --Testcase 629:
@@ -9003,26 +9153,30 @@ select * from parent inner join remt2 on (parent.a = remt2.a);
 --Testcase 475:
 explain (verbose, costs off)
 delete from parent using remt2 where parent.a = remt2.a;
-                                       QUERY PLAN                                        
------------------------------------------------------------------------------------------
+                                          QUERY PLAN                                           
+-----------------------------------------------------------------------------------------------
  Delete on public.parent
    Delete on public.parent parent_1
    Foreign Delete on public.remt1 parent_2
-   ->  Hash Join
+   ->  Merge Join
          Output: remt2.*, parent.tableoid, parent.ctid, (NULL::integer)
-         Hash Cond: (parent.a = remt2.a)
-         ->  Append
-               ->  Seq Scan on public.parent parent_1
-                     Output: parent_1.a, parent_1.tableoid, parent_1.ctid, NULL::integer
-               ->  Foreign Scan on public.remt1 parent_2
-                     Output: parent_2.a, parent_2.tableoid, NULL::tid, parent_2.a
-                     SQLite query: SELECT `a` FROM main."loct3"
-         ->  Hash
+         Merge Cond: (remt2.a = parent.a)
+         ->  Sort
                Output: remt2.*, remt2.a
+               Sort Key: remt2.a
                ->  Foreign Scan on public.remt2
                      Output: remt2.*, remt2.a
                      SQLite query: SELECT `a`, `b` FROM main."loct4"
-(17 rows)
+         ->  Sort
+               Output: parent.a, parent.tableoid, parent.ctid, (NULL::integer)
+               Sort Key: parent.a
+               ->  Append
+                     ->  Seq Scan on public.parent parent_1
+                           Output: parent_1.a, parent_1.tableoid, parent_1.ctid, NULL::integer
+                     ->  Foreign Scan on public.remt1 parent_2
+                           Output: parent_2.a, parent_2.tableoid, NULL::tid, parent_2.a
+                           SQLite query: SELECT `a` FROM main."loct3"
+(21 rows)
 
 --Testcase 476:
 delete from parent using remt2 where parent.a = remt2.a;
@@ -10965,7 +11119,6 @@ SELECT COUNT(*) FROM ftable;
 ALTER FOREIGN TABLE ftable OPTIONS ( SET batch_size '10' );
 --Testcase 978:
 CREATE TRIGGER trig_row_before BEFORE INSERT ON ftable
---Testcase 979:
 FOR EACH ROW EXECUTE PROCEDURE trigger_data(23,'skidoo');
 --Testcase 980:
 EXPLAIN (VERBOSE, COSTS OFF) INSERT INTO ftable VALUES (3), (4);

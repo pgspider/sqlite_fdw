@@ -385,7 +385,7 @@ Limitations
 - `sqlite_fdw` only supports `ARRAY` const, for example, `ANY (ARRAY[1, 2, 3])` or `ANY ('{1, 2 ,3}')`. `Sqlite_fdw` does not support `ARRAY` expression, for example, `ANY (ARRAY[c1, 1, c1+0])`. For `ANY(ARRAY)` clause, `sqlite_fdw` deparses it using `IN` operator.
 - For `sum` function of SQLite, output of `sum(bigint)` is `integer` value. If input values are big, the overflow error may occurs on SQLite because it overflow within the range of signed 64bit. For PostgreSQL, it can calculate as over the precision of `bigint`, so overflow does not occur.
 - SQLite promises to preserve the 15 most significant digits of a floating point value. The big value which exceed 15 most significant digits may become different value after inserted.
-- SQLite does not support `Numeric` type as PostgreSQL. Therefore, it does not allow to store numbers with too high precision and scale. Error out of range occurs.
+- SQLite does not support `numeric` type as PostgreSQL. Therefore, it does not allow to store numbers with too high precision and scale. Error out of range occurs.
 
 Tests
 -----
@@ -394,6 +394,7 @@ Tests
 Contributing
 ------------
 
+## Contributing
 Opening issues and pull requests on GitHub are welcome.
 
 Useful links

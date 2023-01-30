@@ -741,6 +741,33 @@ select * from t12 left join t22 on (t12.a = t22.a);
 --Testcase 120:
 select t12.x from t12 join t32 on (t12.a = t32.x);
 
+-- Test matching of locking clause with wrong alias
+
+--Testcase 540:
+select t12.*, t22.*, unnamed_join.* from
+  t12 join t22 on (t12.a = t22.a), t32 as unnamed_join
+  for update of unnamed_join;
+
+--Testcase 541:
+select foo.*, unnamed_join.* from
+  t12 join t22 using (a) as foo, t32 as unnamed_join
+  for update of unnamed_join;
+
+--Testcase 542:
+select foo.*, unnamed_join.* from
+  t12 join t22 using (a) as foo, t32 as unnamed_join
+  for update of foo;
+
+--Testcase 543:
+select bar.*, unnamed_join.* from
+  (t12 join t22 using (a) as foo) as bar, t32 as unnamed_join
+  for update of foo;
+
+--Testcase 544:
+select bar.*, unnamed_join.* from
+  (t12 join t22 using (a) as foo) as bar, t32 as unnamed_join
+  for update of bar;
+
 --Testcase 536:
 drop table t2a;
 
