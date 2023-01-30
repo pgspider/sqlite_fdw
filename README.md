@@ -229,7 +229,8 @@ For PostgreSQL
 ```sql
 	SELECT *
 	  FROM "T";
-``` is independend query to table `T`, not to table `t` as first queries from previous example.
+```
+is independend query to table `T`, not to table `t` as first queries from previous example.
 
 If there is
 
