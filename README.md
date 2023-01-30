@@ -52,8 +52,8 @@ Features
 
 ### Notes about features
 - SQLite evaluates division by zero as `NULL`. It is different from PostgreSQL, which will display `Division by zero` error.
-- The data type of column of foreign table should match with data type of column in SQLite to avoid wrong result. For example, if the column of SQLite is `float` (which will be stored as `float8`), the column of foreign table should be `float8`, too. If the column of foreign table is `float4`, it may cause wrong result when select.
-- For `key` option, user needs to specify the primary key column of SQLite table corresponding with the `key` option. If not, wrong result may occur when update or delete.
+- The data type of column of foreign table should match with data type of column in SQLite to avoid wrong result. For example, if the column of SQLite is `float` (which will be stored as `float8`), the column of foreign table should be `float8`, too. If the column of foreign table is `float4`, it may cause wrong result when `SELECT`.
+- For `key` option, user needs to specify the primary key column of SQLite table corresponding with the `key` option. If not, wrong result may occur when `UPDATE` or `DELETE`.
 - When `Sum` of data in table is out of range, `sqlite_fdw` will display `Infinity` value. It is different from PostgreSQL FDW, which will display `ERROR: value out of range: overflow` error.
 - For `numeric` data type, `sqlite_fdw` use `sqlite3_column_double` to get value, while SQLite shell uses `sqlite3_column_text` to get value. Those 2 APIs may return different numeric value. Therefore, for `numeric` data type, the value returned from `sqlite_fdw` may different from the value returned from SQLite shell.
 - `sqlite_fdw` can return implementation-dependent order for column if the column is not specified in `ORDER BY` clause.
@@ -177,7 +177,7 @@ from PostgreSQL 14.
 As SQlite does not provide a `TRUNCATE` command, it is simulated with a
 simple unqualified `DELETE` operation.
 
-Actually, `TRUNCATE ... CASCADE` can be simulated if we create child table of SQLite with foreign keys and ON DELETE CASCADE, and then executing TRUNCATE (which will be deparsed to DELETE).
+Actually, `TRUNCATE ... CASCADE` can be simulated if we create child table of SQLite with foreign keys and `ON DELETE CASCADE`, and then executing `TRUNCATE` (which will be deparsed to `DELETE`).
 
 Following restrictions apply:
  - `TRUNCATE ... RESTART IDENTITY` is not supported
