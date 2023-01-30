@@ -216,12 +216,20 @@ This SQL isn't correct for SQLite: `Error: duplicate column name: a`, but is cor
 For SQLite there is no difference between
 
 ```sql
-	SELECT * FROM t;
-	SELECT * FROM T;
-	SELECT * FROM "t";
-	SELECT * FROM "T";
+	SELECT *
+	  FROM t;
+	SELECT *
+	  FROM T;
+	SELECT *
+	  FROM "t";
+	SELECT *
+	  FROM "T";
 ```
-For PostgreSQL `SELECT * FROM "T";` is independend query to table `T`, not to table `t` as first queries.
+For PostgreSQL
+```sql
+	SELECT *
+	  FROM "T";
+``` is independend query to table `T`, not to table `t` as first queries from previous example.
 
 If there is
 
@@ -287,9 +295,9 @@ Please specify SQLite database path using `database` option.
 ```sql
 	CREATE SERVER sqlite_server
 	  FOREIGN DATA WRAPPER sqlite_fdw
-	    OPTIONS (
-              database '/path/to/database'
-	    );
+	  OPTIONS (
+            database '/path/to/database'
+	  );
 ```
 
 ### No need user mapping
