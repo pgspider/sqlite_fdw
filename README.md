@@ -137,9 +137,9 @@ Just ensure `postgres` OS user have permissions for reading or writing on SQLite
 `sqlite_fdw` accepts the following table-level options via the
 `CREATE FOREIGN TABLE` command:
 
-- **table** as *string*, **required**
+- **table** as *string*, optioanl
 
-  SQLite table name.
+  SQLite table name. Use if not equal to name of foreign table in PostgreSQL. Also see about [identifier case handling](#identifier-case-handling).
 
 - **truncatable** as *boolean*, optional
   
@@ -154,7 +154,7 @@ Just ensure `postgres` OS user have permissions for reading or writing on SQLite
 
 - **column_name** as *string*, optional
 
-  This option gives the column name to use for the column on the remote server.
+  This option gives the column name to use for the column on the remote server. Also see about [identifier case handling](#identifier-case-handling).
 
 - **column_type** as *string*, optional
 
@@ -177,11 +177,11 @@ from PostgreSQL 14.
 As SQlite does not provide a `TRUNCATE` command, it is simulated with a
 simple unqualified `DELETE` operation.
 
-Following restrictions apply:
+Actually, `TRUNCATE ... CASCADE` can be simulated if we create child table of SQLite with foreign keys and ON DELETE CASCADE, and then executing TRUNCATE (which will be deparsed to DELETE).
 
- - `TRUNCATE ... CASCADE` is not supported
+Following restrictions apply:
  - `TRUNCATE ... RESTART IDENTITY` is not supported
- - SQLlite tables with foreign key references can cause errors during truncating
+ - SQLite tables with foreign key references can cause errors during truncating
 
 Functions
 ---------
