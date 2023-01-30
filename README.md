@@ -2,7 +2,7 @@ SQLite Foreign Data Wrapper for PostgreSQL
 ==========================================
 
 This is a foreign data wrapper (FDW) to connect [PostgreSQL](https://www.postgresql.org/)
-to [SQLite](https://sqlite.org/) database file. This FDW works with PostgreSQL 11, 12, 13, 14 and 15.
+to [SQLite](https://sqlite.org/) database file. This FDW works with PostgreSQL 11, 12, 13, 14, 15 and confirmed with SQLite 3.38.5.
 
 Contents
 --------
