@@ -4,6 +4,8 @@ SQLite Foreign Data Wrapper for PostgreSQL
 This is a foreign data wrapper (FDW) to connect [PostgreSQL](https://www.postgresql.org/)
 to [SQLite](https://sqlite.org/) database file. This FDW works with PostgreSQL 11, 12, 13, 14, 15 and confirmed with SQLite 3.38.5.
 
+<img src="https://upload.wikimedia.org/wikipedia/commons/2/29/Postgresql_elephant.svg" align="center" height="100" alt="PostgreSQL"/>	+	<img src="https://upload.wikimedia.org/wikipedia/commons/3/38/SQLite370.svg" align="center" height="100" alt="SQLite"/>
+
 Contents
 --------
 
@@ -137,7 +139,7 @@ Just ensure `postgres` OS user have permissions for reading or writing on SQLite
 `sqlite_fdw` accepts the following table-level options via the
 `CREATE FOREIGN TABLE` command:
 
-- **table** as *string*, optioanl
+- **table** as *string*, optional
 
   SQLite table name. Use if not equal to name of foreign table in PostgreSQL. Also see about [identifier case handling](#identifier-case-handling).
 
@@ -216,21 +218,12 @@ This SQL isn't correct for SQLite: `Error: duplicate column name: a`, but is cor
 For SQLite there is no difference between
 
 ```sql
-	SELECT *
-	  FROM t;
-	SELECT *
-	  FROM T;
-	SELECT *
-	  FROM "t";
-	SELECT *
-	  FROM "T";
+	SELECT * FROM t;   -- №1
+	SELECT * FROM T;   -- №2
+	SELECT * FROM "t"; -- №3
+	SELECT * FROM "T"; -- №4
 ```
-For PostgreSQL
-```sql
-	SELECT *
-	  FROM "T";
-```
-is independend query to table `T`, not to table `t` as first queries from previous example.
+For PostgreSQL the query with comment `№4` is independend query to table `T`, not to table `t` as other queries.
 
 If there is
 
@@ -240,7 +233,7 @@ If there is
 	  b REAL
 	);
 ```
-in SQLite, both `a` and `A` , `b` and `B` columns will have the same real datasource in SQlite
+in SQLite, both `a` and `A` , `b` and `B` columns will have the same real datasource in SQlite in follow foreign table:
 
 ```sql
 	CREATE FOREIGN TABLE "SQLite test" (
@@ -259,7 +252,7 @@ Generated columns
 SQLite provides support for [generated columns](https://www.sqlite.org/gencol.html).
 Behaviour of `sqlite_fdw` with this columns _isn't yet described_.
 
-Note that while `sqlite_fdw` will `insert` or `update` the generated column value
+Note that while `sqlite_fdw` will `INSERT` or `UPDATE` the generated column value
 in SQLite, there is nothing to stop the value being modified within SQLite,
 and hence no guarantee that in subsequent `SELECT` operations the column will
 still contain the expected generated value. This limitation also applies to
@@ -285,33 +278,47 @@ Examples
 
 ### Install the extension:
 
+Once for a database you need, as PostgreSQL superuser.
+
 ```sql
 	CREATE EXTENSION sqlite_fdw;
 ```
 
 ### Create a foreign server with appropriate configuration:
 
-Please specify SQLite database path using `database` option.
+Once for a foreign datasource you need, as PostgreSQL superuser. Please specify SQLite database path using `database` option.
 
 ```sql
 	CREATE SERVER sqlite_server
-	  FOREIGN DATA WRAPPER sqlite_fdw
-	  OPTIONS (
-            database '/path/to/database'
-	  );
+	FOREIGN DATA WRAPPER sqlite_fdw
+	OPTIONS (
+          database '/path/to/database'
+	);
 ```
+
+### Grant usage on foreign server to normal user in PostgreSQL:
+
+Once for a normal user (non-superuser) in PostgreSQL, as PostgreSQL superuser. It is a good idea to use a superuser only where really necessary, so let's allow a normal user to use the foreign server (this is not required for the example to work, but it's secirity recomedation).
+
+```sql
+	GRANT USAGE ON FOREIGN SERVER sqlite_server TO pguser;
+```
+Where `pguser` is a sample user for works with foreign server (and foreign tables).
 
 ### User mapping
 
 There is no user or password conceptions in SQlite, hence `sqlite_fdw` no need any `CREATE USER MAPPING` command.
 
 ### Create foreign table
+All `CREATE FOREIGN TABLE` SQL commands can be executed as a normal PostgreSQL user if there were correct `GRANT USAGE ON FOREIGN SERVER`. No need PostgreSQL supersuer for secirity reasons but also works with PostgreSQL supersuer.
+
 Please specify `table` option if SQLite table name is different from foreign table name.
 
 ```sql
 	CREATE FOREIGN TABLE t1 (
 	  a integer,
-	  b text)
+	  b text
+	)
 	SERVER sqlite_server
 	OPTIONS (
 	  table 't1_sqlite'
@@ -323,7 +330,8 @@ If you want to update tables, please add `OPTIONS (key 'true')` to a primary key
 ```sql
 	CREATE FOREIGN TABLE t1(
 	  a integer OPTIONS (key 'true'),
-	  b text)
+	  b text
+	)
 	SERVER sqlite_server 
 	OPTIONS (
 	  table 't1_sqlite'
@@ -336,7 +344,8 @@ If you need to convert INT SQLite column (epoch Unix Time) to be treated/visuali
 	CREATE FOREIGN TABLE t1(
 	  a integer,
 	  b text,
-	  c timestamp without time zone OPTIONS (column_type 'INT'))
+	  c timestamp without time zone OPTIONS (column_type 'INT')
+	)
 	SERVER sqlite_server
 	OPTIONS (
 	  table 't1_sqlite'
@@ -350,6 +359,7 @@ As above, but with aliased column names:
 	  a integer,
 	  b text OPTIONS (column_name 'test_id'),
 	  c timestamp without time zone OPTIONS (column_type 'INT', column_name 'unixtime')
+	)
 	SERVER sqlite_server
 	OPTIONS (
 	  table 't1_sqlite'
@@ -360,8 +370,8 @@ As above, but with aliased column names:
 
 ```sql
 	IMPORT FOREIGN SCHEMA someschema
-	  FROM SERVER sqlite_server;
-	  INTO public;
+	FROM SERVER sqlite_server
+	INTO public;
 ```
 
 Note: `someschema` has no particular meaning and can be set to an arbitrary value.
@@ -370,19 +380,25 @@ Note: `someschema` has no particular meaning and can be set to an arbitrary valu
 For the table from previous examples
 
 ```sql
-	SELECT *
-	  FROM t1;
+	SELECT * FROM t1;
 ```
 
 Limitations
 -----------
 
+### SQL commands
 - `COPY` command for foreign tables is not supported
 - `IMPORT` of generated column is not supported
-- Insert into a partitioned table which has foreign partitions is not supported. Error "Not support partition insert" will display.
+- `INSERT` into a partitioned table which has foreign partitions is not supported. Error `Not support partition insert` will display.
 - `TRUNCATE` in `sqlite_fdw` always delete data of both parent and child tables (no matter user inputs `TRUNCATE table CASCADE` or `TRUNCATE table RESTRICT`) if there are foreign-keys references with `ON DELETE CASCADE` clause.
 - `RETURNING` is not supported.
-- `sqlite_fdw` only supports `ARRAY` const, for example, `ANY (ARRAY[1, 2, 3])` or `ANY ('{1, 2 ,3}')`. `Sqlite_fdw` does not support `ARRAY` expression, for example, `ANY (ARRAY[c1, 1, c1+0])`. For `ANY(ARRAY)` clause, `sqlite_fdw` deparses it using `IN` operator.
+
+### Arrays
+- `sqlite_fdw` only supports `ARRAY` const, for example, `ANY (ARRAY[1, 2, 3])` or `ANY ('{1, 2 ,3}')`.
+- `sqlite_fdw` does not support `ARRAY` expression, for example, `ANY (ARRAY[c1, 1, c1+0])`.
+- For `ANY(ARRAY)` clause, `sqlite_fdw` deparses it using `IN` operator.
+
+### Numbers (range and precision)
 - For `sum` function of SQLite, output of `sum(bigint)` is `integer` value. If input values are big, the overflow error may occurs on SQLite because it overflow within the range of signed 64bit. For PostgreSQL, it can calculate as over the precision of `bigint`, so overflow does not occur.
 - SQLite promises to preserve the 15 most significant digits of a floating point value. The big value which exceed 15 most significant digits may become different value after inserted.
 - SQLite does not support `numeric` type as PostgreSQL. Therefore, it does not allow to store numbers with too high precision and scale. Error out of range occurs.
@@ -394,7 +410,6 @@ Tests
 Contributing
 ------------
 
-## Contributing
 Opening issues and pull requests on GitHub are welcome.
 
 Useful links
