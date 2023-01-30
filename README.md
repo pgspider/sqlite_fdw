@@ -2,7 +2,7 @@ SQLite Foreign Data Wrapper for PostgreSQL
 ==========================================
 
 This is a foreign data wrapper (FDW) to connect [PostgreSQL](https://www.postgresql.org/) 11+
-to [SQLite](https://sqlite.org/) database file.
+to [SQLite](https://sqlite.org/) database file. This FDW works with PostgreSQL 11, 12, 13, 14 and 15.
 
 Contents
 --------
@@ -17,7 +17,7 @@ Contents
 8. [Character set handling](#character-set-handling)
 9. [Examples](#examples)
 10. [Limitations](#limitations)
-13. [Useful links](#useful-links)
+11. [Useful links](#useful-links)
 
 Features
 --------
@@ -207,36 +207,36 @@ This SQL isn't correct for SQLite: `Error: duplicate column name: a`, but is cor
 
 ```sql
 	CREATE TABLE T (
-		"A" INTEGER,
-		"a" NUMERIC
+	  "A" INTEGER,
+	  "a" NUMERIC
 	);
 ```
 For SQLite there is no difference between
 
 ```sql
-	select * from t;
-	select * from T;
-	select * from "t";
-	select * from "T";
+	SELECT * FROM t;
+	SELECT * FROM T;
+	SELECT * FROM "t";
+	SELECT * FROM "T";
 ```
-For PostgreSQL `select * from "T";` is independend query to table `T`, not to table `t` as first queries.
+For PostgreSQL `SELECT * FROM "T";` is independend query to table `T`, not to table `t` as first queries.
 
 If there is
 
 ```sql
 	CREATE TABLE T (
-		A INTEGER,
-		b REAL
+	  A INTEGER,
+	  b REAL
 	);
 ```
 in SQLite, both `a` and `A` , `b` and `B` columns will have the same real datasource in SQlite
 
 ```sql
 	CREATE FOREIGN TABLE "SQLite test" (
-		"A" int4 NULL,
-		"B" float8 NULL,
-		"a" int8 NULL,
-		"b" numeric NULL
+	  "A" int4 NULL,
+	  "B" float8 NULL,
+	  "a" int8 NULL,
+	  "b" numeric NULL
 	)
 	SERVER sqlite_server
 	OPTIONS (table 'T');
@@ -283,11 +283,11 @@ Examples
 Please specify SQLite database path using `database` option.
 
 ```sql
-    CREATE SERVER sqlite_server
-      FOREIGN DATA WRAPPER sqlite_fdw
-      OPTIONS (
-        database '/path/to/database'
-     );
+	CREATE SERVER sqlite_server
+	  FOREIGN DATA WRAPPER sqlite_fdw
+	    OPTIONS (
+              database '/path/to/database'
+	    );
 ```
 
 ### No need user mapping
@@ -346,9 +346,9 @@ As above, but with aliased column names:
 ### Import a SQLite database as schema to PostgreSQL:
 
 ```sql
-    IMPORT FOREIGN SCHEMA someschema
-      FROM SERVER sqlite_server;
-      INTO public;
+	IMPORT FOREIGN SCHEMA someschema
+	  FROM SERVER sqlite_server;
+	  INTO public;
 ```
 
 Note: `someschema` has no particular meaning and can be set to an arbitrary value.
@@ -357,7 +357,8 @@ Note: `someschema` has no particular meaning and can be set to an arbitrary valu
 For the table from previous examples
 
 ```sql
-SELECT * FROM t1;
+	SELECT *
+	  FROM t1;
 ```
 
 Limitations
@@ -371,6 +372,7 @@ Limitations
 - `sqlite_fdw` only supports `ARRAY` const, for example, `ANY (ARRAY[1, 2, 3])` or `ANY ('{1, 2 ,3}')`. `Sqlite_fdw` does not support `ARRAY` expression, for example, `ANY (ARRAY[c1, 1, c1+0])`. For `ANY(ARRAY)` clause, `sqlite_fdw` deparses it using `IN` operator.
 - For `sum` function of SQLite, output of `sum(bigint)` is `integer` value. If input values are big, the overflow error may occurs on SQLite because it overflow within the range of signed 64bit. For PostgreSQL, it can calculate as over the precision of `bigint`, so overflow does not occur.
 - SQLite promises to preserve the 15 most significant digits of a floating point value. The big value which exceed 15 most significant digits may become different value after inserted.
+- SQLite does not support `Numeric` type as PostgreSQL. Therefore, it does not allow to store numbers with too high precision and scale. Error out of range occurs.
 
 Contributing
 ------------
