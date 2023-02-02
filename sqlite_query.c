@@ -62,7 +62,7 @@
 #include "catalog/pg_type.h"
 
 static int32
-			sqlite_from_pgtyp(Oid pgtyp);
+			sqlite_eqv_from_pgtyp(Oid pgtyp);
 
 /*
  * convert_sqlite_to_pg: Convert Sqlite data into PostgreSQL's compatible data types
@@ -76,7 +76,9 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 	HeapTuple	tuple;
 	int			typemod;
 	int			col_type;
-	int			sqlite_type;
+	int			sqlite_type_eqv_to_pg;
+	bool		special_IEEE_value = false;
+	double		special_IEEE_double;
 
 	/* get the type's output function */
 	tuple = SearchSysCache1(TYPEOID, ObjectIdGetDatum(pgtyp));
@@ -87,11 +89,43 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 	typemod = ((Form_pg_type) GETSTRUCT(tuple))->typtypmod;
 	ReleaseSysCache(tuple);
 
-	sqlite_type = sqlite_from_pgtyp(pgtyp);
+	sqlite_type_eqv_to_pg = sqlite_eqv_from_pgtyp(pgtyp);
 	col_type = sqlite3_column_type(stmt, attnum);
 
-	if (sqlite_type != col_type && col_type == SQLITE3_TEXT)
-		elog(ERROR, "invalid input syntax for type =%d, column type =%d", sqlite_type, col_type);
+	if (sqlite_type_eqv_to_pg != col_type && col_type == SQLITE3_TEXT)
+	{
+		value_datum = CStringGetDatum((char*) sqlite3_column_text(stmt, attnum));
+
+		if (sqlite_type_eqv_to_pg == SQLITE_FLOAT && col_type == SQLITE3_TEXT)
+		{
+			bool        special_NaN = false;
+			bool        special_pos_infin = false;
+			bool        special_neg_infin = false;
+			char *p = 0;
+			char *uc_str = (char *) malloc( strlen((char *)value_datum) + 1 );
+			strcpy(uc_str, (char *)value_datum);
+			p = uc_str;
+			while (*p) {
+				*p = toupper(*p);
+				p++;
+			}
+			special_NaN       = !strcmp (uc_str, "NAN");
+			special_pos_infin = !strcmp (uc_str, "+INFINITY") ||
+								!strcmp (uc_str, "+INF") ||
+								!strcmp (uc_str, "INFINITY") ||
+								!strcmp (uc_str, "INF");
+			special_neg_infin = !strcmp (uc_str, "-INFINITY") ||
+								!strcmp (uc_str, "-INF");
+			free(uc_str);
+			special_IEEE_double = special_pos_infin ? (1.0 / 0.0) : special_neg_infin ? (-1.0 / 0.0) : (0.0 / 0.0); // +Inf, -Inf, NaN
+			special_IEEE_value = (special_NaN || special_pos_infin || special_neg_infin);
+		}
+
+		if (special_IEEE_value)
+			elog(DEBUG3, "sqlite_fdw : special IEEE value type =%d, column type =%d, value =%s", sqlite_type_eqv_to_pg, col_type, (char*)value_datum);
+		else
+			elog(ERROR, "invalid input syntax for type =%d, column type =%d, value =%s", sqlite_type_eqv_to_pg, col_type, (char*)value_datum);
+	}
 
 	switch (pgtyp)
 	{
@@ -141,15 +175,13 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 			}
 		case FLOAT4OID:
 			{
-				double		value = sqlite3_column_double(stmt, attnum);
-
+				double		value = (special_IEEE_value) ? special_IEEE_double : sqlite3_column_double(stmt, attnum);
 				return Float4GetDatum((float4) value);
 				break;
 			}
 		case FLOAT8OID:
 			{
-				double		value = sqlite3_column_double(stmt, attnum);
-
+				double		value = (special_IEEE_value) ? special_IEEE_double : sqlite3_column_double(stmt, attnum);
 				return Float8GetDatum((float8) value);
 				break;
 			}
@@ -342,7 +374,7 @@ sqlite_bind_sql_var(Oid type, int attnum, Datum value, sqlite3_stmt * stmt, bool
  * Give SQLite data type from PG type
  */
 static int32
-sqlite_from_pgtyp(Oid type)
+sqlite_eqv_from_pgtyp(Oid type)
 {
 	switch (type)
 	{
