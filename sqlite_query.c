@@ -77,8 +77,10 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 	int			typemod;
 	int			col_type;
 	int			sqlite_type_eqv_to_pg;
-	bool		special_IEEE_value = false;
+	bool		is_special_IEEE_value = false;
 	double		special_IEEE_double;
+	bool		is_special_bool_value = false;
+	bool		special_bool_value = false;
 
 	/* get the type's output function */
 	tuple = SearchSysCache1(TYPEOID, ObjectIdGetDatum(pgtyp));
@@ -118,11 +120,31 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 								!strcmp (uc_str, "-INF");
 			free(uc_str);
 			special_IEEE_double = special_pos_infin ? (1.0 / 0.0) : special_neg_infin ? (-1.0 / 0.0) : (0.0 / 0.0); // +Inf, -Inf, NaN
-			special_IEEE_value = (special_NaN || special_pos_infin || special_neg_infin);
+			is_special_IEEE_value = (special_NaN || special_pos_infin || special_neg_infin);
 		}
 
-		if (special_IEEE_value)
-			elog(DEBUG3, "sqlite_fdw : special IEEE value type =%d, column type =%d, value =%s", sqlite_type_eqv_to_pg, col_type, (char*)value_datum);
+		if (pgtyp == BOOLOID && col_type == SQLITE3_TEXT)
+		{
+			is_special_bool_value = true;
+			char *p = 0;
+			char *uc_str = (char *) malloc( strlen((char *)value_datum) + 1 );
+			strcpy(uc_str, (char *)value_datum);
+			p = uc_str;
+			while (*p) {
+				*p = toupper(*p);
+				p++;
+			}
+			special_bool_value = !strcmp (uc_str, "Y") ||
+								 !strcmp (uc_str, "T") ||
+								 !strcmp (uc_str, "YES") ||
+								 !strcmp (uc_str, "TRUE");
+			free(uc_str);
+		}
+
+		if (is_special_IEEE_value)
+			elog(DEBUG3, "sqlite_fdw : special IEEE value : type =%d, column type =%d, value =%s", sqlite_type_eqv_to_pg, col_type, (char*)value_datum);
+		else if (is_special_bool_value)
+			elog(DEBUG3, "sqlite_fdw : a string for bool : type =%d, column type =%d, value =%s", sqlite_type_eqv_to_pg, col_type, (char*)value_datum);
 		else
 			elog(ERROR, "invalid input syntax for type =%d, column type =%d, value =%s", sqlite_type_eqv_to_pg, col_type, (char*)value_datum);
 	}
@@ -173,15 +195,22 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 
 				return Int64GetDatum(value);
 			}
+		case BOOLOID:
+			{
+				int			value = is_special_bool_value ? special_bool_value : sqlite3_column_int(stmt, attnum);
+
+				return Int16GetDatum(value);
+				break;
+			}
 		case FLOAT4OID:
 			{
-				double		value = (special_IEEE_value) ? special_IEEE_double : sqlite3_column_double(stmt, attnum);
+				double		value = (is_special_IEEE_value) ? special_IEEE_double : sqlite3_column_double(stmt, attnum);
 				return Float4GetDatum((float4) value);
 				break;
 			}
 		case FLOAT8OID:
 			{
-				double		value = (special_IEEE_value) ? special_IEEE_double : sqlite3_column_double(stmt, attnum);
+				double		value = (is_special_IEEE_value) ? special_IEEE_double : sqlite3_column_double(stmt, attnum);
 				return Float8GetDatum((float8) value);
 				break;
 			}
