@@ -13,7 +13,7 @@ MODULE_big = sqlite_fdw
 OBJS = connection.o option.o deparse.o sqlite_query.o sqlite_fdw.o
 
 EXTENSION = sqlite_fdw
-DATA = sqlite_fdw--1.0.sql sqlite_fdw--1.0--1.1.sql
+DATA = sqlite_fdw--1.0.sql sqlite_fdw--1.0--1.1.sql sqlite_fdw--1.1.sql
 
 REGRESS = extra/sqlite_fdw_post extra/float4 extra/float8 extra/int4 extra/int8 extra/numeric extra/join extra/limit extra/aggregates extra/prepare extra/select_having extra/select extra/insert extra/update extra/timestamp sqlite_fdw type aggregate selectfunc 
 
