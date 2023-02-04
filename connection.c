@@ -204,6 +204,7 @@ sqlite_make_new_connection(ConnCacheEntry *entry, ForeignServer *server)
 	entry->invalidated = false;
 	entry->stmtList = NULL;
 	entry->keep_connections = true;
+	entry->readonly = false;
 	entry->server_hashvalue =
 		GetSysCacheHashValue1(FOREIGNSERVEROID,
 							  ObjectIdGetDatum(server->serverid));
