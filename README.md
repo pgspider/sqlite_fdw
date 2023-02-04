@@ -131,7 +131,7 @@ Usage
 
 There is no user or password conceptions in SQlite, hence `sqlite_fdw` no need any `CREATE USER MAPPING` command.
 
-Just ensure `postgres` OS user have permissions for reading or writing on SQLite database file. There is no other access problem than OS access permissions to SQLite database file.
+Just ensure `postgres` OS user have permissions for reading on SQLite database file or also for writing on **both** database file and directory near this file. There is no other access problem than OS access permissions to SQLite database file and write permissoins for directory of this file. For `INSERT`, `UPDATE`, `DELETE` and other changes in SQLite database from PostgreSQL ensure not only SQLite databse file permissions, but **also writing permissons of directory of SQLite database** file for `postgres` OS user. Otherwise error `failed to execute remote SQL: rc=8 attempt to write a readonly database` occurs. During data change transactions SQLite create some temporary files in direcory near SQLite database file.
 
 
 ## CREATE FOREIGN TABLE options
