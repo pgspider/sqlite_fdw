@@ -43,6 +43,7 @@ typedef struct ConnCacheEntry
 	/* Remaining fields are invalid when conn is NULL: */
 	int			xact_depth;		/* 0 = no xact open, 1 = main xact open, 2 =
 								 * one level of subxact open, etc */
+	bool		readonly;		/* true for readonly connections */
 	bool		keep_connections;	/* setting value of keep_connections
 									 * server option */
 	bool		truncatable;	/* check table can truncate or not */
@@ -193,6 +194,8 @@ sqlite_make_new_connection(ConnCacheEntry *entry, ForeignServer *server)
 	int			rc;
 	char	   *err;
 	ListCell   *lc;
+	int flags = 0;
+	const char *zVfs = NULL;
 
 	Assert(entry->conn == NULL);
 
@@ -212,9 +215,12 @@ sqlite_make_new_connection(ConnCacheEntry *entry, ForeignServer *server)
 			dbpath = defGetString(def);
 		else if (strcmp(def->defname, "keep_connections") == 0)
 			entry->keep_connections = defGetBoolean(def);
+		else if (strcmp(def->defname, "readonly") == 0)
+			entry->readonly = defGetBoolean(def);
 	}
 
-	rc = sqlite3_open(dbpath, &entry->conn);
+	flags = flags | (entry->readonly ? SQLITE_OPEN_READONLY : SQLITE_OPEN_READWRITE);
+	rc = sqlite3_open_v2(dbpath, &entry->conn, flags, zVfs);
 	if (rc != SQLITE_OK)
 		ereport(ERROR,
 				(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
