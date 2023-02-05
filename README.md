@@ -6,6 +6,8 @@ to [SQLite](https://sqlite.org/) database file. This FDW works with PostgreSQL 1
 
 <img src="https://upload.wikimedia.org/wikipedia/commons/2/29/Postgresql_elephant.svg" align="center" height="100" alt="PostgreSQL"/>	+	<img src="https://upload.wikimedia.org/wikipedia/commons/3/38/SQLite370.svg" align="center" height="100" alt="SQLite"/>
 
+History of releases and main features see in [CHANGELOG](CHANGELOG).
+
 Contents
 --------
 
@@ -125,14 +127,19 @@ Usage
 - **batch_size** as *integer*, optional
 
   Specifies the number of rows which should be inserted in a single `INSERT` operation. This setting can be overridden for individual tables.
+  
+- *planned feature* **readonly** as *boolean*, optional
 
+  This option disallow write operations on SQLite database file. Uses `SQLITE_OPEN_READONLY` mode.
 
 ## CREATE USER MAPPING options
 
 There is no user or password conceptions in SQlite, hence `sqlite_fdw` no need any `CREATE USER MAPPING` command.
 
-Just ensure `postgres` OS user have permissions for reading on SQLite database file or also for writing on **both** database file and directory near this file. There is no other access problem than OS access permissions to SQLite database file and write permissoins for directory of this file. For `INSERT`, `UPDATE`, `DELETE` and other changes in SQLite database from PostgreSQL ensure not only SQLite databse file permissions, but **also writing permissons of directory of SQLite database** file for `postgres` OS user. Otherwise error `failed to execute remote SQL: rc=8 attempt to write a readonly database` occurs. During data change transactions SQLite create some temporary files in direcory near SQLite database file.
-
+In OS `sqlite_fdw` works as executed code with permissions of user of PostgreSQL server. Usually it is `postgres` OS user. For interacting with SQLite database without access errors ensure this user have follow permissions:
+- read permission on all directories by path to the SQLite database file;
+- read permission on SQLite database file;
+- write permissions both on SQLite database file and *directory it contains* if you don't need *readonly* mode. During `INSERT`, `UPDATE` or `DELETE` in SQLite database, SQLite engine functions makes temporary files with transaction data in the directory near SQLite database file. Hence without write permissions you'll have a message `failed to execute remote SQL: rc=8 attempt to write a readonly database`. 
 
 ## CREATE FOREIGN TABLE options
 
@@ -307,7 +314,7 @@ Where `pguser` is a sample user for works with foreign server (and foreign table
 
 ### User mapping
 
-There is no user or password conceptions in SQlite, hence `sqlite_fdw` no need any `CREATE USER MAPPING` command.
+There is no user or password conceptions in SQlite, hence `sqlite_fdw` no need any `CREATE USER MAPPING` command. About access problems see in [CREATE USER MAPPING options](#create-user-mapping-options).
 
 ### Create foreign table
 All `CREATE FOREIGN TABLE` SQL commands can be executed as a normal PostgreSQL user if there were correct `GRANT USAGE ON FOREIGN SERVER`. No need PostgreSQL supersuer for secirity reasons but also works with PostgreSQL supersuer.
@@ -402,11 +409,11 @@ Limitations
 - For `sum` function of SQLite, output of `sum(bigint)` is `integer` value. If input values are big, the overflow error may occurs on SQLite because it overflow within the range of signed 64bit. For PostgreSQL, it can calculate as over the precision of `bigint`, so overflow does not occur.
 - SQLite promises to preserve the 15 most significant digits of a floating point value. The big value which exceed 15 most significant digits may become different value after inserted.
 - SQLite does not support `numeric` type as PostgreSQL. Therefore, it does not allow to store numbers with too high precision and scale. Error out of range occurs.
-- SQLite does not support special values for IEEE 754-2008 numbers stored in SQLite `real` [affinity](https://www.sqlite.org/datatype3.html) in opposite PostgreSQL with full support of special values. This values are `NaN` ≡ ` 0.0 / 0.0 `, `+Infinity` ≡ +∞ ≡ ` 1.0 / 0.0 `,`-Infinity` ≡ -∞ ≡ ` -1.0 / 0.0 `. All this special calculating expressions gives `NULL` in SQLite in opposite to full-supported special values in PostgreSQL. `sqlite_fdw` can case insensetive read special values for this pseudonumbers from data with `text` affinity in SQLite such as `NaN`, `nan`, `Nan`, `+INF`, `Infinity`, `-Inf` etc and convert it to special values in PostgreSQL. But during `SELECT ... WHERE ... = double precision 'naN'` or other query reverse conversion `sqlite_fdw` uses **only** standard PostgreSQL literals: `NaN`, `-Infinity`, `Infinity`, not original strings from `WHERE`. *This can caused selecting issues*.
+- SQLite does not support special values for IEEE 754-2008 numbers stored in SQLite `real` [affinity](https://www.sqlite.org/datatype3.html) in opposite PostgreSQL with full support of special values. In PostgreSQL there is full support of such special values as `NaN` ≡ ` 0.0 / 0.0 `, `+Infinity` ≡ +∞ ≡ ` 1.0 / 0.0 `,`-Infinity` ≡ -∞ ≡ ` -1.0 / 0.0 `. In oppose to PostgreSQL all this special calculating expressions gives `NULL` in SQLite. Also conditions with special literals (such as ` n < '+Infinity'` or ` m > '-Infinity'` ) isn't numeric conditions in SQLite and gives unexpected result after pushdowning in oppose to internal PostgreSQL  calculations. During `INSERT` or in `WHERE` conditions `sqlite_fdw` uses given by PostgreSQL standard case sensetive literals **only** in follow forms: `NaN`, `-Infinity`, `Infinity`, not original strings from `WHERE` condition. *This can caused selecting issues*.
 
 ### Boolean values
-- `sqlite_fdw` boolean values support exists only for `bool` columns in foreign table. SQLite documentation recommends to store boolean as value with `integer` [affinity](https://www.sqlite.org/datatype3.html). `NULL` isn't converted, 1 converted to `true`, all other `NON NULL` values converted to `false`. During `SELECT ... WHERE condition_column` condition converted only to `condition_column = 1` and `SELECT ... WHERE NOT condition_column` converted only to `condition_column != 1`.
-- `sqlite_fdw` provides limited support of boolean values if `bool` column in foreign table mapped to SQLite `text` [affinity](https://www.sqlite.org/datatype3.html). Case insensetive values `t`, `true`, `y`, `yes` converted to `true` value, all other `NOT NULL` values converted to `false`. De facto `SELECT ... WHERE condition_column` queries isn't applicable to this case, because search condition for `bool` column coverted by `sqlite_fdw` **only** to `condition_column = 1`. *This can caused selecting issues*.
+- `sqlite_fdw` boolean values support exists only for `bool` columns in foreign table. SQLite documentation recommends to store boolean as value with `integer` [affinity](https://www.sqlite.org/datatype3.html). `NULL` isn't converted, 1 converted to `true`, all other `NON NULL` values converted to `false`. During `SELECT ... WHERE condition_column` condition converted only to `condition_column`.
+- `sqlite_fdw` don't provides limited support of boolean values if `bool` column in foreign table mapped to SQLite `text` [affinity](https://www.sqlite.org/datatype3.html).
 
 Tests
 -----
