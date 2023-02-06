@@ -6,8 +6,6 @@ to [SQLite](https://sqlite.org/) database file. This FDW works with PostgreSQL 1
 
 <img src="https://upload.wikimedia.org/wikipedia/commons/2/29/Postgresql_elephant.svg" align="center" height="100" alt="PostgreSQL"/>	+	<img src="https://upload.wikimedia.org/wikipedia/commons/3/38/SQLite370.svg" align="center" height="100" alt="SQLite"/>
 
-History of releases and main features see in [CHANGELOG](CHANGELOG).
-
 Contents
 --------
 
