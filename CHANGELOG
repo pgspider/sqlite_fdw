@@ -1,25 +1,46 @@
 Revision history for sqlite_fdw
 
 2.2.0	2022-09-22
-	- Changes yet not described
+	- Working with busy connections
 
 2.1.1	2021-12-22	
 
 2.1.0	2021-09-24
+	- support for PostgreSQL 14
 
-2.0.0 2021-05-26
+2.0.0	2021-05-26
+	- Support JOIN pushdown (LEFT,RIGHT,INNER)
+	- Support direct modification (UPDATE/DELETE)
+	- Support pushdown nest functions
+	- Support pushdown scalar operator ANY/ALL (ARRAY)
+	- Support pushdown ON CONFLICT DO NOTHING
+	- Refactored tests
+	- Don't push down lower/upper function
+	- Fix processing for DATE data type
+	- Do not prepare SQL statement during EXPLAIN
+	- add sqlite_fdw_version()
 
-1.3.1 2021-01-14
+1.3.1	2021-01-14
 
-1.3.0 2020-09-24
+1.3.0	2020-09-24
+	- column_type option
 
-1.2.1 2020-08-26
+1.2.1	2020-08-26
+	- pushing down limit/order clauses
+	- support NULLS FIRST/LAST
 
-1.2.0 2019-10-01
+1.2.0	2019-10-01
+	- many fixes of different errors
+	
+1.1.1	2019-08-26
+	- column_name option 
+	- key option
 
-1.1.1 2019-08-26
+1.1.0	2018-10-31
+	- Transactions
+	- Support update to foreign table  
+	- WHERE clauses are pushdowned  
+	- Aggregate function are pushdowned	
 
-1.1.0 2018-10-31
-
-0.0.0 2018-04-09
+0.0.0	2018-04-09
   - Initial commit
