@@ -72,7 +72,12 @@ reasonably POSIX-compliant system.
 Installation
 ------------
 
-For some Linux distributives deb and rpm packages are avalillable.
+### Package installation
+
+For some Linux distributives internal packages with `sqlite_fdw` are avalillable.
+
+- [sqlite_fdw_14 rpm](https://pkgs.org/download/sqlite_fdw_14(x86-64)) for CentOS 9, RHEL 9, Rocky Linux 9, AlmaLinux 9.
+- [sqlite_fdw code source](https://aur.archlinux.org/packages/sqlite_fdw) for Arch Linux.
 
 ### Source installation
 
@@ -128,7 +133,7 @@ Usage
   
 ## CREATE USER MAPPING options
 
-There is no user or password conceptions in SQlite, hence `sqlite_fdw` no need any `CREATE USER MAPPING` command.
+There is no user or password conceptions in SQLite, hence `sqlite_fdw` no need any `CREATE USER MAPPING` command.
 
 In OS `sqlite_fdw` works as executed code with permissions of user of PostgreSQL server. Usually it is `postgres` OS user. For interacting with SQLite database without access errors ensure this user have follow permissions:
 - read permission on all directories by path to the SQLite database file;
@@ -406,7 +411,7 @@ Limitations
 - SQLite does not support special values for IEEE 754-2008 numbers such as `NaN`, `+Infinity` and `-Infinity` in SQL expressions with numeric context. Also SQLite can not store this values with `real` [affinity](https://www.sqlite.org/datatype3.html). In opposite to SQLite, PostgreSQL can store special values in columns belongs to `real` datatype family such as `float` or `double precision` and use arithmetic comparation for this values. In oppose to PostgreSQL, SQLite stores `NaN`, `+Infinity` and `-Infinity` as a text values. Also conditions with special literals (such as ` n < '+Infinity'` or ` m > '-Infinity'` ) isn't numeric conditions in SQLite and gives unexpected result after pushdowning in oppose to internal PostgreSQL calculations. During `INSERT INTO ... SELECT` or in `WHERE` conditions `sqlite_fdw` uses given by PostgreSQL standard case sensetive literals **only** in follow forms: `NaN`, `-Infinity`, `Infinity`, not original strings from `WHERE` condition. *This can caused selecting issues*.
 
 ### Boolean values
-- `sqlite_fdw` boolean values support exists only for `bool` columns in foreign table. SQLite documentation recommends to store boolean as value with `integer` [affinity](https://www.sqlite.org/datatype3.html). `NULL` isn't converted, 1 converted to `true`, all other `NON NULL` values converted to `false`. During `SELECT ... WHERE condition_column` condition converted only to `condition_column`.
+- `sqlite_fdw` boolean values support exists only for `bool` columns in foreign table. SQLite documentation recommends to store boolean as value with `integer` [affinity](https://www.sqlite.org/datatype3.html). `NULL` isn't converted, 1 converted to `true`, all other `NOT NULL` values converted to `false`. During `SELECT ... WHERE condition_column` condition converted only to `condition_column`.
 - `sqlite_fdw` don't provides limited support of boolean values if `bool` column in foreign table mapped to SQLite `text` [affinity](https://www.sqlite.org/datatype3.html).
 
 Tests
