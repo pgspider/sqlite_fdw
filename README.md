@@ -119,7 +119,7 @@ Usage
 
   SQLite database path.
   
-**readonly** as *boolean*, optional, default *false*
+- **readonly** as *boolean*, optional, default *false*
 
   This option disallow write operations on SQLite database file. Uses [`SQLITE_OPEN_READONLY`](https://sqlite.org/c3ref/open.html) mode.  
 
