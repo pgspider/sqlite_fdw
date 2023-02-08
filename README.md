@@ -119,15 +119,15 @@ Usage
 
   SQLite database path.
 
-- **truncatable** as *boolean*, optional
+- **truncatable** as *boolean*, optional, default *false*
 
   Allows foreign tables to be truncated using the `TRUNCATE` command.
   
-- **keep_connections** as *boolean*, optional
+- **keep_connections** as *boolean*, optional, default *false*
   
   Allows to keep connections to SQLite while there is no SQL operations between PostgreSQL and SQLite.
   
-- **batch_size** as *integer*, optional
+- **batch_size** as *integer*, optional, default *1*
 
   Specifies the number of rows which should be inserted in a single `INSERT` operation. This setting can be overridden for individual tables.
   
@@ -145,30 +145,30 @@ In OS `sqlite_fdw` works as executed code with permissions of user of PostgreSQL
 `sqlite_fdw` accepts the following table-level options via the
 `CREATE FOREIGN TABLE` command:
 
-- **table** as *string*, optional
+- **table** as *string*, optional, no default
 
   SQLite table name. Use if not equal to name of foreign table in PostgreSQL. Also see about [identifier case handling](#identifier-case-handling).
 
-- **truncatable** as *boolean*, optional
+- **truncatable** as *boolean*, optional, default from the same `CREATE SERVER` option
   
-  Allows table to be truncated using the `TRUNCATE` command.
+  See `CREATE SERVER` options section for details.
 
-- **batch_size** as *integer*, optional
+- **batch_size** as *integer*, optional, default from the same `CREATE SERVER` option
 
   See `CREATE SERVER` options section for details.  
   
 `sqlite_fdw` accepts the following column-level options via the
 `CREATE FOREIGN TABLE` command:
 
-- **column_name** as *string*, optional
+- **column_name** as *string*, optional, no default
 
   This option gives the column name to use for the column on the remote server. Also see about [identifier case handling](#identifier-case-handling).
 
-- **column_type** as *string*, optional
+- **column_type** as *string*, optional, no default
 
   Option to convert INT SQLite column (epoch Unix Time) to be treated/visualized as TIMESTAMP in PostgreSQL.
 
-- **key** as *boolean*, optional
+- **key** as *boolean*, optional, default *false*
 
   Indicates a column as a part of primary key or unique key of SQLite table.
   
@@ -197,16 +197,21 @@ Functions
 As well as the standard `sqlite_fdw_handler()` and `sqlite_fdw_validator()`
 functions, `sqlite_fdw` provides the following user-callable utility functions:
 
-- SETOF record **sqlite_fdw_get_connections(server_name text, valid bool)**
+- SETOF record **sqlite_fdw_get_connections**(server_name text, valid bool)
 
-- bool **sqlite_fdw_disconnect(text)**
+- bool **sqlite_fdw_disconnect**(text)
 
   Closes connection from PostgreSQL to SQLite in the current session.
 
 - bool **sqlite_fdw_disconnect_all()**
 
-- SETOF record **sqlite_fdw_version()**;
-
+- **sqlite_fdw_version()**;
+Returns standard "version integer" as `major version * 10000 + minor version * 100 + bugfix`.
+```
+sqlite_fdw_version 
+--------------------
+              20300
+```
 Identifier case handling
 ------------------------
 
