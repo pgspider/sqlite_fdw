@@ -284,6 +284,7 @@ static bool sqliteAnalyzeForeignTable(Relation relation,
 									  AcquireSampleRowsFunc *func,
 									  BlockNumber *totalpages);
 
+static int sqliteIsForeignRelUpdatable(Relation rel);
 
 
 static List *sqliteImportForeignSchema(ImportForeignSchemaStmt *stmt,
@@ -437,6 +438,7 @@ sqlite_fdw_handler(PG_FUNCTION_ARGS)
 	fdwroutine->ReScanForeignScan = sqliteReScanForeignScan;
 	fdwroutine->EndForeignScan = sqliteEndForeignScan;
 
+	fdwroutine->IsForeignRelUpdatable = sqliteIsForeignRelUpdatable;
 	fdwroutine->AddForeignUpdateTargets = sqliteAddForeignUpdateTargets;
 	fdwroutine->PlanForeignModify = sqlitePlanForeignModify;
 	fdwroutine->BeginForeignModify = sqliteBeginForeignModify;
@@ -5563,3 +5565,48 @@ sqlite_get_batch_size_option(Relation rel)
 	return batch_size;
 }
 #endif
+
+/*
+ * sqliteIsForeignRelUpdatable
+ *		Determine whether a foreign table supports INSERT, UPDATE and/or
+ *		DELETE.
+ */
+static int
+sqliteIsForeignRelUpdatable(Relation rel)
+{
+	bool		updatable;
+	ForeignTable *table;
+	ForeignServer *server;
+	ListCell   *lc;
+
+	/*
+	 * By default, all sqlite_fdw foreign tables are assumed updatable. This
+	 * can be overridden by a per-server setting, which in turn can be
+	 * overridden by a per-table setting.
+	 */
+	updatable = true;
+
+	table = GetForeignTable(RelationGetRelid(rel));
+	server = GetForeignServer(table->serverid);
+
+	foreach(lc, server->options)
+	{
+		DefElem    *def = (DefElem *) lfirst(lc);
+
+		if (strcmp(def->defname, "updatable") == 0)
+			updatable = defGetBoolean(def);
+	}
+	foreach(lc, table->options)
+	{
+		DefElem    *def = (DefElem *) lfirst(lc);
+
+		if (strcmp(def->defname, "updatable") == 0)
+			updatable = defGetBoolean(def);
+	}
+
+	/*
+	 * Currently "updatable" means support for INSERT, UPDATE and DELETE.
+	 */
+	return updatable ?
+		(1 << CMD_INSERT) | (1 << CMD_UPDATE) | (1 << CMD_DELETE) : 0;
+}
