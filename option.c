@@ -57,11 +57,13 @@ struct SqliteFdwOption
 static struct SqliteFdwOption valid_options[] =
 {
 	{"table", ForeignTableRelationId},
-	{"database", ForeignServerRelationId},
-	{"updatable", ForeignServerRelationId},
+	{"database", ForeignServerRelationId},	
 	{"key", AttributeRelationId},
 	{"column_name", AttributeRelationId},
 	{"column_type", AttributeRelationId},
+	/* updatable is available on both server and table */
+	{"updatable", ForeignServerRelationId},
+	{"updatable", AttributeRelationId},
 	/* truncatable is available on both server and table */
 	{"truncatable", ForeignServerRelationId},
 	{"truncatable", ForeignTableRelationId},
