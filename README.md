@@ -427,6 +427,7 @@ Contributing
 ------------
 
 Opening issues and pull requests on GitHub are welcome.
+You don't need to squash small commits to one big in pull requests.
 
 Useful links
 ------------
@@ -435,6 +436,9 @@ Useful links
 
  - https://github.com/pgspider/sqlite_fdw
  - https://pgxn.org/dist/sqlite_fdw/
+ 
+ Reference FDW realisation, `postgres_fdw`
+ - https://git.postgresql.org/gitweb/?p=postgresql.git;a=tree;f=contrib/postgres_fdw;hb=HEAD
 
 ### General FDW Documentation
 
