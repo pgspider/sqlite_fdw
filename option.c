@@ -58,7 +58,7 @@ static struct SqliteFdwOption valid_options[] =
 {
 	{"table", ForeignTableRelationId},
 	{"database", ForeignServerRelationId},
-	{"readonly", ForeignServerRelationId},
+	{"updatable", ForeignServerRelationId},
 	{"key", AttributeRelationId},
 	{"column_name", AttributeRelationId},
 	{"column_type", AttributeRelationId},
@@ -128,7 +128,7 @@ sqlite_fdw_validator(PG_FUNCTION_ARGS)
 		/* Validate option value */
 		if (strcmp(def->defname, "truncatable") == 0 ||
 			strcmp(def->defname, "keep_connections") == 0) ||
-			strcmp(def->defname, "readonly") == 0
+			strcmp(def->defname, "updatable") == 0
 		{
 			defGetBoolean(def);
 		}
