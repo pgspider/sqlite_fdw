@@ -284,6 +284,7 @@ static bool sqliteAnalyzeForeignTable(Relation relation,
 									  AcquireSampleRowsFunc *func,
 									  BlockNumber *totalpages);
 
+static int sqliteIsForeignRelUpdatable(Relation rel);
 
 
 static List *sqliteImportForeignSchema(ImportForeignSchemaStmt *stmt,
@@ -437,6 +438,7 @@ sqlite_fdw_handler(PG_FUNCTION_ARGS)
 	fdwroutine->ReScanForeignScan = sqliteReScanForeignScan;
 	fdwroutine->EndForeignScan = sqliteEndForeignScan;
 
+	fdwroutine->IsForeignRelUpdatable = sqliteIsForeignRelUpdatable;
 	fdwroutine->AddForeignUpdateTargets = sqliteAddForeignUpdateTargets;
 	fdwroutine->PlanForeignModify = sqlitePlanForeignModify;
 	fdwroutine->BeginForeignModify = sqliteBeginForeignModify;
@@ -1563,6 +1565,37 @@ make_tuple_from_result_row(sqlite3_stmt * stmt,
 {
 	ListCell   *lc = NULL;
 	int			attid = 0;
+	
+	bool		special_real_values = false;
+	bool		implicit_bool_type = false;
+	
+	ForeignTable *table;
+	ForeignServer *server;
+
+	table = GetForeignTable(RelationGetRelid(festate->rel));
+	server = GetForeignServer(table->serverid);
+
+	foreach(lc, server->options)
+	{
+		DefElem    *def = (DefElem *) lfirst(lc);
+
+		if (strcmp(def->defname, "special_real_values") == 0)
+			special_real_values = defGetBoolean(def);
+		if (strcmp(def->defname, "implicit_bool_type") == 0)
+			implicit_bool_type = defGetBoolean(def);	
+	}
+	foreach(lc, table->options)
+	{
+		DefElem    *def = (DefElem *) lfirst(lc);
+
+		if (strcmp(def->defname, "special_real_values") == 0)
+			special_real_values = defGetBoolean(def);
+		if (strcmp(def->defname, "implicit_bool_type") == 0)
+			implicit_bool_type = defGetBoolean(def);
+	}
+
+
+
 
 	memset(row, 0, sizeof(Datum) * tupleDescriptor->natts);
 	memset(is_null, true, sizeof(bool) * tupleDescriptor->natts);
@@ -1577,7 +1610,8 @@ make_tuple_from_result_row(sqlite3_stmt * stmt,
 		{
 			is_null[attnum] = false;
 			row[attnum] = sqlite_convert_to_pg(pgtype, pgtypmod,
-											   stmt, attid, festate->attinmeta);
+											   stmt, attid, festate->attinmeta,
+											   special_real_values, implicit_bool_type);
 		}
 		attid++;
 	}
@@ -5563,3 +5597,52 @@ sqlite_get_batch_size_option(Relation rel)
 	return batch_size;
 }
 #endif
+
+/*
+ * sqliteIsForeignRelUpdatable
+ *		Determine whether a foreign table supports INSERT, UPDATE and/or
+ *		DELETE.
+ */
+static int
+sqliteIsForeignRelUpdatable(Relation rel)
+{
+	bool		updatable;
+	ForeignTable *table;
+	ForeignServer *server;
+	ListCell   *lc;
+
+	/*
+	 * By default, all sqlite_fdw foreign tables are assumed updatable only
+	 * if corresponding per-server setting is 'true'. Otherewise
+	 * a per-table setting is ignored. Hence minimum privilegies security
+	 * policy is enabled.
+	 */
+	updatable = true;
+
+	table = GetForeignTable(RelationGetRelid(rel));
+	server = GetForeignServer(table->serverid);
+
+	foreach(lc, server->options)
+	{
+		DefElem    *def = (DefElem *) lfirst(lc);
+
+		if (strcmp(def->defname, "updatable") == 0)
+			updatable = defGetBoolean(def);
+	}
+	if (updatable)
+	{
+		foreach(lc, table->options)
+		{
+			DefElem    *def = (DefElem *) lfirst(lc);
+
+			if (strcmp(def->defname, "updatable") == 0)
+				updatable = defGetBoolean(def);
+		}
+	}
+
+	/*
+	 * Currently "updatable" means support for INSERT, UPDATE and DELETE.
+	 */
+	return updatable ?
+		(1 << CMD_INSERT) | (1 << CMD_UPDATE) | (1 << CMD_DELETE) : 0;
+}

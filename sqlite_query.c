@@ -68,7 +68,7 @@ static int32
  * convert_sqlite_to_pg: Convert Sqlite data into PostgreSQL's compatible data types
  */
 Datum
-sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, AttInMetadata *attinmeta)
+sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, AttInMetadata *attinmeta, bool use_special_IEEE_double, bool use_special_bool_value)
 {
 	Datum		value_datum = 0;
 	Datum		valueDatum = 0;
@@ -78,7 +78,7 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 	int			col_type;
 	int			sqlite_type_eqv_to_pg;
 	bool		is_special_IEEE_value = false;
-	double		special_IEEE_double;
+	double		special_IEEE_double = 0.0 / 0.0 ; // NaN
 	bool		is_special_bool_value = false;
 	bool		special_bool_value = false;
 
@@ -98,7 +98,7 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 	{
 		value_datum = CStringGetDatum((char*) sqlite3_column_text(stmt, attnum));
 
-		if (sqlite_type_eqv_to_pg == SQLITE_FLOAT && col_type == SQLITE3_TEXT)
+		if (sqlite_type_eqv_to_pg == SQLITE_FLOAT && col_type == SQLITE3_TEXT && use_special_IEEE_double)
 		{
 			bool        special_NaN = false;
 			bool        special_pos_infin = false;
@@ -123,7 +123,7 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 			is_special_IEEE_value = (special_NaN || special_pos_infin || special_neg_infin);
 		}
 
-		if (pgtyp == BOOLOID && col_type == SQLITE3_TEXT)
+		if (pgtyp == BOOLOID && col_type == SQLITE3_TEXT && use_special_bool_value)
 		{
 			is_special_bool_value = true;
 			char *p = 0;
@@ -197,20 +197,20 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 			}
 		case BOOLOID:
 			{
-				int			value = is_special_bool_value ? special_bool_value : sqlite3_column_int(stmt, attnum);
+				int			value = (is_special_bool_value && use_special_bool_value) ? special_bool_value : sqlite3_column_int(stmt, attnum);
 
 				return Int16GetDatum(value);
 				break;
 			}
 		case FLOAT4OID:
 			{
-				double		value = (is_special_IEEE_value) ? special_IEEE_double : sqlite3_column_double(stmt, attnum);
+				double		value = (is_special_IEEE_value && use_special_IEEE_double) ? special_IEEE_double : sqlite3_column_double(stmt, attnum);
 				return Float4GetDatum((float4) value);
 				break;
 			}
 		case FLOAT8OID:
 			{
-				double		value = (is_special_IEEE_value) ? special_IEEE_double : sqlite3_column_double(stmt, attnum);
+				double		value = (is_special_IEEE_value && use_special_IEEE_double) ? special_IEEE_double : sqlite3_column_double(stmt, attnum);
 				return Float8GetDatum((float8) value);
 				break;
 			}
