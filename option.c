@@ -129,8 +129,8 @@ sqlite_fdw_validator(PG_FUNCTION_ARGS)
 
 		/* Validate option value */
 		if (strcmp(def->defname, "truncatable") == 0 ||
-			strcmp(def->defname, "keep_connections") == 0) ||
-			strcmp(def->defname, "updatable") == 0
+			strcmp(def->defname, "keep_connections") == 0 ||
+			strcmp(def->defname, "updatable") == 0)
 		{
 			defGetBoolean(def);
 		}
