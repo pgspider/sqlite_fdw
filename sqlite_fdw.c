@@ -5580,9 +5580,10 @@ sqliteIsForeignRelUpdatable(Relation rel)
 	ListCell   *lc;
 
 	/*
-	 * By default, all sqlite_fdw foreign tables are assumed updatable. This
-	 * can be overridden by a per-server setting, which in turn can be
-	 * overridden by a per-table setting.
+	 * By default, all sqlite_fdw foreign tables are assumed updatable only
+	 * if corresponding per-server setting is 'true'. Otherewise
+	 * a per-table setting is ignored. Hence minimum privilegies security
+	 * policy is enabled.
 	 */
 	updatable = true;
 
@@ -5596,12 +5597,15 @@ sqliteIsForeignRelUpdatable(Relation rel)
 		if (strcmp(def->defname, "updatable") == 0)
 			updatable = defGetBoolean(def);
 	}
-	foreach(lc, table->options)
+	if (updatable)
 	{
-		DefElem    *def = (DefElem *) lfirst(lc);
+		foreach(lc, table->options)
+		{
+			DefElem    *def = (DefElem *) lfirst(lc);
 
-		if (strcmp(def->defname, "updatable") == 0)
-			updatable = defGetBoolean(def);
+			if (strcmp(def->defname, "updatable") == 0)
+				updatable = defGetBoolean(def);
+		}
 	}
 
 	/*
