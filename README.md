@@ -121,7 +121,7 @@ Usage
   
 - **updatable** as *boolean*, optional, default *true*
 
-  This option allow write operations on SQLite database file. If `false` [`SQLITE_OPEN_READONLY`](https://sqlite.org/c3ref/open.html) mode will enabled.
+  This option allow write operations on SQLite database file. If `false` [`SQLITE_OPEN_READONLY`](https://sqlite.org/c3ref/open.html) mode will enabled. Hence `updatable` option for foreign tables will ignored.
   
 - **truncatable** as *boolean*, optional, default *false*
 
@@ -160,6 +160,10 @@ In OS `sqlite_fdw` works as executed code with permissions of user of PostgreSQL
 - **batch_size** as *integer*, optional, default from the same `CREATE SERVER` option
 
   See `CREATE SERVER` options section for details.  
+  
+- **updatable** as *boolean*, optional, default *true*
+
+  This option can disallow write operations on a SQLite table if this operations is server-level allowed (option `updatable` set to `true` or not set for foreign server). Otherwise this option is ignored.
   
 `sqlite_fdw` accepts the following column-level options via the
 `CREATE FOREIGN TABLE` command:
