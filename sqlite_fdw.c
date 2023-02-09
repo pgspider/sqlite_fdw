@@ -1564,15 +1564,18 @@ make_tuple_from_result_row(sqlite3_stmt * stmt,
 						   SqliteFdwExecState * festate)
 {
 	ListCell   *lc = NULL;
+	ListCell   *lc_attr = NULL;
 	int			attid = 0;
 	
 	bool		special_real_values = false;
 	bool		implicit_bool_type = false;
-	
+
+	unsigned int rel = 0;	
 	ForeignTable *table;
 	ForeignServer *server;
 
-	table = GetForeignTable(RelationGetRelid(festate->rel));
+	rel = RelationGetRelid(festate->rel);
+	table = GetForeignTable(rel);
 	server = GetForeignServer(table->serverid);
 
 	foreach(lc, server->options)
@@ -1599,13 +1602,27 @@ make_tuple_from_result_row(sqlite3_stmt * stmt,
 
 	foreach(lc, retrieved_attrs)
 	{
-		int			attnum = lfirst_int(lc) - 1;
+		int			attnum_base = lfirst_int(lc);
+		int			attnum = attnum_base - 1;
 		Oid			pgtype = TupleDescAttr(tupleDescriptor, attnum)->atttypid;
 		int32		pgtypmod = TupleDescAttr(tupleDescriptor, attnum)->atttypmod;
+		List	   *options = NULL;
 
 		if (sqlite3_column_type(stmt, attid) != SQLITE_NULL)
 		{
 			is_null[attnum] = false;
+			
+			options = GetForeignColumnOptions(rel, attnum_base);
+			foreach(lc_attr, options)
+			{
+				DefElem    *def = (DefElem *) lfirst(lc_attr);
+
+				if (strcmp(def->defname, "special_real_values") == 0)
+					special_real_values = defGetBoolean(def);
+				if (strcmp(def->defname, "implicit_bool_type") == 0)
+					implicit_bool_type = defGetBoolean(def);
+			}
+			
 			row[attnum] = sqlite_convert_to_pg(pgtype, pgtypmod,
 											   stmt, attid, festate->attinmeta,
 											   special_real_values, implicit_bool_type);
