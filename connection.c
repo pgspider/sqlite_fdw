@@ -204,7 +204,7 @@ sqlite_make_new_connection(ConnCacheEntry *entry, ForeignServer *server)
 	entry->invalidated = false;
 	entry->stmtList = NULL;
 	entry->keep_connections = true;
-	entry->readonly = false;
+	entry->updatable = true;
 	entry->server_hashvalue =
 		GetSysCacheHashValue1(FOREIGNSERVEROID,
 							  ObjectIdGetDatum(server->serverid));
@@ -216,11 +216,11 @@ sqlite_make_new_connection(ConnCacheEntry *entry, ForeignServer *server)
 			dbpath = defGetString(def);
 		else if (strcmp(def->defname, "keep_connections") == 0)
 			entry->keep_connections = defGetBoolean(def);
-		else if (strcmp(def->defname, "readonly") == 0)
-			entry->readonly = defGetBoolean(def);
+		else if (strcmp(def->defname, "updatable") == 0)
+			entry->updatable = defGetBoolean(def);
 	}
 
-	flags = flags | (entry->readonly ? SQLITE_OPEN_READONLY : SQLITE_OPEN_READWRITE);
+	flags = flags | (entry->updatable ? SQLITE_OPEN_READWRITE : SQLITE_OPEN_READONLY);
 	rc = sqlite3_open_v2(dbpath, &entry->conn, flags, zVfs);
 	if (rc != SQLITE_OK)
 		ereport(ERROR,
