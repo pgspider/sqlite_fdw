@@ -1594,9 +1594,6 @@ make_tuple_from_result_row(sqlite3_stmt * stmt,
 			implicit_bool_type = defGetBoolean(def);
 	}
 
-
-
-
 	memset(row, 0, sizeof(Datum) * tupleDescriptor->natts);
 	memset(is_null, true, sizeof(bool) * tupleDescriptor->natts);
 
