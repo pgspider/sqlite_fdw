@@ -60,9 +60,12 @@
 #include "postmaster/syslogger.h"
 #include "storage/fd.h"
 #include "catalog/pg_type.h"
+#include "parser/parse_type.h"
 
 static int32
 			sqlite_eqv_from_pgtyp(Oid pgtyp);
+static const char*
+			sqlite_datatype(int t);
 
 /*
  * convert_sqlite_to_pg: Convert Sqlite data into PostgreSQL's compatible data types
@@ -75,12 +78,15 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 	regproc		typeinput;
 	HeapTuple	tuple;
 	int			typemod;
-	int			col_type;
+	int			sqlite_col_type;
 	int			sqlite_type_eqv_to_pg;
 	bool		is_special_IEEE_value = false;
 	double		special_IEEE_double = 0.0 / 0.0 ; // NaN
 	bool		is_special_bool_value = false;
 	bool		special_bool_value = false;
+	const char * sqlite_affinity;
+	const char * pg_eqv_affinity;
+	const char * pg_dataTypeName;
 
 	/* get the type's output function */
 	tuple = SearchSysCache1(TYPEOID, ObjectIdGetDatum(pgtyp));
@@ -91,20 +97,28 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 	typemod = ((Form_pg_type) GETSTRUCT(tuple))->typtypmod;
 	ReleaseSysCache(tuple);
 
+	/* prepare all metadata for datatypes both in forms for PostgreSQL
+	 * and SQLite, both on int and char* forms
+	 */
 	sqlite_type_eqv_to_pg = sqlite_eqv_from_pgtyp(pgtyp);
-	col_type = sqlite3_column_type(stmt, attnum);
+	sqlite_col_type = sqlite3_column_type(stmt, attnum);
 
-	if (sqlite_type_eqv_to_pg != col_type && col_type == SQLITE3_TEXT)
+	pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(pgtyp, pgtypmod));
+	sqlite_affinity = sqlite_datatype(sqlite_col_type);
+	pg_eqv_affinity = sqlite_datatype(sqlite_type_eqv_to_pg);
+
+	if (sqlite_type_eqv_to_pg != sqlite_col_type && sqlite_col_type == SQLITE3_TEXT)
 	{
 		value_datum = CStringGetDatum((char*) sqlite3_column_text(stmt, attnum));
 
-		if (sqlite_type_eqv_to_pg == SQLITE_FLOAT && col_type == SQLITE3_TEXT && use_special_IEEE_double)
+		if (sqlite_type_eqv_to_pg == SQLITE_FLOAT && sqlite_col_type == SQLITE3_TEXT && use_special_IEEE_double)
 		{
 			bool        special_NaN = false;
 			bool        special_pos_infin = false;
 			bool        special_neg_infin = false;
-			char *p = 0;
-			char *uc_str = (char *) malloc( strlen((char *)value_datum) + 1 );
+			char		*p;
+			char *uc_str;
+			uc_str = (char *) malloc( strlen((char *)value_datum) + 1 );
 			strcpy(uc_str, (char *)value_datum);
 			p = uc_str;
 			while (*p) {
@@ -123,11 +137,13 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 			is_special_IEEE_value = (special_NaN || special_pos_infin || special_neg_infin);
 		}
 
-		if (pgtyp == BOOLOID && col_type == SQLITE3_TEXT && use_special_bool_value)
+		if (pgtyp == BOOLOID && sqlite_col_type == SQLITE3_TEXT && use_special_bool_value)
 		{
+			char *p;
+			char *uc_str;
 			is_special_bool_value = true;
-			char *p = 0;
-			char *uc_str = (char *) malloc( strlen((char *)value_datum) + 1 );
+
+			uc_str = (char *) malloc( strlen((char *)value_datum) + 1 );
 			strcpy(uc_str, (char *)value_datum);
 			p = uc_str;
 			while (*p) {
@@ -142,11 +158,13 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 		}
 
 		if (is_special_IEEE_value)
-			elog(DEBUG3, "sqlite_fdw : special IEEE value : type =%d, column type =%d, value =%s", sqlite_type_eqv_to_pg, col_type, (char*)value_datum);
+			elog(DEBUG3, "sqlite_fdw : special IEEE value for \"%s\" = sqlite \"%s\", affinity = \"%s\", value ='%s'", pg_dataTypeName, pg_eqv_affinity, sqlite_affinity, (char*)value_datum);
 		else if (is_special_bool_value)
-			elog(DEBUG3, "sqlite_fdw : a string for bool : type =%d, column type =%d, value =%s", sqlite_type_eqv_to_pg, col_type, (char*)value_datum);
+			elog(DEBUG3, "sqlite_fdw : a bool literal for \"%s\" = sqlite \"%s\", affinity = \"%s\", value ='%s'", pg_dataTypeName, pg_eqv_affinity, sqlite_affinity, (char*)value_datum);
 		else
-			elog(ERROR, "invalid input syntax for type =%d, column type =%d, value =%s", sqlite_type_eqv_to_pg, col_type, (char*)value_datum);
+		{
+			elog(ERROR, "invalid input for type \"%s\" = SQLite \"%s\", but affinity = \"%s\" for value ='%s'", pg_dataTypeName, pg_eqv_affinity, sqlite_affinity, (char*)value_datum);
+		}
 	}
 
 	switch (pgtyp)
@@ -400,7 +418,7 @@ sqlite_bind_sql_var(Oid type, int attnum, Datum value, sqlite3_stmt * stmt, bool
 }
 
 /*
- * Give SQLite data type from PG type
+ * Give equivalent SQLite data type to PG data type Oid
  */
 static int32
 sqlite_eqv_from_pgtyp(Oid type)
@@ -420,5 +438,29 @@ sqlite_eqv_from_pgtyp(Oid type)
 			return SQLITE_BLOB;
 		default:
 			return SQLITE3_TEXT;
+	}
+}
+
+/*
+ * Give equivalent string for SQLite data by int from enum
+ * SQLITE_INTEGER etc.
+ */
+static const char* sqlite_datatype(int t)
+{
+	static const char *azType[] = { "?", "integer", "real", "text", "blob", "null" };
+	switch (t)
+	{
+		case SQLITE_INTEGER:
+			return azType[1];
+		case SQLITE_FLOAT:
+			return azType[2];
+		case SQLITE3_TEXT:
+			return azType[3];
+		case SQLITE_BLOB:
+			return azType[4];
+		case SQLITE_NULL:
+			return azType[5];									
+		default:
+			return azType[0];
 	}
 }
