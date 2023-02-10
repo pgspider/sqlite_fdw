@@ -84,9 +84,6 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 	double		special_IEEE_double = 0.0 / 0.0 ; // NaN
 	bool		is_special_bool_value = false;
 	bool		special_bool_value = false;
-	const char * sqlite_affinity;
-	const char * pg_eqv_affinity;
-	const char * pg_dataTypeName;
 
 	/* get the type's output function */
 	tuple = SearchSysCache1(TYPEOID, ObjectIdGetDatum(pgtyp));
@@ -97,18 +94,18 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 	typemod = ((Form_pg_type) GETSTRUCT(tuple))->typtypmod;
 	ReleaseSysCache(tuple);
 
-	/* prepare all metadata for datatypes both in forms for PostgreSQL
-	 * and SQLite, both on int and char* forms
-	 */
 	sqlite_type_eqv_to_pg = sqlite_eqv_from_pgtyp(pgtyp);
 	sqlite_col_type = sqlite3_column_type(stmt, attnum);
 
-	pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(pgtyp, pgtypmod));
-	sqlite_affinity = sqlite_datatype(sqlite_col_type);
-	pg_eqv_affinity = sqlite_datatype(sqlite_type_eqv_to_pg);
-
 	if (sqlite_type_eqv_to_pg != sqlite_col_type && sqlite_col_type == SQLITE3_TEXT)
-	{
+	{	// prepare string for data type and affinities
+		const char * sqlite_affinity;
+		const char * pg_eqv_affinity;
+		const char * pg_dataTypeName;
+		pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(pgtyp, pgtypmod));
+		sqlite_affinity = sqlite_datatype(sqlite_col_type);
+		pg_eqv_affinity = sqlite_datatype(sqlite_type_eqv_to_pg);
+	
 		value_datum = CStringGetDatum((char*) sqlite3_column_text(stmt, attnum));
 
 		if (sqlite_type_eqv_to_pg == SQLITE_FLOAT && sqlite_col_type == SQLITE3_TEXT && use_special_IEEE_double)
