@@ -113,9 +113,9 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 
 		if (sqlite_type_eqv_to_pg == SQLITE_FLOAT && sqlite_col_type == SQLITE3_TEXT && use_special_IEEE_double)
 		{
-			bool        special_NaN = false;
-			bool        special_pos_infin = false;
-			bool        special_neg_infin = false;
+			bool		special_NaN = false;
+			bool		special_pos_infin = false;
+			bool		special_neg_infin = false;
 			char		*p;
 			char *uc_str;
 			uc_str = (char *) malloc( strlen((char *)value_datum) + 1 );
@@ -328,7 +328,6 @@ sqlite_bind_sql_var(Oid type, int attnum, Datum value, sqlite3_stmt * stmt, bool
 				ret = sqlite3_bind_int64(stmt, attnum, dat);
 				break;
 			}
-
 		case FLOAT4OID:
 
 			{
@@ -344,7 +343,6 @@ sqlite_bind_sql_var(Oid type, int attnum, Datum value, sqlite3_stmt * stmt, bool
 				ret = sqlite3_bind_double(stmt, attnum, dat);
 				break;
 			}
-
 		case NUMERICOID:
 			{
 				Datum		valueDatum = DirectFunctionCall1(numeric_float8, value);
@@ -360,7 +358,6 @@ sqlite_bind_sql_var(Oid type, int attnum, Datum value, sqlite3_stmt * stmt, bool
 				ret = sqlite3_bind_int(stmt, attnum, dat);
 				break;
 			}
-
 		case BPCHAROID:
 		case VARCHAROID:
 		case TEXTOID:
@@ -372,7 +369,7 @@ sqlite_bind_sql_var(Oid type, int attnum, Datum value, sqlite3_stmt * stmt, bool
 		case DATEOID:
 			{
 				/* Bind as text because SQLite does not have these types */
-				char	   *outputString = NULL;
+				char*		outputString = NULL;
 				Oid			outputFunctionId = InvalidOid;
 				bool		typeVarLength = false;
 
@@ -384,8 +381,8 @@ sqlite_bind_sql_var(Oid type, int attnum, Datum value, sqlite3_stmt * stmt, bool
 		case BYTEAOID:
 			{
 				int			len;
-				char	   *dat = NULL;
-				char	   *result = DatumGetPointer(value);
+				char*		dat = NULL;
+				char*		result = DatumGetPointer(value);
 
 				if (VARATT_IS_1B(result))
 				{
@@ -400,7 +397,6 @@ sqlite_bind_sql_var(Oid type, int attnum, Datum value, sqlite3_stmt * stmt, bool
 				ret = sqlite3_bind_blob(stmt, attnum, dat, len, SQLITE_TRANSIENT);
 				break;
 			}
-
 		default:
 			{
 				ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
@@ -412,9 +408,8 @@ sqlite_bind_sql_var(Oid type, int attnum, Datum value, sqlite3_stmt * stmt, bool
 	if (ret != SQLITE_OK)
 		ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
 						errmsg("Can't convert constant value to Sqlite: %s",
-							   sqlite3_errmsg(sqlite3_db_handle(stmt))),
+								sqlite3_errmsg(sqlite3_db_handle(stmt))),
 						errhint("Constant value data type: %u", type)));
-
 }
 
 /*
@@ -459,7 +454,7 @@ static const char* sqlite_datatype(int t)
 		case SQLITE_BLOB:
 			return azType[4];
 		case SQLITE_NULL:
-			return azType[5];									
+			return azType[5];
 		default:
 			return azType[0];
 	}
