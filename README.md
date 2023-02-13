@@ -421,7 +421,12 @@ Limitations
 
 Tests
 -----
-*Yet not described*. Some tests as `psql` expected outputs can be found in [expected](expected) directory.
+
+For testing you need install `sqlite3` from packgage of your OS or from source code to a directory from `PATH` environment variable. Hence `sqlite3` must be a right command in your environment. Testing scripts from PosgreSQL-side is multi-versioned. Hence you must install PostgreSQL packages in versions listed in [sql](sql) directory.
+
+Main testing script see in [test.sh](test.sh) file.
+
+*Environmemt requirements yet not described*. Some tests as `psql` expected outputs can be found in [expected](expected) directory.
  
 Contributing
 ------------
