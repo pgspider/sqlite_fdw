@@ -426,13 +426,55 @@ For testing you need install `sqlite3` from packgage of your OS or from source c
 
 Main testing script see in [test.sh](test.sh) file.
 
-*Environmemt requirements yet not described*. Some tests as `psql` expected outputs can be found in [expected](expected) directory.
- 
+
+Test directory have structure as following:
+
+```sql
++---sql
+|   +---11.7
+|   |       filename1.sql
+|   |       filename2.sql
+|   | 
+|   +---12.12
+|   |       filename1.sql
+|   |       filename2.sql
+|   | 
+.................  
+|   \---15.0
+|          filename1.sql
+|          filename2.sql
+|          
+\---expected
+|   +---11.7
+|   |       filename1.out
+|   |       filename2.out
+|   | 
+|   +---12.12
+|   |       filename1.out
+|   |       filename2.out
+|   | 
+.................  
+|   \---15.0
+            filename1.out
+            filename2.out
+```
+The test cases for each version are based on the test of corresponding version of PostgreSQL.
+You can execute test by test.sh directly. 
+The version of PostgreSQL is detected automatically by $(VERSION) variable in Makefile.
+The corresponding sql and expected directory will be used to compare the result. For example, for Postgres 15.0, you can execute "test.sh" directly, and the sql/15.0 and expected/15.0 will be used to compare automatically.
+
+
 Contributing
 ------------
 
 Opening issues and pull requests on GitHub are welcome.
+
 You don't need to squash small commits to one big in pull requests.
+
+For pull request, please make sure these items below for testing:
+- Create test cases (if needed) for the latest version of PostgreSQL supported by `sqlite_fdw`.
+- Execute test cases and update expectations for the latest version of PostgreSQL
+- Test creation and execution for other PostgreSQL versions are welcome but not required.
 
 Useful links
 ------------
