@@ -422,10 +422,7 @@ Limitations
 Tests
 -----
 
-For testing you need install `sqlite3` from packgage of your OS or from source code to a directory from `PATH` environment variable. Hence `sqlite3` must be a right command in your environment. Testing scripts from PosgreSQL-side is multi-versioned. Hence you must install PostgreSQL packages in versions listed in [sql](sql) directory.
-
-Main testing script see in [test.sh](test.sh) file.
-
+All tests is based on `make check`, main testing script see in [test.sh](test.sh) file. We don't profess a specific environment. You can use any POSIX-compliant system. For testing you need install `sqlite3` from packgage of your OS or from source code to a directory from `PATH` environment variable. Hence `sqlite3` must be a correct command in your environment. Testing scripts from PosgreSQL-side is multi-versioned. Hence you need install PostgreSQL packages in versions listed in [sql](sql) directory. About base testing mechanism see in [PostgreSQL documentation](https://www.postgresql.org/docs/current/regress-run.html).
 
 Test directory have structure as following:
 
@@ -459,10 +456,9 @@ Test directory have structure as following:
             filename2.out
 ```
 The test cases for each version are based on the test of corresponding version of PostgreSQL.
-You can execute test by test.sh directly. 
-The version of PostgreSQL is detected automatically by $(VERSION) variable in Makefile.
-The corresponding sql and expected directory will be used to compare the result. For example, for Postgres 15.0, you can execute "test.sh" directly, and the sql/15.0 and expected/15.0 will be used to compare automatically.
-
+You can execute test by `test.sh` directly. 
+The version of PostgreSQL is detected automatically by `$(VERSION)` variable in Makefile.
+The corresponding [sql](sql) and [expected](expected) directory will be used to compare the result. For example, for Postgres 15.0, you can execute [`test.sh`](test.sh) directly, and the sql/15.0 and expected/15.0 will be used to compare automatically.
 
 Contributing
 ------------
