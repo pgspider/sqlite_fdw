@@ -551,6 +551,16 @@ ALTER TABLE fts_table ALTER COLUMN name TYPE int;
 --Testcase 160:
 SELECT * FROM fts_table; -- should fail
 
+-- issue #62 github
+--Testcase 236:
+SELECT * FROM noprimary;
+
+--Testcase 237:
+SELECT * FROM noprimary where b = 'Test''s';
+
+--Testcase 238:
+SELECT * FROM noprimary where b in ('Test''s', '2');
+
 -- Executable test case for pushdown CASE expressions (results)
 --Testcase 224:
 CREATE FOREIGN TABLE case_exp(c1 int OPTIONS (key 'true'), c3 text, c6 varchar(10)) SERVER sqlite_svr;
