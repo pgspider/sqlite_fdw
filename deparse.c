@@ -2940,6 +2940,9 @@ sqlite_deparse_scalar_array_op_expr(ScalarArrayOpExpr *node, deparse_expr_cxt *c
 							}
 							continue;
 						}
+
+						if (SQL_STR_DOUBLE(ch, true))
+							appendStringInfoChar(buf, ch);
 						appendStringInfoChar(buf, ch);
 					}
 
