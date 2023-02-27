@@ -43,7 +43,6 @@ typedef struct ConnCacheEntry
 	/* Remaining fields are invalid when conn is NULL: */
 	int			xact_depth;		/* 0 = no xact open, 1 = main xact open, 2 =
 								 * one level of subxact open, etc */
-	bool		updatable;		/* false for readonly connections */
 	bool		keep_connections;	/* setting value of keep_connections
 									 * server option */
 	bool		truncatable;	/* check table can truncate or not */
