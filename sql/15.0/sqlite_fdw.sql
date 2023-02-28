@@ -18,6 +18,9 @@ CREATE FOREIGN TABLE multiprimary(a int, b int OPTIONS (key 'true'), c int OPTIO
 --Testcase 136:
 CREATE FOREIGN TABLE noprimary(a int, b text) SERVER sqlite_svr;
 
+-- readonly/readwrite test github pull 59
+CREATE FOREIGN TABLE RO_RW_test(i int, a text, b float, c int) SERVER sqlite_svr;
+
 --Testcase 1:
 SELECT * FROM department LIMIT 10;
 --Testcase 2:
@@ -629,6 +632,125 @@ SELECT * FROM case_exp WHERE CASE c3 COLLATE "C" WHEN c6 THEN true ELSE c3 < 'ba
 
 --Testcase 234:
 DELETE FROM case_exp;
+
+-- readonly/readwrite test github pull 59
+-- D-default, T-true, F-false
+-- sD+tD - sT+tD - sF+tD - sT+tD - sT+tT - sT+tT - sT+tF - sT+tT - sF+tD - sF+tF - sF+tF
+
+--Testcase 235:
+INSERT INTO RO_RW_test (i, a, b, c) VALUES (2, 'B', 3.01, 1); -- OK
+--Testcase 236:
+UPDATE RO_RW_test SET a='C' WHERE i=2; -- OK
+--Testcase 237:
+DELETE FROM RO_RW_test WHERE i=2; -- OK
+
+--Testcase 238:
+ALTER FOREIGN SERVER sqlite_svr OPTIONS (ADD updatable 'true');
+--Testcase 239:
+INSERT INTO RO_RW_test (i, a, b, c) VALUES (3, 'D', 5.02, 8); -- OK
+--Testcase 240:
+UPDATE RO_RW_test SET a='E' WHERE i=3; -- OK
+--Testcase 241:
+DELETE FROM RO_RW_test WHERE i=3; -- OK
+--Testcase 242:
+INSERT INTO RO_RW_test (i, a, b, c) VALUES (4, 'F', 0.005, 5); -- OK
+
+--Testcase 243:
+ALTER FOREIGN SERVER sqlite_svr OPTIONS (SET updatable 'false');
+--Testcase 244:
+INSERT INTO RO_RW_test (i, a, b, c) VALUES (5, 'H', 0.03, 7); -- ERR
+--Testcase 245:
+UPDATE RO_RW_test SET a='E' WHERE i=4; -- ERR
+--Testcase 246:
+DELETE FROM RO_RW_test WHERE i=4; -- ERR
+
+--Testcase 247:
+ALTER FOREIGN SERVER sqlite_svr OPTIONS (SET updatable 'true');
+--Testcase 248:
+INSERT INTO RO_RW_test (i, a, b, c) VALUES (6, 'I', 1.403, 2); -- OK
+--Testcase 249:
+UPDATE RO_RW_test SET a='J' WHERE i=6; -- OK
+--Testcase 250:
+DELETE FROM RO_RW_test WHERE i=6; -- OK
+
+--Testcase 251:
+ALTER FOREIGN TABLE RO_RW_test OPTIONS (ADD updatable 'true');
+--Testcase 252:
+INSERT INTO RO_RW_test (i, a, b, c) VALUES (7, 'K', 2.01, 4); -- OK
+--Testcase 253:
+UPDATE RO_RW_test SET a='L' WHERE i=7; -- OK
+--Testcase 254:
+DELETE FROM RO_RW_test WHERE i=7; -- OK
+
+--Testcase 255:
+ALTER FOREIGN TABLE RO_RW_test OPTIONS (SET updatable 'true');
+--Testcase 256:
+INSERT INTO RO_RW_test (i, a, b, c) VALUES (8, 'M', 5.02, 8); -- OK
+--Testcase 257:
+UPDATE RO_RW_test SET a='N' WHERE i=8; -- OK
+--Testcase 258:
+DELETE FROM RO_RW_test WHERE i=8; -- OK
+--Testcase 259:
+INSERT INTO RO_RW_test (i, a, b, c) VALUES (9, 'O', 3.21, 9); -- OK
+
+--Testcase 260:
+ALTER FOREIGN TABLE RO_RW_test OPTIONS (SET updatable 'false');
+--Testcase 261:
+INSERT INTO RO_RW_test (i, a, b, c) VALUES (10, 'P', 4.15, 1); -- ERR
+--Testcase 262:
+UPDATE RO_RW_test SET a='E' WHERE i=9; -- ERR
+--Testcase 263:
+DELETE FROM RO_RW_test WHERE i=9; -- ERR
+
+--Testcase 264:
+ALTER FOREIGN TABLE RO_RW_testr OPTIONS (SET updatable 'true');
+--Testcase 265:
+INSERT INTO RO_RW_test (i, a, b, c) VALUES (11, 'Q', 2.27, 5); -- OK
+--Testcase 266:
+UPDATE RO_RW_test SET a='R' WHERE i=11; -- OK
+--Testcase 267:
+DELETE FROM RO_RW_test WHERE i=11; -- OK
+--Testcase 268:
+INSERT INTO RO_RW_test (i, a, b, c) VALUES (12, 'R', 6.18, 11); -- OK
+--Testcase 269:
+INSERT INTO RO_RW_test (i, a, b, c) VALUES (13, 'S', 4.09, 15); -- OK
+--Testcase 270:
+INSERT INTO RO_RW_test (i, a, b, c) VALUES (14, 'T', 5.41, 32); -- OK
+
+--Testcase 271:
+ALTER FOREIGN SERVER sqlite_svr OPTIONS (SET updatable 'false');
+--Testcase 272:
+INSERT INTO RO_RW_test (i, a, b, c) VALUES (15, 'U', 7.39, 3); -- ERR
+--Testcase 273:
+UPDATE RO_RW_test SET a='V' WHERE i=15; -- ERR
+--Testcase 274:
+DELETE FROM RO_RW_test WHERE i=15; -- ERR
+
+--Testcase 275:
+ALTER FOREIGN TABLE RO_RW_test OPTIONS (SET updatable 'true');
+--Testcase 276:
+INSERT INTO RO_RW_test (i, a, b, c) VALUES (16, 'V', 3.19, 7); -- ERR
+--Testcase 277:
+UPDATE RO_RW_test SET a='W' WHERE i=16; -- ERR
+--Testcase 278:
+DELETE FROM RO_RW_test WHERE i=16; -- ERR
+--Testcase 279:
+ALTER FOREIGN TABLE RO_RW_test OPTIONS (DROP updatable);
+--Testcase 280:
+INSERT INTO RO_RW_test (i, a, b, c) VALUES (17, 'X', 9.52, 12); -- ERR
+--Testcase 281:
+UPDATE RO_RW_test SET a='Y' WHERE i=17; -- ERR
+--Testcase 282:
+DELETE FROM RO_RW_test WHERE i=17; -- ERR
+
+--Testcase 283:
+ALTER FOREIGN SERVER sqlite_svr OPTIONS (DROP updatable);
+--Testcase 284:
+ALTER FOREIGN TABLE RO_RW_test OPTIONS (DROP updatable);
+
+
+-- readonly/readwrite test github pull 59
+DROP FOREIGN TABLE RO_RW_test;
 
 --Testcase 142:
 DROP FUNCTION test_param_WHERE();
