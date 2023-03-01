@@ -138,7 +138,7 @@ There is no user or password conceptions in SQLite, hence `sqlite_fdw` no need a
 In OS `sqlite_fdw` works as executed code with permissions of user of PostgreSQL server. Usually it is `postgres` OS user. For interacting with SQLite database without access errors ensure this user have follow permissions:
 - read permission on all directories by path to the SQLite database file;
 - read permission on SQLite database file;
-- write permissions both on SQLite database file and *directory it contains* if you need a modification. During `INSERT`, `UPDATE` or `DELETE` in SQLite database, SQLite engine functions makes temporary files with transaction data in the directory near SQLite database file. Hence without write permissions you'll have a message `failed to execute remote SQL: rc=8 attempt to write a readonly database`. 
+- write permissions both on SQLite database file and *directory it contains* if you need a modification. During `INSERT`, `UPDATE` or `DELETE` in SQLite database, SQLite engine functions makes [temporary files with transaction data](https://www.sqlite.org/tempfiles.html) in the directory near SQLite database file. Hence without write permissions you'll have a message `failed to execute remote SQL: rc=8 attempt to write a readonly database`. 
 
 ## CREATE FOREIGN TABLE options
 
