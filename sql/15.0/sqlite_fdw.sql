@@ -634,9 +634,20 @@ SELECT * FROM case_exp WHERE CASE c3 COLLATE "C" WHEN c6 THEN true ELSE c3 < 'ba
 DELETE FROM case_exp;
 
 -- readonly/readwrite test github pull 59
+-- Full combinations
 -- D-default, T-true, F-false
--- sD+tD - sT+tD - sF+tD - sT+tD - sT+tT - sT+tT - sT+tF - sT+tT - sF+tD - sF+tF - sF+tF
+-- sD+tD - sT+tD - sF+tD - sD+tT - sD+tF - sT+tT - sF+tT - sF+tF - sT+tF
+-- SERVER default TABLE default
+-- SERVER true    TABLE default
+-- SERVER false   TABLE default
+-- SERVER default TABLE true
+-- SERVER default TABLE false
+-- SERVER true    TABLE true
+-- SERVER false   TABLE true
+-- SERVER false   TABLE false
+-- SERVER true    TABLE false
 
+-- SERVER default TABLE default
 --Testcase 235:
 INSERT INTO RO_RW_test (i, a, b, c) VALUES (2, 'B', 3.01, 1); -- OK
 --Testcase 236:
@@ -644,6 +655,7 @@ UPDATE RO_RW_test SET a='C' WHERE i=2; -- OK
 --Testcase 237:
 DELETE FROM RO_RW_test WHERE i=2; -- OK
 
+-- SERVER true TABLE default
 --Testcase 238:
 ALTER FOREIGN SERVER sqlite_svr OPTIONS (ADD updatable 'true');
 --Testcase 239:
@@ -655,6 +667,7 @@ DELETE FROM RO_RW_test WHERE i=3; -- OK
 --Testcase 242:
 INSERT INTO RO_RW_test (i, a, b, c) VALUES (4, 'F', 0.005, 5); -- OK
 
+-- SERVER false TABLE default
 --Testcase 243:
 ALTER FOREIGN SERVER sqlite_svr OPTIONS (SET updatable 'false');
 --Testcase 244:
@@ -664,90 +677,80 @@ UPDATE RO_RW_test SET a='E' WHERE i=4; -- ERR
 --Testcase 246:
 DELETE FROM RO_RW_test WHERE i=4; -- ERR
 
+-- SERVER default TABLE true
 --Testcase 247:
-ALTER FOREIGN SERVER sqlite_svr OPTIONS (SET updatable 'true');
+ALTER FOREIGN SERVER sqlite_svr OPTIONS (DROP updatable);
 --Testcase 248:
-INSERT INTO RO_RW_test (i, a, b, c) VALUES (6, 'I', 1.403, 2); -- OK
+ALTER FOREIGN TABLE RO_RW_test OPTIONS (ADD updatable 'true');
 --Testcase 249:
-UPDATE RO_RW_test SET a='J' WHERE i=6; -- OK
+INSERT INTO RO_RW_test (i, a, b, c) VALUES (6, 'I', 1.403, 2); -- OK
 --Testcase 250:
+UPDATE RO_RW_test SET a='J' WHERE i=6; -- OK
+--Testcase 251:
 DELETE FROM RO_RW_test WHERE i=6; -- OK
 
---Testcase 251:
-ALTER FOREIGN TABLE RO_RW_test OPTIONS (ADD updatable 'true');
+-- SERVER default TABLE false
 --Testcase 252:
-INSERT INTO RO_RW_test (i, a, b, c) VALUES (7, 'K', 2.01, 4); -- OK
+ALTER FOREIGN TABLE RO_RW_test OPTIONS (SET updatable 'false');
 --Testcase 253:
-UPDATE RO_RW_test SET a='L' WHERE i=7; -- OK
+INSERT INTO RO_RW_test (i, a, b, c) VALUES (7, 'K', 2.01, 4); -- ERR
 --Testcase 254:
-DELETE FROM RO_RW_test WHERE i=7; -- OK
-
+UPDATE RO_RW_test SET a='L' WHERE i=4; -- ERR
 --Testcase 255:
-ALTER FOREIGN TABLE RO_RW_test OPTIONS (SET updatable 'true');
+DELETE FROM RO_RW_test WHERE i=4; -- ERR
+
+-- SERVER true TABLE true
 --Testcase 256:
-INSERT INTO RO_RW_test (i, a, b, c) VALUES (8, 'M', 5.02, 8); -- OK
+ALTER FOREIGN SERVER sqlite_svr OPTIONS (ADD updatable 'true');
 --Testcase 257:
-UPDATE RO_RW_test SET a='N' WHERE i=8; -- OK
+ALTER FOREIGN TABLE RO_RW_test OPTIONS (SET updatable 'true');
 --Testcase 258:
+INSERT INTO RO_RW_test (i, a, b, c) VALUES (8, 'M', 5.02, 8); -- OK
+--Testcase 258:
+UPDATE RO_RW_test SET a='N' WHERE i=8; -- OK
+--Testcase 260:
 DELETE FROM RO_RW_test WHERE i=8; -- OK
---Testcase 259:
+--Testcase 261:
 INSERT INTO RO_RW_test (i, a, b, c) VALUES (9, 'O', 3.21, 9); -- OK
 
---Testcase 260:
-ALTER FOREIGN TABLE RO_RW_test OPTIONS (SET updatable 'false');
---Testcase 261:
-INSERT INTO RO_RW_test (i, a, b, c) VALUES (10, 'P', 4.15, 1); -- ERR
+-- SERVER false TABLE true
 --Testcase 262:
-UPDATE RO_RW_test SET a='E' WHERE i=9; -- ERR
+ALTER FOREIGN SERVER sqlite_svr OPTIONS (SET updatable 'false');
 --Testcase 263:
+INSERT INTO RO_RW_test (i, a, b, c) VALUES (10, 'P', 4.15, 1); -- ERR
+--Testcase 264:
+UPDATE RO_RW_test SET a='Q' WHERE i=9; -- ERR
+--Testcase 265:
 DELETE FROM RO_RW_test WHERE i=9; -- ERR
 
---Testcase 264:
-ALTER FOREIGN TABLE RO_RW_testr OPTIONS (SET updatable 'true');
---Testcase 265:
-INSERT INTO RO_RW_test (i, a, b, c) VALUES (11, 'Q', 2.27, 5); -- OK
+-- SERVER false TABLE false
 --Testcase 266:
-UPDATE RO_RW_test SET a='R' WHERE i=11; -- OK
+ALTER FOREIGN TABLE RO_RW_testr OPTIONS (SET updatable 'false');
 --Testcase 267:
-DELETE FROM RO_RW_test WHERE i=11; -- OK
+INSERT INTO RO_RW_test (i, a, b, c) VALUES (11, 'Q', 2.27, 5); -- ERR
 --Testcase 268:
-INSERT INTO RO_RW_test (i, a, b, c) VALUES (12, 'R', 6.18, 11); -- OK
+UPDATE RO_RW_test SET a='S' WHERE i=9; -- ERR
 --Testcase 269:
-INSERT INTO RO_RW_test (i, a, b, c) VALUES (13, 'S', 4.09, 15); -- OK
+DELETE FROM RO_RW_test WHERE i=9; -- ERR
+
+-- SERVER true TABLE false
 --Testcase 270:
-INSERT INTO RO_RW_test (i, a, b, c) VALUES (14, 'T', 5.41, 32); -- OK
-
+ALTER FOREIGN SERVER sqlite_svr OPTIONS (SET updatable 'true');
 --Testcase 271:
-ALTER FOREIGN SERVER sqlite_svr OPTIONS (SET updatable 'false');
+INSERT INTO RO_RW_test (i, a, b, c) VALUES (12, 'R', 6.18, 11); -- ERR
 --Testcase 272:
-INSERT INTO RO_RW_test (i, a, b, c) VALUES (15, 'U', 7.39, 3); -- ERR
+UPDATE RO_RW_test SET a='T' WHERE i=9; -- ERR
 --Testcase 273:
-UPDATE RO_RW_test SET a='V' WHERE i=15; -- ERR
+DELETE FROM RO_RW_test WHERE i=9; -- ERR
+
 --Testcase 274:
-DELETE FROM RO_RW_test WHERE i=15; -- ERR
-
---Testcase 275:
-ALTER FOREIGN TABLE RO_RW_test OPTIONS (SET updatable 'true');
---Testcase 276:
-INSERT INTO RO_RW_test (i, a, b, c) VALUES (16, 'V', 3.19, 7); -- ERR
---Testcase 277:
-UPDATE RO_RW_test SET a='W' WHERE i=16; -- ERR
---Testcase 278:
-DELETE FROM RO_RW_test WHERE i=16; -- ERR
---Testcase 279:
-ALTER FOREIGN TABLE RO_RW_test OPTIONS (DROP updatable);
---Testcase 280:
-INSERT INTO RO_RW_test (i, a, b, c) VALUES (17, 'X', 9.52, 12); -- ERR
---Testcase 281:
-UPDATE RO_RW_test SET a='Y' WHERE i=17; -- ERR
---Testcase 282:
-DELETE FROM RO_RW_test WHERE i=17; -- ERR
-
---Testcase 283:
 ALTER FOREIGN SERVER sqlite_svr OPTIONS (DROP updatable);
---Testcase 284:
+--Testcase 275:
 ALTER FOREIGN TABLE RO_RW_test OPTIONS (DROP updatable);
 
+--Testcase 276:
+SELECT * FROM RO_RW_test;
+-- End of RO/RW test
 
 -- readonly/readwrite test github pull 59
 DROP FOREIGN TABLE RO_RW_test;
