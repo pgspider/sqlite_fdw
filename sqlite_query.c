@@ -70,7 +70,7 @@ static const char*
 /*
  * convert_sqlite_to_pg: Convert Sqlite data into PostgreSQL's compatible data types
  */
-Datum
+NullableDatum
 sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, AttInMetadata *attinmeta, int	sqlite_col_type, bool use_special_IEEE_double, bool use_special_bool_value, bool empty_as_non_text_null)
 {
 	Datum		value_datum = 0;
@@ -156,10 +156,10 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 			elog(DEBUG3, "sqlite_fdw : special IEEE value for \"%s\" = sqlite \"%s\", affinity = \"%s\", value ='%s'", pg_dataTypeName, pg_eqv_affinity, sqlite_affinity, (char*)value_datum);
 		else if (is_special_bool_value)
 			elog(DEBUG3, "sqlite_fdw : a bool literal for \"%s\" = sqlite \"%s\", affinity = \"%s\", value ='%s'", pg_dataTypeName, pg_eqv_affinity, sqlite_affinity, (char*)value_datum);
-		else if (sqlite_type_eqv_to_pg != SQLITE_TEXT && empty_as_non_text_null && sqlite_col_type == SQLITE_TEXT && !strcmp ((char*)value_datum, ""))
+		else if (empty_as_non_text_null && sqlite_type_eqv_to_pg != SQLITE_TEXT && sqlite_col_type == SQLITE_TEXT && !strcmp ((char*)value_datum, ""))
 		{			
 			elog(DEBUG3, "sqlite_fdw : empty as non-text null in \"%s\" = sqlite \"%s\", affinity = \"%s\"", pg_dataTypeName, pg_eqv_affinity, sqlite_affinity);
-			return 0;
+			return (struct NullableDatum) {0, true};
 		} 
 		else
 		{
@@ -193,43 +193,43 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 				value_datum = (Datum) palloc0(blobsize + VARHDRSZ);
 				memcpy(VARDATA(value_datum), sqlite3_column_blob(stmt, attnum), blobsize);
 				SET_VARSIZE(value_datum, blobsize + VARHDRSZ);
-				return PointerGetDatum(value_datum);
+				return (struct NullableDatum) {PointerGetDatum(value_datum), false};
 			}
 		case INT2OID:
 			{
 				int			value = sqlite3_column_int(stmt, attnum);
 
-				return Int16GetDatum(value);
+				return (struct NullableDatum) {Int16GetDatum(value), false};
 			}
 		case INT4OID:
 			{
 				int			value = sqlite3_column_int(stmt, attnum);
 
-				return Int32GetDatum(value);
+				return (struct NullableDatum) {Int32GetDatum(value), false};
 			}
 		case INT8OID:
 			{
 				sqlite3_int64 value = sqlite3_column_int64(stmt, attnum);
 
-				return Int64GetDatum(value);
+				return (struct NullableDatum) {Int64GetDatum(value), false};
 			}
 		case BOOLOID:
 			{
 				int			value = (is_special_bool_value && use_special_bool_value) ? special_bool_value : sqlite3_column_int(stmt, attnum);
 
-				return Int16GetDatum(value);
+				return (struct NullableDatum) {Int16GetDatum(value), false};
 				break;
 			}
 		case FLOAT4OID:
 			{
 				double		value = (is_special_IEEE_value && use_special_IEEE_double) ? special_IEEE_double : sqlite3_column_double(stmt, attnum);
-				return Float4GetDatum((float4) value);
+				return (struct NullableDatum) {Float4GetDatum((float4) value), false};
 				break;
 			}
 		case FLOAT8OID:
 			{
 				double		value = (is_special_IEEE_value && use_special_IEEE_double) ? special_IEEE_double : sqlite3_column_double(stmt, attnum);
-				return Float8GetDatum((float8) value);
+				return (struct NullableDatum) {Float8GetDatum((float8) value), false};
 				break;
 			}
 		case BPCHAROID:
@@ -258,12 +258,12 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 				{
 					double		value = sqlite3_column_double(stmt, attnum);
 
-					return DirectFunctionCall1(float8_timestamptz, Float8GetDatum((float8) value));
+					return (struct NullableDatum) {DirectFunctionCall1(float8_timestamptz, Float8GetDatum((float8) value)), false};
 				}
 				else
 				{
 					valueDatum = CStringGetDatum((char *) sqlite3_column_text(stmt, attnum));
-					return OidFunctionCall3(typeinput, valueDatum, ObjectIdGetDatum(InvalidOid), Int32GetDatum(typemod));
+					return (struct NullableDatum) {OidFunctionCall3(typeinput, valueDatum, ObjectIdGetDatum(InvalidOid), Int32GetDatum(typemod)), false};
 				}
 				break;
 			}
@@ -272,7 +272,7 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 				double		value = sqlite3_column_double(stmt, attnum);
 
 				valueDatum = CStringGetDatum((char *) DirectFunctionCall1(float8out, Float8GetDatum((float8) value)));
-				return OidFunctionCall3(typeinput, valueDatum, ObjectIdGetDatum(InvalidOid), Int32GetDatum(typemod));
+				return (struct NullableDatum) {OidFunctionCall3(typeinput, valueDatum, ObjectIdGetDatum(InvalidOid), Int32GetDatum(typemod)), false};
 			}
 		default:
 			valueDatum = CStringGetDatum((char *) sqlite3_column_text(stmt, attnum));
@@ -282,7 +282,7 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 									(char *) valueDatum,
 									attinmeta->attioparams[attnum],
 									attinmeta->atttypmods[attnum]);
-	return value_datum;
+	return (struct NullableDatum) {value_datum, false};
 }
 
 /*

@@ -1570,7 +1570,7 @@ make_tuple_from_result_row(sqlite3_stmt * stmt,
 	bool		special_real_values = false;
 	bool		implicit_bool_type = false;
 	bool		empty_as_non_text_null = false;
-	Datum		sqlite_coverted;
+	NullableDatum		sqlite_coverted;
 
 	unsigned int rel = 0;	
 	ForeignTable *table;
@@ -1636,10 +1636,12 @@ make_tuple_from_result_row(sqlite3_stmt * stmt,
 												   sqlite_col_type,
 												   special_real_values, implicit_bool_type,
 												   empty_as_non_text_null);
-			if (sqlite_coverted) {
+			if (!sqlite_coverted.isnull) {
 				is_null[attnum] = false;
-				row[attnum] = sqlite_coverted;
+				row[attnum] = sqlite_coverted.value;
 			}
+			else
+				is_null[attnum] = true;
 		}
 		attid++;
 	}
