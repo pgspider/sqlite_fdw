@@ -1569,6 +1569,8 @@ make_tuple_from_result_row(sqlite3_stmt * stmt,
 	
 	bool		special_real_values = false;
 	bool		implicit_bool_type = false;
+	bool		empty_as_non_text_null = false;
+	Datum		sqlite_coverted;
 
 	unsigned int rel = 0;	
 	ForeignTable *table;
@@ -1585,7 +1587,9 @@ make_tuple_from_result_row(sqlite3_stmt * stmt,
 		if (strcmp(def->defname, "special_real_values") == 0)
 			special_real_values = defGetBoolean(def);
 		if (strcmp(def->defname, "implicit_bool_type") == 0)
-			implicit_bool_type = defGetBoolean(def);	
+			implicit_bool_type = defGetBoolean(def);
+		if (strcmp(def->defname, "empty_as_non_text_null") == 0)
+			empty_as_non_text_null = defGetBoolean(def);			
 	}
 	foreach(lc, table->options)
 	{
@@ -1595,6 +1599,8 @@ make_tuple_from_result_row(sqlite3_stmt * stmt,
 			special_real_values = defGetBoolean(def);
 		if (strcmp(def->defname, "implicit_bool_type") == 0)
 			implicit_bool_type = defGetBoolean(def);
+		if (strcmp(def->defname, "empty_as_non_text_null") == 0)
+			empty_as_non_text_null = defGetBoolean(def);			
 	}
 
 	memset(row, 0, sizeof(Datum) * tupleDescriptor->natts);
@@ -1607,11 +1613,11 @@ make_tuple_from_result_row(sqlite3_stmt * stmt,
 		Oid			pgtype = TupleDescAttr(tupleDescriptor, attnum)->atttypid;
 		int32		pgtypmod = TupleDescAttr(tupleDescriptor, attnum)->atttypmod;
 		List	   *options = NULL;
+		int			sqlite_col_type;
 
-		if (sqlite3_column_type(stmt, attid) != SQLITE_NULL)
+		sqlite_col_type = sqlite3_column_type(stmt, attid);
+		if ( sqlite_col_type != SQLITE_NULL)
 		{
-			is_null[attnum] = false;
-			
 			options = GetForeignColumnOptions(rel, attnum_base);
 			foreach(lc_attr, options)
 			{
@@ -1621,11 +1627,19 @@ make_tuple_from_result_row(sqlite3_stmt * stmt,
 					special_real_values = defGetBoolean(def);
 				if (strcmp(def->defname, "implicit_bool_type") == 0)
 					implicit_bool_type = defGetBoolean(def);
+				if (strcmp(def->defname, "empty_as_non_text_null") == 0)
+					empty_as_non_text_null = defGetBoolean(def);					
 			}
-			
-			row[attnum] = sqlite_convert_to_pg(pgtype, pgtypmod,
-											   stmt, attid, festate->attinmeta,
-											   special_real_values, implicit_bool_type);
+
+			sqlite_coverted = sqlite_convert_to_pg(pgtype, pgtypmod,
+												   stmt, attid, festate->attinmeta,
+												   sqlite_col_type,
+												   special_real_values, implicit_bool_type,
+												   empty_as_non_text_null);
+			if (sqlite_coverted) {
+				is_null[attnum] = false;
+				row[attnum] = sqlite_coverted;
+			}
 		}
 		attid++;
 	}

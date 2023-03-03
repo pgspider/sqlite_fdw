@@ -79,6 +79,10 @@ static struct SqliteFdwOption valid_options[] =
 	{"implicit_bool_type", ForeignServerRelationId},
 	{"implicit_bool_type", ForeignTableRelationId},
 	{"implicit_bool_type", AttributeRelationId},
+	/* empty_as_non_text_null is available on both server, table and column */
+	{"empty_as_non_text_null", ForeignServerRelationId},
+	{"empty_as_non_text_null", ForeignTableRelationId},
+	{"empty_as_non_text_null", AttributeRelationId},
 	/* Sentinel */
 	{NULL, InvalidOid}
 };
@@ -140,7 +144,8 @@ sqlite_fdw_validator(PG_FUNCTION_ARGS)
 			strcmp(def->defname, "keep_connections") == 0 ||
 			strcmp(def->defname, "updatable") == 0 ||
 			strcmp(def->defname, "special_real_values") == 0 ||
-			strcmp(def->defname, "implicit_bool_type") == 0 )
+			strcmp(def->defname, "implicit_bool_type") == 0 ||
+			strcmp(def->defname, "empty_as_non_text_null") == 0 )
 		{
 			defGetBoolean(def);
 		}

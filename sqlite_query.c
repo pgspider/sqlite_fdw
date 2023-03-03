@@ -71,14 +71,13 @@ static const char*
  * convert_sqlite_to_pg: Convert Sqlite data into PostgreSQL's compatible data types
  */
 Datum
-sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, AttInMetadata *attinmeta, bool use_special_IEEE_double, bool use_special_bool_value)
+sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, AttInMetadata *attinmeta, int	sqlite_col_type, bool use_special_IEEE_double, bool use_special_bool_value, bool empty_as_non_text_null)
 {
 	Datum		value_datum = 0;
 	Datum		valueDatum = 0;
 	regproc		typeinput;
 	HeapTuple	tuple;
-	int			typemod;
-	int			sqlite_col_type;
+	int			typemod;	
 	int			sqlite_type_eqv_to_pg;
 	bool		is_special_IEEE_value = false;
 	double		special_IEEE_double = 0.0 / 0.0 ; // NaN
@@ -95,7 +94,6 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 	ReleaseSysCache(tuple);
 
 	sqlite_type_eqv_to_pg = sqlite_eqv_from_pgtyp(pgtyp);
-	sqlite_col_type = sqlite3_column_type(stmt, attnum);
 
 	if (sqlite_type_eqv_to_pg != sqlite_col_type && sqlite_col_type == SQLITE3_TEXT)
 	{	// prepare string for data type and affinities
@@ -158,6 +156,11 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 			elog(DEBUG3, "sqlite_fdw : special IEEE value for \"%s\" = sqlite \"%s\", affinity = \"%s\", value ='%s'", pg_dataTypeName, pg_eqv_affinity, sqlite_affinity, (char*)value_datum);
 		else if (is_special_bool_value)
 			elog(DEBUG3, "sqlite_fdw : a bool literal for \"%s\" = sqlite \"%s\", affinity = \"%s\", value ='%s'", pg_dataTypeName, pg_eqv_affinity, sqlite_affinity, (char*)value_datum);
+		else if (sqlite_type_eqv_to_pg != SQLITE_TEXT && empty_as_non_text_null && sqlite_col_type == SQLITE_TEXT && !strcmp ((char*)value_datum, ""))
+		{			
+			elog(DEBUG3, "sqlite_fdw : empty as non-text null ");
+			return 0;
+		} 
 		else
 		{
 			elog(ERROR, "invalid input for type \"%s\" = SQLite \"%s\", but affinity = \"%s\" for value ='%s'", pg_dataTypeName, pg_eqv_affinity, sqlite_affinity, (char*)value_datum);
