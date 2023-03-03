@@ -158,7 +158,7 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 			elog(DEBUG3, "sqlite_fdw : a bool literal for \"%s\" = sqlite \"%s\", affinity = \"%s\", value ='%s'", pg_dataTypeName, pg_eqv_affinity, sqlite_affinity, (char*)value_datum);
 		else if (sqlite_type_eqv_to_pg != SQLITE_TEXT && empty_as_non_text_null && sqlite_col_type == SQLITE_TEXT && !strcmp ((char*)value_datum, ""))
 		{			
-			elog(DEBUG3, "sqlite_fdw : empty as non-text null ");
+			elog(DEBUG3, "sqlite_fdw : empty as non-text null in \"%s\" = sqlite \"%s\", affinity = \"%s\"", pg_dataTypeName, pg_eqv_affinity, sqlite_affinity);
 			return 0;
 		} 
 		else
