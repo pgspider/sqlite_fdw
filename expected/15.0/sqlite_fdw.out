@@ -1482,6 +1482,56 @@ ALTER TABLE fts_table ALTER COLUMN name TYPE int;
 --Testcase 160:
 SELECT * FROM fts_table; -- should fail
 ERROR:  invalid input syntax for type =1, column type =3
+-- issue #62 github
+--Testcase 236:
+INSERT INTO noprimary VALUES (4, 'Test''s');
+--Testcase 237:
+INSERT INTO noprimary VALUES (5, 'Test');
+--Testcase 238:
+SELECT * FROM noprimary;
+ a |   b    
+---+--------
+ 1 | 2
+ 1 | 2
+ 4 | Test's
+ 5 | Test
+(4 rows)
+
+--Testcase 239:
+EXPLAIN VERBOSE
+SELECT * FROM noprimary where b = 'Test''s';
+                                   QUERY PLAN                                    
+---------------------------------------------------------------------------------
+ Foreign Scan on public.noprimary  (cost=10.00..7.00 rows=7 width=36)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."noprimary" WHERE ((`b` = 'Test''s'))
+(3 rows)
+
+--Testcase 240:
+SELECT * FROM noprimary where b = 'Test''s';
+ a |   b    
+---+--------
+ 4 | Test's
+(1 row)
+
+--Testcase 241:
+EXPLAIN VERBOSE
+SELECT * FROM noprimary where b in ('Test''s', 'Test');
+                                        QUERY PLAN                                        
+------------------------------------------------------------------------------------------
+ Foreign Scan on public.noprimary  (cost=10.00..14.00 rows=14 width=36)
+   Output: a, b
+   SQLite query: SELECT `a`, `b` FROM main."noprimary" WHERE (`b` IN ('Test''s', 'Test'))
+(3 rows)
+
+--Testcase 242:
+SELECT * FROM noprimary where b in ('Test''s', 'Test');
+ a |   b    
+---+--------
+ 4 | Test's
+ 5 | Test
+(2 rows)
+
 -- INSERT/UPDATE whole row with generated column
 --Testcase 216:
 CREATE FOREIGN TABLE grem1_1 (
