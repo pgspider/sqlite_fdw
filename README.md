@@ -111,6 +111,33 @@ make install
 Usage
 -----
 
+### Datatypes
+This table represents `sqlite_fdw` behaviour if in PostgreSQL foreign table column data of some SQLite [affinity](https://www.sqlite.org/datatype3.html) is detected. Based on `convert_sqlite_to_pg` C function.
+
+* **X** - error
+* **V** - transparent transformation
+* **V+** - transparent transformation if appliacable
+* **?** - not described/not tested
+* **-** - transparent transformation is possible for PostgreSQL (always or for some special values), but not implemented in `sqlite_fdw`.
+
+| PostgreSQL   |  SQLite NULL |  SQLite INT  |  SQLite REAL |  SQLite BLOB |  SQLite TEXT |
+|-------------:|--------------|--------------|--------------|--------------|--------------|
+|         bool |      V+      |      V       |       ?      |       X      |       -      |
+|        bytea |      V+      |      X       |       X      |       V      |       -      |
+|         date |      V+      |      V       |       V      |       X      |       V+     |
+|       float4 |      V+      |      ?       |       V      |       X      |       -      |
+|       float8 |      V+      |      ?       |       V      |       X      |       -      |
+|         int2 |      V+      |      V       |       ?      |       X      |       X      |
+|         int4 |      V+      |      V       |       ?      |       X      |       X      |
+|         int8 |      V+      |      V       |       ?      |       X      |       X      |
+|         json |      V+      |      ?       |       ?      |       X      |       V+     |
+|         name |      V+      |      ?       |       ?      |       X      |       V      |
+|         text |      V+      |      ?       |       ?      |       X      |       V      |
+|         time |      V+      |      V       |       V      |       X      |       V+     |
+|    timestamp |      V+      |      V       |       V      |       X      |       V+     |
+|timestamp + tz|      V+      |      V       |       V      |       X      |       V+     |
+|      varchar |      V+      |      ?       |       ?      |       X      |       V      |
+
 ## CREATE SERVER options
 
 `sqlite_fdw` accepts the following options via the `CREATE SERVER` command:
