@@ -114,7 +114,8 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 		}
 		else
 		{
-			elog(ERROR, "SQLite data affinity = \"%s\" disallowed for PostgreSQL type \"%s\" = SQLite \"%s\"", sqlite_affinity, pg_dataTypeName, pg_eqv_affinity);
+			valueDatum = CStringGetDatum((char*) sqlite3_column_text(stmt, attnum));
+			elog(ERROR, "SQLite data affinity = \"%s\" disallowed for PostgreSQL type \"%s\" = SQLite \"%s\", value ='%s'", sqlite_affinity, pg_dataTypeName, pg_eqv_affinity, (char*)valueDatum);
 		}
 	}
 
