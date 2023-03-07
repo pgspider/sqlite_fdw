@@ -106,14 +106,22 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 	}
 
 	// First check BLOB transformation
-	if (sqlite_type_eqv_to_pg == SQLITE_BLOB && value_affinity != SQLITE3_TEXT && value_affinity != SQLITE_BLOB)
-	{
-		elog(ERROR, "SQLite data affinity = \"%s\" disallowed for PostgreSQL type \"%s\" = SQLite \"%s\"", sqlite_affinity, pg_dataTypeName, pg_eqv_affinity);
+	if (sqlite_type_eqv_to_pg == SQLITE_BLOB && sqlite_type_eqv_to_pg != value_affinity)
+	{ 
+		if (force_bytea && value_affinity == SQLITE3_TEXT )
+		{
+			elog(DEBUG2, "sqlite_fdw : \"%s\" affinity transparent converted to \"%s\" = sqlite \"%s\"", sqlite_affinity, pg_dataTypeName, pg_eqv_affinity);
+		}
+		else
+		{
+			elog(ERROR, "SQLite data affinity = \"%s\" disallowed for PostgreSQL type \"%s\" = SQLite \"%s\"", sqlite_affinity, pg_dataTypeName, pg_eqv_affinity);
+		}
 	}
 	// Log transformation of text affinity values as bytea or other blob
-	if (sqlite_type_eqv_to_pg == SQLITE_BLOB && value_affinity == SQLITE3_TEXT)
+	if (sqlite_type_eqv_to_pg == SQLITE_BLOB && value_affinity == SQLITE3_TEXT && )
 	{
-		elog(DEBUG2, "sqlite_fdw : \"%s\" affinity transparent converted to \"%s\" = sqlite \"%s\"", sqlite_affinity, pg_dataTypeName, pg_eqv_affinity);
+
+	}
 	}
 
 	// Second check text data converted to any not equal datatype but not to blob
@@ -176,10 +184,6 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 			elog(DEBUG3, "sqlite_fdw : empty as non-text null in \"%s\" = sqlite \"%s\", affinity = \"%s\"", pg_dataTypeName, pg_eqv_affinity, sqlite_affinity);
 			return (struct NullableDatum) {0, true};
 		} 
-		else if (force_bytea && sqlite_type_eqv_to_pg != SQLITE_BLOB && value_affinity == SQLITE3_TEXT)
-		{
-			elog(DEBUG3, "sqlite_fdw : force bytea (\"%s\" = sqlite \"%s\") for affinity = \"%s\"", pg_dataTypeName, pg_eqv_affinity, sqlite_affinity);		
-		}
 		else
 		{
 			elog(ERROR, "invalid input for type \"%s\" = SQLite \"%s\", but affinity = \"%s\" for value ='%s'", pg_dataTypeName, pg_eqv_affinity, sqlite_affinity, (char*)valueDatum);
