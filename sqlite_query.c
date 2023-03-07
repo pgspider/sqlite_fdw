@@ -109,19 +109,13 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 	if (sqlite_type_eqv_to_pg == SQLITE_BLOB && sqlite_type_eqv_to_pg != value_affinity)
 	{ 
 		if (force_bytea && value_affinity == SQLITE3_TEXT )
-		{
+		{	// Log transformation of text affinity values as bytea or other blob
 			elog(DEBUG2, "sqlite_fdw : \"%s\" affinity transparent converted to \"%s\" = sqlite \"%s\"", sqlite_affinity, pg_dataTypeName, pg_eqv_affinity);
 		}
 		else
 		{
 			elog(ERROR, "SQLite data affinity = \"%s\" disallowed for PostgreSQL type \"%s\" = SQLite \"%s\"", sqlite_affinity, pg_dataTypeName, pg_eqv_affinity);
 		}
-	}
-	// Log transformation of text affinity values as bytea or other blob
-	if (sqlite_type_eqv_to_pg == SQLITE_BLOB && value_affinity == SQLITE3_TEXT && )
-	{
-
-	}
 	}
 
 	// Second check text data converted to any not equal datatype but not to blob
