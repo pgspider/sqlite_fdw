@@ -71,7 +71,7 @@ static const char*
  * convert_sqlite_to_pg: Convert Sqlite data into PostgreSQL's compatible data types
  */
 NullableDatum
-sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, AttInMetadata *attinmeta, int	sqlite_col_type, bool use_special_IEEE_double, bool use_special_bool_value, bool empty_as_non_text_null)
+sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, AttInMetadata *attinmeta, int	value_affinity, bool use_special_IEEE_double, bool use_special_bool_value, bool empty_as_non_text_null, bool force_bytea)
 {
 	Datum		valueDatum = 0;
 	regproc		typeinput;
@@ -82,6 +82,10 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 	double		special_IEEE_double = 0.0 / 0.0 ; // NaN
 	bool		is_special_bool_value = false;
 	bool		special_bool_value = false;
+	
+	const char * sqlite_affinity = 0;
+	const char * pg_eqv_affinity = 0;
+	const char * pg_dataTypeName = 0;
 
 	/* get the type's output function */
 	tuple = SearchSysCache1(TYPEOID, ObjectIdGetDatum(pgtyp));
@@ -94,18 +98,30 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 
 	sqlite_type_eqv_to_pg = sqlite_eqv_from_pgtyp(pgtyp);
 
-	if (sqlite_type_eqv_to_pg != sqlite_col_type && sqlite_col_type == SQLITE3_TEXT)
-	{	// prepare string for data type and affinities
-		const char * sqlite_affinity;
-		const char * pg_eqv_affinity;
-		const char * pg_dataTypeName;
+	if (sqlite_type_eqv_to_pg != value_affinity)
+	{	// prepare string for data type and affinities for log or error messages
 		pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(pgtyp, pgtypmod));
-		sqlite_affinity = sqlite_datatype(sqlite_col_type);
+		sqlite_affinity = sqlite_datatype(value_affinity);
 		pg_eqv_affinity = sqlite_datatype(sqlite_type_eqv_to_pg);
-	
-		valueDatum = CStringGetDatum((char*) sqlite3_column_text(stmt, attnum));
+	}
 
-		if (sqlite_type_eqv_to_pg == SQLITE_FLOAT && sqlite_col_type == SQLITE3_TEXT && use_special_IEEE_double)
+	// First check BLOB transformation
+	if (sqlite_type_eqv_to_pg == SQLITE_BLOB && value_affinity != SQLITE3_TEXT && value_affinity != SQLITE_BLOB)
+	{
+		elog(ERROR, "SQLite data affinity = \"%s\" disallowed for PostgreSQL type \"%s\" = SQLite \"%s\"", sqlite_affinity, pg_dataTypeName, pg_eqv_affinity);
+	}
+	// Log transformation of text affinity values as bytea or other blob
+	if (sqlite_type_eqv_to_pg == SQLITE_BLOB && value_affinity == SQLITE3_TEXT)
+	{
+		elog(DEBUG2, "sqlite_fdw : \"%s\" affinity transparent converted to \"%s\" = sqlite \"%s\"", sqlite_affinity, pg_dataTypeName, pg_eqv_affinity);
+	}
+
+	// Second check text data converted to any not equal datatype but not to blob
+	if (sqlite_type_eqv_to_pg != SQLITE_BLOB && sqlite_type_eqv_to_pg != value_affinity && value_affinity == SQLITE3_TEXT)
+	{	
+		valueDatum = CStringGetDatum((char*) sqlite3_column_text(stmt, attnum));
+		
+		if (sqlite_type_eqv_to_pg == SQLITE_FLOAT && value_affinity == SQLITE3_TEXT && use_special_IEEE_double)
 		{
 			bool		special_NaN = false;
 			bool		special_pos_infin = false;
@@ -131,7 +147,7 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 			is_special_IEEE_value = (special_NaN || special_pos_infin || special_neg_infin);
 		}
 
-		if (pgtyp == BOOLOID && sqlite_col_type == SQLITE3_TEXT && use_special_bool_value)
+		if (pgtyp == BOOLOID && value_affinity == SQLITE3_TEXT && use_special_bool_value)
 		{
 			char *p;
 			char *uc_str;
@@ -155,11 +171,15 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 			elog(DEBUG3, "sqlite_fdw : special IEEE value for \"%s\" = sqlite \"%s\", affinity = \"%s\", value ='%s'", pg_dataTypeName, pg_eqv_affinity, sqlite_affinity, (char*)valueDatum);
 		else if (is_special_bool_value)
 			elog(DEBUG3, "sqlite_fdw : a bool literal for \"%s\" = sqlite \"%s\", affinity = \"%s\", value ='%s'", pg_dataTypeName, pg_eqv_affinity, sqlite_affinity, (char*)valueDatum);
-		else if (empty_as_non_text_null && sqlite_type_eqv_to_pg != SQLITE_TEXT && sqlite_col_type == SQLITE_TEXT && !strcmp ((char*)valueDatum, ""))
+		else if (empty_as_non_text_null && sqlite_type_eqv_to_pg != SQLITE_TEXT && value_affinity == SQLITE_TEXT && !strcmp ((char*)valueDatum, ""))
 		{			
 			elog(DEBUG3, "sqlite_fdw : empty as non-text null in \"%s\" = sqlite \"%s\", affinity = \"%s\"", pg_dataTypeName, pg_eqv_affinity, sqlite_affinity);
 			return (struct NullableDatum) {0, true};
 		} 
+		else if (force_bytea && sqlite_type_eqv_to_pg != SQLITE_BLOB && value_affinity == SQLITE3_TEXT)
+		{
+			elog(DEBUG3, "sqlite_fdw : force bytea (\"%s\" = sqlite \"%s\") for affinity = \"%s\"", pg_dataTypeName, pg_eqv_affinity, sqlite_affinity);		
+		}
 		else
 		{
 			elog(ERROR, "invalid input for type \"%s\" = SQLite \"%s\", but affinity = \"%s\" for value ='%s'", pg_dataTypeName, pg_eqv_affinity, sqlite_affinity, (char*)valueDatum);
