@@ -140,7 +140,7 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 |timestamp + tz|      V       |       V      |       x      |       V+     |
 |      varchar |      ?       |       ?      |       x      |       V      |
 
-## CREATE SERVER options
+### CREATE SERVER options
 
 `sqlite_fdw` accepts the following options via the `CREATE SERVER` command:
 
@@ -160,7 +160,7 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 
   Specifies the number of rows which should be inserted in a single `INSERT` operation. This setting can be overridden for individual tables.
   
-## CREATE USER MAPPING options
+### CREATE USER MAPPING options
 
 There is no user or password conceptions in SQLite, hence `sqlite_fdw` no need any `CREATE USER MAPPING` command.
 
@@ -169,7 +169,7 @@ In OS `sqlite_fdw` works as executed code with permissions of user of PostgreSQL
 - read permission on SQLite database file;
 - write permissions both on SQLite database file and *directory it contains* if you need a modification. During `INSERT`, `UPDATE` or `DELETE` in SQLite database, SQLite engine functions makes [temporary files with transaction data](https://www.sqlite.org/tempfiles.html) in the directory near SQLite database file. Hence without write permissions you'll have a message `failed to execute remote SQL: rc=8 attempt to write a readonly database`. 
 
-## CREATE FOREIGN TABLE options
+### CREATE FOREIGN TABLE options
 
 `sqlite_fdw` accepts the following table-level options via the
 `CREATE FOREIGN TABLE` command:
@@ -201,12 +201,12 @@ In OS `sqlite_fdw` works as executed code with permissions of user of PostgreSQL
 
   Indicates a column as a part of primary key or unique key of SQLite table.
   
-## IMPORT FOREIGN SCHEMA options
+### IMPORT FOREIGN SCHEMA options
 
 `sqlite_fdw` supports [IMPORT FOREIGN SCHEMA](https://www.postgresql.org/docs/current/sql-importforeignschema.html)
 (PostgreSQL 9.5+) and accepts no custom options for this command.
 
-## TRUNCATE support
+### TRUNCATE support
 
 `sqlite_fdw` implements the foreign data wrapper `TRUNCATE` API, available
 from PostgreSQL 14.
