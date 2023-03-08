@@ -28,7 +28,10 @@
 
 /* Length of host */
 #define HOST_LEN 256
-
+/* buffer size of pragma journal */
+#define PRAGMA_JOURNAL_BUFFER_SIZE 32
+/* buffer size of pragma synchronous */
+#define PRAGMA_SYNCHRONOUS_BUFFER_SIZE 32
 /*
  * Connection cache hash table entry
  *
@@ -76,6 +79,8 @@ static void sqlitefdw_subxact_callback(SubXactEvent event,
 									   void *arg);
 static void sqlitefdw_inval_callback(Datum arg, int cacheid, uint32 hashvalue);
 static void sqlitefdw_abort_cleanup(ConnCacheEntry *entry, bool toplevel, List **busy_connection);
+static int sqlitefdw_ck_pragma_callback(void *, int, char **, char **);
+
 #if PG_VERSION_NUM >= 140000
 static bool sqlite_disconnect_cached_connections(Oid serverid);
 #endif
@@ -193,6 +198,8 @@ sqlite_make_new_connection(ConnCacheEntry *entry, ForeignServer *server)
 	int			rc;
 	char	   *err;
 	ListCell   *lc;
+	char        *journal_mode = NULL;
+	char        *synchronous = NULL;
 
 	Assert(entry->conn == NULL);
 
@@ -212,6 +219,10 @@ sqlite_make_new_connection(ConnCacheEntry *entry, ForeignServer *server)
 			dbpath = defGetString(def);
 		else if (strcmp(def->defname, "keep_connections") == 0)
 			entry->keep_connections = defGetBoolean(def);
+	    else if (strcmp(def->defname, "journal_mode") == 0)
+	        journal_mode = defGetString(def);
+	    else if (strcmp(def->defname, "synchronous") == 0)
+            synchronous = defGetString(def);
 	}
 
 	rc = sqlite3_open(dbpath, &entry->conn);
@@ -233,6 +244,81 @@ sqlite_make_new_connection(ConnCacheEntry *entry, ForeignServer *server)
 				(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
 				 errmsg("failed to open SQLite DB. err=%s rc=%d", perr, rc)));
 	}
+
+    if (journal_mode != NULL)
+	{
+	    /* manage pragma journal_mode option
+	    */
+	    // note: overflows prevented by the check of values in option.c
+        char buffer[PRAGMA_JOURNAL_BUFFER_SIZE];
+        snprintf(buffer, PRAGMA_JOURNAL_BUFFER_SIZE, "pragma journal_mode=%s", journal_mode);
+        // execute pragma command and check the result
+        rc = sqlite3_exec(entry->conn, buffer, sqlitefdw_ck_pragma_callback,
+                        journal_mode, &err);
+        if (rc != SQLITE_OK)
+        {
+            char	   *perr = pstrdup(err);
+
+            sqlite3_free(err);
+            sqlite3_close(entry->conn);
+            entry->conn = NULL;
+            ereport(ERROR,
+                    (errcode(ERRCODE_FDW_ERROR),
+                     errmsg("failed to issue pragma journal_mode: %s", perr)));
+        }
+    }
+
+    if (synchronous != NULL)
+    {
+        /* manage pragma synchronous option
+        */
+        // note: overflows prevented by the check of values in option.c
+        char buffer[PRAGMA_SYNCHRONOUS_BUFFER_SIZE];
+        char *SQL_CHECK_SYNCHRONOUS = "pragma synchronous";
+        char *ret_value = NULL;
+        char *RET_OFF = "0";
+        char *RET_NORMAL = "1";
+        char *RET_FULL = "2";
+        char *RET_EXTRA = "3";
+
+        snprintf(buffer, PRAGMA_SYNCHRONOUS_BUFFER_SIZE, "pragma synchronous=%s", synchronous);
+        if (strcmp(synchronous, "off") == 0)
+            ret_value = RET_OFF;
+        else if (strcmp(synchronous, "normal") == 0)
+            ret_value = RET_NORMAL;
+        else if (strcmp(synchronous, "full") == 0)
+            ret_value = RET_FULL;
+        else if (strcmp(synchronous, "extra") == 0)
+            ret_value = RET_EXTRA;
+
+        // execute pragma command for synchronous
+        rc = sqlite3_exec(entry->conn, buffer, NULL, NULL, &err);
+        if (rc != SQLITE_OK)
+        {
+            char	   *perr = pstrdup(err);
+
+            sqlite3_free(err);
+            sqlite3_close(entry->conn);
+            entry->conn = NULL;
+            ereport(ERROR,
+                    (errcode(ERRCODE_FDW_ERROR),
+                     errmsg("failed to issue pragma synchronous: %s", perr)));
+        }
+
+        // execute check for the previous command
+        rc = sqlite3_exec(entry->conn, SQL_CHECK_SYNCHRONOUS, sqlitefdw_ck_pragma_callback, ret_value, &err);
+        if (rc != SQLITE_OK)
+        {
+            char	   *perr = pstrdup(err);
+
+            sqlite3_free(err);
+            sqlite3_close(entry->conn);
+            entry->conn = NULL;
+            ereport(ERROR,
+                    (errcode(ERRCODE_FDW_ERROR),
+                     errmsg("failed to verify pragma synchronous: %s", perr)));
+        }
+    }
 
 }
 
@@ -1041,4 +1127,22 @@ sqlite_append_stmt_to_list(List *list, sqlite3_stmt * stmt)
 	list = lappend(list, stmt);
 	MemoryContextSwitchTo(oldcontext);
 	return list;
+}
+
+/*
+* callback function used to check the results of pragma journal_mode and pragma synchronous,
+* where the first parameter points to the the expected result (to compare against the one returned by the DB)
+*/
+static int sqlitefdw_ck_pragma_callback(void *input, int count, char **data, char **columns)
+{
+    // both commands return only one value in one column
+    if (count != 1)
+    {
+        ereport(ERROR,
+                (errcode(ERRCODE_FDW_ERROR),
+                 errmsg("Expecting one column, received %d", count)));
+        return 1;
+    }
+    // compare expected vs obtained result
+    return strcmp(input, data[0]);
 }
