@@ -451,7 +451,26 @@ Limitations
 Tests
 -----
 
-All tests is based on `make check`, main testing script see in [test.sh](test.sh) file. We don't profess a specific environment. You can use any POSIX-compliant system. For testing you need install `sqlite3` from packgage of your OS or from source code to a directory from `PATH` environment variable. Hence `sqlite3` must be a correct command in your environment. Testing scripts from PosgreSQL-side is multi-versioned. Hence you need install PostgreSQL packages in versions listed in [sql](sql) directory. PostgreSQL server locale for messages in tests must be *english*. About base testing mechanism see in [PostgreSQL documentation](https://www.postgresql.org/docs/current/regress-run.html).
+All tests is based on `make installcheck`, main testing script see in [test.sh](test.sh) file. We don't profess a specific environment. You can use any POSIX-compliant system. For testing you need install `sqlite3` from packgage of your OS or from source code to a directory from `PATH` environment variable. Hence `sqlite3` must be a correct command in your environment. Testing scripts from PosgreSQL-side is multi-versioned. Hence you need install PostgreSQL packages in versions listed in [sql](sql) directory. PostgreSQL server locale for messages in tests must be *english*. About base testing mechanism see in [PostgreSQL documentation](https://www.postgresql.org/docs/current/regress-run.html).
+
+Enviroment requriments:
+If you execute [`test.sh`](test.sh) as some OS user, for example `user`, ensure
+- This user can directly write to `/tmp`
+- This user can write to directory of local copy of `sqlite_fdw`
+- This user can login to `psql` (SQL look like `CREATE USER "user" LOGIN;` can be helpful)
+- This user is superuser in PostgreSQL and can create a database. Database `contrib_regression` will be used for tests
+- SQLite databases in `/tmp` are RW accessable for PosgreSQL server user such as `postgres` or other.
+
+Full shell test commands after `cd` to code directory can be like
+```sh
+./test.sh USE_PGXS=1;
+chmod og+rw -v /tmp/*.db;
+LANGUAGE=C make installcheck USE_PGXS=1;
+```
+After creating SQLite DBs in `/tmp` just use
+```sh
+LANGUAGE=C make installcheck USE_PGXS=1;
+```
 
 Testing directory have structure as following:
 
