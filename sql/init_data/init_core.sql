@@ -409,3 +409,11 @@ CREATE TABLE update_test (
 
 create table upsert_test (a int primary key, b text);
 
+
+-- PR #67
+create table test_pragma_jms
+(
+    attr int
+);
+insert into test_pragma_jms values (0);
+
