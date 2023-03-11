@@ -122,10 +122,18 @@ Usage
   
   Allows to keep connections to SQLite while there is no SQL operations between PostgreSQL and SQLite.
   
-- **batch_size** as *integer*, optional
+- **batch_size** as *integer*, optional.
 
   Specifies the number of rows which should be inserted in a single `INSERT` operation. This setting can be overridden for individual tables.
-  
+
+- **journal_mode** as *string*, optional
+
+  It allows to tune some settings of the rollback journal. The accepted values are the same ones reported in the official documentation: https://www.sqlite.org/pragma.html#pragma_journal_mode .
+
+- **synchronous** as *string*, optional
+
+  It allows to tune some settings related to syncing content of SQLite files. The accepted values  are the same ones reported in the official documentation: https://www.sqlite.org/pragma.html#pragma_synchronous .
+
 ## CREATE USER MAPPING options
 
 There is no user or password conceptions in SQlite, hence `sqlite_fdw` no need any `CREATE USER MAPPING` command.

@@ -9,7 +9,7 @@ sqlite3 /tmp/sqlitefdw_test.db < sql/init_data/init.sql
 sqlite3 /tmp/sqlitefdw_test_selectfunc.db < sql/init_data/init_selectfunc.sql
 
 sed -i 's/REGRESS =.*/REGRESS = journal_mode_synchronous extra\/sqlite_fdw_post extra\/float4 extra\/float8 extra\/int4 extra\/int8 extra\/numeric extra\/join extra\/limit extra\/aggregates extra\/prepare extra\/select_having extra\/select extra\/insert extra\/update extra\/timestamp sqlite_fdw type aggregate selectfunc /' Makefile
-
+chmod o+w /tmp/sqlitefdw_test_post.db /tmp/sqlitefdw_test_core.db /tmp/sqlitefdw_test.db /tmp/sqlitefdw_test_selectfunc.db
 make clean
 make $1
 make check $1 | tee make_check.out
