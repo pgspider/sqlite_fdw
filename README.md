@@ -83,6 +83,7 @@ For some Linux distributives internal packages with `sqlite_fdw` are avalillable
 
 Prerequisites:
 * `libsqlite3-dev`, especially `sqlite.h`
+* `postgresql-server-dev-**`, where ** must be removed to needed PostgreSQL version number
 * `gcc`
 * `make`
 
