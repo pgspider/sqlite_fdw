@@ -117,6 +117,7 @@ This table represents `sqlite_fdw` behaviour if in PostgreSQL foreign table colu
 
 * **x** - error
 * **V** - transparent transformation
+* **✔** - transparent transformation where PostgreSQL datatype is equal to SQLite affinity
 * **V+** - transparent transformation if appliacable
 * **?** - not described/not tested
 * **-** - transparent transformation is possible for PostgreSQL (always or for some special values), but not implemented in `sqlite_fdw`.
@@ -124,22 +125,23 @@ This table represents `sqlite_fdw` behaviour if in PostgreSQL foreign table colu
 SQLite `NULL` affinity always can be transparent converted for a nullable column in PostgreSQL.
 
 | PostgreSQL   |  SQLite INT  |  SQLite REAL |  SQLite BLOB |  SQLite TEXT |
-|-------------:|--------------|--------------|--------------|--------------|
+|-------------:|:------------:|:------------:|:------------:|:------------:|
 |         bool |      V       |       ?      |       x      |       -      |
-|        bytea |      x       |       x      |       V      |       -      |
+|        bytea |      x       |       x      |       ✔      |       -      |
 |         date |      V       |       V      |       x      |       V+     |
-|       float4 |      ?       |       V      |       x      |       -      |
-|       float8 |      ?       |       V      |       x      |       -      |
-|         int2 |      V       |       ?      |       x      |       x      |
-|         int4 |      V       |       ?      |       x      |       x      |
-|         int8 |      V       |       ?      |       x      |       x      |
+|       float4 |      ?       |       ✔      |       x      |       -      |
+|       float8 |      ?       |       ✔      |       x      |       -      |
+|         int2 |      ✔       |       ?      |       x      |       x      |
+|         int4 |      ✔       |       ?      |       x      |       x      |
+|         int8 |      ✔       |       ?      |       x      |       x      |
 |         json |      ?       |       ?      |       x      |       V+     |
 |         name |      ?       |       ?      |       x      |       V      |
-|         text |      ?       |       ?      |       x      |       V      |
+|         text |      ?       |       ?      |       x      |       ✔      |
 |         time |      V       |       V      |       x      |       V+     |
 |    timestamp |      V       |       V      |       x      |       V+     |
 |timestamp + tz|      V       |       V      |       x      |       V+     |
-|      varchar |      ?       |       ?      |       x      |       V      |
+|         uuid |      ?       |       x      |       x      |       V+     |
+|      varchar |      ?       |       ?      |       x      |       ✔      |
 
 ### CREATE SERVER options
 
