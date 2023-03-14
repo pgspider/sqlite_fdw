@@ -124,25 +124,25 @@ This table represents `sqlite_fdw` behaviour if in PostgreSQL foreign table colu
 
 SQLite `NULL` affinity always can be transparent converted for a nullable column in PostgreSQL.
 
-| PostgreSQL   |  SQLite INT  |  SQLite REAL |  SQLite BLOB |  SQLite TEXT |
-|-------------:|:------------:|:------------:|:------------:|:------------:|
-|         bool |      V       |       ?      |       x      |       -      |
-|        bytea |      x       |       x      |       ✔      |       -      |
-|         date |      V       |       V      |       x      |       V+     |
-|       float4 |      ?       |       ✔      |       x      |       -      |
-|       float8 |      ?       |       ✔      |       x      |       -      |
-|         int2 |      ✔       |       ?      |       x      |       x      |
-|         int4 |      ✔       |       ?      |       x      |       x      |
-|         int8 |      ✔       |       ?      |       x      |       x      |
-|         json |      ?       |       ?      |       x      |       V+     |
-|         name |      ?       |       ?      |       x      |       V      |
-|      numeric |      V       |       V      |       x      |       V+     |
-|         text |      ?       |       ?      |       x      |       ✔      |
-|         time |      V       |       V      |       x      |       V+     |
-|    timestamp |      V       |       V      |       x      |       V+     |
-|timestamp + tz|      V       |       V      |       x      |       V+     |
-|         uuid |      ?       |       x      |       x      |       V+     |
-|      varchar |      ?       |       ?      |       x      |       ✔      |
+| PostgreSQL   | SQLite <br> INT  | SQLite <br> REAL | SQLite <br> BLOB | SQLite <br> TEXT | SQLite <br> TEXT but <br> empty |
+|-------------:|:------------:|:------------:|:------------:|:------------:|:------------:|
+|         bool |      V       |       ?      |       x      |       -      |       x      |
+|        bytea |      x       |       x      |       ✔      |       -      |       ?      |
+|         date |      V       |       V      |       x      |       V+     |     `NULL`   |
+|       float4 |      ?       |       ✔      |       x      |       -      |     `NULL`   |
+|       float8 |      ?       |       ✔      |       x      |       -      |     `NULL`   |
+|         int2 |      ✔       |       ?      |       x      |       x      |     `NULL`   |
+|         int4 |      ✔       |       ?      |       x      |       x      |     `NULL`   |
+|         int8 |      ✔       |       ?      |       x      |       x      |     `NULL`   |
+|         json |      ?       |       ?      |       x      |       V+     |       ?      |
+|         name |      ?       |       ?      |       x      |       V      |     `NULL`   |
+|      numeric |      V       |       V      |       x      |       V+     |     `NULL`   |
+|         text |      ?       |       ?      |       x      |       ✔      |       V      |
+|         time |      V       |       V      |       x      |       V+     |     `NULL`   |
+|    timestamp |      V       |       V      |       x      |       V+     |     `NULL`   |
+|timestamp + tz|      V       |       V      |       x      |       V+     |     `NULL`   |
+|         uuid |      ?       |       x      |       x      |       V+     |     `NULL`   |
+|      varchar |      ?       |       ?      |       x      |       ✔      |       V      |
 
 ### CREATE SERVER options
 
