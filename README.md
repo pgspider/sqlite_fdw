@@ -141,7 +141,7 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 |         time |     V     |     V     |     x     |     V+    |   `NULL`  |
 |    timestamp |     V     |     V     |     x     |     V+    |   `NULL`  |
 |timestamp + tz|     V     |     V     |     x     |     V+    |   `NULL`  |
-|         uuid |     ?     |     x     |     x     |     V+    |   `NULL`  |
+|         uuid |     ?     |     x     |V+<br>(only<br>16 bytes)|     V+    |   `NULL`  |
 |      varchar |     ?     |     ?     |     x     |     ✔     |     V     |
 
 ### CREATE SERVER options
