@@ -136,6 +136,7 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 |         int8 |      ✔       |       ?      |       x      |       x      |
 |         json |      ?       |       ?      |       x      |       V+     |
 |         name |      ?       |       ?      |       x      |       V      |
+|      numeric |      V       |       V      |       x      |       V+     |
 |         text |      ?       |       ?      |       x      |       ✔      |
 |         time |      V       |       V      |       x      |       V+     |
 |    timestamp |      V       |       V      |       x      |       V+     |
