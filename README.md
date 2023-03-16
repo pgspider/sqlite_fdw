@@ -126,14 +126,26 @@ Usage
 
   Specifies the number of rows which should be inserted in a single `INSERT` operation. This setting can be overridden for individual tables.
 
-- **journal_mode** as *string*, optional
+- **journal_mode** as *string*, optional.
 
-  It allows to tune some settings of the rollback journal. The accepted values are the same ones reported in the official documentation: https://www.sqlite.org/pragma.html#pragma_journal_mode .
+  It allows to tune some settings of the rollback journal. Accepted values:
+  * `'delete'` (default, even if no value is specified for `journal_mode`): the rollback journal is deleted at the conclusion of each transaction;
+  * `'truncate'`: it commits transactions by truncating the rollback journal to zero-length;
+  * `'persist'`: the header of the journal is overwritten with zeros at the end of the transaction;
+  * `'memory'`: it stores the rollback journal in volatile RAM;
+  * `'wal'`: it uses a write-ahead log instead of a rollback journal to implement transactions;
+  * `'off'`: it disables the rollback journal completely.
 
-- **synchronous** as *string*, optional
+The aforementioned semantics refers to the official documentation for SQLite version 3.41.1.
+- **synchronous** as *string*, optional.
 
-  It allows to tune some settings related to syncing content of SQLite files. The accepted values  are the same ones reported in the official documentation: https://www.sqlite.org/pragma.html#pragma_synchronous .
+  It allows to tune some settings related to syncing content of SQLite files. Accepted values:
+  * `'full'` (default, even if no value is specified for `synchronous,` but it can be altered by other settings): it uses the xSync method of the VFS to ensure that all content is safely written to the disk surface prior to continuing;
+  * `'extra'`: like 'full' with the addition that the directory containing a rollback journal is synced after that journal is unlinked to commit a transaction in `journal_mode` 'normal';
+  * `'normal'`: it syncs at the most critical moments, but less often than in 'full' mode;
+  * `'off'`: it continues without syncing as soon as it has handed data off to the operating system;
 
+The aforementioned semantics refers to the official documentation for SQLite version 3.41.1.
 ## CREATE USER MAPPING options
 
 There is no user or password conceptions in SQlite, hence `sqlite_fdw` no need any `CREATE USER MAPPING` command.
