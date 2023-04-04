@@ -115,8 +115,10 @@ Usage
 ### Datatypes
 This table represents `sqlite_fdw` behaviour if in PostgreSQL foreign table column data of some SQLite [affinity](https://www.sqlite.org/datatype3.html) is detected. Based on `convert_sqlite_to_pg` C function.
 
-* **x** - error
+* **∅** - no support (runtime error)
 * **V** - transparent transformation
+* **b** - show per-bit form
+* **T** - cast to text in encoding of current PostgreSQL database and than transparent transformation if applicable
 * **✔** - transparent transformation where PostgreSQL datatype is equal to SQLite affinity
 * **V+** - transparent transformation if appliacable
 * **?** - not described/not tested
@@ -126,23 +128,23 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 
 | PostgreSQL   | SQLite <br> INT  | SQLite <br> REAL | SQLite <br> BLOB | SQLite <br> TEXT | SQLite <br> TEXT but <br>empty<br>(not implemented)|
 |-------------:|:------------:|:------------:|:------------:|:------------:|:------------:|
-|         bool |     V     |     ?     |     x     |     -     |     x     |
+|         bool |     V     |     ?     |     T     |     -     |     ∅     |
 |        bytea |     x     |     x     |     ✔     |     -     |     ?     |
-|         date |     V     |     V     |     x     |     V+    |   `NULL`  |
-|       float4 |     ?     |     ✔     |     x     |     -     |   `NULL`  |
-|       float8 |     ?     |     ✔     |     x     |     -     |   `NULL`  |
-|         int2 |     ✔     |     ?     |     x     |     x     |   `NULL`  |
-|         int4 |     ✔     |     ?     |     x     |     x     |   `NULL`  |
-|         int8 |     ✔     |     ?     |     x     |     x     |   `NULL`  |
-|         json |     ?     |     ?     |     x     |     V+    |     ?     |
-|         name |     ?     |     ?     |     x     |     V     |   `NULL`  |
-|      numeric |     V     |     V     |     x     |     V+    |   `NULL`  |
-|         text |     ?     |     ?     |     x     |     ✔     |     V     |
-|         time |     V     |     V     |     x     |     V+    |   `NULL`  |
-|    timestamp |     V     |     V     |     x     |     V+    |   `NULL`  |
-|timestamp + tz|     V     |     V     |     x     |     V+    |   `NULL`  |
-|         uuid |     ?     |     x     |V+<br>(only<br>16 bytes)|     V+    |   `NULL`  |
-|      varchar |     ?     |     ?     |     x     |     ✔     |     V     |
+|         date |     V     |     V     |     T     |     V+    |   `NULL`  |
+|       float4 |     ?     |     ✔     |     b     |     V+     |   `NULL`  |
+|       float8 |     ?     |     ✔     |     b     |     V+     |   `NULL`  |
+|         int2 |     ✔     |     ?     |     b     |     V+     |   `NULL`  |
+|         int4 |     ✔     |     ?     |     b     |     V+     |   `NULL`  |
+|         int8 |     ✔     |     ?     |     b     |     V+     |   `NULL`  |
+|         json |     ?     |     ?     |     T     |     V+    |     ?     |
+|         name |     ?     |     ?     |     T     |     V     |   `NULL`  |
+|      numeric |     V     |     V     |     ∅     |     V+    |   `NULL`  |
+|         text |     ?     |     ?     |     T     |     ✔     |     V     |
+|         time |     V     |     V     |     T     |     V+    |   `NULL`  |
+|    timestamp |     V     |     V     |     T     |     V+    |   `NULL`  |
+|timestamp + tz|     V     |     V     |     T     |     V+    |   `NULL`  |
+|         uuid |     ∅     |     ∅     |V+<br>(only<br>16 bytes)|     V+    |   `NULL`  |
+|      varchar |     ?     |     ?     |     T     |     ✔     |     V     |
 
 ### CREATE SERVER options
 
