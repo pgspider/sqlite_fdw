@@ -131,11 +131,11 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 |         bool |     V     |     ?     |     T     |     -     |     ∅     |
 |        bytea |     x     |     x     |     ✔     |     -     |     ?     |
 |         date |     V     |     V     |     T     |     V+    |   `NULL`  |
-|       float4 |     ?     |     ✔     |     b     |     V+     |   `NULL`  |
-|       float8 |     ?     |     ✔     |     b     |     V+     |   `NULL`  |
-|         int2 |     ✔     |     ?     |     b     |     V+     |   `NULL`  |
-|         int4 |     ✔     |     ?     |     b     |     V+     |   `NULL`  |
-|         int8 |     ✔     |     ?     |     b     |     V+     |   `NULL`  |
+|       float4 |     V+    |     ✔     |     b     |     V+    |   `NULL`  |
+|       float8 |     V+    |     ✔     |     b     |     V+    |   `NULL`  |
+|         int2 |     ✔     |     ?     |     b     |     V+    |   `NULL`  |
+|         int4 |     ✔     |     ?     |     b     |     V+    |   `NULL`  |
+|         int8 |     ✔     |     ?     |     b     |     V+    |   `NULL`  |
 |         json |     ?     |     ?     |     T     |     V+    |     ?     |
 |         name |     ?     |     ?     |     T     |     V     |   `NULL`  |
 |      numeric |     V     |     V     |     ∅     |     V+    |   `NULL`  |
