@@ -725,7 +725,7 @@ DELETE FROM RO_RW_test WHERE i=9; -- ERR
 
 -- SERVER false TABLE false
 --Testcase 266:
-ALTER FOREIGN TABLE RO_RW_testr OPTIONS (SET updatable 'false');
+ALTER FOREIGN TABLE RO_RW_test OPTIONS (SET updatable 'false');
 --Testcase 267:
 INSERT INTO RO_RW_test (i, a, b, c) VALUES (11, 'Q', 2.27, 5); -- ERR
 --Testcase 268:
