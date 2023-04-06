@@ -510,6 +510,24 @@ Testing directory have structure as following:
             filename2.out
 ```
 
+### SQLite library requirements
+
+When installing `sqlite3`, it will create some libraries: `libsqlite3.xx`.
+If you use `make install`, libraries will be in `/usr/local/lib` directory, replacing the old library of `sqlite3` if exist.
+
+If a machine has default library folder is `/usr/lib/x86_64-linux-gnu`, and when making `sqlite_fdw`, it will find library in this folder, but the library of `sqlite3` in this folder is old. So `sqlite_fdw` use the wrong library of `sqlite3` in this case. You can use `ldd` command to verify all is ok:
+```
+    ldd sqlite_fdw.so
+    linux-vdso.so.1 (0x00007ffd3798f000)
+    libsqlite3.so.0 => /usr/lib/x86_64-linux-gnu/libsqlite3.so.0 (0x00007fb9aa491000)
+    libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007fb9aa2bc000)
+    libm.so.6 => /lib/x86_64-linux-gnu/libm.so.6 (0x00007fb9aa178000)
+    libdl.so.2 => /lib/x86_64-linux-gnu/libdl.so.2 (0x00007fb9aa172000)
+    libpthread.so.0 => /lib/x86_64-linux-gnu/libpthread.so.0 (0x00007fb9aa150000)
+    /lib64/ld-linux-x86-64.so.2 (0x00007fb9aa5f9000)
+```
+To resolve SQLite library mismatch, you can replace the old library of `sqlite3` in `/usr/lib/x86_64-linux-gnu` by the new library of `sqlite3` (`/usr/local/lib` or folder `.libs` of source building).
+
 ### Enviroment requriments (OS user rights, files and PostgreSQL rigths=
 
 Test script creates some SQLite databases for testing in `/tmp` directory. This databases used in 
