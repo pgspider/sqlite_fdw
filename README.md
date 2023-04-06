@@ -456,27 +456,27 @@ Limitations
 
 Tests
 -----
+We don't profess a specific environment. You can use any POSIX-compliant system. Main testing script see in [test.sh](test.sh) file.
 
-All tests is based on `make installcheck`, main testing script see in [test.sh](test.sh) file. We don't profess a specific environment. You can use any POSIX-compliant system. For testing you need install `sqlite3` from packgage of your OS or from source code to a directory from `PATH` environment variable. Hence `sqlite3` must be a correct command in your environment. Testing scripts from PosgreSQL-side is multi-versioned. Hence you need install PostgreSQL packages in versions listed in [sql](sql) directory. PostgreSQL server locale for messages in tests must be *english*. About base testing mechanism see in [PostgreSQL documentation](https://www.postgresql.org/docs/current/regress-run.html).
+### Prerequisites
 
-Enviroment requriments:
-If you execute [`test.sh`](test.sh) as some OS user, for example `user`, ensure
-- This user can directly write to `/tmp`
-- This user can write to directory of local copy of `sqlite_fdw`
-- This user can login to `psql` (SQL look like `CREATE USER "user" LOGIN;` can be helpful)
-- This user is superuser in PostgreSQL and can create a database. Database `contrib_regression` will be used for tests
-- SQLite databases in `/tmp` are RW accessable for PosgreSQL server user such as `postgres` or other.
+- For testing you need to install **`sqlite3`** from packgage of your OS or from source code to a directory from `PATH` environment variable. Hence `sqlite3` must be a correct command in your environment.
 
-Full shell test commands after `cd` to code directory can be like
-```sh
-./test.sh USE_PGXS=1;
-chmod og+rw -v /tmp/*.db;
-LANGUAGE=C make installcheck USE_PGXS=1;
-```
-After creating SQLite DBs in `/tmp` just use
-```sh
-LANGUAGE=C make installcheck USE_PGXS=1;
-```
+- Also you need to install one or more versions of PostgreSQL RDBMS. We recommended versions listed in [sql](sql) directory, but sometimes minor versions also have all succesfully tests, not only listed base version.
+- PostgreSQL server locale for messages in tests must be *C*. This means C language, usually it's ASCII english CLI. 
+
+### Testing framework
+
+*Testing framework* based on UTF-8 files with SQL commands for `psql` and comparing actual outputs with saved expected outputs.  About base testing mechanism see in [PostgreSQL documentation](https://www.postgresql.org/docs/current/regress-run.html). The simplest analog of testing framework look like `cat Some_test_script.sql | LANGUAGE=C psql --echo-all -d contrib_regression > Some_test_script.actual.out; diff Some_test_script.out Some_test_script.actual.out;`
+
+**WARNING**: testing framework works with database **`contrib_regression`**. If you have such database please rename to any safe name. Database `contrib_regression` will droped before first tests if exists.
+
+### Tests are multiversional for PsotgreSQL
+The version of PostgreSQL is detected automatically by `$(VERSION)` variable in Makefile. If many PostgreSQL versions are availlable veresion of `psql` from `PATH` environment variable is used.
+
+You can execute test by `test.sh` directly or with `make installcheck`. Don't forget use `USE_PGXS=1` environment variable if needed.
+
+The corresponding [sql](sql) and [expected](expected) directory will be used to compare the result. For example, for Postgres 15.0, you can execute [`test.sh`](test.sh) directly, and the sql/15.0 and expected/15.0 will be used to compare automatically.
 
 Testing directory have structure as following:
 
@@ -509,10 +509,27 @@ Testing directory have structure as following:
             filename1.out
             filename2.out
 ```
-The test cases for each version are based on the test of corresponding version of PostgreSQL.
-You can execute test by `test.sh` directly. 
-The version of PostgreSQL is detected automatically by `$(VERSION)` variable in Makefile.
-The corresponding [sql](sql) and [expected](expected) directory will be used to compare the result. For example, for Postgres 15.0, you can execute [`test.sh`](test.sh) directly, and the sql/15.0 and expected/15.0 will be used to compare automatically.
+
+### Enviroment requriments (OS user rights, files and PostgreSQL rigths=
+
+Test script creates some SQLite databases for testing in `/tmp` directory. This databases used in 
+`CREATE SERVER` SQL commands, gives access to testing interactions between PostgreSQL and SQLite.
+In OS testing scripts running by a user we called **testing user**.
+
+If you execute [`test.sh`](test.sh) as testing user, ensure
+- Testing user can directly write to `/tmp`
+- Testing user can write to directory of local copy of `sqlite_fdw` and some subdirectories
+- Testing user can login to `psql` without password or any other wainting. SQL look like `CREATE USER "user" LOGIN;` can be helpful for creating testing user under PostgreSQL superuser.
+- Testing user is superuser in PostgreSQL and can drop and create a database. Database `contrib_regression` will be used for tests.
+- SQLite databases in `/tmp` are RW accessable for PosgreSQL server user such as `postgres` or other.
+
+Full sample shell test commands for Ubuntu or Debian after `cd` to code directory can be like
+```sh
+export USE_PGXS=1;
+./test.sh ;
+chmod og+rw -v /tmp/*.db;
+LANGUAGE=C make installcheck;
+```
 
 Contributing
 ------------
