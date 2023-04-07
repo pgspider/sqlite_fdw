@@ -408,13 +408,3 @@ CREATE TABLE update_test (
 );
 
 create table upsert_test (a int primary key, b text);
-
--- github.com/pull/59
-CREATE TABLE RO_RW_test (
-    i   INT PRIMARY KEY,
-    a   text,
-    b   float,
-    c   int
-);
-
-INSERT INTO RO_RW_test (a, b, c) VALUES ('A',1.001, 0);
