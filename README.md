@@ -118,7 +118,7 @@ This table represents `sqlite_fdw` behaviour if in PostgreSQL foreign table colu
 * **∅** - no support (runtime error)
 * **V** - transparent transformation
 * **b** - show per-bit form
-* **T** - cast to text in encoding of current PostgreSQL database and than transparent transformation if applicable
+* **T** - cast to text in SQLite utf-8 encoding, then to *PostgreSQL text with current encoding of database** and then transparent transformation if applicable
 * **✔** - transparent transformation where PostgreSQL datatype is equal to SQLite affinity
 * **V+** - transparent transformation if appliacable
 * **?** - not described/not tested
@@ -129,16 +129,16 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 | PostgreSQL   | SQLite <br> INT  | SQLite <br> REAL | SQLite <br> BLOB | SQLite <br> TEXT | SQLite <br> TEXT but <br>empty<br>(not implemented)|
 |-------------:|:------------:|:------------:|:------------:|:------------:|:------------:|
 |         bool |     V     |     ?     |     T     |     -     |     ∅     |
-|        bytea |     x     |     x     |     ✔     |     -     |     ?     |
+|        bytea |     b     |     b     |     ✔     |     -     |     ?     |
 |         date |     V     |     V     |     T     |     V+    |   `NULL`  |
-|       float4 |     V+    |     ✔     |     b     |     V+    |   `NULL`  |
-|       float8 |     V+    |     ✔     |     b     |     V+    |   `NULL`  |
-|         int2 |     ✔     |     ?     |     b     |     V+    |   `NULL`  |
-|         int4 |     ✔     |     ?     |     b     |     V+    |   `NULL`  |
-|         int8 |     ✔     |     ?     |     b     |     V+    |   `NULL`  |
+|       float4 |     V+    |     ✔     |     T     |     -    |   `NULL`  |
+|       float8 |     V+    |     ✔     |     T     |     -    |   `NULL`  |
+|         int2 |     ✔     |     ?     |     T     |     -    |   `NULL`  |
+|         int4 |     ✔     |     ?     |     T     |     -    |   `NULL`  |
+|         int8 |     ✔     |     ?     |     T     |     -    |   `NULL`  |
 |         json |     ?     |     ?     |     T     |     V+    |     ?     |
 |         name |     ?     |     ?     |     T     |     V     |   `NULL`  |
-|      numeric |     V     |     V     |     ∅     |     V+    |   `NULL`  |
+|      numeric |     V     |     V     |     T     |     ∅     |   `NULL`  |
 |         text |     ?     |     ?     |     T     |     ✔     |     V     |
 |         time |     V     |     V     |     T     |     V+    |   `NULL`  |
 |    timestamp |     V     |     V     |     T     |     V+    |   `NULL`  |
