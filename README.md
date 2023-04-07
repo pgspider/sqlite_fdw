@@ -467,9 +467,9 @@ We don't profess a specific environment. You can use any POSIX-compliant system.
 
 ### Testing framework
 
-*Testing framework* based on UTF-8 files with SQL commands for `psql` and comparing actual outputs with saved expected outputs.  About base testing mechanism see in [PostgreSQL documentation](https://www.postgresql.org/docs/current/regress-run.html). The simplest analog of testing framework look like `cat Some_test_script.sql | LANGUAGE=C psql --echo-all -d contrib_regression > Some_test_script.actual.out; diff Some_test_script.out Some_test_script.actual.out;`
+*Testing framework* based on UTF-8 files with SQL commands for `psql` and comparing actual outputs with saved expected outputs.  About base testing mechanism see in [PostgreSQL documentation](https://www.postgresql.org/docs/current/regress-run.html). The simplest analogue of testing framework look like `cat Some_test_script.sql | LANGUAGE=C psql --echo-all -d contrib_regression > Some_test_script.actual.out; diff Some_test_script.out Some_test_script.actual.out;`
 
-**WARNING**: testing framework works with database **`contrib_regression`**. If you have such database please rename to any safe name. Database `contrib_regression` will droped before first tests if exists.
+**WARNING**: testing framework works with PostgreSQL database **`contrib_regression`**. If you have such database please rename to any safe name. Database `contrib_regression` will be droped before first tests if exists.
 
 ### Tests are multiversional for PsotgreSQL
 The version of PostgreSQL is detected automatically by `$(VERSION)` variable in Makefile. If many PostgreSQL versions are availlable veresion of `psql` from `PATH` environment variable is used.
@@ -510,7 +510,7 @@ Testing directory have structure as following:
             filename2.out
 ```
 
-### SQLite library requirements
+### SQLite library requirements and fixing
 
 When installing `sqlite3`, it will create some libraries: `libsqlite3.xx`.
 If you use `make install`, libraries will be in `/usr/local/lib` directory, replacing the old library of `sqlite3` if exist.
