@@ -118,7 +118,7 @@ This table represents `sqlite_fdw` behaviour if in PostgreSQL foreign table colu
 * **∅** - no support (runtime error)
 * **V** - transparent transformation
 * **b** - show per-bit form
-* **T** - cast to text in SQLite utf-8 encoding, then to *PostgreSQL text with current encoding of database** and then transparent transformation if applicable
+* **T** - cast to text in SQLite utf-8 encoding, then to **PostgreSQL text with current encoding of database** and then transparent transformation if applicable
 * **✔** - transparent transformation where PostgreSQL datatype is equal to SQLite affinity
 * **V+** - transparent transformation if appliacable
 * **?** - not described/not tested
