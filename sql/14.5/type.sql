@@ -144,5 +144,127 @@ SELECT * FROM type_JSON;
 --Testcase 57
 DELETE FROM type_JSON;
 
+-- drop column
+--Testcase 62:
+DROP FOREIGN TABLE "type_BOOLEAN";
+--Testcase 63:
+CREATE FOREIGN TABLE "type_BOOLEAN" (colx int, col boolean) SERVER sqlite_svr;
+--Testcase 64:
+ALTER FOREIGN TABLE "type_BOOLEAN" DROP COLUMN colx;
+--Testcase 65:
+SELECT * FROM "type_BOOLEAN"; -- OK
+
+-- define INTEGER as TEXT column
+--Testcase 67:
+ALTER FOREIGN TABLE "type_INTEGER" ALTER COLUMN col TYPE text;
+--Testcase 68:
+SELECT * FROM "type_INTEGER"; -- OK
+
+-- define INTEGER as bpchar
+--Testcase 69:
+ALTER FOREIGN TABLE "type_INTEGER" ALTER COLUMN col TYPE char(30);
+--Testcase 70:
+SELECT * FROM "type_INTEGER"; -- OK
+-- define INTEGER as varchar
+--Testcase 71:
+ALTER FOREIGN TABLE "type_INTEGER" ALTER COLUMN col TYPE varchar(30);
+--Testcase 72:
+SELECT * FROM "type_INTEGER"; -- OK
+
+-- define INTEGER as name
+--Testcase 73:
+ALTER FOREIGN TABLE "type_INTEGER" ALTER COLUMN col TYPE name;
+--Testcase 74:
+SELECT * FROM "type_INTEGER"; -- OK
+
+-- define INTEGER as json
+--Testcase 75:
+ALTER FOREIGN TABLE "type_INTEGER" ALTER COLUMN col TYPE json;
+--Testcase 76:
+SELECT * FROM "type_INTEGER"; -- OK
+
+-- define INTEGER as time
+--Testcase 77:
+DELETE FROM "type_INTEGER";
+--Testcase 78:
+ALTER FOREIGN TABLE "type_INTEGER" ALTER COLUMN col TYPE int;
+--Testcase 79:
+INSERT INTO "type_INTEGER" VALUES (120506);
+--Testcase 80:
+ALTER FOREIGN TABLE "type_INTEGER" ALTER COLUMN col TYPE time;
+--Testcase 81:
+SELECT * FROM "type_INTEGER"; -- OK
+
+-- define INTEGER as date
+--Testcase 82:
+ALTER FOREIGN TABLE "type_INTEGER" ALTER COLUMN col TYPE date;
+--Testcase 83:
+SELECT * FROM "type_INTEGER"; -- OK
+
+--Testcase 84:
+ALTER FOREIGN TABLE "type_INTEGER" ALTER COLUMN col TYPE int;
+
+--Testcase 85:
+INSERT INTO "type_DOUBLE" VALUES (1.3e-5);
+--Testcase 86:
+SELECT * FROM "type_DOUBLE";
+
+-- define DOUBLE as TEXT column
+--Testcase 87:
+ALTER FOREIGN TABLE "type_DOUBLE" ALTER COLUMN col TYPE text;
+--Testcase 88:
+SELECT * FROM "type_DOUBLE"; -- OK
+
+-- define DOUBLE as bpchar
+--Testcase 89:
+ALTER FOREIGN TABLE "type_DOUBLE" ALTER COLUMN col TYPE char(30);
+--Testcase 90:
+SELECT * FROM "type_DOUBLE"; -- OK
+-- define DOUBLE as varchar
+--Testcase 91:
+ALTER FOREIGN TABLE "type_DOUBLE" ALTER COLUMN col TYPE varchar(30);
+--Testcase 92:
+SELECT * FROM "type_DOUBLE"; -- OK
+
+-- define DOUBLE as name
+--Testcase 93:
+ALTER FOREIGN TABLE "type_DOUBLE" ALTER COLUMN col TYPE name;
+--Testcase 94:
+SELECT * FROM "type_DOUBLE"; -- OK
+
+-- define DOUBLE as json
+--Testcase 95:
+ALTER FOREIGN TABLE "type_DOUBLE" ALTER COLUMN col TYPE json;
+--Testcase 96:
+SELECT * FROM "type_DOUBLE"; -- OK
+
+--Testcase 97:
+DELETE FROM "type_DOUBLE";
+--Testcase 98:
+ALTER FOREIGN TABLE "type_DOUBLE" ALTER COLUMN col TYPE float8;
+--Testcase 99:
+INSERT INTO "type_DOUBLE" VALUES (120506.12);
+
+-- define DOUBLE as time
+--Testcase 100:
+ALTER FOREIGN TABLE "type_DOUBLE" ALTER COLUMN col TYPE time;
+--Testcase 101:
+SELECT * FROM "type_DOUBLE"; -- OK
+
+--Testcase 102:
+DELETE FROM "type_DOUBLE";
+--Testcase 103:
+ALTER FOREIGN TABLE "type_DOUBLE" ALTER COLUMN col TYPE float8;
+--Testcase 104:
+INSERT INTO "type_DOUBLE" VALUES (1999.012);
+-- define DOUBLE as date
+--Testcase 105:
+ALTER FOREIGN TABLE "type_DOUBLE" ALTER COLUMN col TYPE date;
+--Testcase 106:
+SELECT * FROM "type_DOUBLE"; -- OK
+
+--Testcase 107:
+ALTER FOREIGN TABLE "type_DOUBLE" ALTER COLUMN col TYPE float8;
+
 --Testcase 47:
 DROP EXTENSION sqlite_fdw CASCADE;

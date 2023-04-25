@@ -361,7 +361,7 @@ void		sqlite_rel_connection(sqlite3 * conn);
 void		sqlitefdw_report_error(int elevel, sqlite3_stmt * stmt, sqlite3 * conn, const char *sql, int rc);
 void		sqlite_cache_stmt(ForeignServer *server, sqlite3_stmt * *stmt);
 
-Datum		sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, AttInMetadata *attinmeta);
+Datum		sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_colid, AttInMetadata *attinmeta, AttrNumber attnum);
 
 void		sqlite_bind_sql_var(Oid type, int attnum, Datum value, sqlite3_stmt * stmt, bool *isnull);
 extern void sqlite_do_sql_command(sqlite3 * conn, const char *sql, int level, List **busy_connection);
