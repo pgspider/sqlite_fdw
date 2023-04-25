@@ -65,6 +65,7 @@ PG_FUNCTION_INFO_V1(sqlite_fdw_get_connections);
 PG_FUNCTION_INFO_V1(sqlite_fdw_disconnect);
 PG_FUNCTION_INFO_V1(sqlite_fdw_disconnect_all);
 
+static sqlite3 *sqlite_open_db(const char *dbpath);
 static void sqlite_make_new_connection(ConnCacheEntry *entry, ForeignServer *server);
 void		sqlite_do_sql_command(sqlite3 * conn, const char *sql, int level, List **busy_connection);
 static void sqlite_begin_remote_xact(ConnCacheEntry *entry);
@@ -159,6 +160,11 @@ sqlite_get_connection(ForeignServer *server, bool truncatable)
 		entry->conn = NULL;
 	}
 
+	/*
+	 * If cache entry doesn't have a connection, we have to establish a new
+	 * connection.  (If sqlite_open_db has an error, the cache entry will
+	 * remain in a valid empty state, ie conn == NULL.)
+	 */
 	if (entry->conn == NULL)
 		sqlite_make_new_connection(entry, server);
 
@@ -183,6 +189,39 @@ sqlite_get_connection(ForeignServer *server, bool truncatable)
 }
 
 /*
+ * Open remote sqlite database using specified database path.
+ */
+static sqlite3 *
+sqlite_open_db(const char *dbpath)
+{
+	sqlite3	   *conn = NULL;
+	int			rc;
+	char	   *err;
+
+	rc = sqlite3_open(dbpath, &conn);
+	if (rc != SQLITE_OK)
+		ereport(ERROR,
+				(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
+				 errmsg("failed to open SQLite DB. rc=%d path=%s", rc, dbpath)));
+
+	/* make 'LIKE' of SQLite case sensitive like PostgreSQL */
+	rc = sqlite3_exec(conn, "pragma case_sensitive_like=1",
+					  NULL, NULL, &err);
+	if (rc != SQLITE_OK)
+	{
+		char	   *perr = pstrdup(err);
+
+		sqlite3_free(err);
+		sqlite3_close(conn);
+		ereport(ERROR,
+				(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
+				 errmsg("failed to open SQLite DB. rc=%d err=%s", rc, perr)));
+	}
+
+	return conn;
+}
+
+/*
  * Reset all transient state fields in the cached connection entry and
  * establish new connection to the remote server.
  */
@@ -190,8 +229,6 @@ static void
 sqlite_make_new_connection(ConnCacheEntry *entry, ForeignServer *server)
 {
 	const char *dbpath = NULL;
-	int			rc;
-	char	   *err;
 	ListCell   *lc;
 
 	Assert(entry->conn == NULL);
@@ -214,26 +251,8 @@ sqlite_make_new_connection(ConnCacheEntry *entry, ForeignServer *server)
 			entry->keep_connections = defGetBoolean(def);
 	}
 
-	rc = sqlite3_open(dbpath, &entry->conn);
-	if (rc != SQLITE_OK)
-		ereport(ERROR,
-				(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
-				 errmsg("failed to open SQLite DB. rc=%d path=%s", rc, dbpath)));
-	/* make 'LIKE' of SQLite case sensitive like PostgreSQL */
-	rc = sqlite3_exec(entry->conn, "pragma case_sensitive_like=1",
-					  NULL, NULL, &err);
-	if (rc != SQLITE_OK)
-	{
-		char	   *perr = pstrdup(err);
-
-		sqlite3_free(err);
-		sqlite3_close(entry->conn);
-		entry->conn = NULL;
-		ereport(ERROR,
-				(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
-				 errmsg("failed to open SQLite DB. err=%s rc=%d", perr, rc)));
-	}
-
+	/* Try to make the connection */
+	entry->conn = sqlite_open_db(dbpath);
 }
 
 /*

@@ -1577,7 +1577,7 @@ make_tuple_from_result_row(sqlite3_stmt * stmt,
 		{
 			is_null[attnum] = false;
 			row[attnum] = sqlite_convert_to_pg(pgtype, pgtypmod,
-											   stmt, attid, festate->attinmeta);
+											   stmt, attid, festate->attinmeta, attnum);
 		}
 		attid++;
 	}
