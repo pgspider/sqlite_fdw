@@ -2092,6 +2092,7 @@ sqlite_deparse_column_option(int varno, int varattno, PlannerInfo *root, char *o
 void
 sqlite_deparse_string_literal(StringInfo buf, const char *val)
 {
+    // TODO: text input for SQLite is always UTF-8, we need to respect PostgreSQL database encoding
 	const char *valptr;
 
 	appendStringInfoChar(buf, '\'');

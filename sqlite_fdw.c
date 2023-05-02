@@ -1561,8 +1561,9 @@ make_tuple_from_result_row(sqlite3_stmt * stmt,
 						   bool *is_null,
 						   SqliteFdwExecState * festate)
 {
-	ListCell   *lc = NULL;
-	int			attid = 0;
+	ListCell        *lc = NULL;
+	int             stmt_colid = 0;
+	NullableDatum   sqlite_coverted;
 
 	memset(row, 0, sizeof(Datum) * tupleDescriptor->natts);
 	memset(is_null, true, sizeof(bool) * tupleDescriptor->natts);
@@ -1572,14 +1573,36 @@ make_tuple_from_result_row(sqlite3_stmt * stmt,
 		int			attnum = lfirst_int(lc) - 1;
 		Oid			pgtype = TupleDescAttr(tupleDescriptor, attnum)->atttypid;
 		int32		pgtypmod = TupleDescAttr(tupleDescriptor, attnum)->atttypmod;
+		//List	   *options = NULL;
+		int			sqlite_value_affinity;
 
-		if (sqlite3_column_type(stmt, attid) != SQLITE_NULL)
+		sqlite_value_affinity = sqlite3_column_type(stmt, stmt_colid);
+		if ( sqlite_value_affinity != SQLITE_NULL)
 		{
-			is_null[attnum] = false;
-			row[attnum] = sqlite_convert_to_pg(pgtype, pgtypmod,
-											   stmt, attid, festate->attinmeta, attnum);
+		    /* Here will be processing of column options about special convert behaviour 
+		    options = GetForeignColumnOptions(rel, attnum_base);
+			foreach(lc_attr, options)
+			{
+				DefElem    *def = (DefElem *) lfirst(lc_attr);
+
+				if (strcmp(def->defname, "...") == 0)
+					...  = defGet...(def);
+			} */
+			
+			int AffinityBehaviourFlags = 0; // Here will be flags about special convert behaviour from options on database, table or column level
+
+            sqlite_coverted = sqlite_convert_to_pg(pgtype, pgtypmod,
+    											   stmt, stmt_colid, festate->attinmeta,
+    											   attnum, sqlite_value_affinity,
+    											   AffinityBehaviourFlags);
+			if (!sqlite_coverted.isnull) {
+				is_null[attnum] = false;
+				row[attnum] = sqlite_coverted.value;
+			}
+			else
+				is_null[attnum] = true;
 		}
-		attid++;
+		stmt_colid++;
 	}
 }
 
