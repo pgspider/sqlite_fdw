@@ -561,6 +561,17 @@ For pull request, please make sure these items below for testing:
 - Execute test cases and update expectations for the latest version of PostgreSQL
 - Test creation and execution for other PostgreSQL versions are welcome but not required.
 
+For C code please indent by Tabs, not Spaces. Comments should be in style as in PostgresSQL code
+```c
+/* comment */
+```
+or 
+```c
+/*
+ * comment 
+ */
+```
+
 Useful links
 ------------
 
