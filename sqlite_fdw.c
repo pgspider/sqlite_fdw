@@ -1579,17 +1579,14 @@ make_tuple_from_result_row(sqlite3_stmt * stmt,
 		sqlite_value_affinity = sqlite3_column_type(stmt, stmt_colid);
 		if ( sqlite_value_affinity != SQLITE_NULL)
 		{
-		    /* Here will be processing of column options about special convert behaviour 
-		    options = GetForeignColumnOptions(rel, attnum_base);
-			foreach(lc_attr, options)
-			{
-				DefElem    *def = (DefElem *) lfirst(lc_attr);
-
-				if (strcmp(def->defname, "...") == 0)
-					...  = defGet...(def);
-			} */
+		    /* TODO: Processing of column options about special convert behaviour 
+		     * options = GetForeignColumnOptions(rel, attnum_base); ... foreach(lc_attr, options)
+			 */
 			
-			int AffinityBehaviourFlags = 0; // Here will be flags about special convert behaviour from options on database, table or column level
+			int AffinityBehaviourFlags = 0;
+			/* TODO
+			 * Flags about special convert behaviour from options on database, table or column level
+			 */
 
             sqlite_coverted = sqlite_convert_to_pg(pgtype, pgtypmod,
     											   stmt, stmt_colid, festate->attinmeta,
@@ -1764,7 +1761,6 @@ sqliteReScanForeignScan(ForeignScanState *node)
 	festate->rowidx = 0;
 }
 
-
 /*
  * sqliteAddForeignUpdateTargets: Add column(s) needed for update/delete on a foreign table,
  * we are using first column as row identification column, so we are adding that into target
@@ -1844,8 +1840,6 @@ sqliteAddForeignUpdateTargets(
 				 errhint("Set the option \"%s\" on the columns that belong to the primary key.", "key")));
 
 }
-
-
 
 static List *
 sqlitePlanForeignModify(PlannerInfo *root,
@@ -1976,7 +1970,6 @@ sqlitePlanForeignModify(PlannerInfo *root,
 	table_close(rel, NoLock);
 	return list_make3(makeString(sql.data), targetAttrs, makeInteger(values_end_len));
 }
-
 
 static void
 sqliteBeginForeignModify(ModifyTableState *mtstate,
@@ -2946,7 +2939,6 @@ sqliteExecForeignDelete(EState *estate,
 	return slot;
 }
 
-
 static void
 sqliteEndForeignModify(EState *estate,
 					   ResultRelInfo *resultRelInfo)
@@ -2960,7 +2952,6 @@ sqliteEndForeignModify(EState *estate,
 		fmstate->stmt = NULL;
 	}
 }
-
 
 static void
 sqliteExplainForeignScan(ForeignScanState *node,
@@ -2977,7 +2968,6 @@ sqliteExplainForeignScan(ForeignScanState *node,
 		ExplainPropertyText("SQLite query", sql, es);
 	}
 }
-
 
 static void
 sqliteExplainForeignModify(ModifyTableState *mtstate,
@@ -3001,8 +2991,6 @@ sqliteExplainForeignModify(ModifyTableState *mtstate,
 #endif
 }
 
-
-
 static bool
 sqliteAnalyzeForeignTable(Relation relation,
 						  AcquireSampleRowsFunc *func,
@@ -3011,7 +2999,6 @@ sqliteAnalyzeForeignTable(Relation relation,
 	elog(DEBUG1, "sqlite_fdw : %s", __func__);
 	return false;
 }
-
 
 /*
  * Import a foreign schema
@@ -3769,7 +3756,6 @@ sqlite_foreign_grouping_ok(PlannerInfo *root, RelOptInfo *grouped_rel)
 	if (ofpinfo->local_conds)
 		return false;
 
-
 	i = 0;
 	foreach(lc, grouping_target->exprs)
 	{
@@ -4067,7 +4053,6 @@ sqlite_add_foreign_grouping_paths(PlannerInfo *root, RelOptInfo *input_rel,
 	if (root->hasHavingQual && !parse->groupClause)
 		return;
 
-
 	/* save the input_rel as outerrel in fpinfo */
 	fpinfo->outerrel = input_rel;
 
@@ -4119,7 +4104,6 @@ sqlite_add_foreign_grouping_paths(PlannerInfo *root, RelOptInfo *input_rel,
 	/* Add generated path into grouped_rel by add_path(). */
 	add_path(grouped_rel, (Path *) grouppath);
 }
-
 
 /*
  * sqlite_add_foreign_ordered_paths
@@ -5113,7 +5097,6 @@ sqlite_to_pg_type(StringInfo str, char *type)
 	pfree(type);
 }
 
-
 /*
  * Force assorted GUC parameters to settings that ensure that we'll output
  * data values in a form that is unambiguous to the remote server.
@@ -5395,7 +5378,6 @@ sqlite_create_cursor(ForeignScanState *node)
 	/* Mark the cursor as created, and show no tuples have been retrieved */
 	festate->cursor_exists = true;
 }
-
 
 /*
  * Execute a direct UPDATE/DELETE statement.
