@@ -44,15 +44,6 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 	if (affinity_for_pg_column != sqlite_value_affinity && sqlite_value_affinity == SQLITE3_TEXT)
 	{
 		/* TODO: human readable error message based on this code
-		 * const char	*sqlite_affinity = 0;
-		 * const char	*pg_eqv_affinity = 0;
-		 * const char	*pg_dataTypeName = 0;
-		
-		 * pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(pgtyp, pgtypmod));
-		 * sqlite_affinity = sqlite_datatype(sqlite_value_affinity);
-		 * pg_eqv_affinity = sqlite_datatype(affinity_for_pg_column);
-		
-		 * value_datum = CStringGetDatum((char*) sqlite3_column_text(stmt, attnum));
 		 * elog(ERROR, "SQLite data affinity = \"%s\" disallowed for PostgreSQL type \"%s\" = SQLite \"%s\", value ='%s'", sqlite_affinity, pg_dataTypeName, pg_eqv_affinity, (char*)value_datum);
 		 */
 		elog(ERROR, "invalid input syntax for type =%d, column type =%d", affinity_for_pg_column, sqlite_value_affinity);
@@ -140,7 +131,8 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 		 * case TIMEOID:
 		 */
 		default:
-			{	/*
+			{
+				/*
 				 * TODO: text output from SQLite is always UTF-8, we need to respect PostgreSQL database encoding
 				 */
 				valstr = (char *) sqlite3_column_text(stmt, stmt_colid);

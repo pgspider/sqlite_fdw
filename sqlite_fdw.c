@@ -1572,15 +1572,14 @@ make_tuple_from_result_row(sqlite3_stmt * stmt,
 	{
 		int			attnum = lfirst_int(lc) - 1;
 		Oid			pgtype = TupleDescAttr(tupleDescriptor, attnum)->atttypid;
-		int32		pgtypmod = TupleDescAttr(tupleDescriptor, attnum)->atttypmod;
-		//List	   *options = NULL;
+		int32		pgtypmod = TupleDescAttr(tupleDescriptor, attnum)->atttypmod;		
 		int			sqlite_value_affinity;
 
 		sqlite_value_affinity = sqlite3_column_type(stmt, stmt_colid);
 		if ( sqlite_value_affinity != SQLITE_NULL)
 		{
-		    /* TODO: Processing of column options about special convert behaviour 
-		     * options = GetForeignColumnOptions(rel, attnum_base); ... foreach(lc_attr, options)
+			/* TODO: Processing of column options about special convert behaviour 
+			 * options = GetForeignColumnOptions(rel, attnum_base); ... foreach(lc_attr, options)
 			 */
 			
 			int AffinityBehaviourFlags = 0;
@@ -1588,10 +1587,10 @@ make_tuple_from_result_row(sqlite3_stmt * stmt,
 			 * Flags about special convert behaviour from options on database, table or column level
 			 */
 
-            sqlite_coverted = sqlite_convert_to_pg(pgtype, pgtypmod,
-    											   stmt, stmt_colid, festate->attinmeta,
-    											   attnum, sqlite_value_affinity,
-    											   AffinityBehaviourFlags);
+			sqlite_coverted = sqlite_convert_to_pg(pgtype, pgtypmod,
+												   stmt, stmt_colid, festate->attinmeta,
+												   attnum, sqlite_value_affinity,
+												   AffinityBehaviourFlags);
 			if (!sqlite_coverted.isnull) {
 				is_null[attnum] = false;
 				row[attnum] = sqlite_coverted.value;
@@ -1940,7 +1939,7 @@ sqlitePlanForeignModify(PlannerInfo *root,
 		options = GetForeignColumnOptions(foreignTableId, attrno);
 		foreach(option, options)
 		{
-			DefElem    *def = (DefElem *) lfirst(option);
+			DefElem		*def = (DefElem *) lfirst(option);
 
 			if (IS_KEY_COLUMN(def))
 			{
