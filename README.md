@@ -126,25 +126,25 @@ This table represents `sqlite_fdw` behaviour if in PostgreSQL foreign table colu
 
 SQLite `NULL` affinity always can be transparent converted for a nullable column in PostgreSQL.
 
-| PostgreSQL   | SQLite <br> INT  | SQLite <br> REAL | SQLite <br> BLOB | SQLite <br> TEXT | SQLite <br> TEXT but <br>empty<br>(not implemented)|
-|-------------:|:------------:|:------------:|:------------:|:------------:|:------------:|
-|         bool |     V     |     ?     |     T     |     -     |     ∅     |
-|        bytea |     b     |     b     |     ✔     |     -     |     ?     |
-|         date |     V     |     V     |     T     |     V+    |   `NULL`  |
-|       float4 |     V+    |     ✔     |     T     |     -    |   `NULL`  |
-|       float8 |     V+    |     ✔     |     T     |     -    |   `NULL`  |
-|         int2 |     ✔     |     ?     |     T     |     -    |   `NULL`  |
-|         int4 |     ✔     |     ?     |     T     |     -    |   `NULL`  |
-|         int8 |     ✔     |     ?     |     T     |     -    |   `NULL`  |
-|         json |     ?     |     ?     |     T     |     V+    |     ?     |
-|         name |     ?     |     ?     |     T     |     V     |   `NULL`  |
-|      numeric |     V     |     V     |     T     |     ∅     |   `NULL`  |
-|         text |     ?     |     ?     |     T     |     ✔     |     V     |
-|         time |     V     |     V     |     T     |     V+    |   `NULL`  |
-|    timestamp |     V     |     V     |     T     |     V+    |   `NULL`  |
-|timestamp + tz|     V     |     V     |     T     |     V+    |   `NULL`  |
-|         uuid |     ∅     |     ∅     |V+<br>(only<br>16 bytes)|     V+    |   `NULL`  |
-|      varchar |     ?     |     ?     |     T     |     ✔     |     V     |
+| PostgreSQL   | SQLite <br> INT  | SQLite <br> REAL | SQLite <br> BLOB | SQLite <br> TEXT | SQLite <br> TEXT but <br>empty|SQLite<br>nearest<br>affinity|
+|-------------:|:------------:|:------------:|:------------:|:------------:|:------------:|-------------:|
+|         bool |     V     |     ?     |     T     |     -     |     ∅     |   INT|
+|        bytea |     b     |     b     |     ✔     |     -     |     ?     |  BLOB|
+|         date |     V     |     V     |     T     |     V+    |   `NULL`  | ? |
+|       float4 |     V+    |     ✔     |     T     |     -    |   `NULL`  | REAL|
+|       float8 |     V+    |     ✔     |     T     |     -    |   `NULL`  | REAL|
+|         int2 |     ✔     |     ?     |     T     |     -    |   `NULL`  |   INT|
+|         int4 |     ✔     |     ?     |     T     |     -    |   `NULL`  |   INT|
+|         int8 |     ✔     |     ?     |     T     |     -    |   `NULL`  |   INT|
+|         json |     ?     |     ?     |     T     |     V+    |     ?     |  TEXT|
+|         name |     ?     |     ?     |     T     |     V     |   `NULL`  |  TEXT|
+|      numeric |     V     |     V     |     T     |     ∅     |   `NULL`  | REAL|
+|         text |     ?     |     ?     |     T     |     ✔     |     V     |  TEXT|
+|         time |     V     |     V     |     T     |     V+    |   `NULL`  | ? |
+|    timestamp |     V     |     V     |     T     |     V+    |   `NULL`  | ? |
+|timestamp + tz|     V     |     V     |     T     |     V+    |   `NULL`  | ? |
+|         uuid |     ∅     |     ∅     |V+<br>(only<br>16 bytes)|     V+    |   `NULL`  |  TEXT, BLOB|
+|      varchar |     ?     |     ?     |     T     |     ✔     |     V     |  TEXT|
 
 ### CREATE SERVER options
 
