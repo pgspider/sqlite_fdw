@@ -334,7 +334,7 @@ static void sqlite_value_to_pg_error (Oid pgtyp, int pgtypmod, sqlite3_stmt * st
 	const char	*sqlite_affinity = 0;
 	const char	*pg_eqv_affinity = 0;
 	const char	*pg_dataTypeName = 0;
-	const int	 max_logged_byte_length = 63;
+	const int	 max_logged_byte_length = NAMEDATALEN;
 	
 	pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(pgtyp, pgtypmod));
 	sqlite_affinity = sqlite_datatype(sqlite_value_affinity);
@@ -343,10 +343,10 @@ static void sqlite_value_to_pg_error (Oid pgtyp, int pgtypmod, sqlite3_stmt * st
 	if (value_byte_size_blob_or_utf8 < max_logged_byte_length)
 	{
 		const unsigned char	*text_value = sqlite3_column_text(stmt, attnum);
-		elog(ERROR, "SQLite data affinity = \"%s\" disallowed for PostgreSQL type \"%s\" = SQLite \"%s\", value ='%s'", sqlite_affinity, pg_dataTypeName, pg_eqv_affinity, text_value);
+		elog(ERROR, "SQLite data affinity \"%s\" disallowed for PostgreSQL data type \"%s\" = SQLite \"%s\", value = '%s'", sqlite_affinity, pg_dataTypeName, pg_eqv_affinity, text_value);
 	}
 	else
 	{
-		elog(ERROR, "SQLite data affinity = \"%s\" disallowed for PostgreSQL type \"%s\" = SQLite \"%s\" for a long value", sqlite_affinity, pg_dataTypeName, pg_eqv_affinity);
+		elog(ERROR, "SQLite data affinity \"%s\" disallowed for PostgreSQL data type \"%s\" = SQLite \"%s\" for a long value (%d bytes)", sqlite_affinity, pg_dataTypeName, pg_eqv_affinity, value_byte_size_blob_or_utf8);
 	}
 }
