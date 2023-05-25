@@ -1481,7 +1481,7 @@ SELECT * FROM fts_table; -- should work
 ALTER TABLE fts_table ALTER COLUMN name TYPE int;
 --Testcase 160:
 SELECT * FROM fts_table; -- should fail
-ERROR:  SQLite data affinity "text" disallowed for PostgreSQL data type "int" = SQLite "int", value = 'this is name'
+ERROR:  SQLite data affinity "text" disallowed for PostgreSQL data type "integer" = SQLite "integer", value = 'this is name'
 -- issue #62 github
 --Testcase 236:
 INSERT INTO noprimary VALUES (4, 'Test''s');

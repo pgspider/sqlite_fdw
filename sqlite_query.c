@@ -30,7 +30,7 @@ static int32
 static const char*
 			sqlite_datatype(int t);
 static void 
-			sqlite_value_to_pg_error (Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, AttrNumber attnum, int sqlite_value_affinity, int affinity_for_pg_column, int value_byte_size_blob_or_utf8);
+			sqlite_value_to_pg_error (Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_colid, int sqlite_value_affinity, int affinity_for_pg_column, int value_byte_size_blob_or_utf8);
 
 /*
  * convert_sqlite_to_pg: Convert Sqlite data into PostgreSQL's compatible data types
@@ -45,7 +45,7 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 
 	if (affinity_for_pg_column != sqlite_value_affinity && sqlite_value_affinity == SQLITE3_TEXT)
 	{
-		sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+		sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, stmt_colid, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
 	}
 
 	switch (pgtyp)
@@ -329,7 +329,7 @@ static const char* sqlite_datatype(int t)
  * Human readable message about disallowed combination of PostgreSQL columnn
  * data type and SQLite data value affinity
  */
-static void sqlite_value_to_pg_error (Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, AttrNumber attnum, int sqlite_value_affinity, int affinity_for_pg_column, int value_byte_size_blob_or_utf8)
+static void sqlite_value_to_pg_error (Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_colid, int sqlite_value_affinity, int affinity_for_pg_column, int value_byte_size_blob_or_utf8)
 {
 	const char	*sqlite_affinity = 0;
 	const char	*pg_eqv_affinity = 0;
@@ -342,7 +342,7 @@ static void sqlite_value_to_pg_error (Oid pgtyp, int pgtypmod, sqlite3_stmt * st
 	
 	if (value_byte_size_blob_or_utf8 < max_logged_byte_length)
 	{
-		const unsigned char	*text_value = sqlite3_column_text(stmt, attnum);
+		const unsigned char	*text_value = sqlite3_column_text(stmt, stmt_colid);
 		elog(ERROR, "SQLite data affinity \"%s\" disallowed for PostgreSQL data type \"%s\" = SQLite \"%s\", value = '%s'", sqlite_affinity, pg_dataTypeName, pg_eqv_affinity, text_value);
 	}
 	else

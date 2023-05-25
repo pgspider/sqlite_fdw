@@ -4622,16 +4622,16 @@ DROP FUNCTION f_test(int);
 ALTER FOREIGN TABLE ft1 ALTER COLUMN c8 TYPE int;
 --Testcase 273:
 SELECT * FROM ft1 WHERE c1 = 1;
-ERROR:  SQLite data affinity "text" disallowed for PostgreSQL data type "int" = SQLite "int", value = 'foo'
+ERROR:  SQLite data affinity "text" disallowed for PostgreSQL data type "integer" = SQLite "integer", value = 'foo'
 --Testcase 274:
 SELECT  ft1.c1,  ft2.c2, ft1.c8 FROM ft1, ft2 WHERE ft1.c1 = ft2.c1 AND ft1.c1 = 1;
-ERROR:  SQLite data affinity "text" disallowed for PostgreSQL data type "int" = SQLite "int", value = 'foo'
+ERROR:  SQLite data affinity "text" disallowed for PostgreSQL data type "integer" = SQLite "integer", value = 'foo'
 --Testcase 275:
 SELECT  ft1.c1,  ft2.c2, ft1 FROM ft1, ft2 WHERE ft1.c1 = ft2.c1 AND ft1.c1 = 1;
-ERROR:  SQLite data affinity "text" disallowed for PostgreSQL data type "int" = SQLite "int", value = 'foo'
+ERROR:  SQLite data affinity "text" disallowed for PostgreSQL data type "integer" = SQLite "integer", value = 'foo'
 --Testcase 276:
 SELECT sum(c2), array_agg(c8) FROM ft1 GROUP BY c8;
-ERROR:  SQLite data affinity "text" disallowed for PostgreSQL data type "int" = SQLite "int", value = 'foo'
+ERROR:  SQLite data affinity "text" disallowed for PostgreSQL data type "integer" = SQLite "integer", value = 'foo'
 ALTER FOREIGN TABLE ft1 ALTER COLUMN c8 TYPE text;
 -- ===================================================================
 -- subtransaction

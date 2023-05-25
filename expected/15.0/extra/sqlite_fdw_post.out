@@ -4954,16 +4954,16 @@ DROP TABLE reind_fdw_parent;
 ALTER FOREIGN TABLE ft1 ALTER COLUMN c8 TYPE int;
 --Testcase 273:
 SELECT * FROM ft1 ftx(x1,x2,x3,x4,x5,x6,x7,x8) WHERE x1 = 1;
-ERROR:  SQLite data affinity "text" disallowed for PostgreSQL data type "int" = SQLite "int", value = 'foo'
+ERROR:  SQLite data affinity "text" disallowed for PostgreSQL data type "integer" = SQLite "integer", value = 'foo'
 --Testcase 274:
 SELECT  ftx.x1,  ft2.c2, ftx.x8 FROM ft1 ftx(x1,x2,x3,x4,x5,x6,x7,x8), ft2 WHERE ftx.x1 = ft2.c1 AND ftx.x1 = 1;
-ERROR:  SQLite data affinity "text" disallowed for PostgreSQL data type "int" = SQLite "int", value = 'foo'
+ERROR:  SQLite data affinity "text" disallowed for PostgreSQL data type "integer" = SQLite "integer", value = 'foo'
 --Testcase 275:
 SELECT  ftx.x1,  ft2.c2, ftx FROM ft1 ftx(x1,x2,x3,x4,x5,x6,x7,x8), ft2 WHERE ftx.x1 = ft2.c1 AND ftx.x1 = 1;
-ERROR:  SQLite data affinity "text" disallowed for PostgreSQL data type "int" = SQLite "int", value = 'foo'
+ERROR:  SQLite data affinity "text" disallowed for PostgreSQL data type "integer" = SQLite "integer", value = 'foo'
 --Testcase 276:
 SELECT sum(c2), array_agg(c8) FROM ft1 GROUP BY c8;
-ERROR:  SQLite data affinity "text" disallowed for PostgreSQL data type "int" = SQLite "int", value = 'foo'
+ERROR:  SQLite data affinity "text" disallowed for PostgreSQL data type "integer" = SQLite "integer", value = 'foo'
 -- ANALYZE ft1; -- ERROR
 -- ===================================================================
 -- local type can be different from remote type in some cases,
