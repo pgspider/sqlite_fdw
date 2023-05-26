@@ -125,7 +125,9 @@ Usage
 -----
 
 ### Datatypes
-This table represents `sqlite_fdw` behaviour if in PostgreSQL foreign table column data of some SQLite [affinity](https://www.sqlite.org/datatype3.html) is detected. Based on `convert_sqlite_to_pg` C function.
+**WARNING! The table above represents roadmap**, work still in progress. Untill it will be ended please refer real behaviour in non-obvious cases.
+
+This table represents `sqlite_fdw` behaviour if in PostgreSQL foreign table column data of some SQLite [affinity](https://www.sqlite.org/datatype3.html) is detected.
 
 * **∅** - no support (runtime error)
 * **V** - transparent transformation
