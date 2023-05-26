@@ -78,6 +78,18 @@
 #define list_concat(X, Y)  list_concat(X, list_copy(Y))
 #endif
 
+#if PG_VERSION_NUM < 120000
+/* NullableDatum is introduced from PG12, we define it here in case of PG11 or earlier. */
+typedef struct NullableDatum
+{
+#define FIELDNO_NULLABLE_DATUM_DATUM 0
+    Datum        value;
+#define FIELDNO_NULLABLE_DATUM_ISNULL 1
+    bool        isnull;
+    /* due to alignment padding this could be used for flags for free */
+} NullableDatum;
+#endif
+
 /*
  * Options structure to store the Sqlite
  * server information
