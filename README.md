@@ -269,10 +269,11 @@ For more details on generated columns see:
 Character set handling
 ----------------------
 
-When `sqlite_fdw` connects to a SQLite [no character set metadata](https://www.sqlite.org/search?s=d&q=character+set)
-stored in SQLite. There is only [`PRAGMA encoding;`](https://www.sqlite.org/pragma.html#pragma_encoding) with UTF-only values (`UTF-8`, `UTF-16`, `UTF-16le`, `UTF-16be`). All strings are interpreted acording the PostgreSQL database's server encoding. It's not a problem
-if both PostgreSQL database and SQLite character data from database file has UTF-8 or UTF-16 encoding. Otherewise
-character interpretation transformation problems will occur.
+There is [no character set metadata](https://www.sqlite.org/search?s=d&q=character+set)
+stored in SQLite, only [`PRAGMA encoding;`](https://www.sqlite.org/pragma.html#pragma_encoding) with UTF-only values (`UTF-8`, `UTF-16`, `UTF-16le`, `UTF-16be`). [`SQLite text output function`](https://www.sqlite.org/c3ref/column_blob.html) guarantees UTF-8 encoding.
+
+When `sqlite_fdw` connects to a SQLite, all strings are interpreted acording the PostgreSQL database's server encoding.
+It's not a problem if your PostgreSQL database encoding belongs to Unicode family. Otherewise interpretation transformation problems can occur. Some unproper for PostgreSQL database encoding characters will be replaced to default 'no such character' character.
 
 Character case functions such as `upper`, `lower` and other are not pushed down because they does not work with UNICODE character in SQLite.
 

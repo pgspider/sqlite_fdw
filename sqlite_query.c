@@ -24,6 +24,7 @@
 #include "nodes/makefuncs.h"
 #include "catalog/pg_type.h"
 #include "parser/parse_type.h"
+#include "mb/pg_wchar.h"
 
 static int32
 			sqlite_affinity_eqv_to_pgtype(Oid pgtyp);
@@ -31,6 +32,8 @@ static const char*
 			sqlite_datatype(int t);
 static void 
 			sqlite_value_to_pg_error (Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_colid, int sqlite_value_affinity, int affinity_for_pg_column, int value_byte_size_blob_or_utf8);
+static char *
+			sqlite_text_value_to_pg_db_encoding(sqlite3_stmt * stmt, int stmt_colid);			
 
 /*
  * convert_sqlite_to_pg: Convert Sqlite data into PostgreSQL's compatible data types
@@ -110,7 +113,7 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 				}
 				else
 				{
-					valstr = (char *) sqlite3_column_text(stmt, stmt_colid);
+					valstr = sqlite_text_value_to_pg_db_encoding(stmt, stmt_colid);
 				}
 				break;
 			}
@@ -131,10 +134,7 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 		 */
 		default:
 			{
-				/*
-				 * TODO: text output from SQLite is always UTF-8, we need to respect PostgreSQL database encoding
-				 */
-				valstr = (char *) sqlite3_column_text(stmt, stmt_colid);
+				valstr = sqlite_text_value_to_pg_db_encoding(stmt, stmt_colid);
 			}
 	}
 	/* convert string value to appropriate type value */
@@ -349,4 +349,19 @@ static void sqlite_value_to_pg_error (Oid pgtyp, int pgtypmod, sqlite3_stmt * st
 	{
 		elog(ERROR, "SQLite data affinity \"%s\" disallowed for PostgreSQL data type \"%s\" = SQLite \"%s\" for a long value (%d bytes)", sqlite_affinity, pg_dataTypeName, pg_eqv_affinity, value_byte_size_blob_or_utf8);
 	}
+}
+
+static char * sqlite_text_value_to_pg_db_encoding(sqlite3_stmt * stmt, int stmt_colid)
+{
+	int pg_database_encoding = GetDatabaseEncoding(); /* very fast call, see PostgreSQL mbutils.c */
+	char *utf8_text_value;
+	/* Text from this SQLite function is always UTF-8,
+	 * see  https://www.sqlite.org/c3ref/column_blob.html
+	 */
+	utf8_text_value = (char *) sqlite3_column_text(stmt, stmt_colid);
+	if (pg_database_encoding == PG_UTF8)
+		return utf8_text_value;
+	else
+		/* There is no UTF16 in PostgreSQL for fast sqlite3_column_text16, hence always convert */
+		return (char *) pg_do_encoding_conversion((unsigned char *) utf8_text_value, strlen(utf8_text_value), PG_UTF8, pg_database_encoding);
 }

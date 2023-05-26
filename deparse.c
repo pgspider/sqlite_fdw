@@ -37,6 +37,7 @@
 #include "utils/timestamp.h"
 #include "utils/typcache.h"
 #include "commands/tablecmds.h"
+#include "mb/pg_wchar.h"
 
 /*
  * Global context for sqlite_foreign_expr_walker's search of an expression tree.
@@ -2087,19 +2088,28 @@ sqlite_deparse_column_option(int varno, int varattno, PlannerInfo *root, char *o
 }
 
 /*
+ * Convert a text value from PostgreSQL database with an encoding to SQLite value which is always UTF8
+ */
+static const char *
+pg_text_value_to_sqlite_text(const char * pg_text_value)
+{
+	int pg_database_encoding = GetDatabaseEncoding(); /* very fast call, see PostgreSQL mbutils.c */
+	return (pg_database_encoding == PG_UTF8) ? pg_text_value : (char *) pg_do_encoding_conversion((unsigned char *) pg_text_value, strlen(pg_text_value),  pg_database_encoding, PG_UTF8);
+}
+
+/*
 * Append a SQL string literal representing "val" to buf.
 */
 void
 sqlite_deparse_string_literal(StringInfo buf, const char *val)
 {
-	/*
-	 * TODO
-	 * text input for SQLite is always UTF-8, we need to respect PostgreSQL database encoding
-	 */
+	const char *sqlite_text_val;
 	const char *valptr;
 
+	sqlite_text_val = pg_text_value_to_sqlite_text(val);
+	
 	appendStringInfoChar(buf, '\'');
-	for (valptr = val; *valptr; valptr++)
+	for (valptr = sqlite_text_val; *valptr; valptr++)
 	{
 		char		ch = *valptr;
 
