@@ -79,6 +79,8 @@ For some Linux distributives internal packages with `sqlite_fdw` are avalillable
 - [sqlite_fdw_14 rpm](https://pkgs.org/download/sqlite_fdw_14(x86-64)) for CentOS 9, RHEL 9, Rocky Linux 9, AlmaLinux 9.
 - [sqlite_fdw code source](https://aur.archlinux.org/packages/sqlite_fdw) for Arch Linux.
 
+Also you can build RPM with actual code base before release, see above.
+
 ### Source installation
 
 Prerequisites:
@@ -108,6 +110,15 @@ If you want to build `sqlite_fdw` in a source tree of PostgreSQL, use
 ```sh
 make
 make install
+```
+
+### RPM package building
+
+RPM is a software distribution file format for such Linux distributives as REHL, openSUSE, Fuduntu, ALT Linux, Fedora etc. You can build RPM with actual code base before release with following commands in the main directory of your copy of this repository:
+
+```sh
+rpmbuild -bs rpm.spec # for source RPM file
+rpmbuild -bb rpm.spec # for binary RPM file for current processor architecture
 ```
 
 Usage
