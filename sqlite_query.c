@@ -11,157 +11,85 @@
  */
 
 #include "postgres.h"
-
 #include "sqlite_fdw.h"
 
 #include <stdio.h>
 
 #include <sqlite3.h>
 
-#include "foreign/fdwapi.h"
-#include "foreign/foreign.h"
-#include "nodes/makefuncs.h"
-#include "storage/ipc.h"
-#include "utils/array.h"
+#include "catalog/pg_type_d.h"
 #include "utils/builtins.h"
-#include "utils/numeric.h"
-#include "utils/date.h"
-#include "utils/datetime.h"
-#include "utils/hsearch.h"
-#include "utils/syscache.h"
 #include "utils/lsyscache.h"
-#include "utils/rel.h"
-#include "utils/timestamp.h"
-#include "utils/formatting.h"
-#include "utils/memutils.h"
-#include "utils/guc.h"
-#include "access/htup_details.h"
-#include "access/sysattr.h"
-#include "access/reloptions.h"
-#include "commands/defrem.h"
-#include "commands/explain.h"
-#include "commands/vacuum.h"
-#include "funcapi.h"
-#include "miscadmin.h"
+
 #include "nodes/makefuncs.h"
-#include "nodes/nodeFuncs.h"
-#include "optimizer/cost.h"
-#include "optimizer/paths.h"
-#include "optimizer/prep.h"
-#include "optimizer/restrictinfo.h"
-#include "optimizer/cost.h"
-#include "optimizer/pathnode.h"
-#include "optimizer/plancat.h"
-#include "optimizer/planmain.h"
-#include "parser/parsetree.h"
 #include "catalog/pg_type.h"
-#include "funcapi.h"
-#include "miscadmin.h"
-#include "postmaster/syslogger.h"
-#include "storage/fd.h"
-#include "catalog/pg_type.h"
+#include "parser/parse_type.h"
 
 static int32
-			sqlite_from_pgtyp(Oid pgtyp);
+			sqlite_affinity_eqv_to_pgtype(Oid pgtyp);
+static const char*
+			sqlite_datatype(int t);
+static void 
+			sqlite_value_to_pg_error (Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_colid, int sqlite_value_affinity, int affinity_for_pg_column, int value_byte_size_blob_or_utf8);
 
 /*
  * convert_sqlite_to_pg: Convert Sqlite data into PostgreSQL's compatible data types
  */
-Datum
-sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, AttInMetadata *attinmeta)
+NullableDatum
+sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_colid, AttInMetadata *attinmeta, AttrNumber attnum, int sqlite_value_affinity, int AffinityBehaviourFlags)
 {
 	Datum		value_datum = 0;
-	Datum		valueDatum = 0;
-	regproc		typeinput;
-	HeapTuple	tuple;
-	int			typemod;
-	int			col_type;
-	int			sqlite_type;
+	char	   *valstr = NULL;
+	int			affinity_for_pg_column = sqlite_affinity_eqv_to_pgtype(pgtyp);
+	int		 	value_byte_size_blob_or_utf8 = sqlite3_column_bytes(stmt, stmt_colid); // Compute always, void text and void BLOB will be special cases
 
-	/* get the type's output function */
-	tuple = SearchSysCache1(TYPEOID, ObjectIdGetDatum(pgtyp));
-	if (!HeapTupleIsValid(tuple))
-		elog(ERROR, "cache lookup failed for type%u", pgtyp);
-
-	typeinput = ((Form_pg_type) GETSTRUCT(tuple))->typinput;
-	typemod = ((Form_pg_type) GETSTRUCT(tuple))->typtypmod;
-	ReleaseSysCache(tuple);
-
-	sqlite_type = sqlite_from_pgtyp(pgtyp);
-	col_type = sqlite3_column_type(stmt, attnum);
-
-	if (sqlite_type != col_type && col_type == SQLITE3_TEXT)
-		elog(ERROR, "invalid input syntax for type =%d, column type =%d", sqlite_type, col_type);
+	if (affinity_for_pg_column != sqlite_value_affinity && sqlite_value_affinity == SQLITE3_TEXT)
+	{
+		sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, stmt_colid, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+	}
 
 	switch (pgtyp)
 	{
-			/*
-			 * Sqlite gives BIT / BIT(n) data type as decimal value. The only
-			 * way to retrieve this value is to use BIN, OCT or HEX function
-			 * in Sqlite, otherwise sqlite client shows the actual decimal
-			 * value, which could be a non - printable character. For exmple
-			 * in Sqlite
-			 *
-			 * CREATE TABLE t (b BIT(8)); INSERT INTO t SET b = b'1001';
-			 * SELECT BIN(b) FROM t; +--------+ | BIN(b) | +--------+ | 1001 |
-			 * +--------+
-			 *
-			 * PostgreSQL expacts all binary data to be composed of either '0'
-			 * or '1'. Sqlite gives value 9 hence PostgreSQL reports error.
-			 * The solution is to convert the decimal number into equivalent
-			 * binary string.
-			 */
-
 		case BYTEAOID:
 			{
-				int			blobsize = sqlite3_column_bytes(stmt, attnum);
-
-				value_datum = (Datum) palloc0(blobsize + VARHDRSZ);
-				memcpy(VARDATA(value_datum), sqlite3_column_blob(stmt, attnum), blobsize);
-				SET_VARSIZE(value_datum, blobsize + VARHDRSZ);
-				return PointerGetDatum(value_datum);
+				// int			value_byte_size_blob_or_utf = sqlite3_column_bytes(stmt, stmt_colid); // Calculated always for detectind void values
+				value_datum = (Datum) palloc0(value_byte_size_blob_or_utf8 + VARHDRSZ);
+				memcpy(VARDATA(value_datum), sqlite3_column_blob(stmt, stmt_colid), value_byte_size_blob_or_utf8);
+				SET_VARSIZE(value_datum, value_byte_size_blob_or_utf8 + VARHDRSZ);
+				return (struct NullableDatum) { PointerGetDatum(value_datum), false};
 			}
 		case INT2OID:
 			{
-				int			value = sqlite3_column_int(stmt, attnum);
+				int			value = sqlite3_column_int(stmt, stmt_colid);
 
-				return Int16GetDatum(value);
+				return (struct NullableDatum) { Int16GetDatum(value), false};
 			}
 		case INT4OID:
 			{
-				int			value = sqlite3_column_int(stmt, attnum);
+				int			value = sqlite3_column_int(stmt, stmt_colid);
 
-				return Int32GetDatum(value);
+				return (struct NullableDatum) { Int32GetDatum(value), false};
 			}
 		case INT8OID:
 			{
-				sqlite3_int64 value = sqlite3_column_int64(stmt, attnum);
+				sqlite3_int64 value = sqlite3_column_int64(stmt, stmt_colid);
 
-				return Int64GetDatum(value);
+				return (struct NullableDatum) { Int64GetDatum(value), false};
 			}
 		case FLOAT4OID:
 			{
-				double		value = sqlite3_column_double(stmt, attnum);
+				double		value = sqlite3_column_double(stmt, stmt_colid);
 
-				return Float4GetDatum((float4) value);
-				break;
+				return (struct NullableDatum) { Float4GetDatum((float4) value), false};
 			}
 		case FLOAT8OID:
 			{
-				double		value = sqlite3_column_double(stmt, attnum);
+				double		value = sqlite3_column_double(stmt, stmt_colid);
 
-				return Float8GetDatum((float8) value);
-				break;
+				return (struct NullableDatum) { Float8GetDatum((float8) value), false};
 			}
-		case BPCHAROID:
-		case VARCHAROID:
-		case TEXTOID:
-		case JSONOID:
-		case NAMEOID:
-		case TIMEOID:
 		case TIMESTAMPOID:
 		case TIMESTAMPTZOID:
-		case DATEOID:
 			{
 				/*
 				 * We add this conversion to allow add INTEGER/FLOAT SQLite
@@ -173,37 +101,48 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int attnum, A
 				 * "regular" process because its already implemented and
 				 * working properly.
 				 */
-				int			sqlitetype = sqlite3_column_type(stmt, attnum);
-
-				if (sqlitetype == SQLITE_INTEGER || sqlitetype == SQLITE_FLOAT)
+				if (sqlite_value_affinity == SQLITE_INTEGER || sqlite_value_affinity == SQLITE_FLOAT)
 				{
-					double		value = sqlite3_column_double(stmt, attnum);
+					double		value = sqlite3_column_double(stmt, stmt_colid);
+					Datum		d = DirectFunctionCall1(float8_timestamptz, Float8GetDatum((float8) value));
 
-					return DirectFunctionCall1(float8_timestamptz, Float8GetDatum((float8) value));
+					return (struct NullableDatum) { d, false};
 				}
 				else
 				{
-					valueDatum = CStringGetDatum((char *) sqlite3_column_text(stmt, attnum));
-					return OidFunctionCall3(typeinput, valueDatum, ObjectIdGetDatum(InvalidOid), Int32GetDatum(typemod));
+					valstr = (char *) sqlite3_column_text(stmt, stmt_colid);
 				}
 				break;
 			}
 		case NUMERICOID:
 			{
-				double		value = sqlite3_column_double(stmt, attnum);
+				double		value = sqlite3_column_double(stmt, stmt_colid);
 
-				valueDatum = CStringGetDatum((char *) DirectFunctionCall1(float8out, Float8GetDatum((float8) value)));
-				return OidFunctionCall3(typeinput, valueDatum, ObjectIdGetDatum(InvalidOid), Int32GetDatum(typemod));
+				valstr = DatumGetCString(DirectFunctionCall1(float8out, Float8GetDatum((float8) value)));
+				break;
 			}
+		/* some popular datatypes for default algorythm branch
+		 * case BPCHAROID:
+		 * case VARCHAROID:
+		 * case TEXTOID:
+		 * case JSONOID:
+		 * case NAMEOID:
+		 * case TIMEOID:
+		 */
 		default:
-			valueDatum = CStringGetDatum((char *) sqlite3_column_text(stmt, attnum));
+			{
+				/*
+				 * TODO: text output from SQLite is always UTF-8, we need to respect PostgreSQL database encoding
+				 */
+				valstr = (char *) sqlite3_column_text(stmt, stmt_colid);
+			}
 	}
 	/* convert string value to appropriate type value */
 	value_datum = InputFunctionCall(&attinmeta->attinfuncs[attnum],
-									(char *) valueDatum,
+									valstr,
 									attinmeta->attioparams[attnum],
 									attinmeta->atttypmods[attnum]);
-	return value_datum;
+	return (struct NullableDatum) { value_datum, false};
 }
 
 /*
@@ -268,8 +207,8 @@ sqlite_bind_sql_var(Oid type, int attnum, Datum value, sqlite3_stmt * stmt, bool
 
 		case NUMERICOID:
 			{
-				Datum		valueDatum = DirectFunctionCall1(numeric_float8, value);
-				float8		dat = DatumGetFloat8(valueDatum);
+				Datum		value_datum = DirectFunctionCall1(numeric_float8, value);
+				float8		dat = DatumGetFloat8(value_datum);
 
 				ret = sqlite3_bind_double(stmt, attnum, dat);
 				break;
@@ -339,10 +278,10 @@ sqlite_bind_sql_var(Oid type, int attnum, Datum value, sqlite3_stmt * stmt, bool
 }
 
 /*
- * Give SQLite data type from PG type
+ * Give nearest SQLite data affinity for PostgreSQL data type
  */
 static int32
-sqlite_from_pgtyp(Oid type)
+sqlite_affinity_eqv_to_pgtype(Oid type)
 {
 	switch (type)
 	{
@@ -359,5 +298,55 @@ sqlite_from_pgtyp(Oid type)
 			return SQLITE_BLOB;
 		default:
 			return SQLITE3_TEXT;
+	}
+}
+
+/*
+ * Give equivalent string for SQLite data affinity by int from enum
+ * SQLITE_INTEGER etc.
+ */
+static const char* sqlite_datatype(int t)
+{
+	static const char *azType[] = { "?", "integer", "real", "text", "blob", "null" };
+	switch (t)
+	{
+		case SQLITE_INTEGER:
+			return azType[1];
+		case SQLITE_FLOAT:
+			return azType[2];
+		case SQLITE3_TEXT:
+			return azType[3];
+		case SQLITE_BLOB:
+			return azType[4];
+		case SQLITE_NULL:
+			return azType[5];
+		default:
+			return azType[0];
+	}
+}
+
+/*
+ * Human readable message about disallowed combination of PostgreSQL columnn
+ * data type and SQLite data value affinity
+ */
+static void sqlite_value_to_pg_error (Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_colid, int sqlite_value_affinity, int affinity_for_pg_column, int value_byte_size_blob_or_utf8)
+{
+	const char	*sqlite_affinity = 0;
+	const char	*pg_eqv_affinity = 0;
+	const char	*pg_dataTypeName = 0;
+	const int	 max_logged_byte_length = NAMEDATALEN;
+	
+	pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(pgtyp, pgtypmod));
+	sqlite_affinity = sqlite_datatype(sqlite_value_affinity);
+	pg_eqv_affinity = sqlite_datatype(affinity_for_pg_column);
+	
+	if (value_byte_size_blob_or_utf8 < max_logged_byte_length)
+	{
+		const unsigned char	*text_value = sqlite3_column_text(stmt, stmt_colid);
+		elog(ERROR, "SQLite data affinity \"%s\" disallowed for PostgreSQL data type \"%s\" = SQLite \"%s\", value = '%s'", sqlite_affinity, pg_dataTypeName, pg_eqv_affinity, text_value);
+	}
+	else
+	{
+		elog(ERROR, "SQLite data affinity \"%s\" disallowed for PostgreSQL data type \"%s\" = SQLite \"%s\" for a long value (%d bytes)", sqlite_affinity, pg_dataTypeName, pg_eqv_affinity, value_byte_size_blob_or_utf8);
 	}
 }

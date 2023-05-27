@@ -83,13 +83,15 @@ For some Linux distributives internal packages with `sqlite_fdw` are avalillable
 
 Prerequisites:
 * `libsqlite3-dev`, especially `sqlite.h`
+* `postgresql-server-dev`, especially `postgres.h`
 * `gcc`
 * `make`
 
-#### 1. Install SQLite library
+#### 1. Install SQLite & Postgres Development Libraries
 
 For Debian or Ubuntu:
 `apt-get install libsqlite3-dev`
+`apt-get install postgresql-server-dev-XX`, where XX matches your postgres version, i.e. `apt-get install postgresql-server-dev-15`
 
 You can also [download SQLite source code][1] and [build SQLite][2].
 
