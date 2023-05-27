@@ -143,6 +143,7 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 | PostgreSQL   | SQLite <br> INT  | SQLite <br> REAL | SQLite <br> BLOB | SQLite <br> TEXT | SQLite <br> TEXT but <br>empty|SQLite<br>nearest<br>affinity|
 |-------------:|:------------:|:------------:|:------------:|:------------:|:------------:|-------------:|
 |         bool |     V     |     ?     |     T     |     -     |     ∅     |   INT|
+|       bit(n) |     V     |     ∅     |     V     |     ?     |     ∅     |   INT|
 |        bytea |     b     |     b     |     ✔     |     -     |     ?     |  BLOB|
 |         date |     V     |     V     |     T     |     V+    |   `NULL`  | ? |
 |       float4 |     V+    |     ✔     |     T     |     -    |   `NULL`  | REAL|
