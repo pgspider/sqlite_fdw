@@ -53,12 +53,12 @@ CREATE VIRTUAL TABLE fts_table USING fts5(name, description, tokenize = porter);
 
 -- github.com/pull/59
 CREATE TABLE RO_RW_test (
-    i   INT PRIMARY KEY,
+    i   int primary key not null,
     a   text,
     b   float,
     c   int
 );
 
-INSERT INTO RO_RW_test (a, b, c) VALUES ('A',1.001, 0);
+INSERT INTO RO_RW_test (i, a, b, c) VALUES (1, 'A',1.001, 0);
 
 analyze;

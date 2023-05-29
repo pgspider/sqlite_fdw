@@ -666,7 +666,6 @@ UPDATE RO_RW_test SET a='E' WHERE i=3; -- OK
 DELETE FROM RO_RW_test WHERE i=3; -- OK
 --Testcase 242:
 INSERT INTO RO_RW_test (i, a, b, c) VALUES (4, 'F', 0.005, 5); -- OK
-
 -- SERVER false TABLE default
 --Testcase 243:
 ALTER SERVER sqlite_svr OPTIONS (SET updatable 'false');
@@ -749,7 +748,7 @@ ALTER SERVER sqlite_svr OPTIONS (DROP updatable);
 ALTER FOREIGN TABLE RO_RW_test OPTIONS (DROP updatable);
 
 --Testcase 276:
-SELECT * FROM RO_RW_test;
+SELECT * FROM RO_RW_test ORDER BY i;
 -- End of RO/RW test
 
 -- readonly/readwrite test github pull 59
