@@ -2092,10 +2092,6 @@ sqlite_deparse_column_option(int varno, int varattno, PlannerInfo *root, char *o
 void
 sqlite_deparse_string_literal(StringInfo buf, const char *val)
 {
-	/*
-	 * TODO
-	 * text input for SQLite is always UTF-8, we need to respect PostgreSQL database encoding
-	 */
 	const char *valptr;
 
 	appendStringInfoChar(buf, '\'');
@@ -2177,6 +2173,8 @@ sqlite_deparse_expr(Expr *node, deparse_expr_cxt *context)
 	}
 }
 
+
+
 /*
  * deparse remote UPDATE statement
  *
@@ -2233,6 +2231,7 @@ sqlite_deparse_update(StringInfo buf, PlannerInfo *root,
 		i++;
 	}
 }
+
 
 /*
  * deparse remote UPDATE statement
@@ -2353,6 +2352,7 @@ sqlite_deparse_delete(StringInfo buf, PlannerInfo *root,
 		i++;
 	}
 }
+
 
 /*
  * deparse remote DELETE statement
@@ -2940,9 +2940,6 @@ sqlite_deparse_scalar_array_op_expr(ScalarArrayOpExpr *node, deparse_expr_cxt *c
 							}
 							continue;
 						}
-
-						if (SQL_STR_DOUBLE(ch, true))
-							appendStringInfoChar(buf, ch);
 						appendStringInfoChar(buf, ch);
 					}
 
@@ -3006,6 +3003,7 @@ sqlite_deparse_scalar_array_op_expr(ScalarArrayOpExpr *node, deparse_expr_cxt *c
 	/* Close IN clause */
 	if (useIn)
 		appendStringInfoChar(buf, ')');
+
 }
 
 /*
@@ -3644,6 +3642,7 @@ sqlite_deparse_sort_group_clause(Index ref, List *tlist, bool force_colno, depar
 	return (Node *) expr;
 }
 
+
 /*
  * Returns true if given Var is deparsed as a subquery output column, in
  * which case, *relno and *colno are set to the IDs for the relation and
@@ -3706,6 +3705,7 @@ sqlite_is_subquery_var(Var *node, RelOptInfo *foreignrel, int *relno, int *colno
 		return sqlite_is_subquery_var(node, innerrel, relno, colno);
 	}
 }
+
 
 /*
  * Get the IDs for the relation and column alias to given Var belonging to

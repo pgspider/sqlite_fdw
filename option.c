@@ -71,6 +71,14 @@ static struct SqliteFdwOption valid_options[] =
 	/* batch_size is available on both server and table */
 	{"batch_size", ForeignServerRelationId},
 	{"batch_size", ForeignTableRelationId},
+	/* special_real_values is available on both server, table and column */
+	{"special_real_values", ForeignServerRelationId},
+	{"special_real_values", ForeignTableRelationId},
+	{"special_real_values", AttributeRelationId},
+	/* implicit_bool_type is available on both server, table and column */
+	{"implicit_bool_type", ForeignServerRelationId},
+	{"implicit_bool_type", ForeignTableRelationId},
+	{"implicit_bool_type", AttributeRelationId},
 	/* Sentinel */
 	{NULL, InvalidOid}
 };
@@ -130,7 +138,9 @@ sqlite_fdw_validator(PG_FUNCTION_ARGS)
 		/* Validate option value */
 		if (strcmp(def->defname, "truncatable") == 0 ||
 			strcmp(def->defname, "keep_connections") == 0 ||
-			strcmp(def->defname, "updatable") == 0)
+			strcmp(def->defname, "updatable") == 0 ||
+			strcmp(def->defname, "special_real_values") == 0 ||
+			strcmp(def->defname, "implicit_bool_type") == 0 )
 		{
 			defGetBoolean(def);
 		}
