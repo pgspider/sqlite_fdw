@@ -45,6 +45,7 @@ typedef struct ConnCacheEntry
 								 * one level of subxact open, etc */
 	bool		keep_connections;	/* setting value of keep_connections
 									 * server option */
+	bool		updatable;		/* false for readonly connections */
 	bool		truncatable;	/* check table can truncate or not */
 	bool		invalidated;	/* true if reconnect is pending */
 	Oid			serverid;		/* foreign server OID used to get server name */
