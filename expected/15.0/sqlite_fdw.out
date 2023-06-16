@@ -1764,14 +1764,11 @@ INSERT INTO RO_RW_test (i, a, b, c) VALUES (9, 'O', 3.21, 9); -- OK
 --Testcase 262:
 ALTER SERVER sqlite_svr OPTIONS (SET updatable 'false');
 --Testcase 263:
-INSERT INTO RO_RW_test (i, a, b, c) VALUES (10, 'P', 4.15, 1); -- ERR
-ERROR:  foreign table "ro_rw_test" does not allow inserts
+INSERT INTO RO_RW_test (i, a, b, c) VALUES (10, 'P', 4.15, 1); -- OK
 --Testcase 264:
-UPDATE RO_RW_test SET a='Q' WHERE i=9; -- ERR
-ERROR:  foreign table "ro_rw_test" does not allow updates
+UPDATE RO_RW_test SET a='Q' WHERE i=9; -- OK
 --Testcase 265:
-DELETE FROM RO_RW_test WHERE i=9; -- ERR
-ERROR:  foreign table "ro_rw_test" does not allow deletes
+DELETE FROM RO_RW_test WHERE i=9; -- OK
 -- SERVER false TABLE false
 --Testcase 266:
 ALTER FOREIGN TABLE RO_RW_test OPTIONS (SET updatable 'false');
@@ -1802,11 +1799,11 @@ ALTER SERVER sqlite_svr OPTIONS (DROP updatable);
 ALTER FOREIGN TABLE RO_RW_test OPTIONS (DROP updatable);
 --Testcase 276:
 SELECT * FROM RO_RW_test ORDER BY i;
- i | a |   b   | c 
----+---+-------+---
- 1 | A | 1.001 | 0
- 4 | F | 0.005 | 5
- 9 | O |  3.21 | 9
+ i  | a |   b   | c 
+----+---+-------+---
+  1 | A | 1.001 | 0
+  4 | F | 0.005 | 5
+ 10 | P |  4.15 | 1
 (3 rows)
 
 -- End of RO/RW test
