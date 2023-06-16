@@ -230,9 +230,6 @@ sqlite_make_new_connection(ConnCacheEntry *entry, ForeignServer *server)
 {
 	const char *dbpath = NULL;
 	ListCell   *lc;
-	int			flags = 0;
-	const char *zVfs = NULL;
-	bool		updatable = true; /* read-write mode by default */
 
 	Assert(entry->conn == NULL);
 
@@ -252,30 +249,10 @@ sqlite_make_new_connection(ConnCacheEntry *entry, ForeignServer *server)
 			dbpath = defGetString(def);
 		else if (strcmp(def->defname, "keep_connections") == 0)
 			entry->keep_connections = defGetBoolean(def);
-		else if (strcmp(def->defname, "updatable") == 0)
-			updatable = defGetBoolean(def);
 	}
 
-	flags = flags | (updatable ? SQLITE_OPEN_READWRITE : SQLITE_OPEN_READONLY);
-	rc = sqlite3_open_v2(dbpath, &entry->conn, flags, zVfs);
-	if (rc != SQLITE_OK)
-		ereport(ERROR,
-				(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
-				 errmsg("failed to open SQLite DB. rc=%d path=%s", rc, dbpath)));
-	/* make 'LIKE' of SQLite case sensitive like PostgreSQL */
-	rc = sqlite3_exec(entry->conn, "pragma case_sensitive_like=1",
-					  NULL, NULL, &err);
-	if (rc != SQLITE_OK)
-	{
-		char	   *perr = pstrdup(err);
-
-		sqlite3_free(err);
-		sqlite3_close(entry->conn);
-		entry->conn = NULL;
-		ereport(ERROR,
-				(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
-				 errmsg("failed to open SQLite DB. err=%s rc=%d", perr, rc)));
-	}
+	/* Try to make the connection */
+	entry->conn = sqlite_open_db(dbpath);
 }
 
 /*
