@@ -630,6 +630,10 @@ SELECT * FROM case_exp WHERE CASE c3 COLLATE "C" WHEN c6 THEN true ELSE c3 < 'ba
 --Testcase 234:
 DELETE FROM case_exp;
 
+-- test for PR #76 github
+CREATE FOREIGN TABLE "Unicode data" (i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
+SELECT * FROM "Unicode data";
+
 --Testcase 142:
 DROP FUNCTION test_param_WHERE();
 --Testcase 143:
@@ -656,9 +660,169 @@ DROP FOREIGN TABLE grem1_1;
 DROP FOREIGN TABLE grem1_2;
 --Testcase 235:
 DROP FOREIGN TABLE case_exp;
+--test for PR #76 github
+DROP FOREIGN TABLE "Unicode data";
 
 --Testcase 151:
 DROP SERVER sqlite_svr;
 --Testcase 152:
 DROP EXTENSION sqlite_fdw CASCADE;
 
+-- tests for PR #76 github
+-- euc_jp
+CREATE DATABASE "contrib_regression_EUC_JP" ENCODING EUC_JP LC_CTYPE='ja_JP.eucjp' LC_COLLATE='ja_JP.eucjp' template template0;
+\connect "contrib_regression_EUC_JP"
+CREATE EXTENSION sqlite_fdw;
+CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
+OPTIONS (database '/tmp/sqlitefdw_test.db');
+CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
+SELECT * FROM "Unicode data";
+SELECT * FROM "Unicode data" WHERE i = 'jap';
+SELECT * FROM "Unicode data" WHERE t LIKE 'いろはにほ%';
+DROP FOREIGN TABLE "Unicode data";
+DROP SERVER sqlite_svr;
+DROP EXTENSION sqlite_fdw;
+\connect contrib_regression;
+DROP DATABASE "contrib_regression_EUC_JP";
+
+-- cp1251
+CREATE DATABASE "contrib_regression_WIN1251" ENCODING WIN1251 LC_CTYPE='bg_BG' LC_COLLATE='bg_BG' template template0;
+\connect "contrib_regression_WIN1251"
+CREATE EXTENSION sqlite_fdw;
+CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
+OPTIONS (database '/tmp/sqlitefdw_test.db');
+CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
+SELECT * FROM "Unicode data";
+SELECT * FROM "Unicode data" WHERE i = 'bel';
+SELECT * FROM "Unicode data" WHERE i = 'bul';
+SELECT * FROM "Unicode data" WHERE i = 'rus';
+SELECT * FROM "Unicode data" WHERE i = 'ukr';
+SELECT * FROM "Unicode data" WHERE t LIKE 'У руд%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ах, ч%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Широк%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
+DROP FOREIGN TABLE "Unicode data";
+DROP SERVER sqlite_svr;
+DROP EXTENSION sqlite_fdw;
+\connect contrib_regression;
+DROP DATABASE "contrib_regression_WIN1251";
+
+-- cp1256
+CREATE DATABASE "contrib_regression_WIN1256" ENCODING WIN1256 LC_CTYPE='POSIX' LC_COLLATE='POSIX' template template0;
+\connect "contrib_regression_WIN1256"
+CREATE EXTENSION sqlite_fdw;
+CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
+OPTIONS (database '/tmp/sqlitefdw_test.db');
+CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
+SELECT * FROM "Unicode data";
+SELECT * FROM "Unicode data" WHERE i = 'ara';
+SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
+DROP FOREIGN TABLE "Unicode data";
+DROP SERVER sqlite_svr;
+DROP EXTENSION sqlite_fdw;
+\connect contrib_regression;
+DROP DATABASE "contrib_regression_WIN1256";
+
+-- cp1253
+CREATE DATABASE "contrib_regression_WIN1253" ENCODING WIN1253 LC_CTYPE='POSIX' LC_COLLATE='POSIX' template template0;
+\connect "contrib_regression_WIN1253"
+CREATE EXTENSION sqlite_fdw;
+CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
+OPTIONS (database '/tmp/sqlitefdw_test.db');
+CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
+SELECT * FROM "Unicode data";
+SELECT * FROM "Unicode data" WHERE i = 'gre';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
+DROP FOREIGN TABLE "Unicode data";
+DROP SERVER sqlite_svr;
+DROP EXTENSION sqlite_fdw;
+\connect contrib_regression;
+DROP DATABASE "contrib_regression_WIN1253";
+
+-- cp1255
+CREATE DATABASE "contrib_regression_WIN1255" ENCODING WIN1255 LC_CTYPE='POSIX' LC_COLLATE='POSIX' template template0;
+\connect "contrib_regression_WIN1255"
+CREATE EXTENSION sqlite_fdw;
+CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
+OPTIONS (database '/tmp/sqlitefdw_test.db');
+CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
+SELECT * FROM "Unicode data";
+SELECT * FROM "Unicode data" WHERE i = 'heb';
+SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
+DROP FOREIGN TABLE "Unicode data";
+DROP SERVER sqlite_svr;
+DROP EXTENSION sqlite_fdw;
+\connect contrib_regression;
+DROP DATABASE "contrib_regression_WIN1255";
+
+-- cp1252
+CREATE DATABASE "contrib_regression_WIN1252" ENCODING WIN1252 LC_CTYPE='POSIX' LC_COLLATE='POSIX' template template0;
+\connect "contrib_regression_WIN1252"
+CREATE EXTENSION sqlite_fdw;
+CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
+OPTIONS (database '/tmp/sqlitefdw_test.db');
+CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
+SELECT * FROM "Unicode data";
+SELECT * FROM "Unicode data" WHERE i = 'fra';
+SELECT * FROM "Unicode data" WHERE i = 'eus';
+SELECT * FROM "Unicode data" WHERE i = 'spa';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Dès N%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Permi%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Quier%';
+DROP FOREIGN TABLE "Unicode data";
+DROP SERVER sqlite_svr;
+DROP EXTENSION sqlite_fdw;
+\connect contrib_regression;
+DROP DATABASE "contrib_regression_WIN1252";
+
+-- cp1250
+CREATE DATABASE "contrib_regression_WIN1250" ENCODING WIN1250 LC_CTYPE='POSIX' LC_COLLATE='POSIX' template template0;
+\connect "contrib_regression_WIN1250"
+CREATE EXTENSION sqlite_fdw;
+CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
+OPTIONS (database '/tmp/sqlitefdw_test.db');
+CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
+SELECT * FROM "Unicode data";
+SELECT * FROM "Unicode data" WHERE i = 'srp';
+SELECT * FROM "Unicode data" WHERE i = 'pol';
+SELECT * FROM "Unicode data" WHERE i = 'cze';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Pchną%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Zvláš%';
+DROP FOREIGN TABLE "Unicode data";
+DROP SERVER sqlite_svr;
+DROP EXTENSION sqlite_fdw;
+\connect contrib_regression;
+DROP DATABASE "contrib_regression_WIN1250";
+
+-- cp1257
+CREATE DATABASE "contrib_regression_WIN1257" ENCODING WIN1257 LC_CTYPE='POSIX' LC_COLLATE='POSIX' template template0;
+\connect "contrib_regression_WIN1257"
+CREATE EXTENSION sqlite_fdw;
+CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
+OPTIONS (database '/tmp/sqlitefdw_test.db');
+CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
+SELECT * FROM "Unicode data";
+SELECT * FROM "Unicode data" WHERE i = 'lav';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
+DROP FOREIGN TABLE "Unicode data";
+DROP SERVER sqlite_svr;
+DROP EXTENSION sqlite_fdw;
+\connect contrib_regression;
+DROP DATABASE "contrib_regression_WIN1257";
+
+-- ko_KR.euckr
+CREATE DATABASE "contrib_regression_EUC_KR" ENCODING EUC_KR LC_CTYPE='ko_KR.euckr' LC_COLLATE='ko_KR.euckr' template template0;
+\connect "contrib_regression_EUC_KR"
+CREATE EXTENSION sqlite_fdw;
+CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
+OPTIONS (database '/tmp/sqlitefdw_test.db');
+CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
+SELECT * FROM "Unicode data";
+SELECT * FROM "Unicode data" WHERE i = 'kor';
+SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
+DROP FOREIGN TABLE "Unicode data";
+DROP SERVER sqlite_svr;
+DROP EXTENSION sqlite_fdw;
+\connect contrib_regression;
+DROP DATABASE "contrib_regression_EUC_KR";

@@ -270,12 +270,14 @@ Character set handling
 ----------------------
 
 There is [no character set metadata](https://www.sqlite.org/search?s=d&q=character+set)
-stored in SQLite, only [`PRAGMA encoding;`](https://www.sqlite.org/pragma.html#pragma_encoding) with UTF-only values (`UTF-8`, `UTF-16`, `UTF-16le`, `UTF-16be`). [`SQLite text output function`](https://www.sqlite.org/c3ref/column_blob.html) guarantees UTF-8 encoding.
+stored in SQLite, only [`PRAGMA encoding;`](https://www.sqlite.org/pragma.html#pragma_encoding) with UTF-only values (`UTF-8`, `UTF-16`, `UTF-16le`, `UTF-16be`). [SQLite text output function](https://www.sqlite.org/c3ref/column_blob.html) guarantees UTF-8 encoding.
 
 When `sqlite_fdw` connects to a SQLite, all strings are interpreted acording the PostgreSQL database's server encoding.
-It's not a problem if your PostgreSQL database encoding belongs to Unicode family. Otherewise interpretation transformation problems can occur. Some unproper for PostgreSQL database encoding characters will be replaced to default 'no such character' character.
+It's not a problem if your PostgreSQL database encoding belongs to Unicode family. Otherewise interpretation transformation problems can occur. Some unproper for PostgreSQL database encoding characters will be replaced to default 'no such character' character or there will error like `character with byte sequence 0x** in encoding "UTF8" has no equivalent in encoding "**"`.
 
 Character case functions such as `upper`, `lower` and other are not pushed down because they does not work with UNICODE character in SQLite.
+
+`Sqlite_fdw` tested with PostgreSQL database encodings `EUC_JP`, `EUC_KR`, `WIN1250`, `WIN1251`, `WIN1252`, `WIN1253`, `WIN1255`, `WIN1256`, `WIN1257`. Some other encodings also can be supported, but not tested.
 
 Examples
 --------

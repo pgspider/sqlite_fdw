@@ -51,4 +51,28 @@ CREATE TABLE "A a" (col int primary key);
 -- test for issue #44 github
 CREATE VIRTUAL TABLE fts_table USING fts5(name, description, tokenize = porter);
 
+-- test for PR #76 github
+CREATE TABLE "Unicode data" (i text primary key, t text);
+
+INSERT INTO "Unicode data" (i, t) VALUES ('jap', 'いろはにほへと ちりぬるを わかよたれそ つねならむ うゐのおくやま けふこえて あさきゆめみし ゑひもせす.');
+INSERT INTO "Unicode data" (i, t) VALUES ('bul', 'Ах, чудна българска земьо, полюшвай цъфтящи жита.');
+INSERT INTO "Unicode data" (i, t) VALUES ('rus', 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства.');
+INSERT INTO "Unicode data" (i, t) VALUES ('aze', 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq.');
+INSERT INTO "Unicode data" (i, t) VALUES ('arm', 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։');
+INSERT INTO "Unicode data" (i, t) VALUES ('ukr', 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком.');
+INSERT INTO "Unicode data" (i, t) VALUES ('eus', 'Permin gox dabiltzu yoskiñ.');
+INSERT INTO "Unicode data" (i, t) VALUES ('bel', 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі.');
+INSERT INTO "Unicode data" (i, t) VALUES ('gre', 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός');
+INSERT INTO "Unicode data" (i, t) VALUES ('gle', 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig.');
+INSERT INTO "Unicode data" (i, t) VALUES ('spa', 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón.');
+INSERT INTO "Unicode data" (i, t) VALUES ('kor', '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다.');
+INSERT INTO "Unicode data" (i, t) VALUES ('lav', 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm.');
+INSERT INTO "Unicode data" (i, t) VALUES ('pol', 'Pchnąć w tę łódź jeża lub ośm skrzyń fig.');
+INSERT INTO "Unicode data" (i, t) VALUES ('fra', 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !');
+INSERT INTO "Unicode data" (i, t) VALUES ('srp', 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca.');
+INSERT INTO "Unicode data" (i, t) VALUES ('epo', 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj.');
+INSERT INTO "Unicode data" (i, t) VALUES ('cze', 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů.');
+INSERT INTO "Unicode data" (i, t) VALUES ('ara', 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ');
+INSERT INTO "Unicode data" (i, t) VALUES ('heb', 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם');
+
 analyze;
