@@ -123,8 +123,8 @@ Usage
   
 - **updatable** as *boolean*, optional, default *true*
 
-  This option allow write operations on SQLite database file. If `false` [`SQLITE_OPEN_READONLY`](https://sqlite.org/c3ref/open.html) mode will enabled. Hence `updatable` option for foreign tables will ignored.
-  
+  This option allow or disallow write operations on SQLite database file.
+    
 - **truncatable** as *boolean*, optional, default *false*
 
   Allows foreign tables to be truncated using the `TRUNCATE` command.
