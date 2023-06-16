@@ -165,7 +165,7 @@ In OS `sqlite_fdw` works as executed code with permissions of user of PostgreSQL
   
 - **updatable** as *boolean*, optional, default *true*
 
-  This option can disallow write operations on a SQLite table if this operations is server-level allowed (option `updatable` set to `true` or not set for foreign server). Otherwise this option is ignored.
+  This option can allow or disallow write operations on a SQLite table independed of the same server option.
   
 `sqlite_fdw` accepts the following column-level options via the
 `CREATE FOREIGN TABLE` command:
