@@ -716,11 +716,11 @@ INSERT INTO RO_RW_test (i, a, b, c) VALUES (9, 'O', 3.21, 9); -- OK
 --Testcase 262:
 ALTER SERVER sqlite_svr OPTIONS (SET updatable 'false');
 --Testcase 263:
-INSERT INTO RO_RW_test (i, a, b, c) VALUES (10, 'P', 4.15, 1); -- ERR
+INSERT INTO RO_RW_test (i, a, b, c) VALUES (10, 'P', 4.15, 1); -- OK
 --Testcase 264:
-UPDATE RO_RW_test SET a='Q' WHERE i=9; -- ERR
+UPDATE RO_RW_test SET a='Q' WHERE i=9; -- OK
 --Testcase 265:
-DELETE FROM RO_RW_test WHERE i=9; -- ERR
+DELETE FROM RO_RW_test WHERE i=9; -- OK
 
 -- SERVER false TABLE false
 --Testcase 266:
