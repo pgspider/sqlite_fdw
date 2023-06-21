@@ -74,7 +74,7 @@ Installation
 
 ### Package installation
 
-For some Linux distributives internal packages with `sqlite_fdw` are avalillable.
+For some Linux distributives internal packages with `sqlite_fdw` are avalilable.
 
 - [sqlite_fdw_14 rpm](https://pkgs.org/download/sqlite_fdw_14(x86-64)) for CentOS 9, RHEL 9, Rocky Linux 9, AlmaLinux 9.
 - [sqlite_fdw code source](https://aur.archlinux.org/packages/sqlite_fdw) for Arch Linux.
@@ -125,11 +125,11 @@ Usage
 
   This option allow or disallow write operations on SQLite database file.
     
-- **truncatable** as *boolean*, optional, default *false*
+- **truncatable** as *boolean*, optional, default *true*
 
   Allows foreign tables to be truncated using the `TRUNCATE` command.
   
-- **keep_connections** as *boolean*, optional, default *false*
+- **keep_connections** as *boolean*, optional, default *true*
   
   Allows to keep connections to SQLite while there is no SQL operations between PostgreSQL and SQLite.
   
