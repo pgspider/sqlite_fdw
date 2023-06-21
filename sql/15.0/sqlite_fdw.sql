@@ -18,7 +18,7 @@ CREATE FOREIGN TABLE multiprimary(a int, b int OPTIONS (key 'true'), c int OPTIO
 --Testcase 136:
 CREATE FOREIGN TABLE noprimary(a int, b text) SERVER sqlite_svr;
 
--- readonly/readwrite test github pull 59
+-- updatable option test (github pull 59)
 CREATE FOREIGN TABLE RO_RW_test(i int OPTIONS (key 'true'), a text, b float, c int) SERVER sqlite_svr;
 
 --Testcase 1:
