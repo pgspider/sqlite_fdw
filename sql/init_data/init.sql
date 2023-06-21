@@ -51,7 +51,7 @@ CREATE TABLE "A a" (col int primary key);
 -- test for issue #44 github
 CREATE VIRTUAL TABLE fts_table USING fts5(name, description, tokenize = porter);
 
--- github.com/pull/59
+-- updatable option test (github pull 59)
 CREATE TABLE RO_RW_test (
     i   int primary key not null,
     a   text,
