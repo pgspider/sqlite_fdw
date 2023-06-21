@@ -5598,15 +5598,13 @@ sqliteIsForeignRelUpdatable(Relation rel)
 		if (strcmp(def->defname, "updatable") == 0)
 			updatable = defGetBoolean(def);
 	}
+	foreach(lc, table->options)
 	{
-		foreach(lc, table->options)
-		{
-			DefElem    *def = (DefElem *) lfirst(lc);
+		DefElem    *def = (DefElem *) lfirst(lc);
 
-			if (strcmp(def->defname, "updatable") == 0)
-				updatable = defGetBoolean(def);
-		}
-	}
+		if (strcmp(def->defname, "updatable") == 0)
+			updatable = defGetBoolean(def);
+	}	
 
 	/*
 	 * Currently "updatable" means support for INSERT, UPDATE and DELETE.
