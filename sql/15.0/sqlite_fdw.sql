@@ -676,9 +676,92 @@ CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlitefdw_test.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
-SELECT * FROM "Unicode data";
+-- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
 SELECT * FROM "Unicode data" WHERE t LIKE 'いろはにほ%';
+INSERT INTO "Unicode data" (i, t) VALUES ('jap+', 'い');
+DELETE FROM "Unicode data" WHERE t = 'い';
+-- 1251
+SELECT * FROM "Unicode data" WHERE i = 'bel';
+SELECT * FROM "Unicode data" WHERE i = 'bul';
+SELECT * FROM "Unicode data" WHERE i = 'rus';
+SELECT * FROM "Unicode data" WHERE i = 'ukr';
+SELECT * FROM "Unicode data" WHERE t LIKE 'У руд%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ах, ч%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Широк%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
+INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'ў');
+DELETE FROM "Unicode data" WHERE t = 'ў';
+INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'ч');
+DELETE FROM "Unicode data" WHERE t = 'ч';
+INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'щ');
+DELETE FROM "Unicode data" WHERE t = 'щ';
+INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'ї');
+DELETE FROM "Unicode data" WHERE t = 'ї';
+-- 1256
+SELECT * FROM "Unicode data" WHERE i = 'ara';
+SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
+INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أ');
+DELETE FROM "Unicode data" WHERE t = 'أ';
+-- 1253
+SELECT * FROM "Unicode data" WHERE i = 'gre';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
+INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'ά');
+DELETE FROM "Unicode data" WHERE t = 'ά';
+-- 1255
+SELECT * FROM "Unicode data" WHERE i = 'heb';
+SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
+INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'ע');
+DELETE FROM "Unicode data" WHERE t = 'ע';
+-- 1252
+SELECT * FROM "Unicode data" WHERE i = 'eus';
+SELECT * FROM "Unicode data" WHERE i = 'fra';
+SELECT * FROM "Unicode data" WHERE i = 'spa';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Permi%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Dès N%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Quier%';
+INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'ñ');
+DELETE FROM "Unicode data" WHERE t = 'ñ';
+INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'èûæ');
+DELETE FROM "Unicode data" WHERE t = 'èûæ';
+INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'ó');
+DELETE FROM "Unicode data" WHERE t = 'ó';
+-- 1250
+SELECT * FROM "Unicode data" WHERE i = 'cze';
+SELECT * FROM "Unicode data" WHERE i = 'pol';
+SELECT * FROM "Unicode data" WHERE i = 'srp';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Zvláš%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Pchną%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
+INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'ášť');
+DELETE FROM "Unicode data" WHERE t = 'ášť';
+INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'ą');
+DELETE FROM "Unicode data" WHERE t = 'ą';
+INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'đž');
+DELETE FROM "Unicode data" WHERE t = 'đž';
+-- 1257
+SELECT * FROM "Unicode data" WHERE i = 'lav';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
+INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķ');
+DELETE FROM "Unicode data" WHERE t = 'Ķ';
+-- EUC_KR
+SELECT * FROM "Unicode data" WHERE i = 'kor';
+SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
+INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키');
+DELETE FROM "Unicode data" WHERE t = '키';
+-- 1254
+SELECT * FROM "Unicode data" WHERE i = 'aze';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Zəfər%';
+INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'əş');
+DELETE FROM "Unicode data" WHERE t = 'əş';
+-- etc
+INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'ե');
+DELETE FROM "Unicode data" WHERE t = 'ե';
+INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'é');
+DELETE FROM "Unicode data" WHERE t = 'é';
+INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'ŭŝĉ');
+DELETE FROM "Unicode data" WHERE t = 'ŭŝĉ';
+
 DROP FOREIGN TABLE "Unicode data";
 DROP SERVER sqlite_svr;
 DROP EXTENSION sqlite_fdw;
@@ -692,7 +775,12 @@ CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlitefdw_test.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
-SELECT * FROM "Unicode data";
+-- EUC_JP
+SELECT * FROM "Unicode data" WHERE i = 'jap';
+SELECT * FROM "Unicode data" WHERE t LIKE 'いろはにほ%';
+INSERT INTO "Unicode data" (i, t) VALUES ('jap+', 'い');
+DELETE FROM "Unicode data" WHERE t = 'い';
+-- 1251
 SELECT * FROM "Unicode data" WHERE i = 'bel';
 SELECT * FROM "Unicode data" WHERE i = 'bul';
 SELECT * FROM "Unicode data" WHERE i = 'rus';
@@ -701,6 +789,78 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'У руд%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ах, ч%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Широк%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
+INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'ў');
+DELETE FROM "Unicode data" WHERE t = 'ў';
+INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'ч');
+DELETE FROM "Unicode data" WHERE t = 'ч';
+INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'щ');
+DELETE FROM "Unicode data" WHERE t = 'щ';
+INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'ї');
+DELETE FROM "Unicode data" WHERE t = 'ї';
+-- 1256
+SELECT * FROM "Unicode data" WHERE i = 'ara';
+SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
+INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أ');
+DELETE FROM "Unicode data" WHERE t = 'أ';
+-- 1253
+SELECT * FROM "Unicode data" WHERE i = 'gre';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
+INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'ά');
+DELETE FROM "Unicode data" WHERE t = 'ά';
+-- 1255
+SELECT * FROM "Unicode data" WHERE i = 'heb';
+SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
+INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'ע');
+DELETE FROM "Unicode data" WHERE t = 'ע';
+-- 1252
+SELECT * FROM "Unicode data" WHERE i = 'eus';
+SELECT * FROM "Unicode data" WHERE i = 'fra';
+SELECT * FROM "Unicode data" WHERE i = 'spa';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Permi%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Dès N%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Quier%';
+INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'ñ');
+DELETE FROM "Unicode data" WHERE t = 'ñ';
+INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'èûæ');
+DELETE FROM "Unicode data" WHERE t = 'èûæ';
+INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'ó');
+DELETE FROM "Unicode data" WHERE t = 'ó';
+-- 1250
+SELECT * FROM "Unicode data" WHERE i = 'cze';
+SELECT * FROM "Unicode data" WHERE i = 'pol';
+SELECT * FROM "Unicode data" WHERE i = 'srp';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Zvláš%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Pchną%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
+INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'ášť');
+DELETE FROM "Unicode data" WHERE t = 'ášť';
+INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'ą');
+DELETE FROM "Unicode data" WHERE t = 'ą';
+INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'đž');
+DELETE FROM "Unicode data" WHERE t = 'đž';
+-- 1257
+SELECT * FROM "Unicode data" WHERE i = 'lav';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
+INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķ');
+DELETE FROM "Unicode data" WHERE t = 'Ķ';
+-- EUC_KR
+SELECT * FROM "Unicode data" WHERE i = 'kor';
+SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
+INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키');
+DELETE FROM "Unicode data" WHERE t = '키';
+-- 1254
+SELECT * FROM "Unicode data" WHERE i = 'aze';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Zəfər%';
+INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'əş');
+DELETE FROM "Unicode data" WHERE t = 'əş';
+-- etc
+INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'ե');
+DELETE FROM "Unicode data" WHERE t = 'ե';
+INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'é');
+DELETE FROM "Unicode data" WHERE t = 'é';
+INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'ŭŝĉ');
+DELETE FROM "Unicode data" WHERE t = 'ŭŝĉ';
+
 DROP FOREIGN TABLE "Unicode data";
 DROP SERVER sqlite_svr;
 DROP EXTENSION sqlite_fdw;
@@ -714,9 +874,92 @@ CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlitefdw_test.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
-SELECT * FROM "Unicode data";
+-- EUC_JP
+SELECT * FROM "Unicode data" WHERE i = 'jap';
+SELECT * FROM "Unicode data" WHERE t LIKE 'いろはにほ%';
+INSERT INTO "Unicode data" (i, t) VALUES ('jap+', 'い');
+DELETE FROM "Unicode data" WHERE t = 'い';
+-- 1251
+SELECT * FROM "Unicode data" WHERE i = 'bel';
+SELECT * FROM "Unicode data" WHERE i = 'bul';
+SELECT * FROM "Unicode data" WHERE i = 'rus';
+SELECT * FROM "Unicode data" WHERE i = 'ukr';
+SELECT * FROM "Unicode data" WHERE t LIKE 'У руд%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ах, ч%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Широк%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
+INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'ў');
+DELETE FROM "Unicode data" WHERE t = 'ў';
+INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'ч');
+DELETE FROM "Unicode data" WHERE t = 'ч';
+INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'щ');
+DELETE FROM "Unicode data" WHERE t = 'щ';
+INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'ї');
+DELETE FROM "Unicode data" WHERE t = 'ї';
+-- 1256
 SELECT * FROM "Unicode data" WHERE i = 'ara';
 SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
+INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أ');
+DELETE FROM "Unicode data" WHERE t = 'أ';
+-- 1253
+SELECT * FROM "Unicode data" WHERE i = 'gre';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
+INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'ά');
+DELETE FROM "Unicode data" WHERE t = 'ά';
+-- 1255
+SELECT * FROM "Unicode data" WHERE i = 'heb';
+SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
+INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'ע');
+DELETE FROM "Unicode data" WHERE t = 'ע';
+-- 1252
+SELECT * FROM "Unicode data" WHERE i = 'eus';
+SELECT * FROM "Unicode data" WHERE i = 'fra';
+SELECT * FROM "Unicode data" WHERE i = 'spa';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Permi%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Dès N%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Quier%';
+INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'ñ');
+DELETE FROM "Unicode data" WHERE t = 'ñ';
+INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'èûæ');
+DELETE FROM "Unicode data" WHERE t = 'èûæ';
+INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'ó');
+DELETE FROM "Unicode data" WHERE t = 'ó';
+-- 1250
+SELECT * FROM "Unicode data" WHERE i = 'cze';
+SELECT * FROM "Unicode data" WHERE i = 'pol';
+SELECT * FROM "Unicode data" WHERE i = 'srp';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Zvláš%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Pchną%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
+INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'ášť');
+DELETE FROM "Unicode data" WHERE t = 'ášť';
+INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'ą');
+DELETE FROM "Unicode data" WHERE t = 'ą';
+INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'đž');
+DELETE FROM "Unicode data" WHERE t = 'đž';
+-- 1257
+SELECT * FROM "Unicode data" WHERE i = 'lav';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
+INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķ');
+DELETE FROM "Unicode data" WHERE t = 'Ķ';
+-- EUC_KR
+SELECT * FROM "Unicode data" WHERE i = 'kor';
+SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
+INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키');
+DELETE FROM "Unicode data" WHERE t = '키';
+-- 1254
+SELECT * FROM "Unicode data" WHERE i = 'aze';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Zəfər%';
+INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'əş');
+DELETE FROM "Unicode data" WHERE t = 'əş';
+-- etc
+INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'ե');
+DELETE FROM "Unicode data" WHERE t = 'ե';
+INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'é');
+DELETE FROM "Unicode data" WHERE t = 'é';
+INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'ŭŝĉ');
+DELETE FROM "Unicode data" WHERE t = 'ŭŝĉ';
+
 DROP FOREIGN TABLE "Unicode data";
 DROP SERVER sqlite_svr;
 DROP EXTENSION sqlite_fdw;
@@ -730,9 +973,92 @@ CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlitefdw_test.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
-SELECT * FROM "Unicode data";
+-- EUC_JP
+SELECT * FROM "Unicode data" WHERE i = 'jap';
+SELECT * FROM "Unicode data" WHERE t LIKE 'いろはにほ%';
+INSERT INTO "Unicode data" (i, t) VALUES ('jap+', 'い');
+DELETE FROM "Unicode data" WHERE t = 'い';
+-- 1251
+SELECT * FROM "Unicode data" WHERE i = 'bel';
+SELECT * FROM "Unicode data" WHERE i = 'bul';
+SELECT * FROM "Unicode data" WHERE i = 'rus';
+SELECT * FROM "Unicode data" WHERE i = 'ukr';
+SELECT * FROM "Unicode data" WHERE t LIKE 'У руд%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ах, ч%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Широк%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
+INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'ў');
+DELETE FROM "Unicode data" WHERE t = 'ў';
+INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'ч');
+DELETE FROM "Unicode data" WHERE t = 'ч';
+INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'щ');
+DELETE FROM "Unicode data" WHERE t = 'щ';
+INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'ї');
+DELETE FROM "Unicode data" WHERE t = 'ї';
+-- 1256
+SELECT * FROM "Unicode data" WHERE i = 'ara';
+SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
+INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أ');
+DELETE FROM "Unicode data" WHERE t = 'أ';
+-- 1253
 SELECT * FROM "Unicode data" WHERE i = 'gre';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
+INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'ά');
+DELETE FROM "Unicode data" WHERE t = 'ά';
+-- 1255
+SELECT * FROM "Unicode data" WHERE i = 'heb';
+SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
+INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'ע');
+DELETE FROM "Unicode data" WHERE t = 'ע';
+-- 1252
+SELECT * FROM "Unicode data" WHERE i = 'eus';
+SELECT * FROM "Unicode data" WHERE i = 'fra';
+SELECT * FROM "Unicode data" WHERE i = 'spa';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Permi%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Dès N%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Quier%';
+INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'ñ');
+DELETE FROM "Unicode data" WHERE t = 'ñ';
+INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'èûæ');
+DELETE FROM "Unicode data" WHERE t = 'èûæ';
+INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'ó');
+DELETE FROM "Unicode data" WHERE t = 'ó';
+-- 1250
+SELECT * FROM "Unicode data" WHERE i = 'cze';
+SELECT * FROM "Unicode data" WHERE i = 'pol';
+SELECT * FROM "Unicode data" WHERE i = 'srp';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Zvláš%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Pchną%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
+INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'ášť');
+DELETE FROM "Unicode data" WHERE t = 'ášť';
+INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'ą');
+DELETE FROM "Unicode data" WHERE t = 'ą';
+INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'đž');
+DELETE FROM "Unicode data" WHERE t = 'đž';
+-- 1257
+SELECT * FROM "Unicode data" WHERE i = 'lav';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
+INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķ');
+DELETE FROM "Unicode data" WHERE t = 'Ķ';
+-- EUC_KR
+SELECT * FROM "Unicode data" WHERE i = 'kor';
+SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
+INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키');
+DELETE FROM "Unicode data" WHERE t = '키';
+-- 1254
+SELECT * FROM "Unicode data" WHERE i = 'aze';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Zəfər%';
+INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'əş');
+DELETE FROM "Unicode data" WHERE t = 'əş';
+-- etc
+INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'ե');
+DELETE FROM "Unicode data" WHERE t = 'ե';
+INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'é');
+DELETE FROM "Unicode data" WHERE t = 'é';
+INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'ŭŝĉ');
+DELETE FROM "Unicode data" WHERE t = 'ŭŝĉ';
+
 DROP FOREIGN TABLE "Unicode data";
 DROP SERVER sqlite_svr;
 DROP EXTENSION sqlite_fdw;
@@ -746,9 +1072,92 @@ CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlitefdw_test.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
-SELECT * FROM "Unicode data";
+-- EUC_JP
+SELECT * FROM "Unicode data" WHERE i = 'jap';
+SELECT * FROM "Unicode data" WHERE t LIKE 'いろはにほ%';
+INSERT INTO "Unicode data" (i, t) VALUES ('jap+', 'い');
+DELETE FROM "Unicode data" WHERE t = 'い';
+-- 1251
+SELECT * FROM "Unicode data" WHERE i = 'bel';
+SELECT * FROM "Unicode data" WHERE i = 'bul';
+SELECT * FROM "Unicode data" WHERE i = 'rus';
+SELECT * FROM "Unicode data" WHERE i = 'ukr';
+SELECT * FROM "Unicode data" WHERE t LIKE 'У руд%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ах, ч%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Широк%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
+INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'ў');
+DELETE FROM "Unicode data" WHERE t = 'ў';
+INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'ч');
+DELETE FROM "Unicode data" WHERE t = 'ч';
+INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'щ');
+DELETE FROM "Unicode data" WHERE t = 'щ';
+INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'ї');
+DELETE FROM "Unicode data" WHERE t = 'ї';
+-- 1256
+SELECT * FROM "Unicode data" WHERE i = 'ara';
+SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
+INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أ');
+DELETE FROM "Unicode data" WHERE t = 'أ';
+-- 1253
+SELECT * FROM "Unicode data" WHERE i = 'gre';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
+INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'ά');
+DELETE FROM "Unicode data" WHERE t = 'ά';
+-- 1255
 SELECT * FROM "Unicode data" WHERE i = 'heb';
 SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
+INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'ע');
+DELETE FROM "Unicode data" WHERE t = 'ע';
+-- 1252
+SELECT * FROM "Unicode data" WHERE i = 'eus';
+SELECT * FROM "Unicode data" WHERE i = 'fra';
+SELECT * FROM "Unicode data" WHERE i = 'spa';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Permi%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Dès N%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Quier%';
+INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'ñ');
+DELETE FROM "Unicode data" WHERE t = 'ñ';
+INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'èûæ');
+DELETE FROM "Unicode data" WHERE t = 'èûæ';
+INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'ó');
+DELETE FROM "Unicode data" WHERE t = 'ó';
+-- 1250
+SELECT * FROM "Unicode data" WHERE i = 'cze';
+SELECT * FROM "Unicode data" WHERE i = 'pol';
+SELECT * FROM "Unicode data" WHERE i = 'srp';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Zvláš%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Pchną%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
+INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'ášť');
+DELETE FROM "Unicode data" WHERE t = 'ášť';
+INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'ą');
+DELETE FROM "Unicode data" WHERE t = 'ą';
+INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'đž');
+DELETE FROM "Unicode data" WHERE t = 'đž';
+-- 1257
+SELECT * FROM "Unicode data" WHERE i = 'lav';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
+INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķ');
+DELETE FROM "Unicode data" WHERE t = 'Ķ';
+-- EUC_KR
+SELECT * FROM "Unicode data" WHERE i = 'kor';
+SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
+INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키');
+DELETE FROM "Unicode data" WHERE t = '키';
+-- 1254
+SELECT * FROM "Unicode data" WHERE i = 'aze';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Zəfər%';
+INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'əş');
+DELETE FROM "Unicode data" WHERE t = 'əş';
+-- etc
+INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'ե');
+DELETE FROM "Unicode data" WHERE t = 'ե';
+INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'é');
+DELETE FROM "Unicode data" WHERE t = 'é';
+INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'ŭŝĉ');
+DELETE FROM "Unicode data" WHERE t = 'ŭŝĉ';
+
 DROP FOREIGN TABLE "Unicode data";
 DROP SERVER sqlite_svr;
 DROP EXTENSION sqlite_fdw;
@@ -762,13 +1171,92 @@ CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlitefdw_test.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
-SELECT * FROM "Unicode data";
-SELECT * FROM "Unicode data" WHERE i = 'fra';
+-- EUC_JP
+SELECT * FROM "Unicode data" WHERE i = 'jap';
+SELECT * FROM "Unicode data" WHERE t LIKE 'いろはにほ%';
+INSERT INTO "Unicode data" (i, t) VALUES ('jap+', 'い');
+DELETE FROM "Unicode data" WHERE t = 'い';
+-- 1251
+SELECT * FROM "Unicode data" WHERE i = 'bel';
+SELECT * FROM "Unicode data" WHERE i = 'bul';
+SELECT * FROM "Unicode data" WHERE i = 'rus';
+SELECT * FROM "Unicode data" WHERE i = 'ukr';
+SELECT * FROM "Unicode data" WHERE t LIKE 'У руд%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ах, ч%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Широк%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
+INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'ў');
+DELETE FROM "Unicode data" WHERE t = 'ў';
+INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'ч');
+DELETE FROM "Unicode data" WHERE t = 'ч';
+INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'щ');
+DELETE FROM "Unicode data" WHERE t = 'щ';
+INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'ї');
+DELETE FROM "Unicode data" WHERE t = 'ї';
+-- 1256
+SELECT * FROM "Unicode data" WHERE i = 'ara';
+SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
+INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أ');
+DELETE FROM "Unicode data" WHERE t = 'أ';
+-- 1253
+SELECT * FROM "Unicode data" WHERE i = 'gre';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
+INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'ά');
+DELETE FROM "Unicode data" WHERE t = 'ά';
+-- 1255
+SELECT * FROM "Unicode data" WHERE i = 'heb';
+SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
+INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'ע');
+DELETE FROM "Unicode data" WHERE t = 'ע';
+-- 1252
 SELECT * FROM "Unicode data" WHERE i = 'eus';
+SELECT * FROM "Unicode data" WHERE i = 'fra';
 SELECT * FROM "Unicode data" WHERE i = 'spa';
-SELECT * FROM "Unicode data" WHERE t LIKE 'Dès N%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Permi%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Dès N%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Quier%';
+INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'ñ');
+DELETE FROM "Unicode data" WHERE t = 'ñ';
+INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'èûæ');
+DELETE FROM "Unicode data" WHERE t = 'èûæ';
+INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'ó');
+DELETE FROM "Unicode data" WHERE t = 'ó';
+-- 1250
+SELECT * FROM "Unicode data" WHERE i = 'cze';
+SELECT * FROM "Unicode data" WHERE i = 'pol';
+SELECT * FROM "Unicode data" WHERE i = 'srp';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Zvláš%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Pchną%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
+INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'ášť');
+DELETE FROM "Unicode data" WHERE t = 'ášť';
+INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'ą');
+DELETE FROM "Unicode data" WHERE t = 'ą';
+INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'đž');
+DELETE FROM "Unicode data" WHERE t = 'đž';
+-- 1257
+SELECT * FROM "Unicode data" WHERE i = 'lav';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
+INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķ');
+DELETE FROM "Unicode data" WHERE t = 'Ķ';
+-- EUC_KR
+SELECT * FROM "Unicode data" WHERE i = 'kor';
+SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
+INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키');
+DELETE FROM "Unicode data" WHERE t = '키';
+-- 1254
+SELECT * FROM "Unicode data" WHERE i = 'aze';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Zəfər%';
+INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'əş');
+DELETE FROM "Unicode data" WHERE t = 'əş';
+-- etc
+INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'ե');
+DELETE FROM "Unicode data" WHERE t = 'ե';
+INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'é');
+DELETE FROM "Unicode data" WHERE t = 'é';
+INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'ŭŝĉ');
+DELETE FROM "Unicode data" WHERE t = 'ŭŝĉ';
+
 DROP FOREIGN TABLE "Unicode data";
 DROP SERVER sqlite_svr;
 DROP EXTENSION sqlite_fdw;
@@ -782,13 +1270,92 @@ CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlitefdw_test.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
-SELECT * FROM "Unicode data";
-SELECT * FROM "Unicode data" WHERE i = 'srp';
-SELECT * FROM "Unicode data" WHERE i = 'pol';
+-- EUC_JP
+SELECT * FROM "Unicode data" WHERE i = 'jap';
+SELECT * FROM "Unicode data" WHERE t LIKE 'いろはにほ%';
+INSERT INTO "Unicode data" (i, t) VALUES ('jap+', 'い');
+DELETE FROM "Unicode data" WHERE t = 'い';
+-- 1251
+SELECT * FROM "Unicode data" WHERE i = 'bel';
+SELECT * FROM "Unicode data" WHERE i = 'bul';
+SELECT * FROM "Unicode data" WHERE i = 'rus';
+SELECT * FROM "Unicode data" WHERE i = 'ukr';
+SELECT * FROM "Unicode data" WHERE t LIKE 'У руд%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ах, ч%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Широк%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
+INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'ў');
+DELETE FROM "Unicode data" WHERE t = 'ў';
+INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'ч');
+DELETE FROM "Unicode data" WHERE t = 'ч';
+INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'щ');
+DELETE FROM "Unicode data" WHERE t = 'щ';
+INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'ї');
+DELETE FROM "Unicode data" WHERE t = 'ї';
+-- 1256
+SELECT * FROM "Unicode data" WHERE i = 'ara';
+SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
+INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أ');
+DELETE FROM "Unicode data" WHERE t = 'أ';
+-- 1253
+SELECT * FROM "Unicode data" WHERE i = 'gre';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
+INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'ά');
+DELETE FROM "Unicode data" WHERE t = 'ά';
+-- 1255
+SELECT * FROM "Unicode data" WHERE i = 'heb';
+SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
+INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'ע');
+DELETE FROM "Unicode data" WHERE t = 'ע';
+-- 1252
+SELECT * FROM "Unicode data" WHERE i = 'eus';
+SELECT * FROM "Unicode data" WHERE i = 'fra';
+SELECT * FROM "Unicode data" WHERE i = 'spa';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Permi%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Dès N%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Quier%';
+INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'ñ');
+DELETE FROM "Unicode data" WHERE t = 'ñ';
+INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'èûæ');
+DELETE FROM "Unicode data" WHERE t = 'èûæ';
+INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'ó');
+DELETE FROM "Unicode data" WHERE t = 'ó';
+-- 1250
 SELECT * FROM "Unicode data" WHERE i = 'cze';
-SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
-SELECT * FROM "Unicode data" WHERE t LIKE 'Pchną%';
+SELECT * FROM "Unicode data" WHERE i = 'pol';
+SELECT * FROM "Unicode data" WHERE i = 'srp';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Zvláš%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Pchną%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
+INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'ášť');
+DELETE FROM "Unicode data" WHERE t = 'ášť';
+INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'ą');
+DELETE FROM "Unicode data" WHERE t = 'ą';
+INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'đž');
+DELETE FROM "Unicode data" WHERE t = 'đž';
+-- 1257
+SELECT * FROM "Unicode data" WHERE i = 'lav';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
+INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķ');
+DELETE FROM "Unicode data" WHERE t = 'Ķ';
+-- EUC_KR
+SELECT * FROM "Unicode data" WHERE i = 'kor';
+SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
+INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키');
+DELETE FROM "Unicode data" WHERE t = '키';
+-- 1254
+SELECT * FROM "Unicode data" WHERE i = 'aze';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Zəfər%';
+INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'əş');
+DELETE FROM "Unicode data" WHERE t = 'əş';
+-- etc
+INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'ե');
+DELETE FROM "Unicode data" WHERE t = 'ե';
+INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'é');
+DELETE FROM "Unicode data" WHERE t = 'é';
+INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'ŭŝĉ');
+DELETE FROM "Unicode data" WHERE t = 'ŭŝĉ';
+
 DROP FOREIGN TABLE "Unicode data";
 DROP SERVER sqlite_svr;
 DROP EXTENSION sqlite_fdw;
@@ -802,9 +1369,92 @@ CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlitefdw_test.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
-SELECT * FROM "Unicode data";
+-- EUC_JP
+SELECT * FROM "Unicode data" WHERE i = 'jap';
+SELECT * FROM "Unicode data" WHERE t LIKE 'いろはにほ%';
+INSERT INTO "Unicode data" (i, t) VALUES ('jap+', 'い');
+DELETE FROM "Unicode data" WHERE t = 'い';
+-- 1251
+SELECT * FROM "Unicode data" WHERE i = 'bel';
+SELECT * FROM "Unicode data" WHERE i = 'bul';
+SELECT * FROM "Unicode data" WHERE i = 'rus';
+SELECT * FROM "Unicode data" WHERE i = 'ukr';
+SELECT * FROM "Unicode data" WHERE t LIKE 'У руд%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ах, ч%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Широк%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
+INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'ў');
+DELETE FROM "Unicode data" WHERE t = 'ў';
+INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'ч');
+DELETE FROM "Unicode data" WHERE t = 'ч';
+INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'щ');
+DELETE FROM "Unicode data" WHERE t = 'щ';
+INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'ї');
+DELETE FROM "Unicode data" WHERE t = 'ї';
+-- 1256
+SELECT * FROM "Unicode data" WHERE i = 'ara';
+SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
+INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أ');
+DELETE FROM "Unicode data" WHERE t = 'أ';
+-- 1253
+SELECT * FROM "Unicode data" WHERE i = 'gre';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
+INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'ά');
+DELETE FROM "Unicode data" WHERE t = 'ά';
+-- 1255
+SELECT * FROM "Unicode data" WHERE i = 'heb';
+SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
+INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'ע');
+DELETE FROM "Unicode data" WHERE t = 'ע';
+-- 1252
+SELECT * FROM "Unicode data" WHERE i = 'eus';
+SELECT * FROM "Unicode data" WHERE i = 'fra';
+SELECT * FROM "Unicode data" WHERE i = 'spa';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Permi%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Dès N%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Quier%';
+INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'ñ');
+DELETE FROM "Unicode data" WHERE t = 'ñ';
+INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'èûæ');
+DELETE FROM "Unicode data" WHERE t = 'èûæ';
+INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'ó');
+DELETE FROM "Unicode data" WHERE t = 'ó';
+-- 1250
+SELECT * FROM "Unicode data" WHERE i = 'cze';
+SELECT * FROM "Unicode data" WHERE i = 'pol';
+SELECT * FROM "Unicode data" WHERE i = 'srp';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Zvláš%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Pchną%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
+INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'ášť');
+DELETE FROM "Unicode data" WHERE t = 'ášť';
+INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'ą');
+DELETE FROM "Unicode data" WHERE t = 'ą';
+INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'đž');
+DELETE FROM "Unicode data" WHERE t = 'đž';
+-- 1257
 SELECT * FROM "Unicode data" WHERE i = 'lav';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
+INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķ');
+DELETE FROM "Unicode data" WHERE t = 'Ķ';
+-- EUC_KR
+SELECT * FROM "Unicode data" WHERE i = 'kor';
+SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
+INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키');
+DELETE FROM "Unicode data" WHERE t = '키';
+-- 1254
+SELECT * FROM "Unicode data" WHERE i = 'aze';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Zəfər%';
+INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'əş');
+DELETE FROM "Unicode data" WHERE t = 'əş';
+-- etc
+INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'ե');
+DELETE FROM "Unicode data" WHERE t = 'ե';
+INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'é');
+DELETE FROM "Unicode data" WHERE t = 'é';
+INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'ŭŝĉ');
+DELETE FROM "Unicode data" WHERE t = 'ŭŝĉ';
+
 DROP FOREIGN TABLE "Unicode data";
 DROP SERVER sqlite_svr;
 DROP EXTENSION sqlite_fdw;
@@ -818,11 +1468,193 @@ CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlitefdw_test.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
-SELECT * FROM "Unicode data";
+-- EUC_JP
+SELECT * FROM "Unicode data" WHERE i = 'jap';
+SELECT * FROM "Unicode data" WHERE t LIKE 'いろはにほ%';
+INSERT INTO "Unicode data" (i, t) VALUES ('jap+', 'い');
+DELETE FROM "Unicode data" WHERE t = 'い';
+-- 1251
+SELECT * FROM "Unicode data" WHERE i = 'bel';
+SELECT * FROM "Unicode data" WHERE i = 'bul';
+SELECT * FROM "Unicode data" WHERE i = 'rus';
+SELECT * FROM "Unicode data" WHERE i = 'ukr';
+SELECT * FROM "Unicode data" WHERE t LIKE 'У руд%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ах, ч%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Широк%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
+INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'ў');
+DELETE FROM "Unicode data" WHERE t = 'ў';
+INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'ч');
+DELETE FROM "Unicode data" WHERE t = 'ч';
+INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'щ');
+DELETE FROM "Unicode data" WHERE t = 'щ';
+INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'ї');
+DELETE FROM "Unicode data" WHERE t = 'ї';
+-- 1256
+SELECT * FROM "Unicode data" WHERE i = 'ara';
+SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
+INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أ');
+DELETE FROM "Unicode data" WHERE t = 'أ';
+-- 1253
+SELECT * FROM "Unicode data" WHERE i = 'gre';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
+INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'ά');
+DELETE FROM "Unicode data" WHERE t = 'ά';
+-- 1255
+SELECT * FROM "Unicode data" WHERE i = 'heb';
+SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
+INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'ע');
+DELETE FROM "Unicode data" WHERE t = 'ע';
+-- 1252
+SELECT * FROM "Unicode data" WHERE i = 'eus';
+SELECT * FROM "Unicode data" WHERE i = 'fra';
+SELECT * FROM "Unicode data" WHERE i = 'spa';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Permi%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Dès N%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Quier%';
+INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'ñ');
+DELETE FROM "Unicode data" WHERE t = 'ñ';
+INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'èûæ');
+DELETE FROM "Unicode data" WHERE t = 'èûæ';
+INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'ó');
+DELETE FROM "Unicode data" WHERE t = 'ó';
+-- 1250
+SELECT * FROM "Unicode data" WHERE i = 'cze';
+SELECT * FROM "Unicode data" WHERE i = 'pol';
+SELECT * FROM "Unicode data" WHERE i = 'srp';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Zvláš%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Pchną%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
+INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'ášť');
+DELETE FROM "Unicode data" WHERE t = 'ášť';
+INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'ą');
+DELETE FROM "Unicode data" WHERE t = 'ą';
+INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'đž');
+DELETE FROM "Unicode data" WHERE t = 'đž';
+-- 1257
+SELECT * FROM "Unicode data" WHERE i = 'lav';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
+INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķ');
+DELETE FROM "Unicode data" WHERE t = 'Ķ';
+-- EUC_KR
 SELECT * FROM "Unicode data" WHERE i = 'kor';
 SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
+INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키');
+DELETE FROM "Unicode data" WHERE t = '키';
+-- 1254
+SELECT * FROM "Unicode data" WHERE i = 'aze';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Zəfər%';
+INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'əş');
+DELETE FROM "Unicode data" WHERE t = 'əş';
+-- etc
+INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'ե');
+DELETE FROM "Unicode data" WHERE t = 'ե';
+INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'é');
+DELETE FROM "Unicode data" WHERE t = 'é';
+INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'ŭŝĉ');
+DELETE FROM "Unicode data" WHERE t = 'ŭŝĉ';
+
 DROP FOREIGN TABLE "Unicode data";
 DROP SERVER sqlite_svr;
 DROP EXTENSION sqlite_fdw;
 \connect contrib_regression;
 DROP DATABASE "contrib_regression_EUC_KR";
+
+-- cp1254
+CREATE DATABASE "contrib_regression_WIN1254" ENCODING WIN1257 LC_CTYPE='POSIX' LC_COLLATE='POSIX' template template0;
+\connect "contrib_regression_WIN1254"
+CREATE EXTENSION sqlite_fdw;
+CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
+OPTIONS (database '/tmp/sqlitefdw_test.db');
+CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
+-- EUC_JP
+SELECT * FROM "Unicode data" WHERE i = 'jap';
+SELECT * FROM "Unicode data" WHERE t LIKE 'いろはにほ%';
+INSERT INTO "Unicode data" (i, t) VALUES ('jap+', 'い');
+DELETE FROM "Unicode data" WHERE t = 'い';
+-- 1251
+SELECT * FROM "Unicode data" WHERE i = 'bel';
+SELECT * FROM "Unicode data" WHERE i = 'bul';
+SELECT * FROM "Unicode data" WHERE i = 'rus';
+SELECT * FROM "Unicode data" WHERE i = 'ukr';
+SELECT * FROM "Unicode data" WHERE t LIKE 'У руд%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ах, ч%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Широк%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
+INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'ў');
+DELETE FROM "Unicode data" WHERE t = 'ў';
+INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'ч');
+DELETE FROM "Unicode data" WHERE t = 'ч';
+INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'щ');
+DELETE FROM "Unicode data" WHERE t = 'щ';
+INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'ї');
+DELETE FROM "Unicode data" WHERE t = 'ї';
+-- 1256
+SELECT * FROM "Unicode data" WHERE i = 'ara';
+SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
+INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أ');
+DELETE FROM "Unicode data" WHERE t = 'أ';
+-- 1253
+SELECT * FROM "Unicode data" WHERE i = 'gre';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
+INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'ά');
+DELETE FROM "Unicode data" WHERE t = 'ά';
+-- 1255
+SELECT * FROM "Unicode data" WHERE i = 'heb';
+SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
+INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'ע');
+DELETE FROM "Unicode data" WHERE t = 'ע';
+-- 1252
+SELECT * FROM "Unicode data" WHERE i = 'eus';
+SELECT * FROM "Unicode data" WHERE i = 'fra';
+SELECT * FROM "Unicode data" WHERE i = 'spa';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Permi%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Dès N%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Quier%';
+INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'ñ');
+DELETE FROM "Unicode data" WHERE t = 'ñ';
+INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'èûæ');
+DELETE FROM "Unicode data" WHERE t = 'èûæ';
+INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'ó');
+DELETE FROM "Unicode data" WHERE t = 'ó';
+-- 1250
+SELECT * FROM "Unicode data" WHERE i = 'cze';
+SELECT * FROM "Unicode data" WHERE i = 'pol';
+SELECT * FROM "Unicode data" WHERE i = 'srp';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Zvláš%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Pchną%';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
+INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'ášť');
+DELETE FROM "Unicode data" WHERE t = 'ášť';
+INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'ą');
+DELETE FROM "Unicode data" WHERE t = 'ą';
+INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'đž');
+DELETE FROM "Unicode data" WHERE t = 'đž';
+-- 1257
+SELECT * FROM "Unicode data" WHERE i = 'lav';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
+INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķ');
+DELETE FROM "Unicode data" WHERE t = 'Ķ';
+-- EUC_KR
+SELECT * FROM "Unicode data" WHERE i = 'kor';
+SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
+INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키');
+DELETE FROM "Unicode data" WHERE t = '키';
+-- 1254
+SELECT * FROM "Unicode data" WHERE i = 'aze';
+SELECT * FROM "Unicode data" WHERE t LIKE 'Zəfər%';
+INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'əş');
+DELETE FROM "Unicode data" WHERE t = 'əş';
+-- etc
+INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'ե');
+DELETE FROM "Unicode data" WHERE t = 'ե';
+INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'é');
+DELETE FROM "Unicode data" WHERE t = 'é';
+INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'ŭŝĉ');
+DELETE FROM "Unicode data" WHERE t = 'ŭŝĉ';
+
+DROP FOREIGN TABLE "Unicode data";
+DROP SERVER sqlite_svr;
+DROP EXTENSION sqlite_fdw;
+\connect contrib_regression;
+DROP DATABASE "contrib_regression_WIN1254";
