@@ -633,7 +633,7 @@ SELECT * FROM case_exp WHERE CASE c3 COLLATE "C" WHEN c6 THEN true ELSE c3 < 'ba
 --Testcase 234:
 DELETE FROM case_exp;
 
--- readonly/readwrite test github pull 59
+-- updatable option test (github pull 59)
 -- Full combinations
 -- D-default, T-true, F-false
 -- sD+tD - sT+tD - sF+tD - sD+tT - sD+tF - sT+tT - sF+tT - sF+tF - sT+tF
@@ -751,7 +751,7 @@ ALTER FOREIGN TABLE RO_RW_test OPTIONS (DROP updatable);
 SELECT * FROM RO_RW_test ORDER BY i;
 -- End of RO/RW test
 
--- readonly/readwrite test github pull 59
+-- updatable option test (github pull 59)
 DROP FOREIGN TABLE RO_RW_test;
 
 --Testcase 142:
