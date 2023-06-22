@@ -679,8 +679,8 @@ CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
 SELECT * FROM "Unicode data" WHERE t LIKE 'いろはにほ%';
-INSERT INTO "Unicode data" (i, t) VALUES ('jap+', 'い');
-DELETE FROM "Unicode data" WHERE t = 'い';
+INSERT INTO "Unicode data" (i, t) VALUES ('jap+', 'いろはにほへと ちりぬるを わかよたれそ つねならむ うゐのおくやま けふこえて あさきゆめみし ゑひもせす._');
+DELETE FROM "Unicode data" WHERE t = 'いろはにほへと ちりぬるを わかよたれそ つねならむ うゐのおくやま けふこえて あさきゆめみし ゑひもせす._';
 -- 1251
 SELECT * FROM "Unicode data" WHERE i = 'bel';
 SELECT * FROM "Unicode data" WHERE i = 'bul';
@@ -690,29 +690,29 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'У руд%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ах, ч%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Широк%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
-INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'ў');
-DELETE FROM "Unicode data" WHERE t = 'ў';
-INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'ч');
-DELETE FROM "Unicode data" WHERE t = 'ч';
-INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'щ');
-DELETE FROM "Unicode data" WHERE t = 'щ';
-INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'ї');
-DELETE FROM "Unicode data" WHERE t = 'ї';
+INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._');
+DELETE FROM "Unicode data" WHERE t = 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._';
+INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'Ах, чудна българска земьо, полюшвай цъфтящи жита._');
+DELETE FROM "Unicode data" WHERE t = 'Ах, чудна българска земьо, полюшвай цъфтящи жита._';
+INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._');
+DELETE FROM "Unicode data" WHERE t = 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._';
+INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._');
+DELETE FROM "Unicode data" WHERE t = 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._';
 -- 1256
 SELECT * FROM "Unicode data" WHERE i = 'ara';
 SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
-INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أ');
-DELETE FROM "Unicode data" WHERE t = 'أ';
+INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_');
+DELETE FROM "Unicode data" WHERE t = 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_';
 -- 1253
 SELECT * FROM "Unicode data" WHERE i = 'gre';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
-INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'ά');
-DELETE FROM "Unicode data" WHERE t = 'ά';
+INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_');
+DELETE FROM "Unicode data" WHERE t = 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_';
 -- 1255
 SELECT * FROM "Unicode data" WHERE i = 'heb';
 SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
-INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'ע');
-DELETE FROM "Unicode data" WHERE t = 'ע';
+INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_');
+DELETE FROM "Unicode data" WHERE t = 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_';
 -- 1252
 SELECT * FROM "Unicode data" WHERE i = 'eus';
 SELECT * FROM "Unicode data" WHERE i = 'fra';
@@ -720,12 +720,12 @@ SELECT * FROM "Unicode data" WHERE i = 'spa';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Permi%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Dès N%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Quier%';
-INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'ñ');
-DELETE FROM "Unicode data" WHERE t = 'ñ';
-INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'èûæ');
-DELETE FROM "Unicode data" WHERE t = 'èûæ';
-INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'ó');
-DELETE FROM "Unicode data" WHERE t = 'ó';
+INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'Permin gox dabiltzu yoskiñ._');
+DELETE FROM "Unicode data" WHERE t = 'Permin gox dabiltzu yoskiñ._';
+INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_');
+DELETE FROM "Unicode data" WHERE t = 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_';
+INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._');
+DELETE FROM "Unicode data" WHERE t = 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._';
 -- 1250
 SELECT * FROM "Unicode data" WHERE i = 'cze';
 SELECT * FROM "Unicode data" WHERE i = 'pol';
@@ -733,34 +733,34 @@ SELECT * FROM "Unicode data" WHERE i = 'srp';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Zvláš%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Pchną%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
-INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'ášť');
-DELETE FROM "Unicode data" WHERE t = 'ášť';
-INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'ą');
-DELETE FROM "Unicode data" WHERE t = 'ą';
-INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'đž');
-DELETE FROM "Unicode data" WHERE t = 'đž';
+INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._');
+DELETE FROM "Unicode data" WHERE t = 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._';
+INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._');
+DELETE FROM "Unicode data" WHERE t = 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._';
+INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._');
+DELETE FROM "Unicode data" WHERE t = 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._';
 -- 1257
 SELECT * FROM "Unicode data" WHERE i = 'lav';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
-INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķ');
-DELETE FROM "Unicode data" WHERE t = 'Ķ';
+INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._');
+DELETE FROM "Unicode data" WHERE t = 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._';
 -- EUC_KR
 SELECT * FROM "Unicode data" WHERE i = 'kor';
 SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
-INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키');
-DELETE FROM "Unicode data" WHERE t = '키';
+INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._');
+DELETE FROM "Unicode data" WHERE t = '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._';
 -- 1254
 SELECT * FROM "Unicode data" WHERE i = 'aze';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Zəfər%';
-INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'əş');
-DELETE FROM "Unicode data" WHERE t = 'əş';
+INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._');
+DELETE FROM "Unicode data" WHERE t = 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._';
 -- etc
-INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'ե');
-DELETE FROM "Unicode data" WHERE t = 'ե';
-INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'é');
-DELETE FROM "Unicode data" WHERE t = 'é';
-INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'ŭŝĉ');
-DELETE FROM "Unicode data" WHERE t = 'ŭŝĉ';
+INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_');
+DELETE FROM "Unicode data" WHERE t = 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_';
+INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._');
+DELETE FROM "Unicode data" WHERE t = 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._';
+INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._');
+DELETE FROM "Unicode data" WHERE t = 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._';
 
 DROP FOREIGN TABLE "Unicode data";
 DROP SERVER sqlite_svr;
@@ -778,8 +778,8 @@ CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
 SELECT * FROM "Unicode data" WHERE t LIKE 'いろはにほ%';
-INSERT INTO "Unicode data" (i, t) VALUES ('jap+', 'い');
-DELETE FROM "Unicode data" WHERE t = 'い';
+INSERT INTO "Unicode data" (i, t) VALUES ('jap+', 'いろはにほへと ちりぬるを わかよたれそ つねならむ うゐのおくやま けふこえて あさきゆめみし ゑひもせす._');
+DELETE FROM "Unicode data" WHERE t = 'いろはにほへと ちりぬるを わかよたれそ つねならむ うゐのおくやま けふこえて あさきゆめみし ゑひもせす._';
 -- 1251
 SELECT * FROM "Unicode data" WHERE i = 'bel';
 SELECT * FROM "Unicode data" WHERE i = 'bul';
@@ -789,29 +789,29 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'У руд%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ах, ч%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Широк%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
-INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'ў');
-DELETE FROM "Unicode data" WHERE t = 'ў';
-INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'ч');
-DELETE FROM "Unicode data" WHERE t = 'ч';
-INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'щ');
-DELETE FROM "Unicode data" WHERE t = 'щ';
-INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'ї');
-DELETE FROM "Unicode data" WHERE t = 'ї';
+INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._');
+DELETE FROM "Unicode data" WHERE t = 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._';
+INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'Ах, чудна българска земьо, полюшвай цъфтящи жита._');
+DELETE FROM "Unicode data" WHERE t = 'Ах, чудна българска земьо, полюшвай цъфтящи жита._';
+INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._');
+DELETE FROM "Unicode data" WHERE t = 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._';
+INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._');
+DELETE FROM "Unicode data" WHERE t = 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._';
 -- 1256
 SELECT * FROM "Unicode data" WHERE i = 'ara';
 SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
-INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أ');
-DELETE FROM "Unicode data" WHERE t = 'أ';
+INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_');
+DELETE FROM "Unicode data" WHERE t = 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_';
 -- 1253
 SELECT * FROM "Unicode data" WHERE i = 'gre';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
-INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'ά');
-DELETE FROM "Unicode data" WHERE t = 'ά';
+INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_');
+DELETE FROM "Unicode data" WHERE t = 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_';
 -- 1255
 SELECT * FROM "Unicode data" WHERE i = 'heb';
 SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
-INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'ע');
-DELETE FROM "Unicode data" WHERE t = 'ע';
+INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_');
+DELETE FROM "Unicode data" WHERE t = 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_';
 -- 1252
 SELECT * FROM "Unicode data" WHERE i = 'eus';
 SELECT * FROM "Unicode data" WHERE i = 'fra';
@@ -819,12 +819,12 @@ SELECT * FROM "Unicode data" WHERE i = 'spa';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Permi%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Dès N%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Quier%';
-INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'ñ');
-DELETE FROM "Unicode data" WHERE t = 'ñ';
-INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'èûæ');
-DELETE FROM "Unicode data" WHERE t = 'èûæ';
-INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'ó');
-DELETE FROM "Unicode data" WHERE t = 'ó';
+INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'Permin gox dabiltzu yoskiñ._');
+DELETE FROM "Unicode data" WHERE t = 'Permin gox dabiltzu yoskiñ._';
+INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_');
+DELETE FROM "Unicode data" WHERE t = 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_';
+INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._');
+DELETE FROM "Unicode data" WHERE t = 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._';
 -- 1250
 SELECT * FROM "Unicode data" WHERE i = 'cze';
 SELECT * FROM "Unicode data" WHERE i = 'pol';
@@ -832,34 +832,34 @@ SELECT * FROM "Unicode data" WHERE i = 'srp';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Zvláš%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Pchną%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
-INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'ášť');
-DELETE FROM "Unicode data" WHERE t = 'ášť';
-INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'ą');
-DELETE FROM "Unicode data" WHERE t = 'ą';
-INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'đž');
-DELETE FROM "Unicode data" WHERE t = 'đž';
+INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._');
+DELETE FROM "Unicode data" WHERE t = 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._';
+INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._');
+DELETE FROM "Unicode data" WHERE t = 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._';
+INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._');
+DELETE FROM "Unicode data" WHERE t = 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._';
 -- 1257
 SELECT * FROM "Unicode data" WHERE i = 'lav';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
-INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķ');
-DELETE FROM "Unicode data" WHERE t = 'Ķ';
+INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._');
+DELETE FROM "Unicode data" WHERE t = 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._';
 -- EUC_KR
 SELECT * FROM "Unicode data" WHERE i = 'kor';
 SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
-INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키');
-DELETE FROM "Unicode data" WHERE t = '키';
+INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._');
+DELETE FROM "Unicode data" WHERE t = '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._';
 -- 1254
 SELECT * FROM "Unicode data" WHERE i = 'aze';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Zəfər%';
-INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'əş');
-DELETE FROM "Unicode data" WHERE t = 'əş';
+INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._');
+DELETE FROM "Unicode data" WHERE t = 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._';
 -- etc
-INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'ե');
-DELETE FROM "Unicode data" WHERE t = 'ե';
-INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'é');
-DELETE FROM "Unicode data" WHERE t = 'é';
-INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'ŭŝĉ');
-DELETE FROM "Unicode data" WHERE t = 'ŭŝĉ';
+INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_');
+DELETE FROM "Unicode data" WHERE t = 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_';
+INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._');
+DELETE FROM "Unicode data" WHERE t = 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._';
+INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._');
+DELETE FROM "Unicode data" WHERE t = 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._';
 
 DROP FOREIGN TABLE "Unicode data";
 DROP SERVER sqlite_svr;
@@ -877,8 +877,8 @@ CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
 SELECT * FROM "Unicode data" WHERE t LIKE 'いろはにほ%';
-INSERT INTO "Unicode data" (i, t) VALUES ('jap+', 'い');
-DELETE FROM "Unicode data" WHERE t = 'い';
+INSERT INTO "Unicode data" (i, t) VALUES ('jap+', 'いろはにほへと ちりぬるを わかよたれそ つねならむ うゐのおくやま けふこえて あさきゆめみし ゑひもせす._');
+DELETE FROM "Unicode data" WHERE t = 'いろはにほへと ちりぬるを わかよたれそ つねならむ うゐのおくやま けふこえて あさきゆめみし ゑひもせす._';
 -- 1251
 SELECT * FROM "Unicode data" WHERE i = 'bel';
 SELECT * FROM "Unicode data" WHERE i = 'bul';
@@ -888,29 +888,29 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'У руд%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ах, ч%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Широк%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
-INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'ў');
-DELETE FROM "Unicode data" WHERE t = 'ў';
-INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'ч');
-DELETE FROM "Unicode data" WHERE t = 'ч';
-INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'щ');
-DELETE FROM "Unicode data" WHERE t = 'щ';
-INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'ї');
-DELETE FROM "Unicode data" WHERE t = 'ї';
+INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._');
+DELETE FROM "Unicode data" WHERE t = 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._';
+INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'Ах, чудна българска земьо, полюшвай цъфтящи жита._');
+DELETE FROM "Unicode data" WHERE t = 'Ах, чудна българска земьо, полюшвай цъфтящи жита._';
+INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._');
+DELETE FROM "Unicode data" WHERE t = 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._';
+INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._');
+DELETE FROM "Unicode data" WHERE t = 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._';
 -- 1256
 SELECT * FROM "Unicode data" WHERE i = 'ara';
 SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
-INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أ');
-DELETE FROM "Unicode data" WHERE t = 'أ';
+INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_');
+DELETE FROM "Unicode data" WHERE t = 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_';
 -- 1253
 SELECT * FROM "Unicode data" WHERE i = 'gre';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
-INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'ά');
-DELETE FROM "Unicode data" WHERE t = 'ά';
+INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_');
+DELETE FROM "Unicode data" WHERE t = 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_';
 -- 1255
 SELECT * FROM "Unicode data" WHERE i = 'heb';
 SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
-INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'ע');
-DELETE FROM "Unicode data" WHERE t = 'ע';
+INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_');
+DELETE FROM "Unicode data" WHERE t = 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_';
 -- 1252
 SELECT * FROM "Unicode data" WHERE i = 'eus';
 SELECT * FROM "Unicode data" WHERE i = 'fra';
@@ -918,12 +918,12 @@ SELECT * FROM "Unicode data" WHERE i = 'spa';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Permi%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Dès N%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Quier%';
-INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'ñ');
-DELETE FROM "Unicode data" WHERE t = 'ñ';
-INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'èûæ');
-DELETE FROM "Unicode data" WHERE t = 'èûæ';
-INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'ó');
-DELETE FROM "Unicode data" WHERE t = 'ó';
+INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'Permin gox dabiltzu yoskiñ._');
+DELETE FROM "Unicode data" WHERE t = 'Permin gox dabiltzu yoskiñ._';
+INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_');
+DELETE FROM "Unicode data" WHERE t = 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_';
+INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._');
+DELETE FROM "Unicode data" WHERE t = 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._';
 -- 1250
 SELECT * FROM "Unicode data" WHERE i = 'cze';
 SELECT * FROM "Unicode data" WHERE i = 'pol';
@@ -931,34 +931,34 @@ SELECT * FROM "Unicode data" WHERE i = 'srp';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Zvláš%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Pchną%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
-INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'ášť');
-DELETE FROM "Unicode data" WHERE t = 'ášť';
-INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'ą');
-DELETE FROM "Unicode data" WHERE t = 'ą';
-INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'đž');
-DELETE FROM "Unicode data" WHERE t = 'đž';
+INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._');
+DELETE FROM "Unicode data" WHERE t = 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._';
+INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._');
+DELETE FROM "Unicode data" WHERE t = 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._';
+INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._');
+DELETE FROM "Unicode data" WHERE t = 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._';
 -- 1257
 SELECT * FROM "Unicode data" WHERE i = 'lav';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
-INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķ');
-DELETE FROM "Unicode data" WHERE t = 'Ķ';
+INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._');
+DELETE FROM "Unicode data" WHERE t = 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._';
 -- EUC_KR
 SELECT * FROM "Unicode data" WHERE i = 'kor';
 SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
-INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키');
-DELETE FROM "Unicode data" WHERE t = '키';
+INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._');
+DELETE FROM "Unicode data" WHERE t = '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._';
 -- 1254
 SELECT * FROM "Unicode data" WHERE i = 'aze';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Zəfər%';
-INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'əş');
-DELETE FROM "Unicode data" WHERE t = 'əş';
+INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._');
+DELETE FROM "Unicode data" WHERE t = 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._';
 -- etc
-INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'ե');
-DELETE FROM "Unicode data" WHERE t = 'ե';
-INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'é');
-DELETE FROM "Unicode data" WHERE t = 'é';
-INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'ŭŝĉ');
-DELETE FROM "Unicode data" WHERE t = 'ŭŝĉ';
+INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_');
+DELETE FROM "Unicode data" WHERE t = 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_';
+INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._');
+DELETE FROM "Unicode data" WHERE t = 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._';
+INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._');
+DELETE FROM "Unicode data" WHERE t = 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._';
 
 DROP FOREIGN TABLE "Unicode data";
 DROP SERVER sqlite_svr;
@@ -976,8 +976,8 @@ CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
 SELECT * FROM "Unicode data" WHERE t LIKE 'いろはにほ%';
-INSERT INTO "Unicode data" (i, t) VALUES ('jap+', 'い');
-DELETE FROM "Unicode data" WHERE t = 'い';
+INSERT INTO "Unicode data" (i, t) VALUES ('jap+', 'いろはにほへと ちりぬるを わかよたれそ つねならむ うゐのおくやま けふこえて あさきゆめみし ゑひもせす._');
+DELETE FROM "Unicode data" WHERE t = 'いろはにほへと ちりぬるを わかよたれそ つねならむ うゐのおくやま けふこえて あさきゆめみし ゑひもせす._';
 -- 1251
 SELECT * FROM "Unicode data" WHERE i = 'bel';
 SELECT * FROM "Unicode data" WHERE i = 'bul';
@@ -987,29 +987,29 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'У руд%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ах, ч%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Широк%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
-INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'ў');
-DELETE FROM "Unicode data" WHERE t = 'ў';
-INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'ч');
-DELETE FROM "Unicode data" WHERE t = 'ч';
-INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'щ');
-DELETE FROM "Unicode data" WHERE t = 'щ';
-INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'ї');
-DELETE FROM "Unicode data" WHERE t = 'ї';
+INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._');
+DELETE FROM "Unicode data" WHERE t = 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._';
+INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'Ах, чудна българска земьо, полюшвай цъфтящи жита._');
+DELETE FROM "Unicode data" WHERE t = 'Ах, чудна българска земьо, полюшвай цъфтящи жита._';
+INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._');
+DELETE FROM "Unicode data" WHERE t = 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._';
+INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._');
+DELETE FROM "Unicode data" WHERE t = 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._';
 -- 1256
 SELECT * FROM "Unicode data" WHERE i = 'ara';
 SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
-INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أ');
-DELETE FROM "Unicode data" WHERE t = 'أ';
+INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_');
+DELETE FROM "Unicode data" WHERE t = 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_';
 -- 1253
 SELECT * FROM "Unicode data" WHERE i = 'gre';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
-INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'ά');
-DELETE FROM "Unicode data" WHERE t = 'ά';
+INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_');
+DELETE FROM "Unicode data" WHERE t = 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_';
 -- 1255
 SELECT * FROM "Unicode data" WHERE i = 'heb';
 SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
-INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'ע');
-DELETE FROM "Unicode data" WHERE t = 'ע';
+INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_');
+DELETE FROM "Unicode data" WHERE t = 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_';
 -- 1252
 SELECT * FROM "Unicode data" WHERE i = 'eus';
 SELECT * FROM "Unicode data" WHERE i = 'fra';
@@ -1017,12 +1017,12 @@ SELECT * FROM "Unicode data" WHERE i = 'spa';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Permi%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Dès N%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Quier%';
-INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'ñ');
-DELETE FROM "Unicode data" WHERE t = 'ñ';
-INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'èûæ');
-DELETE FROM "Unicode data" WHERE t = 'èûæ';
-INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'ó');
-DELETE FROM "Unicode data" WHERE t = 'ó';
+INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'Permin gox dabiltzu yoskiñ._');
+DELETE FROM "Unicode data" WHERE t = 'Permin gox dabiltzu yoskiñ._';
+INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_');
+DELETE FROM "Unicode data" WHERE t = 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_';
+INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._');
+DELETE FROM "Unicode data" WHERE t = 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._';
 -- 1250
 SELECT * FROM "Unicode data" WHERE i = 'cze';
 SELECT * FROM "Unicode data" WHERE i = 'pol';
@@ -1030,34 +1030,34 @@ SELECT * FROM "Unicode data" WHERE i = 'srp';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Zvláš%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Pchną%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
-INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'ášť');
-DELETE FROM "Unicode data" WHERE t = 'ášť';
-INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'ą');
-DELETE FROM "Unicode data" WHERE t = 'ą';
-INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'đž');
-DELETE FROM "Unicode data" WHERE t = 'đž';
+INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._');
+DELETE FROM "Unicode data" WHERE t = 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._';
+INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._');
+DELETE FROM "Unicode data" WHERE t = 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._';
+INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._');
+DELETE FROM "Unicode data" WHERE t = 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._';
 -- 1257
 SELECT * FROM "Unicode data" WHERE i = 'lav';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
-INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķ');
-DELETE FROM "Unicode data" WHERE t = 'Ķ';
+INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._');
+DELETE FROM "Unicode data" WHERE t = 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._';
 -- EUC_KR
 SELECT * FROM "Unicode data" WHERE i = 'kor';
 SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
-INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키');
-DELETE FROM "Unicode data" WHERE t = '키';
+INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._');
+DELETE FROM "Unicode data" WHERE t = '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._';
 -- 1254
 SELECT * FROM "Unicode data" WHERE i = 'aze';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Zəfər%';
-INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'əş');
-DELETE FROM "Unicode data" WHERE t = 'əş';
+INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._');
+DELETE FROM "Unicode data" WHERE t = 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._';
 -- etc
-INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'ե');
-DELETE FROM "Unicode data" WHERE t = 'ե';
-INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'é');
-DELETE FROM "Unicode data" WHERE t = 'é';
-INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'ŭŝĉ');
-DELETE FROM "Unicode data" WHERE t = 'ŭŝĉ';
+INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_');
+DELETE FROM "Unicode data" WHERE t = 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_';
+INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._');
+DELETE FROM "Unicode data" WHERE t = 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._';
+INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._');
+DELETE FROM "Unicode data" WHERE t = 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._';
 
 DROP FOREIGN TABLE "Unicode data";
 DROP SERVER sqlite_svr;
@@ -1075,8 +1075,8 @@ CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
 SELECT * FROM "Unicode data" WHERE t LIKE 'いろはにほ%';
-INSERT INTO "Unicode data" (i, t) VALUES ('jap+', 'い');
-DELETE FROM "Unicode data" WHERE t = 'い';
+INSERT INTO "Unicode data" (i, t) VALUES ('jap+', 'いろはにほへと ちりぬるを わかよたれそ つねならむ うゐのおくやま けふこえて あさきゆめみし ゑひもせす._');
+DELETE FROM "Unicode data" WHERE t = 'いろはにほへと ちりぬるを わかよたれそ つねならむ うゐのおくやま けふこえて あさきゆめみし ゑひもせす._';
 -- 1251
 SELECT * FROM "Unicode data" WHERE i = 'bel';
 SELECT * FROM "Unicode data" WHERE i = 'bul';
@@ -1086,29 +1086,29 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'У руд%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ах, ч%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Широк%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
-INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'ў');
-DELETE FROM "Unicode data" WHERE t = 'ў';
-INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'ч');
-DELETE FROM "Unicode data" WHERE t = 'ч';
-INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'щ');
-DELETE FROM "Unicode data" WHERE t = 'щ';
-INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'ї');
-DELETE FROM "Unicode data" WHERE t = 'ї';
+INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._');
+DELETE FROM "Unicode data" WHERE t = 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._';
+INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'Ах, чудна българска земьо, полюшвай цъфтящи жита._');
+DELETE FROM "Unicode data" WHERE t = 'Ах, чудна българска земьо, полюшвай цъфтящи жита._';
+INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._');
+DELETE FROM "Unicode data" WHERE t = 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._';
+INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._');
+DELETE FROM "Unicode data" WHERE t = 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._';
 -- 1256
 SELECT * FROM "Unicode data" WHERE i = 'ara';
 SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
-INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أ');
-DELETE FROM "Unicode data" WHERE t = 'أ';
+INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_');
+DELETE FROM "Unicode data" WHERE t = 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_';
 -- 1253
 SELECT * FROM "Unicode data" WHERE i = 'gre';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
-INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'ά');
-DELETE FROM "Unicode data" WHERE t = 'ά';
+INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_');
+DELETE FROM "Unicode data" WHERE t = 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_';
 -- 1255
 SELECT * FROM "Unicode data" WHERE i = 'heb';
 SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
-INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'ע');
-DELETE FROM "Unicode data" WHERE t = 'ע';
+INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_');
+DELETE FROM "Unicode data" WHERE t = 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_';
 -- 1252
 SELECT * FROM "Unicode data" WHERE i = 'eus';
 SELECT * FROM "Unicode data" WHERE i = 'fra';
@@ -1116,12 +1116,12 @@ SELECT * FROM "Unicode data" WHERE i = 'spa';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Permi%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Dès N%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Quier%';
-INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'ñ');
-DELETE FROM "Unicode data" WHERE t = 'ñ';
-INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'èûæ');
-DELETE FROM "Unicode data" WHERE t = 'èûæ';
-INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'ó');
-DELETE FROM "Unicode data" WHERE t = 'ó';
+INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'Permin gox dabiltzu yoskiñ._');
+DELETE FROM "Unicode data" WHERE t = 'Permin gox dabiltzu yoskiñ._';
+INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_');
+DELETE FROM "Unicode data" WHERE t = 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_';
+INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._');
+DELETE FROM "Unicode data" WHERE t = 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._';
 -- 1250
 SELECT * FROM "Unicode data" WHERE i = 'cze';
 SELECT * FROM "Unicode data" WHERE i = 'pol';
@@ -1129,34 +1129,34 @@ SELECT * FROM "Unicode data" WHERE i = 'srp';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Zvláš%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Pchną%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
-INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'ášť');
-DELETE FROM "Unicode data" WHERE t = 'ášť';
-INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'ą');
-DELETE FROM "Unicode data" WHERE t = 'ą';
-INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'đž');
-DELETE FROM "Unicode data" WHERE t = 'đž';
+INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._');
+DELETE FROM "Unicode data" WHERE t = 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._';
+INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._');
+DELETE FROM "Unicode data" WHERE t = 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._';
+INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._');
+DELETE FROM "Unicode data" WHERE t = 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._';
 -- 1257
 SELECT * FROM "Unicode data" WHERE i = 'lav';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
-INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķ');
-DELETE FROM "Unicode data" WHERE t = 'Ķ';
+INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._');
+DELETE FROM "Unicode data" WHERE t = 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._';
 -- EUC_KR
 SELECT * FROM "Unicode data" WHERE i = 'kor';
 SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
-INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키');
-DELETE FROM "Unicode data" WHERE t = '키';
+INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._');
+DELETE FROM "Unicode data" WHERE t = '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._';
 -- 1254
 SELECT * FROM "Unicode data" WHERE i = 'aze';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Zəfər%';
-INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'əş');
-DELETE FROM "Unicode data" WHERE t = 'əş';
+INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._');
+DELETE FROM "Unicode data" WHERE t = 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._';
 -- etc
-INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'ե');
-DELETE FROM "Unicode data" WHERE t = 'ե';
-INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'é');
-DELETE FROM "Unicode data" WHERE t = 'é';
-INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'ŭŝĉ');
-DELETE FROM "Unicode data" WHERE t = 'ŭŝĉ';
+INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_');
+DELETE FROM "Unicode data" WHERE t = 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_';
+INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._');
+DELETE FROM "Unicode data" WHERE t = 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._';
+INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._');
+DELETE FROM "Unicode data" WHERE t = 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._';
 
 DROP FOREIGN TABLE "Unicode data";
 DROP SERVER sqlite_svr;
@@ -1174,8 +1174,8 @@ CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
 SELECT * FROM "Unicode data" WHERE t LIKE 'いろはにほ%';
-INSERT INTO "Unicode data" (i, t) VALUES ('jap+', 'い');
-DELETE FROM "Unicode data" WHERE t = 'い';
+INSERT INTO "Unicode data" (i, t) VALUES ('jap+', 'いろはにほへと ちりぬるを わかよたれそ つねならむ うゐのおくやま けふこえて あさきゆめみし ゑひもせす._');
+DELETE FROM "Unicode data" WHERE t = 'いろはにほへと ちりぬるを わかよたれそ つねならむ うゐのおくやま けふこえて あさきゆめみし ゑひもせす._';
 -- 1251
 SELECT * FROM "Unicode data" WHERE i = 'bel';
 SELECT * FROM "Unicode data" WHERE i = 'bul';
@@ -1185,29 +1185,29 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'У руд%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ах, ч%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Широк%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
-INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'ў');
-DELETE FROM "Unicode data" WHERE t = 'ў';
-INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'ч');
-DELETE FROM "Unicode data" WHERE t = 'ч';
-INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'щ');
-DELETE FROM "Unicode data" WHERE t = 'щ';
-INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'ї');
-DELETE FROM "Unicode data" WHERE t = 'ї';
+INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._');
+DELETE FROM "Unicode data" WHERE t = 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._';
+INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'Ах, чудна българска земьо, полюшвай цъфтящи жита._');
+DELETE FROM "Unicode data" WHERE t = 'Ах, чудна българска земьо, полюшвай цъфтящи жита._';
+INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._');
+DELETE FROM "Unicode data" WHERE t = 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._';
+INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._');
+DELETE FROM "Unicode data" WHERE t = 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._';
 -- 1256
 SELECT * FROM "Unicode data" WHERE i = 'ara';
 SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
-INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أ');
-DELETE FROM "Unicode data" WHERE t = 'أ';
+INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_');
+DELETE FROM "Unicode data" WHERE t = 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_';
 -- 1253
 SELECT * FROM "Unicode data" WHERE i = 'gre';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
-INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'ά');
-DELETE FROM "Unicode data" WHERE t = 'ά';
+INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_');
+DELETE FROM "Unicode data" WHERE t = 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_';
 -- 1255
 SELECT * FROM "Unicode data" WHERE i = 'heb';
 SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
-INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'ע');
-DELETE FROM "Unicode data" WHERE t = 'ע';
+INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_');
+DELETE FROM "Unicode data" WHERE t = 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_';
 -- 1252
 SELECT * FROM "Unicode data" WHERE i = 'eus';
 SELECT * FROM "Unicode data" WHERE i = 'fra';
@@ -1215,12 +1215,12 @@ SELECT * FROM "Unicode data" WHERE i = 'spa';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Permi%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Dès N%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Quier%';
-INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'ñ');
-DELETE FROM "Unicode data" WHERE t = 'ñ';
-INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'èûæ');
-DELETE FROM "Unicode data" WHERE t = 'èûæ';
-INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'ó');
-DELETE FROM "Unicode data" WHERE t = 'ó';
+INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'Permin gox dabiltzu yoskiñ._');
+DELETE FROM "Unicode data" WHERE t = 'Permin gox dabiltzu yoskiñ._';
+INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_');
+DELETE FROM "Unicode data" WHERE t = 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_';
+INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._');
+DELETE FROM "Unicode data" WHERE t = 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._';
 -- 1250
 SELECT * FROM "Unicode data" WHERE i = 'cze';
 SELECT * FROM "Unicode data" WHERE i = 'pol';
@@ -1228,34 +1228,34 @@ SELECT * FROM "Unicode data" WHERE i = 'srp';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Zvláš%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Pchną%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
-INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'ášť');
-DELETE FROM "Unicode data" WHERE t = 'ášť';
-INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'ą');
-DELETE FROM "Unicode data" WHERE t = 'ą';
-INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'đž');
-DELETE FROM "Unicode data" WHERE t = 'đž';
+INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._');
+DELETE FROM "Unicode data" WHERE t = 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._';
+INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._');
+DELETE FROM "Unicode data" WHERE t = 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._';
+INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._');
+DELETE FROM "Unicode data" WHERE t = 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._';
 -- 1257
 SELECT * FROM "Unicode data" WHERE i = 'lav';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
-INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķ');
-DELETE FROM "Unicode data" WHERE t = 'Ķ';
+INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._');
+DELETE FROM "Unicode data" WHERE t = 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._';
 -- EUC_KR
 SELECT * FROM "Unicode data" WHERE i = 'kor';
 SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
-INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키');
-DELETE FROM "Unicode data" WHERE t = '키';
+INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._');
+DELETE FROM "Unicode data" WHERE t = '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._';
 -- 1254
 SELECT * FROM "Unicode data" WHERE i = 'aze';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Zəfər%';
-INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'əş');
-DELETE FROM "Unicode data" WHERE t = 'əş';
+INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._');
+DELETE FROM "Unicode data" WHERE t = 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._';
 -- etc
-INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'ե');
-DELETE FROM "Unicode data" WHERE t = 'ե';
-INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'é');
-DELETE FROM "Unicode data" WHERE t = 'é';
-INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'ŭŝĉ');
-DELETE FROM "Unicode data" WHERE t = 'ŭŝĉ';
+INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_');
+DELETE FROM "Unicode data" WHERE t = 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_';
+INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._');
+DELETE FROM "Unicode data" WHERE t = 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._';
+INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._');
+DELETE FROM "Unicode data" WHERE t = 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._';
 
 DROP FOREIGN TABLE "Unicode data";
 DROP SERVER sqlite_svr;
@@ -1273,8 +1273,8 @@ CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
 SELECT * FROM "Unicode data" WHERE t LIKE 'いろはにほ%';
-INSERT INTO "Unicode data" (i, t) VALUES ('jap+', 'い');
-DELETE FROM "Unicode data" WHERE t = 'い';
+INSERT INTO "Unicode data" (i, t) VALUES ('jap+', 'いろはにほへと ちりぬるを わかよたれそ つねならむ うゐのおくやま けふこえて あさきゆめみし ゑひもせす._');
+DELETE FROM "Unicode data" WHERE t = 'いろはにほへと ちりぬるを わかよたれそ つねならむ うゐのおくやま けふこえて あさきゆめみし ゑひもせす._';
 -- 1251
 SELECT * FROM "Unicode data" WHERE i = 'bel';
 SELECT * FROM "Unicode data" WHERE i = 'bul';
@@ -1284,29 +1284,29 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'У руд%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ах, ч%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Широк%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
-INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'ў');
-DELETE FROM "Unicode data" WHERE t = 'ў';
-INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'ч');
-DELETE FROM "Unicode data" WHERE t = 'ч';
-INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'щ');
-DELETE FROM "Unicode data" WHERE t = 'щ';
-INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'ї');
-DELETE FROM "Unicode data" WHERE t = 'ї';
+INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._');
+DELETE FROM "Unicode data" WHERE t = 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._';
+INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'Ах, чудна българска земьо, полюшвай цъфтящи жита._');
+DELETE FROM "Unicode data" WHERE t = 'Ах, чудна българска земьо, полюшвай цъфтящи жита._';
+INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._');
+DELETE FROM "Unicode data" WHERE t = 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._';
+INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._');
+DELETE FROM "Unicode data" WHERE t = 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._';
 -- 1256
 SELECT * FROM "Unicode data" WHERE i = 'ara';
 SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
-INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أ');
-DELETE FROM "Unicode data" WHERE t = 'أ';
+INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_');
+DELETE FROM "Unicode data" WHERE t = 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_';
 -- 1253
 SELECT * FROM "Unicode data" WHERE i = 'gre';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
-INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'ά');
-DELETE FROM "Unicode data" WHERE t = 'ά';
+INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_');
+DELETE FROM "Unicode data" WHERE t = 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_';
 -- 1255
 SELECT * FROM "Unicode data" WHERE i = 'heb';
 SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
-INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'ע');
-DELETE FROM "Unicode data" WHERE t = 'ע';
+INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_');
+DELETE FROM "Unicode data" WHERE t = 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_';
 -- 1252
 SELECT * FROM "Unicode data" WHERE i = 'eus';
 SELECT * FROM "Unicode data" WHERE i = 'fra';
@@ -1314,12 +1314,12 @@ SELECT * FROM "Unicode data" WHERE i = 'spa';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Permi%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Dès N%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Quier%';
-INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'ñ');
-DELETE FROM "Unicode data" WHERE t = 'ñ';
-INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'èûæ');
-DELETE FROM "Unicode data" WHERE t = 'èûæ';
-INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'ó');
-DELETE FROM "Unicode data" WHERE t = 'ó';
+INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'Permin gox dabiltzu yoskiñ._');
+DELETE FROM "Unicode data" WHERE t = 'Permin gox dabiltzu yoskiñ._';
+INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_');
+DELETE FROM "Unicode data" WHERE t = 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_';
+INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._');
+DELETE FROM "Unicode data" WHERE t = 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._';
 -- 1250
 SELECT * FROM "Unicode data" WHERE i = 'cze';
 SELECT * FROM "Unicode data" WHERE i = 'pol';
@@ -1327,34 +1327,34 @@ SELECT * FROM "Unicode data" WHERE i = 'srp';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Zvláš%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Pchną%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
-INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'ášť');
-DELETE FROM "Unicode data" WHERE t = 'ášť';
-INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'ą');
-DELETE FROM "Unicode data" WHERE t = 'ą';
-INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'đž');
-DELETE FROM "Unicode data" WHERE t = 'đž';
+INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._');
+DELETE FROM "Unicode data" WHERE t = 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._';
+INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._');
+DELETE FROM "Unicode data" WHERE t = 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._';
+INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._');
+DELETE FROM "Unicode data" WHERE t = 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._';
 -- 1257
 SELECT * FROM "Unicode data" WHERE i = 'lav';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
-INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķ');
-DELETE FROM "Unicode data" WHERE t = 'Ķ';
+INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._');
+DELETE FROM "Unicode data" WHERE t = 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._';
 -- EUC_KR
 SELECT * FROM "Unicode data" WHERE i = 'kor';
 SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
-INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키');
-DELETE FROM "Unicode data" WHERE t = '키';
+INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._');
+DELETE FROM "Unicode data" WHERE t = '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._';
 -- 1254
 SELECT * FROM "Unicode data" WHERE i = 'aze';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Zəfər%';
-INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'əş');
-DELETE FROM "Unicode data" WHERE t = 'əş';
+INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._');
+DELETE FROM "Unicode data" WHERE t = 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._';
 -- etc
-INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'ե');
-DELETE FROM "Unicode data" WHERE t = 'ե';
-INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'é');
-DELETE FROM "Unicode data" WHERE t = 'é';
-INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'ŭŝĉ');
-DELETE FROM "Unicode data" WHERE t = 'ŭŝĉ';
+INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_');
+DELETE FROM "Unicode data" WHERE t = 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_';
+INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._');
+DELETE FROM "Unicode data" WHERE t = 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._';
+INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._');
+DELETE FROM "Unicode data" WHERE t = 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._';
 
 DROP FOREIGN TABLE "Unicode data";
 DROP SERVER sqlite_svr;
@@ -1372,8 +1372,8 @@ CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
 SELECT * FROM "Unicode data" WHERE t LIKE 'いろはにほ%';
-INSERT INTO "Unicode data" (i, t) VALUES ('jap+', 'い');
-DELETE FROM "Unicode data" WHERE t = 'い';
+INSERT INTO "Unicode data" (i, t) VALUES ('jap+', 'いろはにほへと ちりぬるを わかよたれそ つねならむ うゐのおくやま けふこえて あさきゆめみし ゑひもせす._');
+DELETE FROM "Unicode data" WHERE t = 'いろはにほへと ちりぬるを わかよたれそ つねならむ うゐのおくやま けふこえて あさきゆめみし ゑひもせす._';
 -- 1251
 SELECT * FROM "Unicode data" WHERE i = 'bel';
 SELECT * FROM "Unicode data" WHERE i = 'bul';
@@ -1383,29 +1383,29 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'У руд%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ах, ч%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Широк%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
-INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'ў');
-DELETE FROM "Unicode data" WHERE t = 'ў';
-INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'ч');
-DELETE FROM "Unicode data" WHERE t = 'ч';
-INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'щ');
-DELETE FROM "Unicode data" WHERE t = 'щ';
-INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'ї');
-DELETE FROM "Unicode data" WHERE t = 'ї';
+INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._');
+DELETE FROM "Unicode data" WHERE t = 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._';
+INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'Ах, чудна българска земьо, полюшвай цъфтящи жита._');
+DELETE FROM "Unicode data" WHERE t = 'Ах, чудна българска земьо, полюшвай цъфтящи жита._';
+INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._');
+DELETE FROM "Unicode data" WHERE t = 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._';
+INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._');
+DELETE FROM "Unicode data" WHERE t = 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._';
 -- 1256
 SELECT * FROM "Unicode data" WHERE i = 'ara';
 SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
-INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أ');
-DELETE FROM "Unicode data" WHERE t = 'أ';
+INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_');
+DELETE FROM "Unicode data" WHERE t = 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_';
 -- 1253
 SELECT * FROM "Unicode data" WHERE i = 'gre';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
-INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'ά');
-DELETE FROM "Unicode data" WHERE t = 'ά';
+INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_');
+DELETE FROM "Unicode data" WHERE t = 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_';
 -- 1255
 SELECT * FROM "Unicode data" WHERE i = 'heb';
 SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
-INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'ע');
-DELETE FROM "Unicode data" WHERE t = 'ע';
+INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_');
+DELETE FROM "Unicode data" WHERE t = 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_';
 -- 1252
 SELECT * FROM "Unicode data" WHERE i = 'eus';
 SELECT * FROM "Unicode data" WHERE i = 'fra';
@@ -1413,12 +1413,12 @@ SELECT * FROM "Unicode data" WHERE i = 'spa';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Permi%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Dès N%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Quier%';
-INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'ñ');
-DELETE FROM "Unicode data" WHERE t = 'ñ';
-INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'èûæ');
-DELETE FROM "Unicode data" WHERE t = 'èûæ';
-INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'ó');
-DELETE FROM "Unicode data" WHERE t = 'ó';
+INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'Permin gox dabiltzu yoskiñ._');
+DELETE FROM "Unicode data" WHERE t = 'Permin gox dabiltzu yoskiñ._';
+INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_');
+DELETE FROM "Unicode data" WHERE t = 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_';
+INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._');
+DELETE FROM "Unicode data" WHERE t = 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._';
 -- 1250
 SELECT * FROM "Unicode data" WHERE i = 'cze';
 SELECT * FROM "Unicode data" WHERE i = 'pol';
@@ -1426,34 +1426,34 @@ SELECT * FROM "Unicode data" WHERE i = 'srp';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Zvláš%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Pchną%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
-INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'ášť');
-DELETE FROM "Unicode data" WHERE t = 'ášť';
-INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'ą');
-DELETE FROM "Unicode data" WHERE t = 'ą';
-INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'đž');
-DELETE FROM "Unicode data" WHERE t = 'đž';
+INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._');
+DELETE FROM "Unicode data" WHERE t = 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._';
+INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._');
+DELETE FROM "Unicode data" WHERE t = 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._';
+INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._');
+DELETE FROM "Unicode data" WHERE t = 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._';
 -- 1257
 SELECT * FROM "Unicode data" WHERE i = 'lav';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
-INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķ');
-DELETE FROM "Unicode data" WHERE t = 'Ķ';
+INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._');
+DELETE FROM "Unicode data" WHERE t = 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._';
 -- EUC_KR
 SELECT * FROM "Unicode data" WHERE i = 'kor';
 SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
-INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키');
-DELETE FROM "Unicode data" WHERE t = '키';
+INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._');
+DELETE FROM "Unicode data" WHERE t = '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._';
 -- 1254
 SELECT * FROM "Unicode data" WHERE i = 'aze';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Zəfər%';
-INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'əş');
-DELETE FROM "Unicode data" WHERE t = 'əş';
+INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._');
+DELETE FROM "Unicode data" WHERE t = 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._';
 -- etc
-INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'ե');
-DELETE FROM "Unicode data" WHERE t = 'ե';
-INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'é');
-DELETE FROM "Unicode data" WHERE t = 'é';
-INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'ŭŝĉ');
-DELETE FROM "Unicode data" WHERE t = 'ŭŝĉ';
+INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_');
+DELETE FROM "Unicode data" WHERE t = 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_';
+INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._');
+DELETE FROM "Unicode data" WHERE t = 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._';
+INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._');
+DELETE FROM "Unicode data" WHERE t = 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._';
 
 DROP FOREIGN TABLE "Unicode data";
 DROP SERVER sqlite_svr;
@@ -1471,8 +1471,8 @@ CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
 SELECT * FROM "Unicode data" WHERE t LIKE 'いろはにほ%';
-INSERT INTO "Unicode data" (i, t) VALUES ('jap+', 'い');
-DELETE FROM "Unicode data" WHERE t = 'い';
+INSERT INTO "Unicode data" (i, t) VALUES ('jap+', 'いろはにほへと ちりぬるを わかよたれそ つねならむ うゐのおくやま けふこえて あさきゆめみし ゑひもせす._');
+DELETE FROM "Unicode data" WHERE t = 'いろはにほへと ちりぬるを わかよたれそ つねならむ うゐのおくやま けふこえて あさきゆめみし ゑひもせす._';
 -- 1251
 SELECT * FROM "Unicode data" WHERE i = 'bel';
 SELECT * FROM "Unicode data" WHERE i = 'bul';
@@ -1482,29 +1482,29 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'У руд%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ах, ч%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Широк%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
-INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'ў');
-DELETE FROM "Unicode data" WHERE t = 'ў';
-INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'ч');
-DELETE FROM "Unicode data" WHERE t = 'ч';
-INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'щ');
-DELETE FROM "Unicode data" WHERE t = 'щ';
-INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'ї');
-DELETE FROM "Unicode data" WHERE t = 'ї';
+INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._');
+DELETE FROM "Unicode data" WHERE t = 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._';
+INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'Ах, чудна българска земьо, полюшвай цъфтящи жита._');
+DELETE FROM "Unicode data" WHERE t = 'Ах, чудна българска земьо, полюшвай цъфтящи жита._';
+INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._');
+DELETE FROM "Unicode data" WHERE t = 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._';
+INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._');
+DELETE FROM "Unicode data" WHERE t = 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._';
 -- 1256
 SELECT * FROM "Unicode data" WHERE i = 'ara';
 SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
-INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أ');
-DELETE FROM "Unicode data" WHERE t = 'أ';
+INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_');
+DELETE FROM "Unicode data" WHERE t = 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_';
 -- 1253
 SELECT * FROM "Unicode data" WHERE i = 'gre';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
-INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'ά');
-DELETE FROM "Unicode data" WHERE t = 'ά';
+INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_');
+DELETE FROM "Unicode data" WHERE t = 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_';
 -- 1255
 SELECT * FROM "Unicode data" WHERE i = 'heb';
 SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
-INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'ע');
-DELETE FROM "Unicode data" WHERE t = 'ע';
+INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_');
+DELETE FROM "Unicode data" WHERE t = 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_';
 -- 1252
 SELECT * FROM "Unicode data" WHERE i = 'eus';
 SELECT * FROM "Unicode data" WHERE i = 'fra';
@@ -1512,12 +1512,12 @@ SELECT * FROM "Unicode data" WHERE i = 'spa';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Permi%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Dès N%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Quier%';
-INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'ñ');
-DELETE FROM "Unicode data" WHERE t = 'ñ';
-INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'èûæ');
-DELETE FROM "Unicode data" WHERE t = 'èûæ';
-INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'ó');
-DELETE FROM "Unicode data" WHERE t = 'ó';
+INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'Permin gox dabiltzu yoskiñ._');
+DELETE FROM "Unicode data" WHERE t = 'Permin gox dabiltzu yoskiñ._';
+INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_');
+DELETE FROM "Unicode data" WHERE t = 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_';
+INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._');
+DELETE FROM "Unicode data" WHERE t = 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._';
 -- 1250
 SELECT * FROM "Unicode data" WHERE i = 'cze';
 SELECT * FROM "Unicode data" WHERE i = 'pol';
@@ -1525,34 +1525,34 @@ SELECT * FROM "Unicode data" WHERE i = 'srp';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Zvláš%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Pchną%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
-INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'ášť');
-DELETE FROM "Unicode data" WHERE t = 'ášť';
-INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'ą');
-DELETE FROM "Unicode data" WHERE t = 'ą';
-INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'đž');
-DELETE FROM "Unicode data" WHERE t = 'đž';
+INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._');
+DELETE FROM "Unicode data" WHERE t = 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._';
+INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._');
+DELETE FROM "Unicode data" WHERE t = 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._';
+INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._');
+DELETE FROM "Unicode data" WHERE t = 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._';
 -- 1257
 SELECT * FROM "Unicode data" WHERE i = 'lav';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
-INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķ');
-DELETE FROM "Unicode data" WHERE t = 'Ķ';
+INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._');
+DELETE FROM "Unicode data" WHERE t = 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._';
 -- EUC_KR
 SELECT * FROM "Unicode data" WHERE i = 'kor';
 SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
-INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키');
-DELETE FROM "Unicode data" WHERE t = '키';
+INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._');
+DELETE FROM "Unicode data" WHERE t = '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._';
 -- 1254
 SELECT * FROM "Unicode data" WHERE i = 'aze';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Zəfər%';
-INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'əş');
-DELETE FROM "Unicode data" WHERE t = 'əş';
+INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._');
+DELETE FROM "Unicode data" WHERE t = 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._';
 -- etc
-INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'ե');
-DELETE FROM "Unicode data" WHERE t = 'ե';
-INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'é');
-DELETE FROM "Unicode data" WHERE t = 'é';
-INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'ŭŝĉ');
-DELETE FROM "Unicode data" WHERE t = 'ŭŝĉ';
+INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_');
+DELETE FROM "Unicode data" WHERE t = 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_';
+INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._');
+DELETE FROM "Unicode data" WHERE t = 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._';
+INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._');
+DELETE FROM "Unicode data" WHERE t = 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._';
 
 DROP FOREIGN TABLE "Unicode data";
 DROP SERVER sqlite_svr;
@@ -1570,8 +1570,8 @@ CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
 SELECT * FROM "Unicode data" WHERE t LIKE 'いろはにほ%';
-INSERT INTO "Unicode data" (i, t) VALUES ('jap+', 'い');
-DELETE FROM "Unicode data" WHERE t = 'い';
+INSERT INTO "Unicode data" (i, t) VALUES ('jap+', 'いろはにほへと ちりぬるを わかよたれそ つねならむ うゐのおくやま けふこえて あさきゆめみし ゑひもせす._');
+DELETE FROM "Unicode data" WHERE t = 'いろはにほへと ちりぬるを わかよたれそ つねならむ うゐのおくやま けふこえて あさきゆめみし ゑひもせす._';
 -- 1251
 SELECT * FROM "Unicode data" WHERE i = 'bel';
 SELECT * FROM "Unicode data" WHERE i = 'bul';
@@ -1581,29 +1581,29 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'У руд%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ах, ч%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Широк%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
-INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'ў');
-DELETE FROM "Unicode data" WHERE t = 'ў';
-INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'ч');
-DELETE FROM "Unicode data" WHERE t = 'ч';
-INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'щ');
-DELETE FROM "Unicode data" WHERE t = 'щ';
-INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'ї');
-DELETE FROM "Unicode data" WHERE t = 'ї';
+INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._');
+DELETE FROM "Unicode data" WHERE t = 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._';
+INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'Ах, чудна българска земьо, полюшвай цъфтящи жита._');
+DELETE FROM "Unicode data" WHERE t = 'Ах, чудна българска земьо, полюшвай цъфтящи жита._';
+INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._');
+DELETE FROM "Unicode data" WHERE t = 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._';
+INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._');
+DELETE FROM "Unicode data" WHERE t = 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._';
 -- 1256
 SELECT * FROM "Unicode data" WHERE i = 'ara';
 SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
-INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أ');
-DELETE FROM "Unicode data" WHERE t = 'أ';
+INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_');
+DELETE FROM "Unicode data" WHERE t = 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_';
 -- 1253
 SELECT * FROM "Unicode data" WHERE i = 'gre';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
-INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'ά');
-DELETE FROM "Unicode data" WHERE t = 'ά';
+INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_');
+DELETE FROM "Unicode data" WHERE t = 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_';
 -- 1255
 SELECT * FROM "Unicode data" WHERE i = 'heb';
 SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
-INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'ע');
-DELETE FROM "Unicode data" WHERE t = 'ע';
+INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_');
+DELETE FROM "Unicode data" WHERE t = 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_';
 -- 1252
 SELECT * FROM "Unicode data" WHERE i = 'eus';
 SELECT * FROM "Unicode data" WHERE i = 'fra';
@@ -1611,12 +1611,12 @@ SELECT * FROM "Unicode data" WHERE i = 'spa';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Permi%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Dès N%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Quier%';
-INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'ñ');
-DELETE FROM "Unicode data" WHERE t = 'ñ';
-INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'èûæ');
-DELETE FROM "Unicode data" WHERE t = 'èûæ';
-INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'ó');
-DELETE FROM "Unicode data" WHERE t = 'ó';
+INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'Permin gox dabiltzu yoskiñ._');
+DELETE FROM "Unicode data" WHERE t = 'Permin gox dabiltzu yoskiñ._';
+INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_');
+DELETE FROM "Unicode data" WHERE t = 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_';
+INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._');
+DELETE FROM "Unicode data" WHERE t = 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._';
 -- 1250
 SELECT * FROM "Unicode data" WHERE i = 'cze';
 SELECT * FROM "Unicode data" WHERE i = 'pol';
@@ -1624,34 +1624,34 @@ SELECT * FROM "Unicode data" WHERE i = 'srp';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Zvláš%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Pchną%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
-INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'ášť');
-DELETE FROM "Unicode data" WHERE t = 'ášť';
-INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'ą');
-DELETE FROM "Unicode data" WHERE t = 'ą';
-INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'đž');
-DELETE FROM "Unicode data" WHERE t = 'đž';
+INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._');
+DELETE FROM "Unicode data" WHERE t = 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._';
+INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._');
+DELETE FROM "Unicode data" WHERE t = 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._';
+INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._');
+DELETE FROM "Unicode data" WHERE t = 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._';
 -- 1257
 SELECT * FROM "Unicode data" WHERE i = 'lav';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
-INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķ');
-DELETE FROM "Unicode data" WHERE t = 'Ķ';
+INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._');
+DELETE FROM "Unicode data" WHERE t = 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._';
 -- EUC_KR
 SELECT * FROM "Unicode data" WHERE i = 'kor';
 SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
-INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키');
-DELETE FROM "Unicode data" WHERE t = '키';
+INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._');
+DELETE FROM "Unicode data" WHERE t = '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._';
 -- 1254
 SELECT * FROM "Unicode data" WHERE i = 'aze';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Zəfər%';
-INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'əş');
-DELETE FROM "Unicode data" WHERE t = 'əş';
+INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._');
+DELETE FROM "Unicode data" WHERE t = 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._';
 -- etc
-INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'ե');
-DELETE FROM "Unicode data" WHERE t = 'ե';
-INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'é');
-DELETE FROM "Unicode data" WHERE t = 'é';
-INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'ŭŝĉ');
-DELETE FROM "Unicode data" WHERE t = 'ŭŝĉ';
+INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_');
+DELETE FROM "Unicode data" WHERE t = 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_';
+INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._');
+DELETE FROM "Unicode data" WHERE t = 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._';
+INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._');
+DELETE FROM "Unicode data" WHERE t = 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._';
 
 DROP FOREIGN TABLE "Unicode data";
 DROP SERVER sqlite_svr;
