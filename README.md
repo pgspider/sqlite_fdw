@@ -76,8 +76,8 @@ Installation
 
 For some Linux distributives internal packages with `sqlite_fdw` are avalilable.
 
-- [sqlite_fdw_14 rpm](https://pkgs.org/download/sqlite_fdw_14(x86-64)) for CentOS 9, RHEL 9, Rocky Linux 9, AlmaLinux 9.
-- [sqlite_fdw code source](https://aur.archlinux.org/packages/sqlite_fdw) for Arch Linux.
+- [sqlite_fdw_14 rpm](https://pkgs.org/download/sqlite_fdw_14(x86-64)) for CentOS 9, RHEL 9, Rocky Linux 9, AlmaLinux 9. Also there is other versions.
+- [sqlite_fdw git package](https://aur.archlinux.org/packages/sqlite_fdw) for Arch Linux.
 
 ### Source installation
 
