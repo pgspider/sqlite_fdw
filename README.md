@@ -72,7 +72,12 @@ reasonably POSIX-compliant system.
 Installation
 ------------
 
-For some Linux distributives deb and rpm packages are avalillable.
+### Package installation
+
+For some Linux distributives internal packages with `sqlite_fdw` are avalilable.
+
+- [sqlite_fdw_14 rpm](https://pkgs.org/download/sqlite_fdw_14(x86-64)) for CentOS 9, RHEL 9, Rocky Linux 9, AlmaLinux 9. Also there is other versions.
+- [sqlite_fdw git package](https://aur.archlinux.org/packages/sqlite_fdw) for Arch Linux.
 
 ### Source installation
 
@@ -115,22 +120,26 @@ Usage
 - **database** as *string*, **required**
 
   SQLite database path.
+  
+- **updatable** as *boolean*, optional, default *true*
 
-- **truncatable** as *boolean*, optional
+  This option allow or disallow write operations on SQLite database file.
+    
+- **truncatable** as *boolean*, optional, default *true*
 
   Allows foreign tables to be truncated using the `TRUNCATE` command.
   
-- **keep_connections** as *boolean*, optional
+- **keep_connections** as *boolean*, optional, default *true*
   
   Allows to keep connections to SQLite while there is no SQL operations between PostgreSQL and SQLite.
   
-- **batch_size** as *integer*, optional
+- **batch_size** as *integer*, optional, default *1*
 
   Specifies the number of rows which should be inserted in a single `INSERT` operation. This setting can be overridden for individual tables.
   
 ## CREATE USER MAPPING options
 
-There is no user or password conceptions in SQlite, hence `sqlite_fdw` no need any `CREATE USER MAPPING` command.
+There is no user or password conceptions in SQLite, hence `sqlite_fdw` no need any `CREATE USER MAPPING` command.
 
 In OS `sqlite_fdw` works as executed code with permissions of user of PostgreSQL server. Usually it is `postgres` OS user. For interacting with SQLite database without access errors ensure this user have follow permissions:
 - read permission on all directories by path to the SQLite database file;
@@ -142,30 +151,34 @@ In OS `sqlite_fdw` works as executed code with permissions of user of PostgreSQL
 `sqlite_fdw` accepts the following table-level options via the
 `CREATE FOREIGN TABLE` command:
 
-- **table** as *string*, optional
+- **table** as *string*, optional, no default
 
   SQLite table name. Use if not equal to name of foreign table in PostgreSQL. Also see about [identifier case handling](#identifier-case-handling).
 
-- **truncatable** as *boolean*, optional
+- **truncatable** as *boolean*, optional, default from the same `CREATE SERVER` option
   
-  Allows table to be truncated using the `TRUNCATE` command.
+  See `CREATE SERVER` options section for details.
 
-- **batch_size** as *integer*, optional
+- **batch_size** as *integer*, optional, default from the same `CREATE SERVER` option
 
   See `CREATE SERVER` options section for details.  
+  
+- **updatable** as *boolean*, optional, default *true*
+
+  This option can allow or disallow write operations on a SQLite table independed of the same server option.
   
 `sqlite_fdw` accepts the following column-level options via the
 `CREATE FOREIGN TABLE` command:
 
-- **column_name** as *string*, optional
+- **column_name** as *string*, optional, no default
 
   This option gives the column name to use for the column on the remote server. Also see about [identifier case handling](#identifier-case-handling).
 
-- **column_type** as *string*, optional
+- **column_type** as *string*, optional, no default
 
   Option to convert INT SQLite column (epoch Unix Time) to be treated/visualized as TIMESTAMP in PostgreSQL.
 
-- **key** as *boolean*, optional
+- **key** as *boolean*, optional, default *false*
 
   Indicates a column as a part of primary key or unique key of SQLite table.
   
@@ -194,16 +207,21 @@ Functions
 As well as the standard `sqlite_fdw_handler()` and `sqlite_fdw_validator()`
 functions, `sqlite_fdw` provides the following user-callable utility functions:
 
-- SETOF record **sqlite_fdw_get_connections(server_name text, valid bool)**
+- SETOF record **sqlite_fdw_get_connections**(server_name text, valid bool)
 
-- bool **sqlite_fdw_disconnect(text)**
+- bool **sqlite_fdw_disconnect**(text)
 
   Closes connection from PostgreSQL to SQLite in the current session.
 
 - bool **sqlite_fdw_disconnect_all()**
 
-- SETOF record **sqlite_fdw_version()**;
-
+- **sqlite_fdw_version()**;
+Returns standard "version integer" as `major version * 10000 + minor version * 100 + bugfix`.
+```
+sqlite_fdw_version 
+--------------------
+              20300
+```
 Identifier case handling
 ------------------------
 
@@ -411,7 +429,7 @@ Limitations
 - SQLite does not support special values for IEEE 754-2008 numbers such as `NaN`, `+Infinity` and `-Infinity` in SQL expressions with numeric context. Also SQLite can not store this values with `real` [affinity](https://www.sqlite.org/datatype3.html). In opposite to SQLite, PostgreSQL can store special values in columns belongs to `real` datatype family such as `float` or `double precision` and use arithmetic comparation for this values. In oppose to PostgreSQL, SQLite stores `NaN`, `+Infinity` and `-Infinity` as a text values. Also conditions with special literals (such as ` n < '+Infinity'` or ` m > '-Infinity'` ) isn't numeric conditions in SQLite and gives unexpected result after pushdowning in oppose to internal PostgreSQL calculations. During `INSERT INTO ... SELECT` or in `WHERE` conditions `sqlite_fdw` uses given by PostgreSQL standard case sensetive literals **only** in follow forms: `NaN`, `-Infinity`, `Infinity`, not original strings from `WHERE` condition. *This can caused selecting issues*.
 
 ### Boolean values
-- `sqlite_fdw` boolean values support exists only for `bool` columns in foreign table. SQLite documentation recommends to store boolean as value with `integer` [affinity](https://www.sqlite.org/datatype3.html). `NULL` isn't converted, 1 converted to `true`, all other `NON NULL` values converted to `false`. During `SELECT ... WHERE condition_column` condition converted only to `condition_column`.
+- `sqlite_fdw` boolean values support exists only for `bool` columns in foreign table. SQLite documentation recommends to store boolean as value with `integer` [affinity](https://www.sqlite.org/datatype3.html). `NULL` isn't converted, 1 converted to `true`, all other `NOT NULL` values converted to `false`. During `SELECT ... WHERE condition_column` condition converted only to `condition_column`.
 - `sqlite_fdw` don't provides limited support of boolean values if `bool` column in foreign table mapped to SQLite `text` [affinity](https://www.sqlite.org/datatype3.html).
 
 Tests

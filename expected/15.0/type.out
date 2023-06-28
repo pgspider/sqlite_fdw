@@ -501,7 +501,7 @@ SELECT * FROM "type_DOUBLE"; -- OK
 ALTER FOREIGN TABLE "type_DOUBLE" ALTER COLUMN col TYPE float8;
 --Testcase 47:
 DROP EXTENSION sqlite_fdw CASCADE;
-NOTICE:  drop cascades to 41 other objects
+NOTICE:  drop cascades to 42 other objects
 DETAIL:  drop cascades to server sqlite_svr
 drop cascades to foreign table department
 drop cascades to foreign table employee
@@ -539,6 +539,7 @@ drop cascades to foreign table fts_table_idx
 drop cascades to foreign table fts_table_content
 drop cascades to foreign table fts_table_docsize
 drop cascades to foreign table fts_table_config
+drop cascades to foreign table "RO_RW_test"
 drop cascades to foreign table "Unicode data"
 drop cascades to foreign table type_json
 drop cascades to foreign table "type_BOOLEAN"
