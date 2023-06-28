@@ -1680,7 +1680,6 @@ SELECT * FROM case_exp WHERE CASE c3 COLLATE "C" WHEN c6 THEN true ELSE c3 < 'ba
 
 --Testcase 234:
 DELETE FROM case_exp;
-
 -- updatable option test (github pull 59)
 -- Full combinations
 -- D-default, T-true, F-false
@@ -1833,7 +1832,6 @@ SELECT * FROM "Unicode data";
  heb | עטלף אבק נס דרך מזגן שהתפוצץ כי חם
 (20 rows)
 
--- End of RO/RW test
 -- updatable option test (github pull 59)
 DROP FOREIGN TABLE RO_RW_test;
 --Testcase 142:

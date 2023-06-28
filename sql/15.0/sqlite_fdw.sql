@@ -646,7 +646,6 @@ DELETE FROM case_exp;
 -- SERVER false   TABLE true
 -- SERVER false   TABLE false
 -- SERVER true    TABLE false
-
 -- SERVER default TABLE default
 --Testcase 235:
 INSERT INTO RO_RW_test (i, a, b, c) VALUES (2, 'B', 3.01, 1); -- OK
@@ -749,7 +748,6 @@ ALTER FOREIGN TABLE RO_RW_test OPTIONS (DROP updatable);
 
 --Testcase 276:
 SELECT * FROM RO_RW_test ORDER BY i;
--- End of RO/RW test
 
 -- test for PR #76 github
 CREATE FOREIGN TABLE "Unicode data" (i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
