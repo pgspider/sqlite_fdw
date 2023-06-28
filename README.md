@@ -74,12 +74,10 @@ Installation
 
 ### Package installation
 
-For some Linux distributives internal packages with `sqlite_fdw` are avalillable.
+For some Linux distributives internal packages with `sqlite_fdw` are avalilable.
 
-- [sqlite_fdw_14 rpm](https://pkgs.org/download/sqlite_fdw_14(x86-64)) for CentOS 9, RHEL 9, Rocky Linux 9, AlmaLinux 9.
-- [sqlite_fdw code source](https://aur.archlinux.org/packages/sqlite_fdw) for Arch Linux.
-
-Also you can build RPM with actual code base before release, see above.
+- [sqlite_fdw_14 rpm](https://pkgs.org/download/sqlite_fdw_14(x86-64)) for CentOS 9, RHEL 9, Rocky Linux 9, AlmaLinux 9. Also there is other versions.
+- [sqlite_fdw git package](https://aur.archlinux.org/packages/sqlite_fdw) for Arch Linux.
 
 ### Source installation
 
@@ -168,12 +166,16 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 - **database** as *string*, **required**
 
   SQLite database path.
+  
+- **updatable** as *boolean*, optional, default *true*
 
-- **truncatable** as *boolean*, optional, default *false*
+  This option allow or disallow write operations on SQLite database file.
+    
+- **truncatable** as *boolean*, optional, default *true*
 
   Allows foreign tables to be truncated using the `TRUNCATE` command.
   
-- **keep_connections** as *boolean*, optional, default *false*
+- **keep_connections** as *boolean*, optional, default *true*
   
   Allows to keep connections to SQLite while there is no SQL operations between PostgreSQL and SQLite.
   
@@ -206,6 +208,10 @@ In OS `sqlite_fdw` works as executed code with permissions of user of PostgreSQL
 - **batch_size** as *integer*, optional, default from the same `CREATE SERVER` option
 
   See `CREATE SERVER` options section for details.
+  
+- **updatable** as *boolean*, optional, default *true*
+
+  This option can allow or disallow write operations on a SQLite table independed of the same server option.
   
 `sqlite_fdw` accepts the following column-level options via the
 `CREATE FOREIGN TABLE` command:

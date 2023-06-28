@@ -12,6 +12,7 @@ DROP TABLE IF EXISTS onek;
 DROP TABLE IF EXISTS tenk1;
 DROP TABLE IF EXISTS btg;
 DROP TABLE IF EXISTS num_typemod_test;
+DROP TABLE IF EXISTS RO_RW_test;
 
 CREATE TABLE FLOAT4_TBL (f1  REAL);
 CREATE TABLE FLOAT4_TMP (f1  REAL, id integer primary key autoincrement);
@@ -399,13 +400,11 @@ create table j32 (id1 int, id2 int, primary key(id1,id2));
 
 create table inserttest01 (col1 int4, col2 int4 NOT NULL, col3 text default 'testing');
 
-
 CREATE TABLE update_test (
-	i   INT PRIMARY KEY,
+    i   INT PRIMARY KEY,
     a   INT DEFAULT 10,
     b   INT,
     c   TEXT
 );
 
 create table upsert_test (a int primary key, b text);
-
