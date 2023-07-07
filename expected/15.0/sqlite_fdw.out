@@ -1931,13 +1931,24 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Широк%';
 SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
 ERROR:  character with byte sequence 0xe2 0x80 0x94 in encoding "UTF8" has no equivalent in encoding "EUC_JP"
 INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._');
+SELECT * FROM "Unicode data" WHERE i = 'bel+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa7
 DELETE FROM "Unicode data" WHERE t = 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._';
 INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'Ах, чудна българска земьо, полюшвай цъфтящи жита._');
+SELECT * FROM "Unicode data" WHERE i = 'bul+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa7
 DELETE FROM "Unicode data" WHERE t = 'Ах, чудна българска земьо, полюшвай цъфтящи жита._';
 INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._');
+SELECT * FROM "Unicode data" WHERE i = 'rus+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa7
 DELETE FROM "Unicode data" WHERE t = 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._';
 INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._');
 ERROR:  character with byte sequence 0xe2 0x80 0x94 in encoding "UTF8" has no equivalent in encoding "EUC_JP"
+SELECT * FROM "Unicode data" WHERE i = 'ukr+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._';
 ERROR:  character with byte sequence 0xe2 0x80 0x94 in encoding "UTF8" has no equivalent in encoding "EUC_JP"
 -- 1256
@@ -1947,6 +1958,11 @@ SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
 ERROR:  character with byte sequence 0xd8 0xb6 in encoding "UTF8" has no equivalent in encoding "EUC_JP"
 INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_');
 ERROR:  character with byte sequence 0xd8 0xa3 in encoding "UTF8" has no equivalent in encoding "EUC_JP"
+SELECT * FROM "Unicode data" WHERE i = 'ara+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_';
 ERROR:  character with byte sequence 0xd8 0xa3 in encoding "UTF8" has no equivalent in encoding "EUC_JP"
 -- 1253
@@ -1963,6 +1979,8 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
 (1 row)
 
 INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_');
+SELECT * FROM "Unicode data" WHERE i = 'gre+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa6
 DELETE FROM "Unicode data" WHERE t = 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_';
 -- 1255
 SELECT * FROM "Unicode data" WHERE i = 'heb';
@@ -1971,6 +1989,11 @@ SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
 ERROR:  character with byte sequence 0xd7 0x9b in encoding "UTF8" has no equivalent in encoding "EUC_JP"
 INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_');
 ERROR:  character with byte sequence 0xd7 0xa2 in encoding "UTF8" has no equivalent in encoding "EUC_JP"
+SELECT * FROM "Unicode data" WHERE i = 'heb+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_';
 ERROR:  character with byte sequence 0xd7 0xa2 in encoding "UTF8" has no equivalent in encoding "EUC_JP"
 -- 1252
@@ -2011,10 +2034,16 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Quier%';
 (1 row)
 
 INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'Permin gox dabiltzu yoskiñ._');
+SELECT * FROM "Unicode data" WHERE i = 'eus+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Permin gox dabiltzu yoskiñ._';
 INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_');
+SELECT * FROM "Unicode data" WHERE i = 'fra+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_';
 INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._');
+SELECT * FROM "Unicode data" WHERE i = 'spa+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._';
 -- 1250
 SELECT * FROM "Unicode data" WHERE i = 'cze';
@@ -2054,10 +2083,16 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
 (1 row)
 
 INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._');
+SELECT * FROM "Unicode data" WHERE i = 'cze+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._';
 INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._');
+SELECT * FROM "Unicode data" WHERE i = 'pol+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._';
 INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._');
+SELECT * FROM "Unicode data" WHERE i = 'srp+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._';
 -- 1257
 SELECT * FROM "Unicode data" WHERE i = 'lav';
@@ -2066,6 +2101,11 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
 ERROR:  character with byte sequence 0xc4 0xa3 in encoding "UTF8" has no equivalent in encoding "EUC_JP"
 INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._');
 ERROR:  character with byte sequence 0xc4 0xa3 in encoding "UTF8" has no equivalent in encoding "EUC_JP"
+SELECT * FROM "Unicode data" WHERE i = 'lav+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._';
 ERROR:  character with byte sequence 0xc4 0xa3 in encoding "UTF8" has no equivalent in encoding "EUC_JP"
 -- EUC_KR
@@ -2075,6 +2115,11 @@ SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
 ERROR:  character with byte sequence 0xed 0x82 0xa4 in encoding "UTF8" has no equivalent in encoding "EUC_JP"
 INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._');
 ERROR:  character with byte sequence 0xed 0x82 0xa4 in encoding "UTF8" has no equivalent in encoding "EUC_JP"
+SELECT * FROM "Unicode data" WHERE i = 'kor+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._';
 ERROR:  character with byte sequence 0xed 0x82 0xa4 in encoding "UTF8" has no equivalent in encoding "EUC_JP"
 -- 1254
@@ -2084,16 +2129,30 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Zəfər%';
 ERROR:  character with byte sequence 0xc9 0x99 in encoding "UTF8" has no equivalent in encoding "EUC_JP"
 INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._');
 ERROR:  character with byte sequence 0xc9 0x99 in encoding "UTF8" has no equivalent in encoding "EUC_JP"
+SELECT * FROM "Unicode data" WHERE i = 'aze+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._';
 ERROR:  character with byte sequence 0xc9 0x99 in encoding "UTF8" has no equivalent in encoding "EUC_JP"
 -- etc
 INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_');
 ERROR:  character with byte sequence 0xd4 0xb2 in encoding "UTF8" has no equivalent in encoding "EUC_JP"
+SELECT * FROM "Unicode data" WHERE i = 'arm+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_';
 ERROR:  character with byte sequence 0xd4 0xb2 in encoding "UTF8" has no equivalent in encoding "EUC_JP"
 INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._');
+SELECT * FROM "Unicode data" WHERE i = 'gle+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._';
 INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._');
+SELECT * FROM "Unicode data" WHERE i = 'epo+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._';
 DROP FOREIGN TABLE "Unicode data";
 DROP SERVER sqlite_svr;
@@ -2168,16 +2227,24 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
 INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._');
 ERROR:  failed to execute remote SQL: rc=19 UNIQUE constraint failed: Unicode data.i 
    sql=INSERT INTO main."Unicode data"(`i`, `t`) VALUES (?, ?)
+SELECT * FROM "Unicode data" WHERE i = 'bel+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa7
 DELETE FROM "Unicode data" WHERE t = 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._';
 INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'Ах, чудна българска земьо, полюшвай цъфтящи жита._');
 ERROR:  failed to execute remote SQL: rc=19 UNIQUE constraint failed: Unicode data.i 
    sql=INSERT INTO main."Unicode data"(`i`, `t`) VALUES (?, ?)
+SELECT * FROM "Unicode data" WHERE i = 'bul+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa7
 DELETE FROM "Unicode data" WHERE t = 'Ах, чудна българска земьо, полюшвай цъфтящи жита._';
 INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._');
 ERROR:  failed to execute remote SQL: rc=19 UNIQUE constraint failed: Unicode data.i 
    sql=INSERT INTO main."Unicode data"(`i`, `t`) VALUES (?, ?)
+SELECT * FROM "Unicode data" WHERE i = 'rus+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa7
 DELETE FROM "Unicode data" WHERE t = 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._';
 INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._');
+SELECT * FROM "Unicode data" WHERE i = 'ukr+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xc3 0xe5
 DELETE FROM "Unicode data" WHERE t = 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._';
 -- 1256
 SELECT * FROM "Unicode data" WHERE i = 'ara';
@@ -2186,6 +2253,11 @@ SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
 ERROR:  character with byte sequence 0xd8 0xb6 in encoding "UTF8" has no equivalent in encoding "WIN1251"
 INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_');
 ERROR:  character with byte sequence 0xd8 0xa3 in encoding "UTF8" has no equivalent in encoding "WIN1251"
+SELECT * FROM "Unicode data" WHERE i = 'ara+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_';
 ERROR:  character with byte sequence 0xd8 0xa3 in encoding "UTF8" has no equivalent in encoding "WIN1251"
 -- 1253
@@ -2195,6 +2267,8 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
 ERROR:  character with byte sequence 0xce 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1251"
 INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_');
 ERROR:  character with byte sequence 0xce 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1251"
+SELECT * FROM "Unicode data" WHERE i = 'gre+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa6
 DELETE FROM "Unicode data" WHERE t = 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_';
 ERROR:  character with byte sequence 0xce 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1251"
 -- 1255
@@ -2204,6 +2278,11 @@ SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
 ERROR:  character with byte sequence 0xd7 0x9b in encoding "UTF8" has no equivalent in encoding "WIN1251"
 INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_');
 ERROR:  character with byte sequence 0xd7 0xa2 in encoding "UTF8" has no equivalent in encoding "WIN1251"
+SELECT * FROM "Unicode data" WHERE i = 'heb+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_';
 ERROR:  character with byte sequence 0xd7 0xa2 in encoding "UTF8" has no equivalent in encoding "WIN1251"
 -- 1252
@@ -2221,14 +2300,20 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Quier%';
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1251"
 INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'Permin gox dabiltzu yoskiñ._');
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1251"
+SELECT * FROM "Unicode data" WHERE i = 'eus+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Permin gox dabiltzu yoskiñ._';
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1251"
 INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_');
 ERROR:  character with byte sequence 0xc3 0xa8 in encoding "UTF8" has no equivalent in encoding "WIN1251"
+SELECT * FROM "Unicode data" WHERE i = 'fra+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_';
 ERROR:  character with byte sequence 0xc3 0xa8 in encoding "UTF8" has no equivalent in encoding "WIN1251"
 INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._');
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1251"
+SELECT * FROM "Unicode data" WHERE i = 'spa+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._';
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1251"
 -- 1250
@@ -2246,14 +2331,20 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
 ERROR:  character with byte sequence 0xc4 0x91 in encoding "UTF8" has no equivalent in encoding "WIN1251"
 INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._');
 ERROR:  character with byte sequence 0xc3 0xa1 in encoding "UTF8" has no equivalent in encoding "WIN1251"
+SELECT * FROM "Unicode data" WHERE i = 'cze+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._';
 ERROR:  character with byte sequence 0xc3 0xa1 in encoding "UTF8" has no equivalent in encoding "WIN1251"
 INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._');
 ERROR:  character with byte sequence 0xc4 0x85 in encoding "UTF8" has no equivalent in encoding "WIN1251"
+SELECT * FROM "Unicode data" WHERE i = 'pol+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._';
 ERROR:  character with byte sequence 0xc4 0x85 in encoding "UTF8" has no equivalent in encoding "WIN1251"
 INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._');
 ERROR:  character with byte sequence 0xc4 0x91 in encoding "UTF8" has no equivalent in encoding "WIN1251"
+SELECT * FROM "Unicode data" WHERE i = 'srp+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._';
 ERROR:  character with byte sequence 0xc4 0x91 in encoding "UTF8" has no equivalent in encoding "WIN1251"
 -- 1257
@@ -2263,6 +2354,11 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
 ERROR:  character with byte sequence 0xc4 0xb6 in encoding "UTF8" has no equivalent in encoding "WIN1251"
 INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._');
 ERROR:  character with byte sequence 0xc4 0xb6 in encoding "UTF8" has no equivalent in encoding "WIN1251"
+SELECT * FROM "Unicode data" WHERE i = 'lav+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._';
 ERROR:  character with byte sequence 0xc4 0xb6 in encoding "UTF8" has no equivalent in encoding "WIN1251"
 -- EUC_KR
@@ -2272,6 +2368,11 @@ SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
 ERROR:  character with byte sequence 0xed 0x82 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1251"
 INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._');
 ERROR:  character with byte sequence 0xed 0x82 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1251"
+SELECT * FROM "Unicode data" WHERE i = 'kor+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._';
 ERROR:  character with byte sequence 0xed 0x82 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1251"
 -- 1254
@@ -2281,19 +2382,33 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Zəfər%';
 ERROR:  character with byte sequence 0xc9 0x99 in encoding "UTF8" has no equivalent in encoding "WIN1251"
 INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._');
 ERROR:  character with byte sequence 0xc9 0x99 in encoding "UTF8" has no equivalent in encoding "WIN1251"
+SELECT * FROM "Unicode data" WHERE i = 'aze+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._';
 ERROR:  character with byte sequence 0xc9 0x99 in encoding "UTF8" has no equivalent in encoding "WIN1251"
 -- etc
 INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_');
 ERROR:  character with byte sequence 0xd4 0xb2 in encoding "UTF8" has no equivalent in encoding "WIN1251"
+SELECT * FROM "Unicode data" WHERE i = 'arm+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_';
 ERROR:  character with byte sequence 0xd4 0xb2 in encoding "UTF8" has no equivalent in encoding "WIN1251"
 INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._');
 ERROR:  character with byte sequence 0xc3 0xa9 in encoding "UTF8" has no equivalent in encoding "WIN1251"
+SELECT * FROM "Unicode data" WHERE i = 'gle+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._';
 ERROR:  character with byte sequence 0xc3 0xa9 in encoding "UTF8" has no equivalent in encoding "WIN1251"
 INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._');
 ERROR:  character with byte sequence 0xc5 0xad in encoding "UTF8" has no equivalent in encoding "WIN1251"
+SELECT * FROM "Unicode data" WHERE i = 'epo+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._';
 ERROR:  character with byte sequence 0xc5 0xad in encoding "UTF8" has no equivalent in encoding "WIN1251"
 DROP FOREIGN TABLE "Unicode data";
@@ -2336,18 +2451,26 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
 ERROR:  character with byte sequence 0xd0 0x93 in encoding "UTF8" has no equivalent in encoding "WIN1256"
 INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._');
 ERROR:  character with byte sequence 0xd0 0xa3 in encoding "UTF8" has no equivalent in encoding "WIN1256"
+SELECT * FROM "Unicode data" WHERE i = 'bel+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa7
 DELETE FROM "Unicode data" WHERE t = 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._';
 ERROR:  character with byte sequence 0xd0 0xa3 in encoding "UTF8" has no equivalent in encoding "WIN1256"
 INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'Ах, чудна българска земьо, полюшвай цъфтящи жита._');
 ERROR:  character with byte sequence 0xd0 0x90 in encoding "UTF8" has no equivalent in encoding "WIN1256"
+SELECT * FROM "Unicode data" WHERE i = 'bul+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa7
 DELETE FROM "Unicode data" WHERE t = 'Ах, чудна българска земьо, полюшвай цъфтящи жита._';
 ERROR:  character with byte sequence 0xd0 0x90 in encoding "UTF8" has no equivalent in encoding "WIN1256"
 INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._');
 ERROR:  character with byte sequence 0xd0 0xa8 in encoding "UTF8" has no equivalent in encoding "WIN1256"
+SELECT * FROM "Unicode data" WHERE i = 'rus+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa7
 DELETE FROM "Unicode data" WHERE t = 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._';
 ERROR:  character with byte sequence 0xd0 0xa8 in encoding "UTF8" has no equivalent in encoding "WIN1256"
 INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._');
 ERROR:  character with byte sequence 0xd0 0x93 in encoding "UTF8" has no equivalent in encoding "WIN1256"
+SELECT * FROM "Unicode data" WHERE i = 'ukr+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xc3 0xe5
 DELETE FROM "Unicode data" WHERE t = 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._';
 ERROR:  character with byte sequence 0xd0 0x93 in encoding "UTF8" has no equivalent in encoding "WIN1256"
 -- 1256
@@ -2364,6 +2487,8 @@ SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
 (1 row)
 
 INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_');
+SELECT * FROM "Unicode data" WHERE i = 'ara+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xc3 0xc8
 DELETE FROM "Unicode data" WHERE t = 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_';
 -- 1253
 SELECT * FROM "Unicode data" WHERE i = 'gre';
@@ -2372,6 +2497,8 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
 ERROR:  character with byte sequence 0xce 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1256"
 INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_');
 ERROR:  character with byte sequence 0xce 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1256"
+SELECT * FROM "Unicode data" WHERE i = 'gre+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa6
 DELETE FROM "Unicode data" WHERE t = 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_';
 ERROR:  character with byte sequence 0xce 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1256"
 -- 1255
@@ -2381,6 +2508,11 @@ SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
 ERROR:  character with byte sequence 0xd7 0x9b in encoding "UTF8" has no equivalent in encoding "WIN1256"
 INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_');
 ERROR:  character with byte sequence 0xd7 0xa2 in encoding "UTF8" has no equivalent in encoding "WIN1256"
+SELECT * FROM "Unicode data" WHERE i = 'heb+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_';
 ERROR:  character with byte sequence 0xd7 0xa2 in encoding "UTF8" has no equivalent in encoding "WIN1256"
 -- 1252
@@ -2398,14 +2530,20 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Quier%';
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1256"
 INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'Permin gox dabiltzu yoskiñ._');
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1256"
+SELECT * FROM "Unicode data" WHERE i = 'eus+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Permin gox dabiltzu yoskiñ._';
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1256"
 INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_');
 ERROR:  character with byte sequence 0xc3 0xbf in encoding "UTF8" has no equivalent in encoding "WIN1256"
+SELECT * FROM "Unicode data" WHERE i = 'fra+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_';
 ERROR:  character with byte sequence 0xc3 0xbf in encoding "UTF8" has no equivalent in encoding "WIN1256"
 INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._');
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1256"
+SELECT * FROM "Unicode data" WHERE i = 'spa+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._';
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1256"
 -- 1250
@@ -2423,14 +2561,20 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
 ERROR:  character with byte sequence 0xc4 0x91 in encoding "UTF8" has no equivalent in encoding "WIN1256"
 INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._');
 ERROR:  character with byte sequence 0xc3 0xa1 in encoding "UTF8" has no equivalent in encoding "WIN1256"
+SELECT * FROM "Unicode data" WHERE i = 'cze+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._';
 ERROR:  character with byte sequence 0xc3 0xa1 in encoding "UTF8" has no equivalent in encoding "WIN1256"
 INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._');
 ERROR:  character with byte sequence 0xc4 0x85 in encoding "UTF8" has no equivalent in encoding "WIN1256"
+SELECT * FROM "Unicode data" WHERE i = 'pol+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._';
 ERROR:  character with byte sequence 0xc4 0x85 in encoding "UTF8" has no equivalent in encoding "WIN1256"
 INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._');
 ERROR:  character with byte sequence 0xc4 0x91 in encoding "UTF8" has no equivalent in encoding "WIN1256"
+SELECT * FROM "Unicode data" WHERE i = 'srp+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._';
 ERROR:  character with byte sequence 0xc4 0x91 in encoding "UTF8" has no equivalent in encoding "WIN1256"
 -- 1257
@@ -2440,6 +2584,11 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
 ERROR:  character with byte sequence 0xc4 0xb6 in encoding "UTF8" has no equivalent in encoding "WIN1256"
 INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._');
 ERROR:  character with byte sequence 0xc4 0xb6 in encoding "UTF8" has no equivalent in encoding "WIN1256"
+SELECT * FROM "Unicode data" WHERE i = 'lav+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._';
 ERROR:  character with byte sequence 0xc4 0xb6 in encoding "UTF8" has no equivalent in encoding "WIN1256"
 -- EUC_KR
@@ -2449,6 +2598,11 @@ SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
 ERROR:  character with byte sequence 0xed 0x82 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1256"
 INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._');
 ERROR:  character with byte sequence 0xed 0x82 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1256"
+SELECT * FROM "Unicode data" WHERE i = 'kor+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._';
 ERROR:  character with byte sequence 0xed 0x82 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1256"
 -- 1254
@@ -2458,19 +2612,33 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Zəfər%';
 ERROR:  character with byte sequence 0xc9 0x99 in encoding "UTF8" has no equivalent in encoding "WIN1256"
 INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._');
 ERROR:  character with byte sequence 0xc9 0x99 in encoding "UTF8" has no equivalent in encoding "WIN1256"
+SELECT * FROM "Unicode data" WHERE i = 'aze+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._';
 ERROR:  character with byte sequence 0xc9 0x99 in encoding "UTF8" has no equivalent in encoding "WIN1256"
 -- etc
 INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_');
 ERROR:  character with byte sequence 0xd4 0xb2 in encoding "UTF8" has no equivalent in encoding "WIN1256"
+SELECT * FROM "Unicode data" WHERE i = 'arm+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_';
 ERROR:  character with byte sequence 0xd4 0xb2 in encoding "UTF8" has no equivalent in encoding "WIN1256"
 INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._');
 ERROR:  character with byte sequence 0xc3 0xb3 in encoding "UTF8" has no equivalent in encoding "WIN1256"
+SELECT * FROM "Unicode data" WHERE i = 'gle+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._';
 ERROR:  character with byte sequence 0xc3 0xb3 in encoding "UTF8" has no equivalent in encoding "WIN1256"
 INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._');
 ERROR:  character with byte sequence 0xc5 0xad in encoding "UTF8" has no equivalent in encoding "WIN1256"
+SELECT * FROM "Unicode data" WHERE i = 'epo+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._';
 ERROR:  character with byte sequence 0xc5 0xad in encoding "UTF8" has no equivalent in encoding "WIN1256"
 DROP FOREIGN TABLE "Unicode data";
@@ -2513,18 +2681,26 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
 ERROR:  character with byte sequence 0xd0 0x93 in encoding "UTF8" has no equivalent in encoding "WIN1253"
 INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._');
 ERROR:  character with byte sequence 0xd0 0xa3 in encoding "UTF8" has no equivalent in encoding "WIN1253"
+SELECT * FROM "Unicode data" WHERE i = 'bel+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa7
 DELETE FROM "Unicode data" WHERE t = 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._';
 ERROR:  character with byte sequence 0xd0 0xa3 in encoding "UTF8" has no equivalent in encoding "WIN1253"
 INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'Ах, чудна българска земьо, полюшвай цъфтящи жита._');
 ERROR:  character with byte sequence 0xd0 0x90 in encoding "UTF8" has no equivalent in encoding "WIN1253"
+SELECT * FROM "Unicode data" WHERE i = 'bul+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa7
 DELETE FROM "Unicode data" WHERE t = 'Ах, чудна българска земьо, полюшвай цъфтящи жита._';
 ERROR:  character with byte sequence 0xd0 0x90 in encoding "UTF8" has no equivalent in encoding "WIN1253"
 INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._');
 ERROR:  character with byte sequence 0xd0 0xa8 in encoding "UTF8" has no equivalent in encoding "WIN1253"
+SELECT * FROM "Unicode data" WHERE i = 'rus+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa7
 DELETE FROM "Unicode data" WHERE t = 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._';
 ERROR:  character with byte sequence 0xd0 0xa8 in encoding "UTF8" has no equivalent in encoding "WIN1253"
 INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._');
 ERROR:  character with byte sequence 0xd0 0x93 in encoding "UTF8" has no equivalent in encoding "WIN1253"
+SELECT * FROM "Unicode data" WHERE i = 'ukr+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xc3 0xe5
 DELETE FROM "Unicode data" WHERE t = 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._';
 ERROR:  character with byte sequence 0xd0 0x93 in encoding "UTF8" has no equivalent in encoding "WIN1253"
 -- 1256
@@ -2534,6 +2710,8 @@ SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
 ERROR:  character with byte sequence 0xd8 0xb6 in encoding "UTF8" has no equivalent in encoding "WIN1253"
 INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_');
 ERROR:  character with byte sequence 0xd8 0xa3 in encoding "UTF8" has no equivalent in encoding "WIN1253"
+SELECT * FROM "Unicode data" WHERE i = 'ara+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xc3 0xc8
 DELETE FROM "Unicode data" WHERE t = 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_';
 ERROR:  character with byte sequence 0xd8 0xa3 in encoding "UTF8" has no equivalent in encoding "WIN1253"
 -- 1253
@@ -2552,6 +2730,8 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
 INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_');
 ERROR:  failed to execute remote SQL: rc=19 UNIQUE constraint failed: Unicode data.i 
    sql=INSERT INTO main."Unicode data"(`i`, `t`) VALUES (?, ?)
+SELECT * FROM "Unicode data" WHERE i = 'gre+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa6
 DELETE FROM "Unicode data" WHERE t = 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_';
 -- 1255
 SELECT * FROM "Unicode data" WHERE i = 'heb';
@@ -2560,6 +2740,11 @@ SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
 ERROR:  character with byte sequence 0xd7 0x9b in encoding "UTF8" has no equivalent in encoding "WIN1253"
 INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_');
 ERROR:  character with byte sequence 0xd7 0xa2 in encoding "UTF8" has no equivalent in encoding "WIN1253"
+SELECT * FROM "Unicode data" WHERE i = 'heb+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_';
 ERROR:  character with byte sequence 0xd7 0xa2 in encoding "UTF8" has no equivalent in encoding "WIN1253"
 -- 1252
@@ -2577,14 +2762,20 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Quier%';
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1253"
 INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'Permin gox dabiltzu yoskiñ._');
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1253"
+SELECT * FROM "Unicode data" WHERE i = 'eus+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Permin gox dabiltzu yoskiñ._';
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1253"
 INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_');
 ERROR:  character with byte sequence 0xc3 0xa8 in encoding "UTF8" has no equivalent in encoding "WIN1253"
+SELECT * FROM "Unicode data" WHERE i = 'fra+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_';
 ERROR:  character with byte sequence 0xc3 0xa8 in encoding "UTF8" has no equivalent in encoding "WIN1253"
 INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._');
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1253"
+SELECT * FROM "Unicode data" WHERE i = 'spa+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._';
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1253"
 -- 1250
@@ -2602,14 +2793,20 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
 ERROR:  character with byte sequence 0xc4 0x91 in encoding "UTF8" has no equivalent in encoding "WIN1253"
 INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._');
 ERROR:  character with byte sequence 0xc3 0xa1 in encoding "UTF8" has no equivalent in encoding "WIN1253"
+SELECT * FROM "Unicode data" WHERE i = 'cze+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._';
 ERROR:  character with byte sequence 0xc3 0xa1 in encoding "UTF8" has no equivalent in encoding "WIN1253"
 INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._');
 ERROR:  character with byte sequence 0xc4 0x85 in encoding "UTF8" has no equivalent in encoding "WIN1253"
+SELECT * FROM "Unicode data" WHERE i = 'pol+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._';
 ERROR:  character with byte sequence 0xc4 0x85 in encoding "UTF8" has no equivalent in encoding "WIN1253"
 INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._');
 ERROR:  character with byte sequence 0xc4 0x91 in encoding "UTF8" has no equivalent in encoding "WIN1253"
+SELECT * FROM "Unicode data" WHERE i = 'srp+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._';
 ERROR:  character with byte sequence 0xc4 0x91 in encoding "UTF8" has no equivalent in encoding "WIN1253"
 -- 1257
@@ -2619,6 +2816,11 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
 ERROR:  character with byte sequence 0xc4 0xb6 in encoding "UTF8" has no equivalent in encoding "WIN1253"
 INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._');
 ERROR:  character with byte sequence 0xc4 0xb6 in encoding "UTF8" has no equivalent in encoding "WIN1253"
+SELECT * FROM "Unicode data" WHERE i = 'lav+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._';
 ERROR:  character with byte sequence 0xc4 0xb6 in encoding "UTF8" has no equivalent in encoding "WIN1253"
 -- EUC_KR
@@ -2628,6 +2830,11 @@ SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
 ERROR:  character with byte sequence 0xed 0x82 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1253"
 INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._');
 ERROR:  character with byte sequence 0xed 0x82 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1253"
+SELECT * FROM "Unicode data" WHERE i = 'kor+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._';
 ERROR:  character with byte sequence 0xed 0x82 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1253"
 -- 1254
@@ -2637,19 +2844,33 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Zəfər%';
 ERROR:  character with byte sequence 0xc9 0x99 in encoding "UTF8" has no equivalent in encoding "WIN1253"
 INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._');
 ERROR:  character with byte sequence 0xc9 0x99 in encoding "UTF8" has no equivalent in encoding "WIN1253"
+SELECT * FROM "Unicode data" WHERE i = 'aze+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._';
 ERROR:  character with byte sequence 0xc9 0x99 in encoding "UTF8" has no equivalent in encoding "WIN1253"
 -- etc
 INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_');
 ERROR:  character with byte sequence 0xd4 0xb2 in encoding "UTF8" has no equivalent in encoding "WIN1253"
+SELECT * FROM "Unicode data" WHERE i = 'arm+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_';
 ERROR:  character with byte sequence 0xd4 0xb2 in encoding "UTF8" has no equivalent in encoding "WIN1253"
 INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._');
 ERROR:  character with byte sequence 0xc3 0xa9 in encoding "UTF8" has no equivalent in encoding "WIN1253"
+SELECT * FROM "Unicode data" WHERE i = 'gle+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._';
 ERROR:  character with byte sequence 0xc3 0xa9 in encoding "UTF8" has no equivalent in encoding "WIN1253"
 INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._');
 ERROR:  character with byte sequence 0xc5 0xad in encoding "UTF8" has no equivalent in encoding "WIN1253"
+SELECT * FROM "Unicode data" WHERE i = 'epo+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._';
 ERROR:  character with byte sequence 0xc5 0xad in encoding "UTF8" has no equivalent in encoding "WIN1253"
 DROP FOREIGN TABLE "Unicode data";
@@ -2692,18 +2913,26 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
 ERROR:  character with byte sequence 0xd0 0x93 in encoding "UTF8" has no equivalent in encoding "WIN1255"
 INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._');
 ERROR:  character with byte sequence 0xd0 0xa3 in encoding "UTF8" has no equivalent in encoding "WIN1255"
+SELECT * FROM "Unicode data" WHERE i = 'bel+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa7
 DELETE FROM "Unicode data" WHERE t = 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._';
 ERROR:  character with byte sequence 0xd0 0xa3 in encoding "UTF8" has no equivalent in encoding "WIN1255"
 INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'Ах, чудна българска земьо, полюшвай цъфтящи жита._');
 ERROR:  character with byte sequence 0xd0 0x90 in encoding "UTF8" has no equivalent in encoding "WIN1255"
+SELECT * FROM "Unicode data" WHERE i = 'bul+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa7
 DELETE FROM "Unicode data" WHERE t = 'Ах, чудна българска земьо, полюшвай цъфтящи жита._';
 ERROR:  character with byte sequence 0xd0 0x90 in encoding "UTF8" has no equivalent in encoding "WIN1255"
 INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._');
 ERROR:  character with byte sequence 0xd0 0xa8 in encoding "UTF8" has no equivalent in encoding "WIN1255"
+SELECT * FROM "Unicode data" WHERE i = 'rus+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa7
 DELETE FROM "Unicode data" WHERE t = 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._';
 ERROR:  character with byte sequence 0xd0 0xa8 in encoding "UTF8" has no equivalent in encoding "WIN1255"
 INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._');
 ERROR:  character with byte sequence 0xd0 0x93 in encoding "UTF8" has no equivalent in encoding "WIN1255"
+SELECT * FROM "Unicode data" WHERE i = 'ukr+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xc3 0xe5
 DELETE FROM "Unicode data" WHERE t = 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._';
 ERROR:  character with byte sequence 0xd0 0x93 in encoding "UTF8" has no equivalent in encoding "WIN1255"
 -- 1256
@@ -2713,6 +2942,8 @@ SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
 ERROR:  character with byte sequence 0xd8 0xb6 in encoding "UTF8" has no equivalent in encoding "WIN1255"
 INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_');
 ERROR:  character with byte sequence 0xd8 0xa3 in encoding "UTF8" has no equivalent in encoding "WIN1255"
+SELECT * FROM "Unicode data" WHERE i = 'ara+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xc3 0xc8
 DELETE FROM "Unicode data" WHERE t = 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_';
 ERROR:  character with byte sequence 0xd8 0xa3 in encoding "UTF8" has no equivalent in encoding "WIN1255"
 -- 1253
@@ -2722,6 +2953,8 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
 ERROR:  character with byte sequence 0xce 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1255"
 INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_');
 ERROR:  character with byte sequence 0xce 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1255"
+SELECT * FROM "Unicode data" WHERE i = 'gre+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa6
 DELETE FROM "Unicode data" WHERE t = 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_';
 ERROR:  character with byte sequence 0xce 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1255"
 -- 1255
@@ -2738,6 +2971,8 @@ SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
 (1 row)
 
 INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_');
+SELECT * FROM "Unicode data" WHERE i = 'heb+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xf2 0xe8 0xec 0xf3
 DELETE FROM "Unicode data" WHERE t = 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_';
 -- 1252
 SELECT * FROM "Unicode data" WHERE i = 'eus';
@@ -2754,14 +2989,20 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Quier%';
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1255"
 INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'Permin gox dabiltzu yoskiñ._');
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1255"
+SELECT * FROM "Unicode data" WHERE i = 'eus+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Permin gox dabiltzu yoskiñ._';
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1255"
 INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_');
 ERROR:  character with byte sequence 0xc3 0xa8 in encoding "UTF8" has no equivalent in encoding "WIN1255"
+SELECT * FROM "Unicode data" WHERE i = 'fra+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_';
 ERROR:  character with byte sequence 0xc3 0xa8 in encoding "UTF8" has no equivalent in encoding "WIN1255"
 INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._');
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1255"
+SELECT * FROM "Unicode data" WHERE i = 'spa+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._';
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1255"
 -- 1250
@@ -2779,14 +3020,20 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
 ERROR:  character with byte sequence 0xc4 0x91 in encoding "UTF8" has no equivalent in encoding "WIN1255"
 INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._');
 ERROR:  character with byte sequence 0xc3 0xa1 in encoding "UTF8" has no equivalent in encoding "WIN1255"
+SELECT * FROM "Unicode data" WHERE i = 'cze+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._';
 ERROR:  character with byte sequence 0xc3 0xa1 in encoding "UTF8" has no equivalent in encoding "WIN1255"
 INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._');
 ERROR:  character with byte sequence 0xc4 0x85 in encoding "UTF8" has no equivalent in encoding "WIN1255"
+SELECT * FROM "Unicode data" WHERE i = 'pol+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._';
 ERROR:  character with byte sequence 0xc4 0x85 in encoding "UTF8" has no equivalent in encoding "WIN1255"
 INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._');
 ERROR:  character with byte sequence 0xc4 0x91 in encoding "UTF8" has no equivalent in encoding "WIN1255"
+SELECT * FROM "Unicode data" WHERE i = 'srp+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._';
 ERROR:  character with byte sequence 0xc4 0x91 in encoding "UTF8" has no equivalent in encoding "WIN1255"
 -- 1257
@@ -2796,6 +3043,11 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
 ERROR:  character with byte sequence 0xc4 0xb6 in encoding "UTF8" has no equivalent in encoding "WIN1255"
 INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._');
 ERROR:  character with byte sequence 0xc4 0xb6 in encoding "UTF8" has no equivalent in encoding "WIN1255"
+SELECT * FROM "Unicode data" WHERE i = 'lav+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._';
 ERROR:  character with byte sequence 0xc4 0xb6 in encoding "UTF8" has no equivalent in encoding "WIN1255"
 -- EUC_KR
@@ -2805,6 +3057,11 @@ SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
 ERROR:  character with byte sequence 0xed 0x82 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1255"
 INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._');
 ERROR:  character with byte sequence 0xed 0x82 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1255"
+SELECT * FROM "Unicode data" WHERE i = 'kor+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._';
 ERROR:  character with byte sequence 0xed 0x82 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1255"
 -- 1254
@@ -2814,19 +3071,33 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Zəfər%';
 ERROR:  character with byte sequence 0xc9 0x99 in encoding "UTF8" has no equivalent in encoding "WIN1255"
 INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._');
 ERROR:  character with byte sequence 0xc9 0x99 in encoding "UTF8" has no equivalent in encoding "WIN1255"
+SELECT * FROM "Unicode data" WHERE i = 'aze+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._';
 ERROR:  character with byte sequence 0xc9 0x99 in encoding "UTF8" has no equivalent in encoding "WIN1255"
 -- etc
 INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_');
 ERROR:  character with byte sequence 0xd4 0xb2 in encoding "UTF8" has no equivalent in encoding "WIN1255"
+SELECT * FROM "Unicode data" WHERE i = 'arm+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_';
 ERROR:  character with byte sequence 0xd4 0xb2 in encoding "UTF8" has no equivalent in encoding "WIN1255"
 INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._');
 ERROR:  character with byte sequence 0xc3 0xa9 in encoding "UTF8" has no equivalent in encoding "WIN1255"
+SELECT * FROM "Unicode data" WHERE i = 'gle+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._';
 ERROR:  character with byte sequence 0xc3 0xa9 in encoding "UTF8" has no equivalent in encoding "WIN1255"
 INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._');
 ERROR:  character with byte sequence 0xc5 0xad in encoding "UTF8" has no equivalent in encoding "WIN1255"
+SELECT * FROM "Unicode data" WHERE i = 'epo+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._';
 ERROR:  character with byte sequence 0xc5 0xad in encoding "UTF8" has no equivalent in encoding "WIN1255"
 DROP FOREIGN TABLE "Unicode data";
@@ -2869,18 +3140,26 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
 ERROR:  character with byte sequence 0xd0 0x93 in encoding "UTF8" has no equivalent in encoding "WIN1252"
 INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._');
 ERROR:  character with byte sequence 0xd0 0xa3 in encoding "UTF8" has no equivalent in encoding "WIN1252"
+SELECT * FROM "Unicode data" WHERE i = 'bel+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa7
 DELETE FROM "Unicode data" WHERE t = 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._';
 ERROR:  character with byte sequence 0xd0 0xa3 in encoding "UTF8" has no equivalent in encoding "WIN1252"
 INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'Ах, чудна българска земьо, полюшвай цъфтящи жита._');
 ERROR:  character with byte sequence 0xd0 0x90 in encoding "UTF8" has no equivalent in encoding "WIN1252"
+SELECT * FROM "Unicode data" WHERE i = 'bul+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa7
 DELETE FROM "Unicode data" WHERE t = 'Ах, чудна българска земьо, полюшвай цъфтящи жита._';
 ERROR:  character with byte sequence 0xd0 0x90 in encoding "UTF8" has no equivalent in encoding "WIN1252"
 INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._');
 ERROR:  character with byte sequence 0xd0 0xa8 in encoding "UTF8" has no equivalent in encoding "WIN1252"
+SELECT * FROM "Unicode data" WHERE i = 'rus+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa7
 DELETE FROM "Unicode data" WHERE t = 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._';
 ERROR:  character with byte sequence 0xd0 0xa8 in encoding "UTF8" has no equivalent in encoding "WIN1252"
 INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._');
 ERROR:  character with byte sequence 0xd0 0x93 in encoding "UTF8" has no equivalent in encoding "WIN1252"
+SELECT * FROM "Unicode data" WHERE i = 'ukr+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xc3 0xe5
 DELETE FROM "Unicode data" WHERE t = 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._';
 ERROR:  character with byte sequence 0xd0 0x93 in encoding "UTF8" has no equivalent in encoding "WIN1252"
 -- 1256
@@ -2890,6 +3169,8 @@ SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
 ERROR:  character with byte sequence 0xd8 0xb6 in encoding "UTF8" has no equivalent in encoding "WIN1252"
 INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_');
 ERROR:  character with byte sequence 0xd8 0xa3 in encoding "UTF8" has no equivalent in encoding "WIN1252"
+SELECT * FROM "Unicode data" WHERE i = 'ara+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xc3 0xc8
 DELETE FROM "Unicode data" WHERE t = 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_';
 ERROR:  character with byte sequence 0xd8 0xa3 in encoding "UTF8" has no equivalent in encoding "WIN1252"
 -- 1253
@@ -2899,6 +3180,8 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
 ERROR:  character with byte sequence 0xce 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1252"
 INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_');
 ERROR:  character with byte sequence 0xce 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1252"
+SELECT * FROM "Unicode data" WHERE i = 'gre+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa6
 DELETE FROM "Unicode data" WHERE t = 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_';
 ERROR:  character with byte sequence 0xce 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1252"
 -- 1255
@@ -2908,6 +3191,8 @@ SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
 ERROR:  character with byte sequence 0xd7 0x9b in encoding "UTF8" has no equivalent in encoding "WIN1252"
 INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_');
 ERROR:  character with byte sequence 0xd7 0xa2 in encoding "UTF8" has no equivalent in encoding "WIN1252"
+SELECT * FROM "Unicode data" WHERE i = 'heb+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xf2 0xe8 0xec 0xf3
 DELETE FROM "Unicode data" WHERE t = 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_';
 ERROR:  character with byte sequence 0xd7 0xa2 in encoding "UTF8" has no equivalent in encoding "WIN1252"
 -- 1252
@@ -2942,14 +3227,20 @@ ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'Permin gox dabiltzu yoskiñ._');
 ERROR:  failed to execute remote SQL: rc=19 UNIQUE constraint failed: Unicode data.i 
    sql=INSERT INTO main."Unicode data"(`i`, `t`) VALUES (?, ?)
+SELECT * FROM "Unicode data" WHERE i = 'eus+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Permin gox dabiltzu yoskiñ._';
 INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_');
 ERROR:  failed to execute remote SQL: rc=19 UNIQUE constraint failed: Unicode data.i 
    sql=INSERT INTO main."Unicode data"(`i`, `t`) VALUES (?, ?)
+SELECT * FROM "Unicode data" WHERE i = 'fra+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_';
 INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._');
 ERROR:  failed to execute remote SQL: rc=19 UNIQUE constraint failed: Unicode data.i 
    sql=INSERT INTO main."Unicode data"(`i`, `t`) VALUES (?, ?)
+SELECT * FROM "Unicode data" WHERE i = 'spa+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._';
 -- 1250
 SELECT * FROM "Unicode data" WHERE i = 'cze';
@@ -2966,14 +3257,20 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
 ERROR:  character with byte sequence 0xc4 0x91 in encoding "UTF8" has no equivalent in encoding "WIN1252"
 INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._');
 ERROR:  character with byte sequence 0xc5 0xa5 in encoding "UTF8" has no equivalent in encoding "WIN1252"
+SELECT * FROM "Unicode data" WHERE i = 'cze+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._';
 ERROR:  character with byte sequence 0xc5 0xa5 in encoding "UTF8" has no equivalent in encoding "WIN1252"
 INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._');
 ERROR:  character with byte sequence 0xc4 0x85 in encoding "UTF8" has no equivalent in encoding "WIN1252"
+SELECT * FROM "Unicode data" WHERE i = 'pol+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._';
 ERROR:  character with byte sequence 0xc4 0x85 in encoding "UTF8" has no equivalent in encoding "WIN1252"
 INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._');
 ERROR:  character with byte sequence 0xc4 0x91 in encoding "UTF8" has no equivalent in encoding "WIN1252"
+SELECT * FROM "Unicode data" WHERE i = 'srp+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._';
 ERROR:  character with byte sequence 0xc4 0x91 in encoding "UTF8" has no equivalent in encoding "WIN1252"
 -- 1257
@@ -2983,6 +3280,11 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
 ERROR:  character with byte sequence 0xc4 0xb6 in encoding "UTF8" has no equivalent in encoding "WIN1252"
 INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._');
 ERROR:  character with byte sequence 0xc4 0xb6 in encoding "UTF8" has no equivalent in encoding "WIN1252"
+SELECT * FROM "Unicode data" WHERE i = 'lav+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._';
 ERROR:  character with byte sequence 0xc4 0xb6 in encoding "UTF8" has no equivalent in encoding "WIN1252"
 -- EUC_KR
@@ -2992,6 +3294,11 @@ SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
 ERROR:  character with byte sequence 0xed 0x82 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1252"
 INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._');
 ERROR:  character with byte sequence 0xed 0x82 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1252"
+SELECT * FROM "Unicode data" WHERE i = 'kor+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._';
 ERROR:  character with byte sequence 0xed 0x82 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1252"
 -- 1254
@@ -3001,19 +3308,33 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Zəfər%';
 ERROR:  character with byte sequence 0xc9 0x99 in encoding "UTF8" has no equivalent in encoding "WIN1252"
 INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._');
 ERROR:  character with byte sequence 0xc9 0x99 in encoding "UTF8" has no equivalent in encoding "WIN1252"
+SELECT * FROM "Unicode data" WHERE i = 'aze+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._';
 ERROR:  character with byte sequence 0xc9 0x99 in encoding "UTF8" has no equivalent in encoding "WIN1252"
 -- etc
 INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_');
 ERROR:  character with byte sequence 0xd4 0xb2 in encoding "UTF8" has no equivalent in encoding "WIN1252"
+SELECT * FROM "Unicode data" WHERE i = 'arm+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_';
 ERROR:  character with byte sequence 0xd4 0xb2 in encoding "UTF8" has no equivalent in encoding "WIN1252"
 INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._');
 ERROR:  failed to execute remote SQL: rc=19 UNIQUE constraint failed: Unicode data.i 
    sql=INSERT INTO main."Unicode data"(`i`, `t`) VALUES (?, ?)
+SELECT * FROM "Unicode data" WHERE i = 'gle+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._';
 INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._');
 ERROR:  character with byte sequence 0xc5 0xad in encoding "UTF8" has no equivalent in encoding "WIN1252"
+SELECT * FROM "Unicode data" WHERE i = 'epo+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._';
 ERROR:  character with byte sequence 0xc5 0xad in encoding "UTF8" has no equivalent in encoding "WIN1252"
 DROP FOREIGN TABLE "Unicode data";
@@ -3056,18 +3377,26 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
 ERROR:  character with byte sequence 0xd0 0x93 in encoding "UTF8" has no equivalent in encoding "WIN1250"
 INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._');
 ERROR:  character with byte sequence 0xd0 0xa3 in encoding "UTF8" has no equivalent in encoding "WIN1250"
+SELECT * FROM "Unicode data" WHERE i = 'bel+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa7
 DELETE FROM "Unicode data" WHERE t = 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._';
 ERROR:  character with byte sequence 0xd0 0xa3 in encoding "UTF8" has no equivalent in encoding "WIN1250"
 INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'Ах, чудна българска земьо, полюшвай цъфтящи жита._');
 ERROR:  character with byte sequence 0xd0 0x90 in encoding "UTF8" has no equivalent in encoding "WIN1250"
+SELECT * FROM "Unicode data" WHERE i = 'bul+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa7
 DELETE FROM "Unicode data" WHERE t = 'Ах, чудна българска земьо, полюшвай цъфтящи жита._';
 ERROR:  character with byte sequence 0xd0 0x90 in encoding "UTF8" has no equivalent in encoding "WIN1250"
 INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._');
 ERROR:  character with byte sequence 0xd0 0xa8 in encoding "UTF8" has no equivalent in encoding "WIN1250"
+SELECT * FROM "Unicode data" WHERE i = 'rus+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa7
 DELETE FROM "Unicode data" WHERE t = 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._';
 ERROR:  character with byte sequence 0xd0 0xa8 in encoding "UTF8" has no equivalent in encoding "WIN1250"
 INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._');
 ERROR:  character with byte sequence 0xd0 0x93 in encoding "UTF8" has no equivalent in encoding "WIN1250"
+SELECT * FROM "Unicode data" WHERE i = 'ukr+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xc3 0xe5
 DELETE FROM "Unicode data" WHERE t = 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._';
 ERROR:  character with byte sequence 0xd0 0x93 in encoding "UTF8" has no equivalent in encoding "WIN1250"
 -- 1256
@@ -3077,6 +3406,8 @@ SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
 ERROR:  character with byte sequence 0xd8 0xb6 in encoding "UTF8" has no equivalent in encoding "WIN1250"
 INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_');
 ERROR:  character with byte sequence 0xd8 0xa3 in encoding "UTF8" has no equivalent in encoding "WIN1250"
+SELECT * FROM "Unicode data" WHERE i = 'ara+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xc3 0xc8
 DELETE FROM "Unicode data" WHERE t = 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_';
 ERROR:  character with byte sequence 0xd8 0xa3 in encoding "UTF8" has no equivalent in encoding "WIN1250"
 -- 1253
@@ -3086,6 +3417,8 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
 ERROR:  character with byte sequence 0xce 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1250"
 INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_');
 ERROR:  character with byte sequence 0xce 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1250"
+SELECT * FROM "Unicode data" WHERE i = 'gre+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa6
 DELETE FROM "Unicode data" WHERE t = 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_';
 ERROR:  character with byte sequence 0xce 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1250"
 -- 1255
@@ -3095,6 +3428,8 @@ SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
 ERROR:  character with byte sequence 0xd7 0x9b in encoding "UTF8" has no equivalent in encoding "WIN1250"
 INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_');
 ERROR:  character with byte sequence 0xd7 0xa2 in encoding "UTF8" has no equivalent in encoding "WIN1250"
+SELECT * FROM "Unicode data" WHERE i = 'heb+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xf2 0xe8 0xec 0xf3
 DELETE FROM "Unicode data" WHERE t = 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_';
 ERROR:  character with byte sequence 0xd7 0xa2 in encoding "UTF8" has no equivalent in encoding "WIN1250"
 -- 1252
@@ -3112,14 +3447,20 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Quier%';
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1250"
 INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'Permin gox dabiltzu yoskiñ._');
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1250"
+SELECT * FROM "Unicode data" WHERE i = 'eus+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Permin gox dabiltzu yoskiñ._';
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1250"
 INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_');
 ERROR:  character with byte sequence 0xc3 0xa8 in encoding "UTF8" has no equivalent in encoding "WIN1250"
+SELECT * FROM "Unicode data" WHERE i = 'fra+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_';
 ERROR:  character with byte sequence 0xc3 0xa8 in encoding "UTF8" has no equivalent in encoding "WIN1250"
 INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._');
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1250"
+SELECT * FROM "Unicode data" WHERE i = 'spa+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._';
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1250"
 -- 1250
@@ -3158,14 +3499,20 @@ ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._');
 ERROR:  failed to execute remote SQL: rc=19 UNIQUE constraint failed: Unicode data.i 
    sql=INSERT INTO main."Unicode data"(`i`, `t`) VALUES (?, ?)
+SELECT * FROM "Unicode data" WHERE i = 'cze+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._';
 INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._');
 ERROR:  failed to execute remote SQL: rc=19 UNIQUE constraint failed: Unicode data.i 
    sql=INSERT INTO main."Unicode data"(`i`, `t`) VALUES (?, ?)
+SELECT * FROM "Unicode data" WHERE i = 'pol+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._';
 INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._');
 ERROR:  failed to execute remote SQL: rc=19 UNIQUE constraint failed: Unicode data.i 
    sql=INSERT INTO main."Unicode data"(`i`, `t`) VALUES (?, ?)
+SELECT * FROM "Unicode data" WHERE i = 'srp+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._';
 -- 1257
 SELECT * FROM "Unicode data" WHERE i = 'lav';
@@ -3174,6 +3521,11 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
 ERROR:  character with byte sequence 0xc4 0xb6 in encoding "UTF8" has no equivalent in encoding "WIN1250"
 INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._');
 ERROR:  character with byte sequence 0xc4 0xb6 in encoding "UTF8" has no equivalent in encoding "WIN1250"
+SELECT * FROM "Unicode data" WHERE i = 'lav+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._';
 ERROR:  character with byte sequence 0xc4 0xb6 in encoding "UTF8" has no equivalent in encoding "WIN1250"
 -- EUC_KR
@@ -3183,6 +3535,11 @@ SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
 ERROR:  character with byte sequence 0xed 0x82 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1250"
 INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._');
 ERROR:  character with byte sequence 0xed 0x82 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1250"
+SELECT * FROM "Unicode data" WHERE i = 'kor+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._';
 ERROR:  character with byte sequence 0xed 0x82 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1250"
 -- 1254
@@ -3192,19 +3549,33 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Zəfər%';
 ERROR:  character with byte sequence 0xc9 0x99 in encoding "UTF8" has no equivalent in encoding "WIN1250"
 INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._');
 ERROR:  character with byte sequence 0xc9 0x99 in encoding "UTF8" has no equivalent in encoding "WIN1250"
+SELECT * FROM "Unicode data" WHERE i = 'aze+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._';
 ERROR:  character with byte sequence 0xc9 0x99 in encoding "UTF8" has no equivalent in encoding "WIN1250"
 -- etc
 INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_');
 ERROR:  character with byte sequence 0xd4 0xb2 in encoding "UTF8" has no equivalent in encoding "WIN1250"
+SELECT * FROM "Unicode data" WHERE i = 'arm+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_';
 ERROR:  character with byte sequence 0xd4 0xb2 in encoding "UTF8" has no equivalent in encoding "WIN1250"
 INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._');
 ERROR:  failed to execute remote SQL: rc=19 UNIQUE constraint failed: Unicode data.i 
    sql=INSERT INTO main."Unicode data"(`i`, `t`) VALUES (?, ?)
+SELECT * FROM "Unicode data" WHERE i = 'gle+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._';
 INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._');
 ERROR:  character with byte sequence 0xc5 0xad in encoding "UTF8" has no equivalent in encoding "WIN1250"
+SELECT * FROM "Unicode data" WHERE i = 'epo+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._';
 ERROR:  character with byte sequence 0xc5 0xad in encoding "UTF8" has no equivalent in encoding "WIN1250"
 DROP FOREIGN TABLE "Unicode data";
@@ -3247,18 +3618,26 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
 ERROR:  character with byte sequence 0xd0 0x93 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._');
 ERROR:  character with byte sequence 0xd0 0xa3 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'bel+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa7
 DELETE FROM "Unicode data" WHERE t = 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._';
 ERROR:  character with byte sequence 0xd0 0xa3 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'Ах, чудна българска земьо, полюшвай цъфтящи жита._');
 ERROR:  character with byte sequence 0xd0 0x90 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'bul+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa7
 DELETE FROM "Unicode data" WHERE t = 'Ах, чудна българска земьо, полюшвай цъфтящи жита._';
 ERROR:  character with byte sequence 0xd0 0x90 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._');
 ERROR:  character with byte sequence 0xd0 0xa8 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'rus+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa7
 DELETE FROM "Unicode data" WHERE t = 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._';
 ERROR:  character with byte sequence 0xd0 0xa8 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._');
 ERROR:  character with byte sequence 0xd0 0x93 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'ukr+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xc3 0xe5
 DELETE FROM "Unicode data" WHERE t = 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._';
 ERROR:  character with byte sequence 0xd0 0x93 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 -- 1256
@@ -3268,6 +3647,8 @@ SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
 ERROR:  character with byte sequence 0xd8 0xb6 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_');
 ERROR:  character with byte sequence 0xd8 0xa3 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'ara+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xc3 0xc8
 DELETE FROM "Unicode data" WHERE t = 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_';
 ERROR:  character with byte sequence 0xd8 0xa3 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 -- 1253
@@ -3277,6 +3658,8 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
 ERROR:  character with byte sequence 0xce 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_');
 ERROR:  character with byte sequence 0xce 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'gre+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa6
 DELETE FROM "Unicode data" WHERE t = 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_';
 ERROR:  character with byte sequence 0xce 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 -- 1255
@@ -3286,6 +3669,8 @@ SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
 ERROR:  character with byte sequence 0xd7 0x9b in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_');
 ERROR:  character with byte sequence 0xd7 0xa2 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'heb+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xf2 0xe8 0xec 0xf3
 DELETE FROM "Unicode data" WHERE t = 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_';
 ERROR:  character with byte sequence 0xd7 0xa2 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 -- 1252
@@ -3303,14 +3688,20 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Quier%';
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'Permin gox dabiltzu yoskiñ._');
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'eus+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Permin gox dabiltzu yoskiñ._';
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_');
 ERROR:  character with byte sequence 0xc3 0xa8 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'fra+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_';
 ERROR:  character with byte sequence 0xc3 0xa8 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._');
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'spa+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._';
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 -- 1250
@@ -3336,14 +3727,20 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
 ERROR:  character with byte sequence 0xc4 0x91 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._');
 ERROR:  character with byte sequence 0xc3 0xa1 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'cze+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._';
 ERROR:  character with byte sequence 0xc3 0xa1 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._');
 ERROR:  failed to execute remote SQL: rc=19 UNIQUE constraint failed: Unicode data.i 
    sql=INSERT INTO main."Unicode data"(`i`, `t`) VALUES (?, ?)
+SELECT * FROM "Unicode data" WHERE i = 'pol+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._';
 INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._');
 ERROR:  character with byte sequence 0xc4 0x91 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'srp+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._';
 ERROR:  character with byte sequence 0xc4 0x91 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 -- 1257
@@ -3360,6 +3757,8 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
 (1 row)
 
 INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._');
+SELECT * FROM "Unicode data" WHERE i = 'lav+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xcd 0x69
 DELETE FROM "Unicode data" WHERE t = 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._';
 -- EUC_KR
 SELECT * FROM "Unicode data" WHERE i = 'kor';
@@ -3368,6 +3767,11 @@ SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
 ERROR:  character with byte sequence 0xed 0x82 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._');
 ERROR:  character with byte sequence 0xed 0x82 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'kor+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._';
 ERROR:  character with byte sequence 0xed 0x82 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 -- 1254
@@ -3377,23 +3781,36 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Zəfər%';
 ERROR:  character with byte sequence 0xc9 0x99 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._');
 ERROR:  character with byte sequence 0xc9 0x99 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'aze+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._';
 ERROR:  character with byte sequence 0xc9 0x99 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 -- etc
 INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_');
 ERROR:  character with byte sequence 0xd4 0xb2 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'arm+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_';
 ERROR:  character with byte sequence 0xd4 0xb2 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._');
 ERROR:  character with byte sequence 0xc3 0xa1 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'gle+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._';
 ERROR:  character with byte sequence 0xc3 0xa1 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._');
 ERROR:  character with byte sequence 0xc5 0xad in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'epo+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._';
 ERROR:  character with byte sequence 0xc5 0xad in encoding "UTF8" has no equivalent in encoding "WIN1257"
-DROP FOREIGN TABLE "Unicode data";
-DROP SERVER sqlite_svr;
+DROP FOREIGN TABLE "Unicode data";DROP SERVER sqlite_svr;
 DROP EXTENSION sqlite_fdw;
 \connect contrib_regression;
 DROP DATABASE "contrib_regression_WIN1257";
@@ -3456,18 +3873,26 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
 ERROR:  character with byte sequence 0xd1 0x96 in encoding "UTF8" has no equivalent in encoding "EUC_KR"
 INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._');
 ERROR:  character with byte sequence 0xd1 0x9e in encoding "UTF8" has no equivalent in encoding "EUC_KR"
+SELECT * FROM "Unicode data" WHERE i = 'bel+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa7
 DELETE FROM "Unicode data" WHERE t = 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._';
 ERROR:  character with byte sequence 0xd1 0x9e in encoding "UTF8" has no equivalent in encoding "EUC_KR"
 INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'Ах, чудна българска земьо, полюшвай цъфтящи жита._');
 ERROR:  failed to execute remote SQL: rc=19 UNIQUE constraint failed: Unicode data.i 
    sql=INSERT INTO main."Unicode data"(`i`, `t`) VALUES (?, ?)
+SELECT * FROM "Unicode data" WHERE i = 'bul+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa7
 DELETE FROM "Unicode data" WHERE t = 'Ах, чудна българска земьо, полюшвай цъфтящи жита._';
 INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._');
 ERROR:  failed to execute remote SQL: rc=19 UNIQUE constraint failed: Unicode data.i 
    sql=INSERT INTO main."Unicode data"(`i`, `t`) VALUES (?, ?)
+SELECT * FROM "Unicode data" WHERE i = 'rus+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa7
 DELETE FROM "Unicode data" WHERE t = 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._';
 INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._');
 ERROR:  character with byte sequence 0xd1 0x96 in encoding "UTF8" has no equivalent in encoding "EUC_KR"
+SELECT * FROM "Unicode data" WHERE i = 'ukr+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xc3 0xe5
 DELETE FROM "Unicode data" WHERE t = 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._';
 ERROR:  character with byte sequence 0xd1 0x96 in encoding "UTF8" has no equivalent in encoding "EUC_KR"
 -- 1256
@@ -3477,6 +3902,8 @@ SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
 ERROR:  character with byte sequence 0xd8 0xb6 in encoding "UTF8" has no equivalent in encoding "EUC_KR"
 INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_');
 ERROR:  character with byte sequence 0xd8 0xa3 in encoding "UTF8" has no equivalent in encoding "EUC_KR"
+SELECT * FROM "Unicode data" WHERE i = 'ara+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xc3 0xc8
 DELETE FROM "Unicode data" WHERE t = 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_';
 ERROR:  character with byte sequence 0xd8 0xa3 in encoding "UTF8" has no equivalent in encoding "EUC_KR"
 -- 1253
@@ -3486,6 +3913,8 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
 ERROR:  character with byte sequence 0xce 0xac in encoding "UTF8" has no equivalent in encoding "EUC_KR"
 INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_');
 ERROR:  character with byte sequence 0xce 0xac in encoding "UTF8" has no equivalent in encoding "EUC_KR"
+SELECT * FROM "Unicode data" WHERE i = 'gre+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa6
 DELETE FROM "Unicode data" WHERE t = 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_';
 ERROR:  character with byte sequence 0xce 0xac in encoding "UTF8" has no equivalent in encoding "EUC_KR"
 -- 1255
@@ -3495,6 +3924,8 @@ SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
 ERROR:  character with byte sequence 0xd7 0x9b in encoding "UTF8" has no equivalent in encoding "EUC_KR"
 INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_');
 ERROR:  character with byte sequence 0xd7 0xa2 in encoding "UTF8" has no equivalent in encoding "EUC_KR"
+SELECT * FROM "Unicode data" WHERE i = 'heb+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xf2 0xe8 0xec 0xf3
 DELETE FROM "Unicode data" WHERE t = 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_';
 ERROR:  character with byte sequence 0xd7 0xa2 in encoding "UTF8" has no equivalent in encoding "EUC_KR"
 -- 1252
@@ -3512,14 +3943,20 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Quier%';
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "EUC_KR"
 INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'Permin gox dabiltzu yoskiñ._');
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "EUC_KR"
+SELECT * FROM "Unicode data" WHERE i = 'eus+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Permin gox dabiltzu yoskiñ._';
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "EUC_KR"
 INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_');
 ERROR:  character with byte sequence 0xc3 0xa8 in encoding "UTF8" has no equivalent in encoding "EUC_KR"
+SELECT * FROM "Unicode data" WHERE i = 'fra+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_';
 ERROR:  character with byte sequence 0xc3 0xa8 in encoding "UTF8" has no equivalent in encoding "EUC_KR"
 INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._');
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "EUC_KR"
+SELECT * FROM "Unicode data" WHERE i = 'spa+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._';
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "EUC_KR"
 -- 1250
@@ -3537,14 +3974,20 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
 ERROR:  character with byte sequence 0xc5 0xbe in encoding "UTF8" has no equivalent in encoding "EUC_KR"
 INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._');
 ERROR:  character with byte sequence 0xc3 0xa1 in encoding "UTF8" has no equivalent in encoding "EUC_KR"
+SELECT * FROM "Unicode data" WHERE i = 'cze+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._';
 ERROR:  character with byte sequence 0xc3 0xa1 in encoding "UTF8" has no equivalent in encoding "EUC_KR"
 INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._');
 ERROR:  character with byte sequence 0xc4 0x85 in encoding "UTF8" has no equivalent in encoding "EUC_KR"
+SELECT * FROM "Unicode data" WHERE i = 'pol+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._';
 ERROR:  character with byte sequence 0xc4 0x85 in encoding "UTF8" has no equivalent in encoding "EUC_KR"
 INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._');
 ERROR:  character with byte sequence 0xc5 0xbe in encoding "UTF8" has no equivalent in encoding "EUC_KR"
+SELECT * FROM "Unicode data" WHERE i = 'srp+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._';
 ERROR:  character with byte sequence 0xc5 0xbe in encoding "UTF8" has no equivalent in encoding "EUC_KR"
 -- 1257
@@ -3554,6 +3997,8 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
 ERROR:  character with byte sequence 0xc4 0xb6 in encoding "UTF8" has no equivalent in encoding "EUC_KR"
 INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._');
 ERROR:  character with byte sequence 0xc4 0xb6 in encoding "UTF8" has no equivalent in encoding "EUC_KR"
+SELECT * FROM "Unicode data" WHERE i = 'lav+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xcd 0x69
 DELETE FROM "Unicode data" WHERE t = 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._';
 ERROR:  character with byte sequence 0xc4 0xb6 in encoding "UTF8" has no equivalent in encoding "EUC_KR"
 -- EUC_KR
@@ -3570,6 +4015,8 @@ SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
 (1 row)
 
 INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._');
+SELECT * FROM "Unicode data" WHERE i = 'kor+';
+ERROR:  character with byte sequence 0xc5 0xb0 in encoding "UTF8" has no equivalent in encoding "EUC_KR"
 DELETE FROM "Unicode data" WHERE t = '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._';
 -- 1254
 SELECT * FROM "Unicode data" WHERE i = 'aze';
@@ -3578,19 +4025,33 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Zəfər%';
 ERROR:  character with byte sequence 0xc9 0x99 in encoding "UTF8" has no equivalent in encoding "EUC_KR"
 INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._');
 ERROR:  character with byte sequence 0xc9 0x99 in encoding "UTF8" has no equivalent in encoding "EUC_KR"
+SELECT * FROM "Unicode data" WHERE i = 'aze+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._';
 ERROR:  character with byte sequence 0xc9 0x99 in encoding "UTF8" has no equivalent in encoding "EUC_KR"
 -- etc
 INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_');
 ERROR:  character with byte sequence 0xd4 0xb2 in encoding "UTF8" has no equivalent in encoding "EUC_KR"
+SELECT * FROM "Unicode data" WHERE i = 'arm+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_';
 ERROR:  character with byte sequence 0xd4 0xb2 in encoding "UTF8" has no equivalent in encoding "EUC_KR"
 INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._');
 ERROR:  character with byte sequence 0xc3 0xa9 in encoding "UTF8" has no equivalent in encoding "EUC_KR"
+SELECT * FROM "Unicode data" WHERE i = 'gle+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._';
 ERROR:  character with byte sequence 0xc3 0xa9 in encoding "UTF8" has no equivalent in encoding "EUC_KR"
 INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._');
 ERROR:  character with byte sequence 0xc5 0xad in encoding "UTF8" has no equivalent in encoding "EUC_KR"
+SELECT * FROM "Unicode data" WHERE i = 'epo+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._';
 ERROR:  character with byte sequence 0xc5 0xad in encoding "UTF8" has no equivalent in encoding "EUC_KR"
 DROP FOREIGN TABLE "Unicode data";
@@ -3633,18 +4094,26 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Гей, %';
 ERROR:  character with byte sequence 0xd0 0x93 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('bel+', 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._');
 ERROR:  character with byte sequence 0xd0 0xa3 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'bel+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa7
 DELETE FROM "Unicode data" WHERE t = 'У рудога вераб’я ў сховішчы пад фатэлем ляжаць нейкія гаючыя зёлкі._';
 ERROR:  character with byte sequence 0xd0 0xa3 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('bul+', 'Ах, чудна българска земьо, полюшвай цъфтящи жита._');
 ERROR:  character with byte sequence 0xd0 0x90 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'bul+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa7
 DELETE FROM "Unicode data" WHERE t = 'Ах, чудна българска земьо, полюшвай цъфтящи жита._';
 ERROR:  character with byte sequence 0xd0 0x90 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('rus+', 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._');
 ERROR:  character with byte sequence 0xd0 0xa8 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'rus+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa7
 DELETE FROM "Unicode data" WHERE t = 'Широкая электрификация южных губерний даст мощный толчок подъёму сельского хозяйства._';
 ERROR:  character with byte sequence 0xd0 0xa8 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('ukr+', 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._');
 ERROR:  character with byte sequence 0xd0 0x93 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'ukr+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xc3 0xe5
 DELETE FROM "Unicode data" WHERE t = 'Гей, хлопці, не вспію — на ґанку ваша файна їжа знищується бурундучком._';
 ERROR:  character with byte sequence 0xd0 0x93 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 -- 1256
@@ -3654,6 +4123,8 @@ SELECT * FROM "Unicode data" WHERE t LIKE '%ضَظَغ%';
 ERROR:  character with byte sequence 0xd8 0xb6 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('ara+', 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_');
 ERROR:  character with byte sequence 0xd8 0xa3 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'ara+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xc3 0xc8
 DELETE FROM "Unicode data" WHERE t = 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ_';
 ERROR:  character with byte sequence 0xd8 0xa3 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 -- 1253
@@ -3663,6 +4134,8 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Τάχισ%';
 ERROR:  character with byte sequence 0xce 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('gre+', 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_');
 ERROR:  character with byte sequence 0xce 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'gre+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xa6
 DELETE FROM "Unicode data" WHERE t = 'Τάχιστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός_';
 ERROR:  character with byte sequence 0xce 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 -- 1255
@@ -3672,6 +4145,8 @@ SELECT * FROM "Unicode data" WHERE t LIKE '%כי ח%';
 ERROR:  character with byte sequence 0xd7 0x9b in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('heb+', 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_');
 ERROR:  character with byte sequence 0xd7 0xa2 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'heb+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xf2 0xe8 0xec 0xf3
 DELETE FROM "Unicode data" WHERE t = 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם_';
 ERROR:  character with byte sequence 0xd7 0xa2 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 -- 1252
@@ -3689,14 +4164,20 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Quier%';
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('eus+', 'Permin gox dabiltzu yoskiñ._');
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'eus+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Permin gox dabiltzu yoskiñ._';
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('fra+', 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_');
 ERROR:  character with byte sequence 0xc3 0xa8 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'fra+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Dès Noël où un zéphyr haï me vêt de glaçons würmiens je dîne d’exquis rôtis de bœuf au kir à l’aÿ d’âge mûr & cætera !_';
 ERROR:  character with byte sequence 0xc3 0xa8 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('spa+', 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._');
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'spa+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Quiere la boca exhausta vid, kiwi, piña y fugaz jamón._';
 ERROR:  character with byte sequence 0xc3 0xb1 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 -- 1250
@@ -3722,14 +4203,20 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Ljuba%';
 ERROR:  character with byte sequence 0xc4 0x91 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('cze+', 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._');
 ERROR:  character with byte sequence 0xc3 0xa1 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'cze+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů._';
 ERROR:  character with byte sequence 0xc3 0xa1 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('pol+', 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._');
 ERROR:  failed to execute remote SQL: rc=19 UNIQUE constraint failed: Unicode data.i 
    sql=INSERT INTO main."Unicode data"(`i`, `t`) VALUES (?, ?)
+SELECT * FROM "Unicode data" WHERE i = 'pol+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Pchnąć w tę łódź jeża lub ośm skrzyń fig._';
 INSERT INTO "Unicode data" (i, t) VALUES ('srp+', 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._');
 ERROR:  character with byte sequence 0xc4 0x91 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'srp+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Ljubavi, Olga, hajde pođi u Fudži i čut ćeš nježnu muziku srca._';
 ERROR:  character with byte sequence 0xc4 0x91 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 -- 1257
@@ -3748,6 +4235,8 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Ķieģeļu%';
 INSERT INTO "Unicode data" (i, t) VALUES ('lav+', 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._');
 ERROR:  failed to execute remote SQL: rc=19 UNIQUE constraint failed: Unicode data.i 
    sql=INSERT INTO main."Unicode data"(`i`, `t`) VALUES (?, ?)
+SELECT * FROM "Unicode data" WHERE i = 'lav+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0xcd 0x69
 DELETE FROM "Unicode data" WHERE t = 'Ķieģeļu cepējs Edgars Buls fraku un hūti žāvē uz čīkstošām eņģēm._';
 -- EUC_KR
 SELECT * FROM "Unicode data" WHERE i = 'kor';
@@ -3756,6 +4245,8 @@ SELECT * FROM "Unicode data" WHERE t LIKE '키스의 고%';
 ERROR:  character with byte sequence 0xed 0x82 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('kor+', '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._');
 ERROR:  character with byte sequence 0xed 0x82 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'kor+';
+ERROR:  character with byte sequence 0xc5 0xb0 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 DELETE FROM "Unicode data" WHERE t = '키스의 고유조건은 입술끼리 만나야 하고 특별한 기술은 필요치 않다._';
 ERROR:  character with byte sequence 0xed 0x82 0xa4 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 -- 1254
@@ -3765,19 +4256,33 @@ SELECT * FROM "Unicode data" WHERE t LIKE 'Zəfər%';
 ERROR:  character with byte sequence 0xc9 0x99 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('aze+', 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._');
 ERROR:  character with byte sequence 0xc9 0x99 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'aze+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'Zəfər, jaketini də, papağını da götür, bu axşam hava çox soyuq olacaq._';
 ERROR:  character with byte sequence 0xc9 0x99 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 -- etc
 INSERT INTO "Unicode data" (i, t) VALUES ('arm+', 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_');
 ERROR:  character with byte sequence 0xd4 0xb2 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'arm+';
+ i | t 
+---+---
+(0 rows)
+
 DELETE FROM "Unicode data" WHERE t = 'Բել դղյակի ձախ ժամն օֆ ազգությանը ցպահանջ չճշտած վնաս էր եւ փառք։_';
 ERROR:  character with byte sequence 0xd4 0xb2 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('gle+', 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._');
 ERROR:  character with byte sequence 0xc3 0xa1 in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'gle+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig._';
 ERROR:  character with byte sequence 0xc3 0xa1 in encoding "UTF8" has no equivalent in encoding "WIN1257"
 INSERT INTO "Unicode data" (i, t) VALUES ('epo+', 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._');
 ERROR:  character with byte sequence 0xc5 0xad in encoding "UTF8" has no equivalent in encoding "WIN1257"
+SELECT * FROM "Unicode data" WHERE i = 'epo+';
+ERROR:  invalid byte sequence for encoding "UTF8": 0x8f
 DELETE FROM "Unicode data" WHERE t = 'Laŭ Ludoviko Zamenhof bongustas freŝa ĉeĥa manĝaĵo kun spicoj._';
 ERROR:  character with byte sequence 0xc5 0xad in encoding "UTF8" has no equivalent in encoding "WIN1257"
 DROP FOREIGN TABLE "Unicode data";
