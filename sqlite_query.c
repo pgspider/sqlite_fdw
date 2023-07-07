@@ -235,10 +235,16 @@ sqlite_bind_sql_var(Oid type, int attnum, Datum value, sqlite3_stmt * stmt, bool
 				char	   *outputString = NULL;
 				Oid			outputFunctionId = InvalidOid;
 				bool		typeVarLength = false;
+				int			pg_database_encoding = GetDatabaseEncoding(); /* very fast call, see PostgreSQL mbutils.c */
+				char	   *utf8_text_value = NULL;
 
 				getTypeOutputInfo(type, &outputFunctionId, &typeVarLength);
 				outputString = OidOutputFunctionCall(outputFunctionId, value);
-				ret = sqlite3_bind_text(stmt, attnum, outputString, -1, SQLITE_TRANSIENT);
+				if (pg_database_encoding == PG_UTF8)
+					utf8_text_value = outputString;
+				else
+					utf8_text_value = (char *) pg_do_encoding_conversion((unsigned char *) outputString, strlen(outputString), pg_database_encoding, PG_UTF8);
+				ret = sqlite3_bind_text(stmt, attnum, utf8_text_value, -1, SQLITE_TRANSIENT);
 				break;
 			}
 		case BYTEAOID:
