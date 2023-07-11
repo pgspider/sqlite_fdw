@@ -295,7 +295,7 @@ It's not a problem if your PostgreSQL database encoding belongs to Unicode famil
 
 Character case functions such as `upper`, `lower` and other are not pushed down because they does not work with UNICODE character in SQLite.
 
-`Sqlite_fdw` tested with PostgreSQL database encodings `EUC_JP`, `EUC_KR`, `WIN1250`, `WIN1251`, `WIN1252`, `WIN1253`, `WIN1255`, `WIN1256`, `WIN1257`. Some other encodings also can be supported, but not tested.
+`Sqlite_fdw` tested with PostgreSQL database encodings `EUC_JP`, `EUC_KR`, `ISO_8859_5`, `ISO_8859_6`, `ISO_8859_7`, `ISO_8859_8`, `LATIN1`, `LATIN2`, `LATIN3`, `LATIN4`, `LATIN5`, `LATIN6`, `LATIN7`, `LATIN8`, `LATIN9`, `LATIN9`, `LATIN10`, `WIN1250`, `WIN1251`, `WIN1252`, `WIN1253`, `WIN1254`, `WIN1255`, `WIN1256`, `WIN1257` and it's synomyms. Some other encodings also can be supported, but not tested.
 
 Examples
 --------
