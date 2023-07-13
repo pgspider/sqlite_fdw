@@ -53,43 +53,197 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 
 	switch (pgtyp)
 	{
+		case BOOLOID:
+			{
+				switch (sqlite_value_affinity)
+				{
+					case SQLITE_INTEGER: /* <-- proper and recommended SQLite affinity of value for pgtyp */ 
+						{
+							int			value = sqlite3_column_int(stmt, stmt_colid);
+							return (struct NullableDatum) { BoolGetDatum(value), false};
+						}
+					case SQLITE_FLOAT:
+					case SQLITE_BLOB:
+						{
+							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							break;
+						}
+					default: /* SQLITE3_TEXT: */
+					{
+						if (!value_byte_size_blob_or_utf8)
+							elog(ERROR, "Void text disallowed for PostgreSQL bool column");
+						else
+							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+					}
+				}
+				break;
+			}
 		case BYTEAOID:
 			{
-				// int			value_byte_size_blob_or_utf = sqlite3_column_bytes(stmt, stmt_colid); // Calculated always for detectind void values
-				value_datum = (Datum) palloc0(value_byte_size_blob_or_utf8 + VARHDRSZ);
-				memcpy(VARDATA(value_datum), sqlite3_column_blob(stmt, stmt_colid), value_byte_size_blob_or_utf8);
-				SET_VARSIZE(value_datum, value_byte_size_blob_or_utf8 + VARHDRSZ);
-				return (struct NullableDatum) { PointerGetDatum(value_datum), false};
+				switch (sqlite_value_affinity)
+				{
+					case SQLITE_INTEGER:
+					case SQLITE_FLOAT:
+						{
+							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							break;
+						}
+					case SQLITE_BLOB: /* <-- proper and recommended SQLite affinity of value for pgtyp */ 
+					default: /* SQLITE3_TEXT: threated as UTF-8 text BLOB */
+					{
+					/* if (!value_byte_size_blob_or_utf8) : vois text as void BLOB */
+						value_datum = (Datum) palloc0(value_byte_size_blob_or_utf8 + VARHDRSZ);
+						memcpy(VARDATA(value_datum), sqlite3_column_blob(stmt, stmt_colid), value_byte_size_blob_or_utf8);
+						SET_VARSIZE(value_datum, value_byte_size_blob_or_utf8 + VARHDRSZ);
+						return (struct NullableDatum) { PointerGetDatum(value_datum), false};
+					}
+				}
+				break;
 			}
 		case INT2OID:
 			{
-				int			value = sqlite3_column_int(stmt, stmt_colid);
-
-				return (struct NullableDatum) { Int16GetDatum(value), false};
+				switch (sqlite_value_affinity)
+				{
+					case SQLITE_INTEGER: /* <-- proper and recommended SQLite affinity of value for pgtyp */ 
+						{
+							int			value = sqlite3_column_int(stmt, stmt_colid);
+							return (struct NullableDatum) { Int16GetDatum(value), false};
+						}
+					case SQLITE_FLOAT:
+						{
+							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							break;
+						}
+					case SQLITE_BLOB:
+						{
+							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							break;
+						}
+					default: /* SQLITE3_TEXT: */
+					{
+						if (!value_byte_size_blob_or_utf8)
+							elog(ERROR, "Void text disallowed for PostgreSQL smallint column");
+						else
+							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+					}
+				}
+				break;
 			}
 		case INT4OID:
 			{
-				int			value = sqlite3_column_int(stmt, stmt_colid);
-
-				return (struct NullableDatum) { Int32GetDatum(value), false};
+				switch (sqlite_value_affinity)
+				{
+					case SQLITE_INTEGER: /* <-- proper and recommended SQLite affinity of value for pgtyp */ 
+					{
+						int			value = sqlite3_column_int(stmt, stmt_colid);
+						return (struct NullableDatum) { Int32GetDatum(value), false};
+					}
+					case SQLITE_FLOAT:
+						{
+							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							break;
+						}
+					case SQLITE_BLOB:
+						{
+							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							break;
+						}
+					default: /* SQLITE3_TEXT: */
+					{
+						if (!value_byte_size_blob_or_utf8)
+							elog(ERROR, "Void text disallowed for PostgreSQL int column");
+						else
+							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, stmt_colid, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+					}
+				}
+				break;
 			}
 		case INT8OID:
 			{
-				sqlite3_int64 value = sqlite3_column_int64(stmt, stmt_colid);
-
-				return (struct NullableDatum) { Int64GetDatum(value), false};
+				switch (sqlite_value_affinity)
+				{
+					case SQLITE_INTEGER: /* <-- proper and recommended SQLite affinity of value for pgtyp */ 
+						{
+							sqlite3_int64 value = sqlite3_column_int64(stmt, stmt_colid);
+							return (struct NullableDatum) { Int64GetDatum(value), false};
+						}
+					case SQLITE_FLOAT:
+						{
+							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							break;
+						}
+					case SQLITE_BLOB:
+						{
+							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							break;
+						}
+					default: /* SQLITE3_TEXT: */
+					{
+						if (!value_byte_size_blob_or_utf8)
+							elog(ERROR, "Void text disallowed for PostgreSQL bigint column");
+						else
+							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+					}
+				}
+				break;
 			}
 		case FLOAT4OID:
 			{
-				double		value = sqlite3_column_double(stmt, stmt_colid);
-
-				return (struct NullableDatum) { Float4GetDatum((float4) value), false};
+				switch (sqlite_value_affinity)
+				{
+					case SQLITE_INTEGER:
+						{
+							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							break;
+						}
+					case SQLITE_FLOAT: /* <-- proper and recommended SQLite affinity of value for pgtyp */ 
+						{
+							double		value = sqlite3_column_double(stmt, stmt_colid);
+							return (struct NullableDatum) { Float4GetDatum((float4) value), false};
+						}
+					case SQLITE_BLOB:
+						{
+							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							break;
+						}
+					default: /* SQLITE3_TEXT: */
+					{
+						if (!value_byte_size_blob_or_utf8)
+							elog(ERROR, "Void text disallowed for PostgreSQL float4 column");
+						else
+							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+					}
+				}
+				break;
 			}
 		case FLOAT8OID:
 			{
-				double		value = sqlite3_column_double(stmt, stmt_colid);
-
-				return (struct NullableDatum) { Float8GetDatum((float8) value), false};
+				switch (sqlite_value_affinity)
+				{
+					case SQLITE_INTEGER:
+						{
+							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							break;
+						}
+					case SQLITE_FLOAT: /* <-- proper and recommended SQLite affinity of value for pgtyp */ 
+						{
+							double		value = sqlite3_column_double(stmt, stmt_colid);
+							return (struct NullableDatum) { Float8GetDatum((float8) value), false};
+						}
+					case SQLITE_BLOB:
+						{
+							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							break;
+						}
+					default: /* SQLITE3_TEXT: */
+					{
+						if (!value_byte_size_blob_or_utf8)
+							elog(ERROR, "Void text disallowed for PostgreSQL float4 column");
+						else
+							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+					}
+				}
+				break;
 			}
 		case TIMESTAMPOID:
 		case TIMESTAMPTZOID:
@@ -104,24 +258,54 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 				 * "regular" process because its already implemented and
 				 * working properly.
 				 */
-				if (sqlite_value_affinity == SQLITE_INTEGER || sqlite_value_affinity == SQLITE_FLOAT)
+				switch (sqlite_value_affinity)
 				{
-					double		value = sqlite3_column_double(stmt, stmt_colid);
-					Datum		d = DirectFunctionCall1(float8_timestamptz, Float8GetDatum((float8) value));
-
-					return (struct NullableDatum) { d, false};
-				}
-				else
-				{
-					valstr = sqlite_text_value_to_pg_db_encoding(stmt, stmt_colid);
+					case SQLITE_INTEGER:
+					case SQLITE_FLOAT: 
+						{
+							double		value = sqlite3_column_double(stmt, stmt_colid);
+							Datum		d = DirectFunctionCall1(float8_timestamptz, Float8GetDatum((float8) value));
+							return (struct NullableDatum) { d, false};
+						}
+					case SQLITE_BLOB:
+						{
+							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							break;
+						}
+					default: /* SQLITE3_TEXT: */
+					{
+						if (!value_byte_size_blob_or_utf8)
+							elog(ERROR, "Void text disallowed for PostgreSQL float4 column");
+						else
+							valstr = sqlite_text_value_to_pg_db_encoding(stmt, stmt_colid);
+					}
 				}
 				break;
 			}
 		case NUMERICOID:
 			{
-				double		value = sqlite3_column_double(stmt, stmt_colid);
-
-				valstr = DatumGetCString(DirectFunctionCall1(float8out, Float8GetDatum((float8) value)));
+				switch (sqlite_value_affinity)
+				{
+					case SQLITE_INTEGER:
+					case SQLITE_FLOAT: /* <-- proper and recommended SQLite affinity of value for pgtyp */ 
+						{
+							double		value = sqlite3_column_double(stmt, stmt_colid);
+							valstr = DatumGetCString(DirectFunctionCall1(float8out, Float8GetDatum((float8) value)));
+							break; /* !!! use valstr later! */
+						}
+					case SQLITE_BLOB:
+						{
+							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							break;
+						}
+					default: /* SQLITE3_TEXT: */
+					{
+						if (!value_byte_size_blob_or_utf8)
+							elog(ERROR, "Void text disallowed for PostgreSQL numeric column");
+						else
+							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+					}
+				}
 				break;
 			}
 		/* some popular datatypes for default algorythm branch
