@@ -123,7 +123,7 @@ Usage
 -----
 
 ### Datatypes
-**WARNING! The table above represents roadmap**, work still in progress. Untill it will be ended please refer real behaviour in non-obvious cases.
+**WARNING! The table above represents roadmap**, work still in progress. Untill it will be ended please refer real behaviour in non-obvious cases, where there is no ✔ mark.
 
 This table represents `sqlite_fdw` behaviour if in PostgreSQL foreign table column data of some SQLite [affinity](https://www.sqlite.org/datatype3.html) is detected.
 
@@ -497,7 +497,7 @@ For `sqlite_fdw` there is 3 testing modes:
 - Testing on OS PostgreSQL environment (usually isn't very representative)
 
 ### Quick start 
-If you have no testing expirience, please read [TESTING.md] with detatiled step-by step description.
+If you have no testing expirience, please read [TESTING.md](TESTING.md) with detatiled step-by step description.
 
 In tests for `sqlite_fdw` version of PostgreSQL is detected automatically by `$(VERSION)` variable in Makefile. The corresponding [sql](sql) and [expected](expected) directory will be used to compare the result. For example, for Postgres 15.0, you can execute [`test.sh`](test.sh) directly, and the sql/15.0 and expected/15.0 will be used to compare automatically.
 
@@ -538,11 +538,11 @@ This is recommended testing mode. Requires not more than 1.2 Gb of disk space. F
 
 1. Install packages for PostgreSQL build from source code.
 2. Get, compile and check PostgreSQL source trees for different versions
-3. Copy tested code for each tested version to `contrib/sqlite_fdw` directoriy in PostgreSQL source code
+3. Copy testing code for each version to `contrib/sqlite_fdw` directoriy in PostgreSQL source code
 4. Read all results
 5. Modify your source code
 6. Delete all `contrib/sqlite_fdw` directories for each tested version
-7. Goto 3 until success
+7. Go to 3 until success
 
 #### One - versional testing in source code tree
 
@@ -557,7 +557,7 @@ This is simplification of previous testing mode. Most of steps are equal without
 
 Usually this testing mode isn't very representative, because for testing you should have in your OS packages of PostgreSQL and SQLite in one or more of version conbinations from  [sql](sql) directory. Sometimes minor versions also have all succesfully tests, not only listed base version, but this is not good testing way. 
 
-Please read in [TESTING.md] about this rare testing mode.
+Please read in [TESTING.md](TESTING.md) about this rare testing mode.
 
 ### SQLite library requirements and fixing
 
