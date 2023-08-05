@@ -375,6 +375,6 @@ void		sqlite_cache_stmt(ForeignServer *server, sqlite3_stmt * *stmt);
 
 NullableDatum sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_colid, AttInMetadata *attinmeta, AttrNumber attnum, int sqlite_value_affinity, int AffinityBehaviourFlags);
 
-void		sqlite_bind_sql_var(Oid type, int attnum, Datum value, sqlite3_stmt * stmt, bool *isnull);
+void		sqlite_bind_sql_var(Oid type, int pgtypmod, int attnum, Datum value, sqlite3_stmt * stmt, bool *isnull, Oid relid);
 extern void sqlite_do_sql_command(sqlite3 * conn, const char *sql, int level, List **busy_connection);
 #endif							/* SQLITE_FDW_H */

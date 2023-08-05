@@ -341,12 +341,13 @@ sqlite_is_valid_type(Oid type)
 		case TIMEOID:
 		case TIMESTAMPOID:
 		case TIMESTAMPTZOID:
+		case UUIDOID:
 			return true;
 	}
 	return false;
 }
 
-/* 
+/*
  * Returns true if it's safe to push down the sort expression described by
  * 'pathkey' to the foreign server.
  */
@@ -2031,9 +2032,10 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 			if (strcmp(def->defname, "column_name") == 0)
 			{
 				colname = defGetString(def);
+				elog(DEBUG3, "opt = %s\n", def->defname);
 				break;
 			}
-			elog(DEBUG1, "column name = %s\n", def->defname);
+			elog(DEBUG1, "column name = %s\n", colname);
 		}
 
 		/*
@@ -2069,7 +2071,7 @@ sqlite_deparse_column_option(int varno, int varattno, PlannerInfo *root, char *o
 	rte = planner_rt_fetch(varno, root);
 
 	/*
-	 * If it's a column of a foreign table, and it has the column_name FDW
+	 * If it's a column of a foreign table, and it has the optionname value named FDW
 	 * option, use that value.
 	 */
 	options = GetForeignColumnOptions(rte->relid, varattno);
@@ -2083,7 +2085,6 @@ sqlite_deparse_column_option(int varno, int varattno, PlannerInfo *root, char *o
 			break;
 		}
 	}
-
 	return coloptionvalue;
 }
 
@@ -2107,7 +2108,7 @@ sqlite_deparse_string_literal(StringInfo buf, const char *val)
 	const char *valptr;
 
 	sqlite_text_val = pg_text_value_to_sqlite_text(val);
-	
+
 	appendStringInfoChar(buf, '\'');
 	for (valptr = sqlite_text_val; *valptr; valptr++)
 	{
@@ -2521,6 +2522,7 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 	char	   *extval;
 	char	   *sqlitecolumntype;
 	bool		convert_timestamp_tounixepoch;
+	bool        convert_uuid_blob;
 	Var		   *varnode;
 
 	if (node->constisnull)
@@ -2545,7 +2547,7 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 				extval = OidOutputFunctionCall(typoutput, node->constvalue);
 
 				/*
-				 * No need to quote unless it's a special value such as 'NaN'.
+				 * No need to quote unless it's a special value such as 'NaN' or 'Infinity'.
 				 * See comments in get_const_expr().
 				 */
 				if (strspn(extval, "0123456789+-eE.") == strlen(extval))
@@ -2573,7 +2575,6 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 			break;
 
 		case BYTEAOID:
-
 			/*
 			 * the string for BYTEA always seems to be in the format "\\x##"
 			 * where # is a hex digit, Even if the value passed in is
@@ -2605,6 +2606,43 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 			else
 				sqlite_deparse_string_literal(buf, extval);
 
+			break;
+		case UUIDOID:
+			convert_uuid_blob = false;
+			extval = OidOutputFunctionCall(typoutput, node->constvalue);
+
+			if (context->complementarynode != NULL)
+			{
+				varnode = get_complementary_var_node(context->complementarynode);
+				if (varnode != NULL)
+				{
+					sqlitecolumntype = sqlite_deparse_column_option(varnode->varno, varnode->varattno, context->root, "column_type");
+
+					if (sqlitecolumntype != NULL && strcmp(sqlitecolumntype, "BLOB") == 0)
+						convert_uuid_blob = true;
+				}
+			}
+
+			if (convert_uuid_blob)
+			{
+		    	/*
+		    	 * the string for BYTEA always seems to be in the format "\\x##"
+		    	 * where # is a hex digit, Even if the value passed in is
+		    	 * 'hi'::bytea we will receive "\x6869". Making this assumption
+		    	 * allows us to quickly convert postgres escaped strings to sqlite
+		    	 * ones for comparison
+		    	 */
+		    	extval = OidOutputFunctionCall(typoutput, node->constvalue);
+		    	appendStringInfo(buf, "X\'");
+		    	for (int i = 0; i < strlen(extval); i++) {
+		    	    char c = extval[i];
+		    	    if ( c != '-' )
+		    	        appendStringInfoChar(buf, c);
+                }
+   		    	appendStringInfo(buf, "\'");
+   		    }
+			else
+				sqlite_deparse_string_literal(buf, extval);
 			break;
 		default:
 			extval = OidOutputFunctionCall(typoutput, node->constvalue);
@@ -3238,7 +3276,7 @@ sqlite_is_builtin(Oid oid)
 {
 #if PG_VERSION_NUM >= 120000
 	return (oid < FirstGenbkiObjectId);
-#else 
+#else
 	return (oid < FirstBootstrapObjectId);
 #endif
 }
@@ -3503,7 +3541,7 @@ sqlite_append_order_by_clause(List *pathkeys, bool has_final_sort, deparse_expr_
  * Append the ASC, DESC, USING <OPERATOR> and NULLS FIRST / NULLS LAST parts
  * of an ORDER BY clause.
  */
-static void sqlite_append_order_by_suffix(Oid sortop, Oid sortcoltype, 
+static void sqlite_append_order_by_suffix(Oid sortop, Oid sortcoltype,
 										  bool nulls_first,
 										  deparse_expr_cxt *context)
 {

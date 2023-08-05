@@ -334,7 +334,8 @@ static void sqlite_process_query_params(ExprContext *econtext,
 										List *param_exprs,
 										const char **param_values,
 										sqlite3_stmt * *stmt,
-										Oid *param_types);
+										Oid *param_types,
+										Oid foreignTableId);
 
 static void sqlite_create_cursor(ForeignScanState *node);
 static void sqlite_execute_dml_stmt(ForeignScanState *node);
@@ -2845,11 +2846,10 @@ bindJunkColumnValue(SqliteFdwExecState * fmstate,
 				typeoid = att->atttypid;
 
 				/* Bind qual */
-				sqlite_bind_sql_var(typeoid, bindnum, value, fmstate->stmt, &is_null);
+				sqlite_bind_sql_var(typeoid, -1, bindnum, value, fmstate->stmt, &is_null, foreignTableId);
 				bindnum++;
 			}
 		}
-
 	}
 }
 
@@ -2863,7 +2863,6 @@ sqliteExecForeignUpdate(EState *estate,
 						TupleTableSlot *slot,
 						TupleTableSlot *planSlot)
 {
-
 	SqliteFdwExecState *fmstate = (SqliteFdwExecState *) resultRelInfo->ri_FdwState;
 	Relation	rel = resultRelInfo->ri_RelationDesc;
 	Oid			foreignTableId = RelationGetRelid(rel);
@@ -2879,6 +2878,7 @@ sqliteExecForeignUpdate(EState *estate,
 	{
 		int			attnum = lfirst_int(lc);
 		Oid			type;
+		int         pgtypmod;
 		bool		is_null;
 		Datum		value = 0;
 #if PG_VERSION_NUM >= 140000
@@ -2891,10 +2891,11 @@ sqliteExecForeignUpdate(EState *estate,
 #endif
 		/* first attribute cannot be in target list attribute */
 		type = TupleDescAttr(slot->tts_tupleDescriptor, attnum - 1)->atttypid;
+		pgtypmod = TupleDescAttr(slot->tts_tupleDescriptor, attnum - 1)->atttypmod;
 
 		value = slot_getattr(slot, attnum, &is_null);
 
-		sqlite_bind_sql_var(type, bindnum, value, fmstate->stmt, &is_null);
+		sqlite_bind_sql_var(type, pgtypmod, bindnum, value, fmstate->stmt, &is_null, foreignTableId);
 		bindnum++;
 		i++;
 	}
@@ -5173,14 +5174,17 @@ sqlite_execute_insert(EState *estate,
 	ListCell   *lc;
 	Datum		value = 0;
 	MemoryContext oldcontext;
-#if PG_VERSION_NUM >= 140000
-	Relation	rel = resultRelInfo->ri_RelationDesc;
-	TupleDesc	tupdesc = RelationGetDescr(rel);
-#endif
 	int			rc = SQLITE_OK;
 	int			nestlevel;
 	int			bindnum = 0;
 	int			i;
+		
+#if PG_VERSION_NUM >= 140000
+	Relation	rel = resultRelInfo->ri_RelationDesc;
+	TupleDesc	tupdesc = RelationGetDescr(rel);
+	Oid			foreignTableId = RelationGetRelid(rel);
+    elog(DEBUG3, "sqlite_fdw : %s forRelId %u", __func__, foreignTableId);
+#endif
 
 	elog(DEBUG1, "sqlite_fdw : %s", __func__);
 
@@ -5218,6 +5222,7 @@ sqlite_execute_insert(EState *estate,
 		{
 			int			attnum = lfirst_int(lc) - 1;
 			Oid			type = TupleDescAttr(slots[i]->tts_tupleDescriptor, attnum)->atttypid;
+			int         pgtypmod = TupleDescAttr(slots[i]->tts_tupleDescriptor, attnum)->atttypmod;
 			bool		isnull;
 #if PG_VERSION_NUM >= 140000
 			Form_pg_attribute attr = TupleDescAttr(tupdesc, attnum);
@@ -5228,7 +5233,11 @@ sqlite_execute_insert(EState *estate,
 #endif
 
 			value = slot_getattr(slots[i], attnum + 1, &isnull);
-			sqlite_bind_sql_var(type, bindnum, value, fmstate->stmt, &isnull);
+#if PG_VERSION_NUM >= 140000
+        	sqlite_bind_sql_var(type, pgtypmod, bindnum, value, fmstate->stmt, &isnull, foreignTableId);
+#else
+			sqlite_bind_sql_var(type, pgtypmod, bindnum, value, fmstate->stmt, &isnull, 0);
+#endif			
 			bindnum++;
 		}
 	}
@@ -5308,7 +5317,9 @@ sqlite_process_query_params(ExprContext *econtext,
 							List *param_exprs,
 							const char **param_values,
 							sqlite3_stmt * *stmt,
-							Oid *param_types)
+							Oid *param_types,
+							Oid foreignTableId
+							)
 {
 	int			i;
 	ListCell   *lc;
@@ -5329,7 +5340,7 @@ sqlite_process_query_params(ExprContext *econtext,
 		expr_value = ExecEvalExpr(expr_state, econtext, &isNull, NULL);
 #endif
 		/* Bind parameters */
-		sqlite_bind_sql_var(param_types[i], i, expr_value, *stmt, &isNull);
+		sqlite_bind_sql_var(param_types[i], -1, i, expr_value, *stmt, &isNull, foreignTableId);
 
 		/*
 		 * Get string sentation of each parameter value by invoking
@@ -5362,6 +5373,7 @@ sqlite_create_cursor(ForeignScanState *node)
 	 */
 	if (numParams > 0)
 	{
+		Oid			foreignTableId = (festate->rel != NULL) ? RelationGetRelid(festate->rel) : 0;
 		MemoryContext oldcontext;
 
 		oldcontext = MemoryContextSwitchTo(econtext->ecxt_per_tuple_memory);
@@ -5371,7 +5383,8 @@ sqlite_create_cursor(ForeignScanState *node)
 									festate->param_exprs,
 									values,
 									&festate->stmt,
-									festate->param_types);
+									festate->param_types,
+									foreignTableId);
 
 		MemoryContextSwitchTo(oldcontext);
 	}
@@ -5390,6 +5403,7 @@ sqlite_execute_dml_stmt(ForeignScanState *node)
 	ExprContext *econtext = node->ss.ps.ps_ExprContext;
 	int			numParams = dmstate->numParams;
 	const char **values = dmstate->param_values;
+	Oid			foreignTableId = RelationGetRelid(dmstate->resultRel);
 	int			rc;
 
 	/*
@@ -5401,7 +5415,8 @@ sqlite_execute_dml_stmt(ForeignScanState *node)
 									dmstate->param_exprs,
 									values,
 									&dmstate->stmt,
-									dmstate->param_types);
+									dmstate->param_types,
+									foreignTableId);
 
 	/*
 	 * Notice that we pass NULL for paramTypes, thus forcing the remote server
