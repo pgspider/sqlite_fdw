@@ -289,10 +289,11 @@ sqlite_fdw_version
 Identifier case handling
 ------------------------
 
-PostgreSQL folds identifiers to lower case by default, SQlite is case insensetive by default. It's important
+PostgreSQL folds identifiers to lower case by default, SQLite is case insensetive by default
+and doesn't differ uppercase and lowercase ASCII base latin letters. It's important
 to be aware of potential issues with table and column names.
 
-This SQL isn't correct for SQLite: `Error: duplicate column name: a`, but is correct for PostgreSQL
+Following SQL isn't correct for SQLite: `Error: duplicate column name: a`, but is correct for PostgreSQL
 
 ```sql
 	CREATE TABLE T (
@@ -300,6 +301,24 @@ This SQL isn't correct for SQLite: `Error: duplicate column name: a`, but is cor
 	  "a" NUMERIC
 	);
 ```
+Following SQLs is correct for both SQLite and PostgreSQL because there is no column
+names with ASCII base latin letters *only*.
+
+```sql
+	CREATE TABLE T_cyr (
+	  "А" INTEGER,
+	  "а" NUMERIC
+	);
+	CREATE TABLE T_gre (
+	  "Α" INTEGER,
+	  "α" NUMERIC
+	);
+	CREATE TABLE T_dia (
+	  "Ä" INTEGER,
+	  "ä" NUMERIC
+	);		
+```
+
 For SQLite there is no difference between
 
 ```sql
