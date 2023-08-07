@@ -2596,7 +2596,7 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 				{
 					sqlitecolumntype = sqlite_deparse_column_option(varnode->varno, varnode->varattno, context->root, "column_type");
 
-					if (sqlitecolumntype != NULL && strcmp(sqlitecolumntype, "INT") == 0)
+					if (sqlitecolumntype != NULL && strcmp_case_independend(sqlitecolumntype, "INT") == 0)
 						convert_timestamp_tounixepoch = true;
 				}
 			}
@@ -3944,4 +3944,20 @@ sqlite_classify_conditions(PlannerInfo *root,
 		else
 			*local_conds = lappend(*local_conds, ri);
 	}
+}
+
+/*
+ * Case independend string comparation is usrful for text option values is some cases
+ */
+int strcmp_case_independend(const char *str1, const char *str2) {
+    for (size_t i = 0;; i++) {
+        int c1 = toupper((unsigned char)str1[i]);
+        int c2 = toupper((unsigned char)str2[i]);
+        if (c1 != c2) {
+            return (c1 > c2) - (c1 < c2);
+        }
+        if (c1 == '\0') {
+            return 0;
+        }
+    }
 }

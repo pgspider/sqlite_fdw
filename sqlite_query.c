@@ -596,7 +596,7 @@ sqlite_bind_sql_var(Oid type, int pgtypmod, int attnum, Datum value, sqlite3_stm
                 {
                     char * optv = get_column_option_string (relid, attnum, "column_type");
                    	elog(DEBUG3, "sqlite_fdw : col type %s ", optv);
-                    if (optv != NULL && strcmp(optv, "BLOB") == 0)
+                    if (optv != NULL && strcmp_case_independend(optv, "BLOB") == 0)
 						uuid_as_blob = true;
 				}
 
