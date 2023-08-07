@@ -2561,8 +2561,16 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 			break;
 		case BITOID:
 		case VARBITOID:
-			extval = OidOutputFunctionCall(typoutput, node->constvalue);
-			appendStringInfo(buf, "B\'%s\'", extval);
+			{
+				extval = OidOutputFunctionCall(typoutput, node->constvalue);
+				if (strlen(extval) > SQLITE_FDW_BIT_DATATYPE_BUF_SIZE - 1 )
+				{
+					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+							errmsg("SQLite FDW dosens't support very long bit/varbit data"),
+							errhint("bit length %ld, maxmum %ld", strlen(extval), SQLITE_FDW_BIT_DATATYPE_BUF_SIZE - 1)));
+				}
+				appendStringInfo(buf, "%lld", binstr2int(extval));
+			}
 			break;
 		case BOOLOID:
 			extval = OidOutputFunctionCall(typoutput, node->constvalue);

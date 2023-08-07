@@ -33,7 +33,9 @@ static const char*
 static void 
 			sqlite_value_to_pg_error (Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_colid, int sqlite_value_affinity, int affinity_for_pg_column, int value_byte_size_blob_or_utf8);
 static char *
-			sqlite_text_value_to_pg_db_encoding(sqlite3_stmt * stmt, int stmt_colid);			
+			sqlite_text_value_to_pg_db_encoding(sqlite3_stmt * stmt, int stmt_colid);
+char *
+			int2binstr(sqlite3_int64 num, char *s, size_t len);
 
 /*
  * convert_sqlite_to_pg: Convert Sqlite data into PostgreSQL's compatible data types
@@ -122,6 +124,16 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 				double		value = sqlite3_column_double(stmt, stmt_colid);
 
 				valstr = DatumGetCString(DirectFunctionCall1(float8out, Float8GetDatum((float8) value)));
+				break;
+			}
+		case VARBITOID:
+		case BITOID:
+			{
+				char * buffer = palloc0(SQLITE_FDW_BIT_DATATYPE_BUF_SIZE);			
+				sqlite3_int64 sqlti = sqlite3_column_int64(stmt, stmt_colid);				
+				buffer = int2binstr(sqlti, buffer, SQLITE_FDW_BIT_DATATYPE_BUF_SIZE);
+				valstr = buffer;
+				elog(DEBUG4, "sqlite_fdw : BIT buf l=%ld v = %s", SQLITE_FDW_BIT_DATATYPE_BUF_SIZE, buffer);
 				break;
 			}
 		/* some popular datatypes for default algorythm branch
@@ -266,7 +278,27 @@ sqlite_bind_sql_var(Oid type, int attnum, Datum value, sqlite3_stmt * stmt, bool
 				ret = sqlite3_bind_blob(stmt, attnum, dat, len, SQLITE_TRANSIENT);
 				break;
 			}
+		case VARBITOID:
+		case BITOID:
+			{
+				sqlite3_int64 dat;
+				char	   *outputString = NULL;
+				Oid			outputFunctionId = InvalidOid;
+				bool		typeVarLength = false;
 
+				getTypeOutputInfo(type, &outputFunctionId, &typeVarLength);
+				outputString = OidOutputFunctionCall(outputFunctionId, value);
+				elog(DEBUG4, "sqlite_fdw : BIT bind  %s", outputString);
+				if (strlen(outputString) > SQLITE_FDW_BIT_DATATYPE_BUF_SIZE - 1 )
+				{
+					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+							errmsg("SQLite FDW dosens't support very long bit/varbit data"),
+							errhint("bit length %ld, maxmum %ld", strlen(outputString), SQLITE_FDW_BIT_DATATYPE_BUF_SIZE - 1)));
+				}
+				dat = binstr2int(outputString);
+				ret = sqlite3_bind_int64(stmt, attnum, dat);
+				break;
+			}
 		default:
 			{
 				ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
@@ -370,4 +402,29 @@ static char * sqlite_text_value_to_pg_db_encoding(sqlite3_stmt * stmt, int stmt_
 	else
 		/* There is no UTF16 in PostgreSQL for fast sqlite3_column_text16, hence always convert */
 		return (char *) pg_do_encoding_conversion((unsigned char *) utf8_text_value, strlen(utf8_text_value), PG_UTF8, pg_database_encoding);
+}
+
+char *int2binstr(sqlite3_int64 num, char *s, size_t len)
+{
+	s[--len] = '\0';
+    do
+		s[--len] = ((num & 1) ? '1' : '0');
+	while ((num >>= 1) != 0);
+    return s + len;
+}
+
+sqlite3_int64 binstr2int(const char *s)
+{
+    sqlite3_int64 rc;
+    for (rc = 0; '\0' != *s; s++) {
+		if ('1' == *s) {
+            rc = (rc * 2) + 1;
+        } else if ('0' == *s) {
+            rc *= 2;
+        } else {
+            errno = EINVAL;
+            return -1;
+        }
+    }
+    return rc;
 }

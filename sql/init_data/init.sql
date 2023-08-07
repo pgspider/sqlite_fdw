@@ -33,7 +33,10 @@ CREATE TABLE "type_TIMESTAMP" (col timestamp primary key, b timestamp);--, c dat
 CREATE TABLE "type_BLOB" (col blob primary key);
 CREATE TABLE "type_DATE" (col date primary key);
 CREATE TABLE "type_TIME" (col time primary key);
-CREATE TABLE BitT (p integer primary key, a BIT(3), b BIT VARYING(5));
+CREATE TABLE "type_BIT" (i int, b bit);
+CREATE VIEW  "type_BIT+" AS SELECT *, typeof(b) t, length(b) l FROM "type_BIT";
+CREATE TABLE "type_VARBIT" (i int, b bit);
+CREATE VIEW  "type_VARBIT+" AS SELECT *, typeof(b) t, length(b) l FROM "type_VARBIT";
 CREATE TABLE notype (a);
 CREATE TABLE typetest (i integer, v varchar(10) , c char(10), t text, d datetime, ti timestamp);
 CREATE TABLE type_TEXT (col text primary key);

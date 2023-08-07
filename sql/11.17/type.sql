@@ -266,5 +266,91 @@ SELECT * FROM "type_DOUBLE"; -- OK
 --Testcase 107:
 ALTER FOREIGN TABLE "type_DOUBLE" ALTER COLUMN col TYPE float8;
 
+--Testcase 178:
+DROP FOREIGN TABLE "type_BIT";
+--Testcase 179:
+CREATE FOREIGN TABLE "type_BIT"( "i" int OPTIONS (key 'true'), "b" bit(6)) SERVER sqlite_svr OPTIONS (table 'type_BIT');
+--Testcase 180:
+DROP FOREIGN TABLE "type_BIT+";
+--Testcase 181:
+CREATE FOREIGN TABLE "type_BIT+"( "i" int OPTIONS (key 'true'), "b" bit(6), "t" text, "l" smallint, "bi" bigint OPTIONS (column_name 'b')) SERVER sqlite_svr OPTIONS (table 'type_BIT+');
+--Testcase 182:
+INSERT INTO "type_BIT" ("i", "b") VALUES (1, 1);
+--Testcase 183:
+INSERT INTO "type_BIT" ("i", "b") VALUES (2, 2);
+--Testcase 184:
+INSERT INTO "type_BIT" ("i", "b") VALUES (3, '1');
+--Testcase 185:
+INSERT INTO "type_BIT" ("i", "b") VALUES (4, '10');
+--Testcase 186:
+INSERT INTO "type_BIT" ("i", "b") VALUES (5, '101');
+--Testcase 187:
+INSERT INTO "type_BIT" ("i", "b") VALUES (6, '110110');
+--Testcase 188:
+INSERT INTO "type_BIT" ("i", "b") VALUES (7, '111001');
+--Testcase 189:
+INSERT INTO "type_BIT" ("i", "b") VALUES (8, '110000');
+--Testcase 190:
+INSERT INTO "type_BIT" ("i", "b") VALUES (9, '100001');
+--Testcase 191:
+INSERT INTO "type_BIT" ("i", "b") VALUES (10, 53);
+--Testcase 192:
+SELECT * FROM "type_BIT+";
+--Testcase 193:
+SELECT * FROM "type_BIT" WHERE b < '110110';
+--Testcase 194:
+SELECT * FROM "type_BIT" WHERE b > '110110';
+--Testcase 195:
+SELECT * FROM "type_BIT" WHERE b = '110110';
+
+--Testcase 196:
+DROP FOREIGN TABLE "type_VARBIT";
+--Testcase 197:
+CREATE FOREIGN TABLE "type_VARBIT"( "i" int OPTIONS (key 'true'), "b" varbit(70)) SERVER sqlite_svr OPTIONS (table 'type_VARBIT');
+--Testcase 199:
+DROP FOREIGN TABLE "type_VARBIT+";
+--Testcase 200:
+CREATE FOREIGN TABLE "type_VARBIT+"( "i" int OPTIONS (key 'true'), "b" varbit(70), "t" text, "l" smallint) SERVER sqlite_svr OPTIONS (table 'type_VARBIT+');
+--Testcase 201:
+INSERT INTO "type_VARBIT" ("i", "b") VALUES (1, '1');
+--Testcase 202:
+INSERT INTO "type_VARBIT" ("i", "b") VALUES (2, '10');
+--Testcase 203:
+INSERT INTO "type_VARBIT" ("i", "b") VALUES (3, '11');
+--Testcase 204:
+INSERT INTO "type_VARBIT" ("i", "b") VALUES (4, '100');
+--Testcase 205:
+INSERT INTO "type_VARBIT" ("i", "b") VALUES (5, '101');
+--Testcase 206:
+INSERT INTO "type_VARBIT" ("i", "b") VALUES (6, '110110');
+--Testcase 207:
+INSERT INTO "type_VARBIT" ("i", "b") VALUES (7, '111001');
+--Testcase 208:
+INSERT INTO "type_VARBIT" ("i", "b") VALUES (8, '110000');
+--Testcase 209:
+INSERT INTO "type_VARBIT" ("i", "b") VALUES (9, '100001');
+--Testcase 210:
+INSERT INTO "type_VARBIT" ("i", "b") VALUES (10, '0100100101011001010010101000111110110101101101111011000101010');
+--Testcase 211:
+INSERT INTO "type_VARBIT" ("i", "b") VALUES (11, '01001001010110010100101010001111101101011011011110110001010101');
+
+--Testcase 212
+SELECT * FROM "type_VARBIT+";
+--Testcase 213:
+SELECT * FROM "type_VARBIT+" WHERE b < '110110';
+--Testcase 214:
+SELECT * FROM "type_VARBIT+" WHERE b > '110110';
+--Testcase 215:
+SELECT * FROM "type_VARBIT+" WHERE b = '110110';
+
+--Testcase 216:
+INSERT INTO "type_VARBIT" ("i", "b") VALUES (12, '010010010101100101001010100011111011010110110111101100010101010');
+--Testcase 217:
+INSERT INTO "type_VARBIT" ("i", "b") VALUES (13, '0100100101011001010010101000111110110101101101111011000101010101');
+--Testcase 218: 65 b
+INSERT INTO "type_VARBIT" ("i", "b") VALUES (14, '01001001010110010100101010001111101101011011011110110001010101010');
+--Testcase 219:
+SELECT * FROM "type_VARBIT+" WHERE "i" > 10;
+
 --Testcase 47:
 DROP EXTENSION sqlite_fdw CASCADE;

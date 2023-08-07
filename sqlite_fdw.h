@@ -43,6 +43,8 @@
 
 #define CR_NO_ERROR 0
 
+#define SQLITE_FDW_BIT_DATATYPE_BUF_SIZE sizeof(sqlite3_int64)* CHAR_BIT + 1
+
 #if (PG_VERSION_NUM < 120000)
 #define table_close(rel, lock)	heap_close(rel, lock)
 #define table_open(rel, lock)	heap_open(rel, lock)
@@ -377,4 +379,8 @@ NullableDatum sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt,
 
 void		sqlite_bind_sql_var(Oid type, int attnum, Datum value, sqlite3_stmt * stmt, bool *isnull);
 extern void sqlite_do_sql_command(sqlite3 * conn, const char *sql, int level, List **busy_connection);
+
+/* sqlite_query.c haders */
+sqlite3_int64 binstr2int(const char *s);
+
 #endif							/* SQLITE_FDW_H */
