@@ -189,7 +189,7 @@ sqlite_deparse_relation(StringInfo buf, Relation rel)
 	 */
 	foreach(lc, table->options)
 	{
-		DefElem    *def = (DefElem *) lfirst(lc);
+		DefElem	*def = (DefElem *) lfirst(lc);
 
 		if (strcmp(def->defname, "table") == 0)
 			relname = defGetString(def);
@@ -2027,7 +2027,7 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 		options = GetForeignColumnOptions(rte->relid, varattno);
 		foreach(lc, options)
 		{
-			DefElem    *def = (DefElem *) lfirst(lc);
+			DefElem	*def = (DefElem *) lfirst(lc);
 
 			if (strcmp(def->defname, "column_name") == 0)
 			{
@@ -2077,7 +2077,7 @@ sqlite_deparse_column_option(int varno, int varattno, PlannerInfo *root, char *o
 	options = GetForeignColumnOptions(rte->relid, varattno);
 	foreach(lc, options)
 	{
-		DefElem    *def = (DefElem *) lfirst(lc);
+		DefElem	*def = (DefElem *) lfirst(lc);
 
 		if (strcmp(def->defname, optionname) == 0)
 		{
@@ -2522,7 +2522,7 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 	char	   *extval;
 	char	   *sqlitecolumntype;
 	bool		convert_timestamp_tounixepoch;
-	bool        convert_uuid_blob;
+	bool		convert_uuid_blob;
 	Var		   *varnode;
 
 	if (node->constisnull)
@@ -2625,22 +2625,22 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 
 			if (convert_uuid_blob)
 			{
-		    	/*
-		    	 * the string for BYTEA always seems to be in the format "\\x##"
-		    	 * where # is a hex digit, Even if the value passed in is
-		    	 * 'hi'::bytea we will receive "\x6869". Making this assumption
-		    	 * allows us to quickly convert postgres escaped strings to sqlite
-		    	 * ones for comparison
-		    	 */
-		    	extval = OidOutputFunctionCall(typoutput, node->constvalue);
-		    	appendStringInfo(buf, "X\'");
-		    	for (int i = 0; i < strlen(extval); i++) {
-		    	    char c = extval[i];
-		    	    if ( c != '-' )
-		    	        appendStringInfoChar(buf, c);
-                }
-   		    	appendStringInfo(buf, "\'");
-   		    }
+				/*
+				 * the string for BYTEA always seems to be in the format "\\x##"
+				 * where # is a hex digit, Even if the value passed in is
+				 * 'hi'::bytea we will receive "\x6869". Making this assumption
+				 * allows us to quickly convert postgres escaped strings to sqlite
+				 * ones for comparison
+				 */
+				extval = OidOutputFunctionCall(typoutput, node->constvalue);
+				appendStringInfo(buf, "X\'");
+				for (int i = 0; i < strlen(extval); i++) {
+					char c = extval[i];
+					if ( c != '-' )
+						appendStringInfoChar(buf, c);
+				}
+   				appendStringInfo(buf, "\'");
+   			}
 			else
 				sqlite_deparse_string_literal(buf, extval);
 			break;
@@ -3463,7 +3463,7 @@ sqlite_append_order_by_clause(List *pathkeys, bool has_final_sort, deparse_expr_
 	appendStringInfo(buf, " ORDER BY");
 	foreach(lcell, pathkeys)
 	{
-		PathKey    *pathkey = lfirst(lcell);
+		PathKey	*pathkey = lfirst(lcell);
 		Expr	   *em_expr;
 		int			sqliteVersion = sqlite3_libversion_number();
 
@@ -3950,14 +3950,14 @@ sqlite_classify_conditions(PlannerInfo *root,
  * Case independend string comparation is usrful for text option values is some cases
  */
 int strcmp_case_independend(const char *str1, const char *str2) {
-    for (size_t i = 0;; i++) {
-        int c1 = toupper((unsigned char)str1[i]);
-        int c2 = toupper((unsigned char)str2[i]);
-        if (c1 != c2) {
-            return (c1 > c2) - (c1 < c2);
-        }
-        if (c1 == '\0') {
-            return 0;
-        }
-    }
+	for (size_t i = 0;; i++) {
+		int c1 = toupper((unsigned char)str1[i]);
+		int c2 = toupper((unsigned char)str2[i]);
+		if (c1 != c2) {
+			return (c1 > c2) - (c1 < c2);
+		}
+		if (c1 == '\0') {
+			return 0;
+		}
+	}
 }

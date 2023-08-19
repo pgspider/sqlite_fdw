@@ -37,15 +37,11 @@ static const char*
 static void
 			sqlite_value_to_pg_error (Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_colid, int sqlite_value_affinity, int affinity_for_pg_column, int value_byte_size_blob_or_utf8);
 static char *
-            get_column_option_string(Oid relid, int varattno, char *optionname);
+			get_column_option_string(Oid relid, int varattno, char *optionname);
 int
-            sqlite_bind_blob_algo (int attnum, Datum value, sqlite3_stmt * stmt);
+			sqlite_bind_blob_algo (int attnum, Datum value, sqlite3_stmt * stmt);
 static char *
 			sqlite_text_value_to_pg_db_encoding(sqlite3_stmt * stmt, int stmt_colid);
-static void
-			sqlite3_uuid_blob_to_str(const unsigned char* aBlob, unsigned char* zStr );
-static int
-            sqlite3_uuid_str_to_blob(const unsigned char* zStr, unsigned char* aBlob );
 
 /*
  * convert_sqlite_to_pg: Convert Sqlite data into PostgreSQL's compatible data types
@@ -54,7 +50,7 @@ NullableDatum
 sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_colid, AttInMetadata *attinmeta, AttrNumber attnum, int sqlite_value_affinity, int AffinityBehaviourFlags)
 {
 	Datum		value_datum = 0;
-	char       *valstr = NULL;
+	char	   *valstr = NULL;
 	int			affinity_for_pg_column = sqlite_affinity_eqv_to_pgtype(pgtyp);
 	int		 	value_byte_size_blob_or_utf8 = sqlite3_column_bytes(stmt, stmt_colid); // Compute always, void text and void BLOB will be special cases
 
@@ -67,7 +63,7 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 					case SQLITE_INTEGER: /* <-- proper and recommended SQLite affinity of value for pgtyp */
 						{
 							int			value = sqlite3_column_int(stmt, stmt_colid);
-							return (struct NullableDatum) { BoolGetDatum(value), false};
+							return (struct NullableDatum){BoolGetDatum(value), false};
 						}
 					case SQLITE_FLOAT:
 					case SQLITE_BLOB:
@@ -107,7 +103,7 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 						value_datum = (Datum) palloc0(value_byte_size_blob_or_utf8 + VARHDRSZ);
 						memcpy(VARDATA(value_datum), sqlite3_column_blob(stmt, stmt_colid), value_byte_size_blob_or_utf8);
 						SET_VARSIZE(value_datum, value_byte_size_blob_or_utf8 + VARHDRSZ);
-						return (struct NullableDatum) { PointerGetDatum(value_datum), false};
+						return (struct NullableDatum) {PointerGetDatum(value_datum), false};
 					}
 					default:
 					{
@@ -124,7 +120,7 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 					case SQLITE_INTEGER: /* <-- proper and recommended SQLite affinity of value for pgtyp */
 						{
 							int			value = sqlite3_column_int(stmt, stmt_colid);
-							return (struct NullableDatum) { Int16GetDatum(value), false};
+							return (struct NullableDatum) {Int16GetDatum(value), false};
 						}
 					case SQLITE_FLOAT:
 						{
@@ -159,7 +155,7 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 					case SQLITE_INTEGER: /* <-- proper and recommended SQLite affinity of value for pgtyp */
 					{
 						int			value = sqlite3_column_int(stmt, stmt_colid);
-						return (struct NullableDatum) { Int32GetDatum(value), false};
+						return (struct NullableDatum) {Int32GetDatum(value), false};
 					}
 					case SQLITE_FLOAT:
 						{
@@ -194,7 +190,7 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 					case SQLITE_INTEGER: /* <-- proper and recommended SQLite affinity of value for pgtyp */
 						{
 							sqlite3_int64 value = sqlite3_column_int64(stmt, stmt_colid);
-							return (struct NullableDatum) { Int64GetDatum(value), false};
+							return (struct NullableDatum) {Int64GetDatum(value), false};
 						}
 					case SQLITE_FLOAT:
 						{
@@ -234,7 +230,7 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 					case SQLITE_FLOAT: /* <-- proper and recommended SQLite affinity of value for pgtyp */
 						{
 							double		value = sqlite3_column_double(stmt, stmt_colid);
-							return (struct NullableDatum) { Float4GetDatum((float4) value), false};
+							return (struct NullableDatum) {Float4GetDatum((float4) value), false};
 						}
 					case SQLITE_BLOB:
 						{
@@ -269,7 +265,7 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 					case SQLITE_FLOAT: /* <-- proper and recommended SQLite affinity of value for pgtyp */
 						{
 							double		value = sqlite3_column_double(stmt, stmt_colid);
-							return (struct NullableDatum) { Float8GetDatum((float8) value), false};
+							return (struct NullableDatum) {Float8GetDatum((float8) value), false};
 						}
 					case SQLITE_BLOB:
 						{
@@ -312,7 +308,7 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 						{
 							double		value = sqlite3_column_double(stmt, stmt_colid);
 							Datum		d = DirectFunctionCall1(float8_timestamptz, Float8GetDatum((float8) value));
-							return (struct NullableDatum) { d, false};
+							return (struct NullableDatum) {d, false};
 						}
 					case SQLITE_BLOB:
 						{
@@ -388,13 +384,11 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 							}
 						else
 							{
-								const unsigned char * blob = 0;
-								unsigned char * buf = 0;
-
-								blob = sqlite3_column_blob(stmt, stmt_colid);
-								buf = (unsigned char *) palloc0(UUID_LEN * 2 + 4 + 1); /* + 4*'-' + 1*'\0' */
-								sqlite3_uuid_blob_to_str(blob, buf);
-								valstr = (char *)buf;
+								const unsigned char * sqlite_blob = 0;
+								pg_uuid_t  *retval = (pg_uuid_t *) palloc0(sizeof(pg_uuid_t));
+								sqlite_blob = sqlite3_column_blob(stmt, stmt_colid);
+								memcpy(retval->data, sqlite_blob, UUID_LEN);
+								return (struct NullableDatum){UUIDPGetDatum(retval), false};
 								break;
 							}
 						}
@@ -432,7 +426,7 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 									valstr,
 									attinmeta->attioparams[attnum],
 									attinmeta->atttypmods[attnum]);
-	return (struct NullableDatum) { value_datum, false};
+	return (struct NullableDatum){value_datum, false};
 }
 
 int sqlite_bind_blob_algo (int attnum, Datum value, sqlite3_stmt * stmt)
@@ -464,7 +458,7 @@ get_column_option_string(Oid relid, int varattno, char *optionname)
 	options = GetForeignColumnOptions(relid, varattno);
 	foreach(lc, options)
 	{
-		DefElem    *def = (DefElem *) lfirst(lc);
+		DefElem	*def = (DefElem *) lfirst(lc);
 
 		if (strcmp(def->defname, optionname) == 0)
 		{
@@ -583,50 +577,58 @@ sqlite_bind_sql_var(Oid type, int pgtypmod, int attnum, Datum value, sqlite3_stm
 				break;
 			}
 		case UUIDOID:
-		    {
-   				char	   *outputString = NULL;
-				Oid			outputFunctionId = InvalidOid;
-				bool		typeVarLength = false;
-				bool        uuid_as_blob = false;
+			{
+				bool		uuid_as_blob = false;
 
-				getTypeOutputInfo(type, &outputFunctionId, &typeVarLength);
-				outputString = OidOutputFunctionCall(outputFunctionId, value); /* uuid text belongs to ASCII subset, no need to translate encoding */
-
-                if (relid)
-                {
-                    char * optv = get_column_option_string (relid, attnum, "column_type");
-                   	elog(DEBUG3, "sqlite_fdw : col type %s ", optv);
-                    if (optv != NULL && strcmp_case_independend(optv, "BLOB") == 0)
+				if (relid)
+				{
+					char * optv = get_column_option_string (relid, attnum, "column_type");
+					elog(DEBUG3, "sqlite_fdw : col type %s ", optv);
+					if (optv != NULL && strcmp_case_independend(optv, "BLOB") == 0)
 						uuid_as_blob = true;
 				}
 
 				if (uuid_as_blob)
-                {
-            		unsigned char *dat = palloc0(UUID_LEN + 1);
-            		int r = sqlite3_uuid_str_to_blob((const unsigned char*) outputString, dat);
-                   	elog(DEBUG2, "sqlite_fdw : bind uuid as blob");
-            		if (!r)
-                    	ret = sqlite3_bind_blob(stmt, attnum, dat, UUID_LEN, SQLITE_TRANSIENT);
-                    /* else bind to null if not parsable, no actions */
-            	}
-            	else
-            	{
-    				ret = sqlite3_bind_text(stmt, attnum, outputString, -1, SQLITE_TRANSIENT);
-    			}
+				{
+					unsigned char *dat = palloc0(UUID_LEN);		
+					pg_uuid_t* pg_uuid = DatumGetUUIDP(value);
+					elog(DEBUG2, "sqlite_fdw : bind uuid as blob");
+					memcpy(dat, pg_uuid->data, UUID_LEN);					
+					ret = sqlite3_bind_blob(stmt, attnum, dat, UUID_LEN, SQLITE_TRANSIENT);
+				}
+				else 
+				{
+					/* uuid as text */
+					char	   *outputString = NULL;
+					Oid			outputFunctionId = InvalidOid;
+					bool		typeVarLength = false;
+					getTypeOutputInfo(type, &outputFunctionId, &typeVarLength);
+					outputString = OidOutputFunctionCall(outputFunctionId, value); /* uuid text belongs to ASCII subset, no need to translate encoding */
+					ret = sqlite3_bind_text(stmt, attnum, outputString, -1, SQLITE_TRANSIENT);
+				}
 				break;
-            }
+			}
 		default:
 			{
-			    const char	*pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(type, pgtypmod));
-				ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-								errmsg("cannot convert constant value to Sqlite value"),
-								errhint("Constant value data type: %s", pg_dataTypeName)));
+				if (pgtypmod > 0)
+				{
+					const char	*pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(type, pgtypmod));
+					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+									errmsg("cannot convert constant value to Sqlite value"),
+									errhint("Constant value data type: %s", pg_dataTypeName)));
+				}
+				else
+				{
+					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+									errmsg("cannot convert constant value to Sqlite value"),
+									errhint("Constant value data type Oid: %u", type)));
+				}
 				break;
 			}
 	}
 	if (ret != SQLITE_OK)
 	{
-	    const char	*pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(type, pgtypmod));
+		const char	*pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(type, pgtypmod));
 		ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
 						errmsg("Can't convert constant value to Sqlite: %s",
 							   sqlite3_errmsg(sqlite3_db_handle(stmt))),
@@ -725,84 +727,4 @@ static char * sqlite_text_value_to_pg_db_encoding(sqlite3_stmt * stmt, int stmt_
 	else
 		/* There is no UTF16 in PostgreSQL for fast sqlite3_column_text16, hence always convert */
 		return (char *) pg_do_encoding_conversion((unsigned char *) utf8_text_value, strlen(utf8_text_value), PG_UTF8, pg_database_encoding);
-}
-
-/*
- * Convert a 16-byte BLOB into a well-formed RFC-4122 UUID.  The output
- * buffer zStr should be at least 37 bytes in length.   The output will
- * be zero-terminated.
- * Adopted from MIT SQLean project, file uuid.c
- */
-static void sqlite3_uuid_blob_to_str(const unsigned char* aBlob, /* Input blob */
-                                     unsigned char* zStr         /* Write the answer here */
-)
-{
-    static const char zDigits[] = "0123456789abcdef";
-    int i, k;
-    unsigned char x;
-    k = 0;
-    for (i = 0, k = 0x550; i < UUID_LEN; i++, k = k >> 1)
-    {
-        if (k & 1)
-        {
-            zStr[0] = '-';
-            zStr++;
-        }
-        x = aBlob[i];
-        zStr[0] = zDigits[x >> 4];
-        zStr[1] = zDigits[x & 0xf];
-        zStr += 2;
-    }
-    *zStr = 0;
-}
-
-#if !defined(SQLITE_ASCII) && !defined(SQLITE_EBCDIC)
-#define SQLITE_ASCII 1
-#endif
-
-/*
- * Translate a single byte of Hex into an integer.
- * This routine only works if h really is a valid hexadecimal
- * character:  0..9a..fA..F
- */
-static unsigned char sqlite3UuidHexToInt(int h) {
-    assert((h >= '0' && h <= '9') || (h >= 'a' && h <= 'f') || (h >= 'A' && h <= 'F'));
-#ifdef SQLITE_ASCII
-    h += 9 * (1 & (h >> 6));
-#endif
-#ifdef SQLITE_EBCDIC
-    h += 9 * (1 & ~(h >> 4));
-#endif
-    return (unsigned char)(h & 0xf);
-}
-
-/*
- * Attempt to parse a zero-terminated input string zStr into a binary
- * UUID.  Return 0 on success, or non-zero if the input string is not
- * parsable.
- */
-static int sqlite3_uuid_str_to_blob(const unsigned char* zStr, /* Input string */
-                                    unsigned char* aBlob       /* Write results here */
-)
-{
-    int i;
-    if (zStr[0] == '{')
-        zStr++;
-    for (i = 0; i < 16; i++)
-    {
-        if (zStr[0] == '-')
-            zStr++;
-        if (isxdigit(zStr[0]) && isxdigit(zStr[1]))
-        {
-            aBlob[i] = (sqlite3UuidHexToInt(zStr[0]) << 4) + sqlite3UuidHexToInt(zStr[1]);
-            zStr += 2;
-        }
-        else
-        {
-            return 1;
-        }
-    }
-    if (zStr[0] == '}')
-        zStr++;
-    return zStr[0] != 0;
 }
