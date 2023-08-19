@@ -1796,7 +1796,7 @@ sqliteAddForeignUpdateTargets(
 		options = GetForeignColumnOptions(relid, attrno);
 		foreach(option, options)
 		{
-			DefElem	*def = (DefElem *) lfirst(option);
+			DefElem		*def = (DefElem *) lfirst(option);
 
 			/* if "key" is set, add a resjunk for this column */
 			if (IS_KEY_COLUMN(def))
@@ -1939,7 +1939,7 @@ sqlitePlanForeignModify(PlannerInfo *root,
 		options = GetForeignColumnOptions(foreignTableId, attrno);
 		foreach(option, options)
 		{
-			DefElem		*def = (DefElem *) lfirst(option);
+			DefElem	   *def = (DefElem *) lfirst(option);
 
 			if (IS_KEY_COLUMN(def))
 			{
@@ -2751,7 +2751,7 @@ sqliteExecForeignTruncate(List *rels,
 
 			foreach(cell, server->options)
 			{
-				DefElem	*defel = (DefElem *) lfirst(cell);
+				DefElem		*defel = (DefElem *) lfirst(cell);
 
 				if (strcmp(defel->defname, "truncatable") == 0)
 				{
@@ -2771,7 +2771,7 @@ sqliteExecForeignTruncate(List *rels,
 		truncatable = server_truncatable;
 		foreach(cell, table->options)
 		{
-			DefElem	*defel = (DefElem *) lfirst(cell);
+			DefElem		*defel = (DefElem *) lfirst(cell);
 
 			if (strcmp(defel->defname, "truncatable") == 0)
 			{
@@ -3006,22 +3006,22 @@ static List *
 sqliteImportForeignSchema(ImportForeignSchemaStmt *stmt,
 						  Oid serverOid)
 {
-	sqlite3	*volatile db = NULL;
-	sqlite3_stmt *volatile sql_stmt = NULL;
-	sqlite3_stmt *volatile pragma_stmt = NULL;
-	ForeignServer *server;
-	ListCell   *lc;
-	StringInfoData buf;
-	List	   *commands = NIL;
-	bool		import_default = false;
-	bool		import_not_null = true;
+	sqlite3		   *volatile db = NULL;
+	sqlite3_stmt   *volatile sql_stmt = NULL;
+	sqlite3_stmt   *volatile pragma_stmt = NULL;
+	ForeignServer  *server;
+	ListCell	   *lc;
+	StringInfoData  buf;
+	List	 	   *commands = NIL;
+	bool			import_default = false;
+	bool			import_not_null = true;
 
 	elog(DEBUG1, "sqlite_fdw : %s", __func__);
 
 	/* Parse statement options */
 	foreach(lc, stmt->options)
 	{
-		DefElem	*def = (DefElem *) lfirst(lc);
+		DefElem		*def = (DefElem *) lfirst(lc);
 
 		if (strcmp(def->defname, "import_default") == 0)
 			import_default = defGetBoolean(def);
@@ -4509,7 +4509,7 @@ sqlite_estimate_path_cost_size(PlannerInfo *root,
 		List	   *remote_param_join_conds;
 		List	   *local_param_join_conds;
 		StringInfoData sql;
-		sqlite3	*conn;
+		sqlite3	   *conn;
 		Selectivity local_sel;
 		QualCost	local_cost;
 		List	   *fdw_scan_tlist = NIL;

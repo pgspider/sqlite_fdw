@@ -114,9 +114,9 @@ Usage
 -----
 
 ### Datatypes
-**WARNING! The table above represents roadmap**, work still in progress. Untill it will be ended please refer real behaviour in non-obvious cases, where there is no ✔ mark.
+**WARNING! The table above represents roadmap**, work still in progress. Untill it will be ended please refer real behaviour in non-obvious cases, where there is no ✔ or ∅ mark.
 
-This table represents `sqlite_fdw` behaviour if in PostgreSQL foreign table column data of some SQLite [affinity](https://www.sqlite.org/datatype3.html) is detected.
+This table represents `sqlite_fdw` behaviour if in PostgreSQL foreign table column some [affinity](https://www.sqlite.org/datatype3.html) of SQLite data is detected.
 
 * **∅** - no support (runtime error)
 * **V** - transparent transformation
@@ -154,7 +154,7 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 
 `sqlite_fdw` accepts the following options via the `CREATE SERVER` command:
 
-- **database** as *string*, **required**
+- **database** as *string*, **required**, no default
 
   SQLite database path.
 
@@ -305,11 +305,11 @@ Following SQLs is correct for both SQLite and PostgreSQL because there is no col
 names with ASCII base latin letters *only*.
 
 ```sql
-	CREATE TABLE T_cyr (
+	CREATE TABLE T_кир (
 	  "А" INTEGER,
 	  "а" NUMERIC
 	);
-	CREATE TABLE T_gre (
+	CREATE TABLE T_ελλ (
 	  "Α" INTEGER,
 	  "α" NUMERIC
 	);
@@ -516,10 +516,10 @@ Limitations
 - `sqlite_fdw` don't provides limited support of boolean values if `bool` column in foreign table mapped to SQLite `text` [affinity](https://www.sqlite.org/datatype3.html).
 
 ### UUID values
-- `sqlite_fdw` UUID values support exists only for `uuid` columns in foreign table. SQLite documentation recommends to store UUID as value with both `blob` and `text` [affinity](https://www.sqlite.org/datatype3.html). `sqlite_fdw` can read both `text` and `blob` values.
-- Affinity of UUID value in SQLite table determined by `column_type` option of the column
-for `INSERT` and `UPDATE` commands and also for searched UUID value in `WHERE` predicate. This means visible `SELECT uuid_column ... WHERE 1=1` and filtred `SELECT uuid_column ... WHERE uuid_column=''` will get different results. First command gives *all possible* UUID values. Second command will filter *only values of preferred affinity* determined by `column_type` option of the column.
-- Common limitation of PostgreSQL determines we [can read UUID values in many forms](https://www.postgresql.org/docs/15/datatype-uuid.html), but PostgreSQL gives to `sqlite_fdw` always normalized UUID value for `INSERT`, `UPDATE` commands or `WHERE` predicate calculation. This means for SQLite `text` affinity values we can read all possible forms, but new inserted values will be normalized according PostgreSQL rules. Also in `WHERE` predicate calculation will be used only normalized form fo UUID value. Hence `SELECT uuid_column ... WHERE 1=1` and filtred `SELECT uuid_column ... WHERE uuid_column=''` will get different results if there is some not normalized but possible UUID text values.
+- `sqlite_fdw` UUID values support exists only for `uuid` columns in foreign table. SQLite documentation recommends to store UUID as value with both `blob` and `text` [affinity](https://www.sqlite.org/datatype3.html). `sqlite_fdw` can read both `text` and `blob` values, but writes only values with affinity determined by `column_type` option.
+- Expected affinity of UUID value in SQLite table determined by `column_type` option of the column
+for `INSERT` and `UPDATE` commands and also for searched UUID value in `WHERE` predicate. This means visible `SELECT uuid_column ... WHERE 1=1` and filtred `SELECT uuid_column ... WHERE uuid_column='...'` will get different results. First command gives *all possible readable* UUID values with both affinities if there are. Second command will filter *only values of preferred affinity* determined by `column_type` option of the column.
+- Common limitation of PostgreSQL text UUID operations determines we [can read UUID values in many forms](https://www.postgresql.org/docs/15/datatype-uuid.html), but PostgreSQL gives to `sqlite_fdw` always normalized UUID value look like `a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11` for `INSERT`, `UPDATE` commands or `WHERE` predicate calculation. This means for SQLite `text` affinity values we can read all possible forms, but new inserted values will be normalized according PostgreSQL rules. Also in `WHERE` predicate calculation will be used only normalized form for UUID value. Hence `SELECT uuid_column ... WHERE 1=1` and filtred `SELECT uuid_column ... WHERE uuid_column='...'` will get different results if there is some not normalized but possible UUID text values.
 
 Tests
 -----
