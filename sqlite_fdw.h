@@ -378,4 +378,7 @@ NullableDatum sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt,
 
 void		sqlite_bind_sql_var(Oid type, int pgtypmod, int attnum, Datum value, sqlite3_stmt * stmt, bool *isnull, Oid relid);
 extern void sqlite_do_sql_command(sqlite3 * conn, const char *sql, int level, List **busy_connection);
+
+int sqlite_uuid_init(sqlite3* db);
+
 #endif							/* SQLITE_FDW_H */

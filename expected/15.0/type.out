@@ -645,15 +645,27 @@ ALTER FOREIGN TABLE "type_UUID+" ALTER COLUMN "u" OPTIONS (ADD column_type 'BLOB
 SELECT * FROM "type_UUID+" where "u" = 'A0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A11';
  i  |                  u                   |  t   | l  
 ----+--------------------------------------+------+----
+  1 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+  2 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+  3 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 38
+  4 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 32
+  5 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 39
+  6 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 37
  13 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
  15 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 17 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+ 18 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+ 19 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+ 20 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+ 21 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+ 22 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
  29 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
  30 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
  31 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
  32 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
  33 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
  34 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
-(8 rows)
+(20 rows)
 
 --Testcase 158:
 ALTER FOREIGN TABLE "type_UUID+" ALTER COLUMN "u" OPTIONS (SET column_type 'TEXT');
@@ -662,26 +674,52 @@ SELECT * FROM "type_UUID+" where "u" = 'A0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A11';
  i  |                  u                   |  t   | l  
 ----+--------------------------------------+------+----
   1 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+  2 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+  3 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 38
+  4 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 32
+  5 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 39
+  6 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 37
+ 13 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 15 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
  17 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
  18 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
  19 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
  20 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
  21 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
  22 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
-(7 rows)
+ 29 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 30 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 31 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 32 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 33 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 34 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+(20 rows)
 
 --Testcase 160:
 SELECT * FROM "type_UUID+" where "u" = 'B0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A12';
  i  |                  u                   |  t   | l  
 ----+--------------------------------------+------+----
   7 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+  8 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+  9 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 38
+ 10 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 37
+ 11 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 32
+ 12 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 39
+ 14 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+ 16 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
  23 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
  24 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
  25 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
  26 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
  27 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
  28 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
-(7 rows)
+ 35 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+ 36 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+ 37 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+ 38 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+ 39 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+ 40 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+(20 rows)
 
 --Testcase 161:
 ALTER FOREIGN TABLE "type_UUID+" ALTER COLUMN "u" OPTIONS (SET column_type 'BLOB');
@@ -689,15 +727,27 @@ ALTER FOREIGN TABLE "type_UUID+" ALTER COLUMN "u" OPTIONS (SET column_type 'BLOB
 SELECT * FROM "type_UUID+" where "u" = 'B0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A12';
  i  |                  u                   |  t   | l  
 ----+--------------------------------------+------+----
+  7 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+  8 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+  9 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 38
+ 10 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 37
+ 11 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 32
+ 12 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 39
  14 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
  16 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+ 23 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+ 24 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+ 25 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+ 26 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+ 27 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+ 28 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
  35 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
  36 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
  37 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
  38 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
  39 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
  40 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
-(8 rows)
+(20 rows)
 
 --Testcase 163:
 UPDATE "type_UUID" SET "u" = '{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a12}' WHERE "i" = 25;
@@ -729,7 +779,6 @@ SELECT * FROM "type_UUID+";
  22 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
  23 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
  24 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
- 25 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
  26 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
  27 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
  28 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
@@ -739,7 +788,7 @@ SELECT * FROM "type_UUID+";
  32 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
  33 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
  34 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
-(32 rows)
+(31 rows)
 
 --Testcase 166:
 ALTER FOREIGN TABLE "type_UUID+" ALTER COLUMN "u" OPTIONS (SET column_type 'BLOB');
@@ -769,11 +818,10 @@ SELECT * FROM "type_UUID+";
  22 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
  23 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
  24 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
- 25 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
  26 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
  27 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
  28 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
-(24 rows)
+(23 rows)
 
 --Testcase 169:
 UPDATE "type_UUID" SET "i" = "i" + 40 WHERE "u" = 'a0eebc999c0b4ef8bb6d6bb9bd380a11';
@@ -801,11 +849,10 @@ SELECT * FROM "type_UUID+";
  22 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
  23 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
  24 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
- 25 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
  26 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
  27 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
  28 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
-(24 rows)
+(23 rows)
 
 ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" TYPE bytea;
 --Testcase 171:

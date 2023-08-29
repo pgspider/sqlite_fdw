@@ -2016,6 +2016,7 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 		char	   *colname = NULL;
 		List	   *options;
 		ListCell   *lc;
+		Oid			pg_atttyp = 0;
 
 		/* varno must not be any of OUTER_VAR, INNER_VAR and INDEX_VAR. */
 		Assert(!IS_SPECIAL_VARNO(varno));
@@ -2048,11 +2049,27 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 #else
 			colname = get_attname(rte->relid, varattno);
 #endif
-
-		if (qualify_col)
-			ADD_REL_QUALIFIER(buf, varno);
-
-		appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+		pg_atttyp = get_atttype(rte->relid, varattno);
+		
+		if (pg_atttyp == UUIDOID && root->parse->commandType == CMD_SELECT)
+		{
+			elog(DEBUG2, "UUID column name for SELECT = %s\n", colname);
+			appendStringInfoString(buf, "coalesce (uuid_blob(");
+			if (qualify_col)
+				ADD_REL_QUALIFIER(buf, varno);
+			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+			appendStringInfoString(buf, "),");
+			if (qualify_col)
+				ADD_REL_QUALIFIER(buf, varno);
+			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+			appendStringInfoString(buf, ")");
+		}
+		else 
+		{
+			if (qualify_col)
+				ADD_REL_QUALIFIER(buf, varno);
+			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+		}
 	}
 }
 
@@ -2522,7 +2539,6 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 	char	   *extval;
 	char	   *sqlitecolumntype;
 	bool		convert_timestamp_tounixepoch;
-	bool		convert_uuid_blob;
 	Var		   *varnode;
 
 	if (node->constisnull)
@@ -2607,42 +2623,22 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 				sqlite_deparse_string_literal(buf, extval);
 
 			break;
-		case UUIDOID:
-			convert_uuid_blob = false;
+		case UUIDOID: 
+			/* always deparse to BLOB because this is internal PostgreSQL storage 
+			 * the string for BYTEA always seems to be in the format "\\x##"
+			 * where # is a hex digit, Even if the value passed in is
+			 * 'hi'::bytea we will receive "\x6869". Making this assumption
+			 * allows us to quickly convert postgres escaped strings to sqlite
+			 * ones for comparison
+			 */
 			extval = OidOutputFunctionCall(typoutput, node->constvalue);
-
-			if (context->complementarynode != NULL)
-			{
-				varnode = get_complementary_var_node(context->complementarynode);
-				if (varnode != NULL)
-				{
-					sqlitecolumntype = sqlite_deparse_column_option(varnode->varno, varnode->varattno, context->root, "column_type");
-
-					if (sqlitecolumntype != NULL && strcmp(sqlitecolumntype, "BLOB") == 0)
-						convert_uuid_blob = true;
-				}
+			appendStringInfo(buf, "X\'");
+			for (int i = 0; i < strlen(extval); i++) {
+				char c = extval[i];
+				if ( c != '-' )
+					appendStringInfoChar(buf, c);
 			}
-
-			if (convert_uuid_blob)
-			{
-				/*
-				 * the string for BYTEA always seems to be in the format "\\x##"
-				 * where # is a hex digit, Even if the value passed in is
-				 * 'hi'::bytea we will receive "\x6869". Making this assumption
-				 * allows us to quickly convert postgres escaped strings to sqlite
-				 * ones for comparison
-				 */
-				extval = OidOutputFunctionCall(typoutput, node->constvalue);
-				appendStringInfo(buf, "X\'");
-				for (int i = 0; i < strlen(extval); i++) {
-					char c = extval[i];
-					if ( c != '-' )
-						appendStringInfoChar(buf, c);
-				}
-   				appendStringInfo(buf, "\'");
-   			}
-			else
-				sqlite_deparse_string_literal(buf, extval);
+  				appendStringInfo(buf, "\'");
 			break;
 		default:
 			extval = OidOutputFunctionCall(typoutput, node->constvalue);

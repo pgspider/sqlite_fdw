@@ -10,7 +10,7 @@
 ##########################################################################
 
 MODULE_big = sqlite_fdw
-OBJS = connection.o option.o deparse.o sqlite_query.o sqlite_fdw.o
+OBJS = connection.o option.o deparse.o sqlite_query.o sqlite_fdw.o uuid_extension.o
 
 EXTENSION = sqlite_fdw
 DATA = sqlite_fdw--1.0.sql sqlite_fdw--1.0--1.1.sql

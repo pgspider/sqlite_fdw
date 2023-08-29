@@ -2816,8 +2816,6 @@ bindJunkColumnValue(SqliteFdwExecState * fmstate,
 					int bindnum)
 {
 	int			i;
-	Datum		value;
-	Oid			typeoid;
 
 	/* Bind where condition using junk column */
 	for (i = 0; i < slot->tts_tupleDescriptor->natts; ++i)
@@ -2838,12 +2836,13 @@ bindJunkColumnValue(SqliteFdwExecState * fmstate,
 
 			if (IS_KEY_COLUMN(def))
 			{
+				Datum		value;
+				Oid			typeoid = att->atttypid;
+				int			pgtypmod = att->atttypmod;
 				/* Get the id that was passed up as a resjunk column */
 				value = ExecGetJunkAttribute(planSlot, fmstate->junk_idx[i], &is_null);
-				typeoid = att->atttypid;
-
 				/* Bind qual */
-				sqlite_bind_sql_var(typeoid, -1, bindnum, value, fmstate->stmt, &is_null, foreignTableId);
+				sqlite_bind_sql_var(typeoid, pgtypmod, bindnum, value, fmstate->stmt, &is_null, foreignTableId);
 				bindnum++;
 			}
 		}
@@ -5284,7 +5283,6 @@ sqlite_prepare_query_params(PlanState *node,
 		getTypeOutputInfo(exprType(param_expr), &typefnoid, &isvarlena);
 		fmgr_info(typefnoid, &(*param_flinfo)[i]);
 		i++;
-
 	}
 
 	/*
