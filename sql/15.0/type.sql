@@ -400,23 +400,27 @@ DELETE FROM "type_UUID" WHERE "u" = 'a0eebc99-9c0b4ef8-bb6d6bb9-bd380a12';
 --Testcase 173:
 SELECT * FROM "type_UUID+";
 --Testcase 174:
-UPDATE "type_UUID" SET "u" = '{b0eebc99-9c0b4ef8-bb6d6bb9-00000a15}' WHERE "u" = '{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a15}';
+INSERT INTO "type_UUID" ("i", "u") VALUES (41, '{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a15}');
 --Testcase 175:
-SELECT * FROM "type_UUID+";
---Testcase 176:
-ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" TYPE bytea;
---Testcase 177:
-INSERT INTO "type_UUID" ("i", "u") VALUES (41, decode('a0eebc999c0b4ef8bb6d6bb9bd380a11f1', 'hex'));
---Testcase 178:
-INSERT INTO "type_UUID" ("i", "u") VALUES (42, decode('b0eebc999c0b4ef8bb6d6bb9bd380a', 'hex'));
---Testcase 179:
-INSERT INTO "type_UUID" ("i", "u") VALUES (43, decode('b0eebc999c0b4ef8bb6d6bb9bd380a1', 'hex'));
---Testcase 180:
 SELECT * FROM "type_UUID+" WHERE "i" = 41;
+--Testcase 176:
+UPDATE "type_UUID" SET "u" = '{b0eebc99-9c0b4ef8-bb6d6bb9-00000a15}' WHERE "u" = '{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a15}';
+--Testcase 177:
+SELECT * FROM "type_UUID+";
+--Testcase 178:
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" TYPE bytea;
+--Testcase 179:
+INSERT INTO "type_UUID" ("i", "u") VALUES (42, decode('a0eebc999c0b4ef8bb6d6bb9bd380a11f1', 'hex'));
+--Testcase 180:
+INSERT INTO "type_UUID" ("i", "u") VALUES (43, decode('b0eebc999c0b4ef8bb6d6bb9bd380a', 'hex'));
 --Testcase 181:
-SELECT * FROM "type_UUID+" WHERE "i" = 42;
+INSERT INTO "type_UUID" ("i", "u") VALUES (44, decode('b0eebc999c0b4ef8bb6d6bb9bd380a1', 'hex'));
 --Testcase 182:
+SELECT * FROM "type_UUID+" WHERE "i" = 42;
+--Testcase 183:
 SELECT * FROM "type_UUID+" WHERE "i" = 43;
+--Testcase 184:
+SELECT * FROM "type_UUID+" WHERE "i" = 44;
 
 --Testcase 47:
 DROP EXTENSION sqlite_fdw CASCADE;
