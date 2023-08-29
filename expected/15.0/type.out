@@ -856,14 +856,16 @@ INSERT INTO "type_UUID" ("i", "u") VALUES (43, decode('b0eebc999c0b4ef8bb6d6bb9b
 INSERT INTO "type_UUID" ("i", "u") VALUES (44, decode('b0eebc999c0b4ef8bb6d6bb9bd380a1', 'hex'));
 ERROR:  invalid hexadecimal data: odd number of digits
 --Testcase 182:
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" TYPE uuid;
+--Testcase 183:
 SELECT * FROM "type_UUID+" WHERE "i" = 42;
 ERROR:  PostgreSQL uuid data type allows only 16 bytes SQLite blob value
 HINT:  incorrect value is 17 bytes length
---Testcase 183:
+--Testcase 184:
 SELECT * FROM "type_UUID+" WHERE "i" = 43;
 ERROR:  PostgreSQL uuid data type allows only 16 bytes SQLite blob value
 HINT:  incorrect value is 15 bytes length
---Testcase 184:
+--Testcase 185:
 SELECT * FROM "type_UUID+" WHERE "i" = 44;
  i | u | t | l 
 ---+---+---+---

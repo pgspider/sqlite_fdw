@@ -416,10 +416,12 @@ INSERT INTO "type_UUID" ("i", "u") VALUES (43, decode('b0eebc999c0b4ef8bb6d6bb9b
 --Testcase 181:
 INSERT INTO "type_UUID" ("i", "u") VALUES (44, decode('b0eebc999c0b4ef8bb6d6bb9bd380a1', 'hex'));
 --Testcase 182:
-SELECT * FROM "type_UUID+" WHERE "i" = 42;
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" TYPE uuid;
 --Testcase 183:
-SELECT * FROM "type_UUID+" WHERE "i" = 43;
+SELECT * FROM "type_UUID+" WHERE "i" = 42;
 --Testcase 184:
+SELECT * FROM "type_UUID+" WHERE "i" = 43;
+--Testcase 185:
 SELECT * FROM "type_UUID+" WHERE "i" = 44;
 
 --Testcase 47:
