@@ -378,33 +378,44 @@ ALTER FOREIGN TABLE "type_UUID+" ALTER COLUMN "u" OPTIONS (SET column_type 'BLOB
 --Testcase 162:
 SELECT * FROM "type_UUID+" where "u" = 'B0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A12';
 --Testcase 163:
-UPDATE "type_UUID" SET "u" = '{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a12}' WHERE "i" = 25;
+UPDATE "type_UUID" SET "u" = '{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a15}' WHERE "i" = 25;
 --Testcase 164:
-DELETE FROM "type_UUID" WHERE "u" = '{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a12}';
+DELETE FROM "type_UUID" WHERE "u" = 'b0eebc999c0b4ef8bb6d6bb9bd380a12';
 --Testcase 165:
 SELECT * FROM "type_UUID+";
 --Testcase 166:
-ALTER FOREIGN TABLE "type_UUID+" ALTER COLUMN "u" OPTIONS (SET column_type 'BLOB');
+DELETE FROM "type_UUID" WHERE "u" = 'b0eebc999c0b4ef8bb6d6bb9bd380a15';
 --Testcase 167:
-DELETE FROM "type_UUID" WHERE "u" = 'a0eebc99-9c0b4ef8-bb6d6bb9-bd380a11';
---Testcase 168:
 SELECT * FROM "type_UUID+";
+--Testcase 168:
+ALTER FOREIGN TABLE "type_UUID+" ALTER COLUMN "u" OPTIONS (SET column_type 'BLOB');
 --Testcase 169:
-UPDATE "type_UUID" SET "i" = "i" + 40 WHERE "u" = 'a0eebc999c0b4ef8bb6d6bb9bd380a11';
+DELETE FROM "type_UUID" WHERE "u" = 'a0eebc99-9c0b4ef8-bb6d6bb9-bd380a11';
 --Testcase 170:
 SELECT * FROM "type_UUID+";
-ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" TYPE bytea;
 --Testcase 171:
-INSERT INTO "type_UUID" ("i", "u") VALUES (41, decode('a0eebc999c0b4ef8bb6d6bb9bd380a11f1', 'hex'));
+ALTER FOREIGN TABLE "type_UUID+" ALTER COLUMN "u" OPTIONS (SET column_type 'TEXT');
 --Testcase 172:
-INSERT INTO "type_UUID" ("i", "u") VALUES (42, decode('b0eebc999c0b4ef8bb6d6bb9bd380a', 'hex'));
+DELETE FROM "type_UUID" WHERE "u" = 'a0eebc99-9c0b4ef8-bb6d6bb9-bd380a12';
 --Testcase 173:
-INSERT INTO "type_UUID" ("i", "u") VALUES (43, decode('b0eebc999c0b4ef8bb6d6bb9bd380a1', 'hex'));
+SELECT * FROM "type_UUID+";
 --Testcase 174:
-SELECT * FROM "type_UUID+" WHERE "i" = 41;
+UPDATE "type_UUID" SET "u" = '{b0eebc99-9c0b4ef8-bb6d6bb9-00000a15}' WHERE "u" = '{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a15}';
 --Testcase 175:
-SELECT * FROM "type_UUID+" WHERE "i" = 42;
+SELECT * FROM "type_UUID+";
 --Testcase 176:
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" TYPE bytea;
+--Testcase 177:
+INSERT INTO "type_UUID" ("i", "u") VALUES (41, decode('a0eebc999c0b4ef8bb6d6bb9bd380a11f1', 'hex'));
+--Testcase 178:
+INSERT INTO "type_UUID" ("i", "u") VALUES (42, decode('b0eebc999c0b4ef8bb6d6bb9bd380a', 'hex'));
+--Testcase 179:
+INSERT INTO "type_UUID" ("i", "u") VALUES (43, decode('b0eebc999c0b4ef8bb6d6bb9bd380a1', 'hex'));
+--Testcase 180:
+SELECT * FROM "type_UUID+" WHERE "i" = 41;
+--Testcase 181:
+SELECT * FROM "type_UUID+" WHERE "i" = 42;
+--Testcase 182:
 SELECT * FROM "type_UUID+" WHERE "i" = 43;
 
 --Testcase 47:

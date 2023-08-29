@@ -130,7 +130,7 @@ static void sqlite_print_remote_placeholder(Oid paramtype, int32 paramtypmod,
 static void sqlite_deparse_relation(StringInfo buf, Relation rel);
 static void sqlite_deparse_target_list(StringInfo buf, PlannerInfo *root, Index rtindex, Relation rel,
 									   Bitmapset *attrs_used, bool qualify_col, List **retrieved_attrs, bool is_concat, bool check_null);
-static void sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *root, bool qualify_col);
+static void sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *root, bool qualify_col, bool dml_context);
 static void sqlite_deparse_select(List *tlist, List **retrieved_attrs, deparse_expr_cxt *context);
 static void sqlite_deparse_case_expr(CaseExpr *node, deparse_expr_cxt *context);
 static void sqlite_deparse_null_if_expr(NullIfExpr *node, deparse_expr_cxt *context);
@@ -1707,7 +1707,7 @@ sqlite_deparse_insert(StringInfo buf, PlannerInfo *root,
 					appendStringInfoString(buf, ", ");
 				first = false;
 
-				sqlite_deparse_column_ref(buf, rtindex, attnum, root, false);
+				sqlite_deparse_column_ref(buf, rtindex, attnum, root, false, true);
 #if PG_VERSION_NUM >= 140000
 			}
 #endif
@@ -1861,7 +1861,7 @@ sqlite_deparse_target_list(StringInfo buf,
 
 			first = false;
 
-			sqlite_deparse_column_ref(buf, rtindex, i, root, qualify_col);
+			sqlite_deparse_column_ref(buf, rtindex, i, root, qualify_col, false);
 
 			if (check_null)
 				appendStringInfoString(buf, " IS NOT NULL) ");
@@ -1959,7 +1959,7 @@ sqlite_deparse_truncate(StringInfo buf,
  * If it has a column_name FDW option, use that instead of attribute name.
  */
 static void
-sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *root, bool qualify_col)
+sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *root, bool qualify_col, bool dml_context)
 {
 	RangeTblEntry *rte;
 
@@ -1973,6 +1973,8 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 
 		/* Required only to be passed down to deparseTargetList(). */
 		List	   *retrieved_attrs;
+		
+		elog(DEBUG3, "sqlite_fdw : %s , varattrno == 0", __func__);
 
 		/*
 		 * The lock on the relation will be held by upper callers, so it's
@@ -2018,6 +2020,7 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 		ListCell   *lc;
 		Oid			pg_atttyp = 0;
 
+		elog(DEBUG3, "sqlite_fdw : %s , varattrno != 0", __func__);
 		/* varno must not be any of OUTER_VAR, INNER_VAR and INDEX_VAR. */
 		Assert(!IS_SPECIAL_VARNO(varno));
 
@@ -2051,7 +2054,7 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 #endif
 		pg_atttyp = get_atttype(rte->relid, varattno);
 		
-		if (pg_atttyp == UUIDOID && root->parse->commandType == CMD_SELECT)
+		if (pg_atttyp == UUIDOID && !dml_context ) /* root->parse->commandType == CMD_SELECT */
 		{
 			elog(DEBUG2, "UUID column name for SELECT = %s\n", colname);
 			appendStringInfoString(buf, "coalesce (uuid_blob(");
@@ -2063,9 +2066,11 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 				ADD_REL_QUALIFIER(buf, varno);
 			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
 			appendStringInfoString(buf, ")");
+			elog(DEBUG3, "UUID column name for SELECT = %s\n", buf->data);
 		}
 		else 
 		{
+			elog(DEBUG2, "non UUID column name = %s\n", colname);
 			if (qualify_col)
 				ADD_REL_QUALIFIER(buf, varno);
 			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
@@ -2243,7 +2248,7 @@ sqlite_deparse_update(StringInfo buf, PlannerInfo *root,
 			if (!first)
 				appendStringInfoString(buf, ", ");
 			first = false;
-			sqlite_deparse_column_ref(buf, rtindex, attnum, root, false);
+			sqlite_deparse_column_ref(buf, rtindex, attnum, root, false, true);
 			appendStringInfo(buf, " = ?");
 			pindex++;
 #if PG_VERSION_NUM >= 140000
@@ -2256,7 +2261,7 @@ sqlite_deparse_update(StringInfo buf, PlannerInfo *root,
 		int			attnum = lfirst_int(lc);
 
 		appendStringInfo(buf, i == 0 ? " WHERE " : " AND ");
-		sqlite_deparse_column_ref(buf, rtindex, attnum, root, false);
+		sqlite_deparse_column_ref(buf, rtindex, attnum, root, false, true);
 		appendStringInfo(buf, "=?");
 		i++;
 	}
@@ -2291,6 +2296,7 @@ sqlite_deparse_direct_update_sql(StringInfo buf, PlannerInfo *root,
 	ListCell   *lc;
 	ListCell   *lc2;
 
+	elog(DEBUG3, "sqlite_fdw : %s\n", __func__);
 	/* Set up context struct for recursion */
 	context.root = root;
 	context.foreignrel = foreignrel;
@@ -2330,7 +2336,7 @@ sqlite_deparse_direct_update_sql(StringInfo buf, PlannerInfo *root,
 			appendStringInfoString(buf, ", ");
 		first = false;
 
-		sqlite_deparse_column_ref(buf, rtindex, attnum, root, false);
+		sqlite_deparse_column_ref(buf, rtindex, attnum, root, false, true);
 		appendStringInfoString(buf, " = ");
 		sqlite_deparse_expr((Expr *) tle->expr, &context);
 	}
@@ -2376,7 +2382,7 @@ sqlite_deparse_delete(StringInfo buf, PlannerInfo *root,
 		int			attnum = lfirst_int(lc);
 
 		appendStringInfo(buf, i == 0 ? " WHERE " : " AND ");
-		sqlite_deparse_column_ref(buf, rtindex, attnum, root, false);
+		sqlite_deparse_column_ref(buf, rtindex, attnum, root, false, true);
 		appendStringInfo(buf, "=?");
 		i++;
 	}
@@ -2403,6 +2409,8 @@ sqlite_deparse_direct_delete_sql(StringInfo buf, PlannerInfo *root,
 								 List **retrieved_attrs)
 {
 	deparse_expr_cxt context;
+	
+	elog(DEBUG1, "sqlite_fdw : %s", __func__);
 
 	/* Set up context struct for recursion */
 	context.root = root;
@@ -2468,7 +2476,7 @@ sqlite_deparse_var(Var *node, deparse_expr_cxt *context)
 	if (bms_is_member(node->varno, relids) && node->varlevelsup == 0)
 	{
 		/* Var belongs to foreign table */
-		sqlite_deparse_column_ref(buf, node->varno, node->varattno, context->root, qualify_col);
+		sqlite_deparse_column_ref(buf, node->varno, node->varattno, context->root, qualify_col, false);
 	}
 	else
 	{
