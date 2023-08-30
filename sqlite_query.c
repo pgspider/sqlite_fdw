@@ -52,7 +52,8 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 	Datum		value_datum = 0;
 	char	   *valstr = NULL;
 	int			affinity_for_pg_column = sqlite_affinity_eqv_to_pgtype(pgtyp);
-	int		 	value_byte_size_blob_or_utf8 = sqlite3_column_bytes(stmt, stmt_colid); // Compute always, void text and void BLOB will be special cases
+				/* Compute always, void text and void BLOB will be special cases */
+	int		 	value_byte_size_blob_or_utf8 = sqlite3_column_bytes(stmt, stmt_colid);
 
 	switch (pgtyp)
 	{

@@ -1,10 +1,21 @@
-// Originally from the uuid SQLite exension, Public Domain
-// https://www.sqlite.org/src/file/ext/misc/uuid.c
-
-// Modified by Anton Zhiyanov, MIT License
-// https://github.com/nalgeon/sqlean/
-
-// Universally Unique IDentifiers (UUIDs) in SQLite
+/*-------------------------------------------------------------------------
+ *
+ * SQLite Foreign Data Wrapper for PostgreSQL
+ *
+ * Universally Unique IDentifiers (UUIDs) in SQLite
+ *
+ * Originally from the uuid SQLite exension, Public Domain
+ * https://www.sqlite.org/src/file/ext/misc/uuid.c
+ * Modified by Anton Zhiyanov, MIT License
+ * https://github.com/nalgeon/sqlean/
+ *
+ * IDENTIFICATION
+ * 		uuid_extension.c
+ *
+ *-------------------------------------------------------------------------
+ * WARNING: PLEASE REMOVE THIS FILE AFTER SQLITE 3.41+ SUPPORT BECASUE OF 
+ * AVAILLABLE UNHEX FUNCTION
+ */
 
 /*
  * This SQLite extension implements functions that handling RFC-4122 UUIDs
@@ -206,10 +217,8 @@ static void uuid_blob(sqlite3_context* context, int argc, sqlite3_value** argv) 
 int sqlite_uuid_init(sqlite3* db) {
     static const int flags = SQLITE_UTF8 | SQLITE_INNOCUOUS;
     static const int det_flags = SQLITE_UTF8 | SQLITE_INNOCUOUS | SQLITE_DETERMINISTIC;
-    sqlite3_create_function(db, "uuid4", 0, flags, 0, uuid_generate, 0, 0);
-    /* for postgresql compatibility */
-    sqlite3_create_function(db, "gen_random_uuid", 0, flags, 0, uuid_generate, 0, 0);
-    sqlite3_create_function(db, "uuid_str", 1, det_flags, 0, uuid_str, 0, 0);
-    sqlite3_create_function(db, "uuid_blob", 1, det_flags, 0, uuid_blob, 0, 0);
+    sqlite3_create_function(db, "sqlite_fdw_gen_random_uuid", 0, flags, 0, uuid_generate, 0, 0);
+    sqlite3_create_function(db, "sqlite_fdw_uuid_str", 1, det_flags, 0, uuid_str, 0, 0);
+    sqlite3_create_function(db, "sqlite_fdw_uuid_blob", 1, det_flags, 0, uuid_blob, 0, 0);
     return SQLITE_OK;
 }

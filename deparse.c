@@ -2054,10 +2054,16 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 #endif
 		pg_atttyp = get_atttype(rte->relid, varattno);
 		
-		if (pg_atttyp == UUIDOID && !dml_context ) /* root->parse->commandType == CMD_SELECT */
+		/* PostgreSQL data types with possible mixed affinity SQLite base we should
+		 * normalize to preferred form in SQLite before transfer to PostgreSQL.
+		 * Recommended form for normalisation is someone from 1<->1 with PostgreSQL
+		 * internal storage, hence usually this will not original text data.
+		 */
+		if (pg_atttyp == UUIDOID && !dml_context )
 		{
-			elog(DEBUG2, "UUID column name for SELECT = %s\n", colname);
-			appendStringInfoString(buf, "coalesce (uuid_blob(");
+			elog(DEBUG2, "UUID unification for \"%s\"", colname);
+			/* Please remove to UNHEX and deattach uuid_extension.c after SQLite 3.41+ support */
+			appendStringInfoString(buf, "coalesce(sqlite_fdw_uuid_blob(");
 			if (qualify_col)
 				ADD_REL_QUALIFIER(buf, varno);
 			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
@@ -2066,11 +2072,10 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 				ADD_REL_QUALIFIER(buf, varno);
 			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
 			appendStringInfoString(buf, ")");
-			elog(DEBUG3, "UUID column name for SELECT = %s\n", buf->data);
 		}
 		else 
 		{
-			elog(DEBUG2, "non UUID column name = %s\n", colname);
+			elog(DEBUG3, "column name without data unification = \"%s\"", colname);
 			if (qualify_col)
 				ADD_REL_QUALIFIER(buf, varno);
 			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));

@@ -39,7 +39,7 @@ typedef Oid ConnCacheKey;
 typedef struct ConnCacheEntry
 {
 	ConnCacheKey key;			/* hash key (must be first) */
-	sqlite3    *conn;			/* connection to foreign server, or NULL */
+	sqlite3	   *conn;			/* connection to foreign server, or NULL */
 	/* Remaining fields are invalid when conn is NULL: */
 	int			xact_depth;		/* 0 = no xact open, 1 = main xact open, 2 =
 								 * one level of subxact open, etc */
@@ -85,7 +85,7 @@ static List *sqlite_append_stmt_to_list(List *list, sqlite3_stmt * stmt);
 
 typedef struct BusyHandlerArg
 {
-	sqlite3    *conn;
+	sqlite3	   *conn;
 	const char *sql;
 	int			level;
 } BusyHandlerArg;
@@ -217,7 +217,9 @@ sqlite_open_db(const char *dbpath)
 				(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
 				 errmsg("failed to open SQLite DB. rc=%d err=%s", rc, perr)));
 	}
-	/* add uuid functions for uuid deparsing */
+	/* add UUID functions for data unifying during deparsing 
+	 * Please remove this call and deattach uuid_extension.c
+	 * after SQLite 3.41+ support where unhex function is availlable */
 	rc = sqlite_uuid_init(conn);
 	return conn;
 }
@@ -244,7 +246,7 @@ sqlite_make_new_connection(ConnCacheEntry *entry, ForeignServer *server)
 							  ObjectIdGetDatum(server->serverid));
 	foreach(lc, server->options)
 	{
-		DefElem    *def = (DefElem *) lfirst(lc);
+		DefElem	   *def = (DefElem *) lfirst(lc);
 
 		if (strcmp(def->defname, "database") == 0)
 			dbpath = defGetString(def);
