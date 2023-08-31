@@ -2835,12 +2835,10 @@ bindJunkColumnValue(SqliteFdwExecState * fmstate,
 			if (IS_KEY_COLUMN(def))
 			{
 				Datum		value;
-				Oid			typeoid = att->atttypid;
-				int			pgtypmod = att->atttypmod;
 				/* Get the id that was passed up as a resjunk column */
 				value = ExecGetJunkAttribute(planSlot, fmstate->junk_idx[i], &is_null);
 				/* Bind qual */
-				sqlite_bind_sql_var(typeoid, pgtypmod, bindnum, value, fmstate->stmt, &is_null, foreignTableId);
+				sqlite_bind_sql_var(att, bindnum, value, fmstate->stmt, &is_null, foreignTableId);
 				bindnum++;
 			}
 		}
@@ -2871,25 +2869,22 @@ sqliteExecForeignUpdate(EState *estate,
 	foreach(lc, fmstate->retrieved_attrs)
 	{
 		int			attnum = lfirst_int(lc);
-		Oid			type;
-		int			pgtypmod;
 		bool		is_null;
 		Datum		value = 0;
 #if PG_VERSION_NUM >= 140000
 		TupleDesc	tupdesc = RelationGetDescr(fmstate->rel);
 		Form_pg_attribute attr = TupleDescAttr(tupdesc, attnum - 1);
+		Form_pg_attribute bind_att = NULL;
 
 		/* Ignore generated columns and skip bind value */
 		if (attr->attgenerated)
 			continue;
 #endif
 		/* first attribute cannot be in target list attribute */
-		type = TupleDescAttr(slot->tts_tupleDescriptor, attnum - 1)->atttypid;
-		pgtypmod = TupleDescAttr(slot->tts_tupleDescriptor, attnum - 1)->atttypmod;
-
+		bind_att = TupleDescAttr(slot->tts_tupleDescriptor, attnum - 1);
 		value = slot_getattr(slot, attnum, &is_null);
 
-		sqlite_bind_sql_var(type, pgtypmod, bindnum, value, fmstate->stmt, &is_null, foreignTableId);
+		sqlite_bind_sql_var(bind_att, bindnum, value, fmstate->stmt, &is_null, foreignTableId);
 		bindnum++;
 		i++;
 	}
@@ -5215,8 +5210,7 @@ sqlite_execute_insert(EState *estate,
 		foreach(lc, fmstate->retrieved_attrs)
 		{
 			int			attnum = lfirst_int(lc) - 1;
-			Oid			type = TupleDescAttr(slots[i]->tts_tupleDescriptor, attnum)->atttypid;
-			int			pgtypmod = TupleDescAttr(slots[i]->tts_tupleDescriptor, attnum)->atttypmod;
+			Form_pg_attribute att = TupleDescAttr(slots[i]->tts_tupleDescriptor, attnum);
 			bool		isnull;
 #if PG_VERSION_NUM >= 140000
 			Form_pg_attribute attr = TupleDescAttr(tupdesc, attnum);
@@ -5228,9 +5222,9 @@ sqlite_execute_insert(EState *estate,
 
 			value = slot_getattr(slots[i], attnum + 1, &isnull);
 #if PG_VERSION_NUM >= 140000
-			sqlite_bind_sql_var(type, pgtypmod, bindnum, value, fmstate->stmt, &isnull, foreignTableId);
+			sqlite_bind_sql_var(att, bindnum, value, fmstate->stmt, &isnull, foreignTableId);
 #else
-			sqlite_bind_sql_var(type, pgtypmod, bindnum, value, fmstate->stmt, &isnull, InvalidOid);
+			sqlite_bind_sql_var(att, bindnum, value, fmstate->stmt, &isnull, InvalidOid);
 #endif			
 			bindnum++;
 		}
@@ -5325,6 +5319,8 @@ sqlite_process_query_params(ExprContext *econtext,
 		ExprState  *expr_state = (ExprState *) lfirst(lc);
 		Datum		expr_value;
 		bool		isNull;
+		/* fake structure, bind function usually works with attribute, but just typid in our case */		
+		Form_pg_attribute att = NULL;
 
 		/* Evaluate the parameter expression */
 #if PG_VERSION_NUM >= 100000
@@ -5333,8 +5329,11 @@ sqlite_process_query_params(ExprContext *econtext,
 		expr_value = ExecEvalExpr(expr_state, econtext, &isNull, NULL);
 #endif
 		/* Bind parameters */
-		sqlite_bind_sql_var(param_types[i], -1, i, expr_value, *stmt, &isNull, foreignTableId);
-
+		att = malloc(sizeof(FormData_pg_attribute));
+		att->atttypid = param_types[i];
+		att->atttypmod = -1;
+		sqlite_bind_sql_var(att, i, expr_value, *stmt, &isNull, foreignTableId);
+		free(att);
 		/*
 		 * Get string sentation of each parameter value by invoking
 		 * type-specific output function, unless the value is null.

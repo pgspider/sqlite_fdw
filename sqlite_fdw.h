@@ -375,7 +375,7 @@ void		sqlite_cache_stmt(ForeignServer *server, sqlite3_stmt * *stmt);
 
 NullableDatum sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid, AttInMetadata *attinmeta, AttrNumber attnum, int sqlite_value_affinity, int AffinityBehaviourFlags);
 
-void		sqlite_bind_sql_var(Oid type, int pgtypmod, int attnum, Datum value, sqlite3_stmt * stmt, bool *isnull, Oid relid);
+void		sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt * stmt, bool *isnull, Oid relid);
 extern void sqlite_do_sql_command(sqlite3 * conn, const char *sql, int level, List **busy_connection);
 
 int sqlite_uuid_init(sqlite3* db);

@@ -432,10 +432,11 @@ get_column_option_string(Oid relid, int varattno, char *optionname)
  * Bind the values provided as DatumBind the values and nulls to modify the target table (INSERT/UPDATE)
  */
 void
-sqlite_bind_sql_var(Oid type, int pgtypmod, int attnum, Datum value, sqlite3_stmt * stmt, bool *isnull, Oid relid)
+sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt * stmt, bool *isnull, Oid relid)
 {
 	int			ret = SQLITE_OK;
-
+	Oid			type = att->atttypid;
+	int32		pgtypmod = att->atttypmod;
 	attnum++;
 	elog(DEBUG2, "sqlite_fdw : %s %d type=%u relid=%u ", __func__, attnum, type, relid);
 
