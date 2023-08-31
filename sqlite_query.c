@@ -571,10 +571,11 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 			{
 				if (pgtypmod > 0)
 				{
+					NameData	pgColND = att->attname;
 					const char	*pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(type, pgtypmod));
 					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
 									errmsg("cannot convert constant value to Sqlite value"),
-									errhint("Constant value data type: %s", pg_dataTypeName)));
+									errhint("Constant value data type: \"%s\" in column \"%.*s\"", pg_dataTypeName, (int)sizeof(pgColND.data), pgColND.data)));
 				}
 				else
 				{
