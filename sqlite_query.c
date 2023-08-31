@@ -34,7 +34,7 @@ static int32
 static const char*
 			sqlite_datatype(int t);
 static void
-			sqlite_value_to_pg_error (Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_colid, int sqlite_value_affinity, int affinity_for_pg_column, int value_byte_size_blob_or_utf8);
+			sqlite_value_to_pg_error (Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid, int sqlite_value_affinity, int affinity_for_pg_column, int value_byte_size_blob_or_utf8);
 static char *
 			get_column_option_string(Oid relid, int varattno, char *optionname);
 int
@@ -46,8 +46,9 @@ static char *
  * convert_sqlite_to_pg: Convert Sqlite data into PostgreSQL's compatible data types
  */
 NullableDatum
-sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_colid, AttInMetadata *attinmeta, AttrNumber attnum, int sqlite_value_affinity, int AffinityBehaviourFlags)
+sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid, AttInMetadata *attinmeta, AttrNumber attnum, int sqlite_value_affinity, int AffinityBehaviourFlags)
 {
+	Oid			pgtyp = att->atttypid;
 	Datum		value_datum = 0;
 	char	   *valstr = NULL;
 	int			affinity_for_pg_column = sqlite_affinity_eqv_to_pgtype(pgtyp);
@@ -68,20 +69,20 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 					case SQLITE_FLOAT:
 					case SQLITE_BLOB:
 						{
-							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
 							break;
 						}
 					case SQLITE3_TEXT:
 					{
 						if (value_byte_size_blob_or_utf8)
-							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
 						else
 							elog(ERROR, "Void text disallowed for PostgreSQL bool column");
 						break;
 					}
 					default:
 					{
-						sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+						sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
 						break;
 					}
 				}
@@ -95,7 +96,7 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 					case SQLITE_FLOAT:
 					default:
 						{
-							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
 							break;
 						}
 					case SQLITE_BLOB: /* <-- proper and recommended SQLite affinity of value for pgtyp */
@@ -122,13 +123,13 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 					case SQLITE_BLOB:
 					default:
 						{
-							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
 							break;
 						}
 					case SQLITE3_TEXT:
 					{
 						if (value_byte_size_blob_or_utf8)
-							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
 						else
 							elog(ERROR, "Void text disallowed for PostgreSQL smallint column");
 						break;
@@ -149,13 +150,13 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 					case SQLITE_BLOB:
 					default:
 						{
-							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
 							break;
 						}
 					case SQLITE3_TEXT:
 					{
 						if (value_byte_size_blob_or_utf8)
-							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, stmt_colid, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error (att, stmt, stmt_colid, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
 						else
 							elog(ERROR, "Void text disallowed for PostgreSQL int column");
 						break;
@@ -176,13 +177,13 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 					case SQLITE_BLOB:
 					default:
 						{
-							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
 							break;
 						}
 					case SQLITE3_TEXT:
 					{
 						if (value_byte_size_blob_or_utf8)
-							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
 						else
 							elog(ERROR, "Void text disallowed for PostgreSQL bigint column");
 						break;
@@ -203,13 +204,13 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 					case SQLITE_BLOB:
 					default:
 						{
-							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
 							break;
 						}
 					case SQLITE3_TEXT:
 					{
 						if (value_byte_size_blob_or_utf8)
-							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
 						else
 							elog(ERROR, "Void text disallowed for PostgreSQL float4 column");
 						break;
@@ -230,13 +231,13 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 					case SQLITE_BLOB:
 					default:
 						{
-							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
 							break;
 						}
 					case SQLITE3_TEXT:
 					{
 						if (value_byte_size_blob_or_utf8)
-							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
 						else
 							elog(ERROR, "Void text disallowed for PostgreSQL float8 column");
 						break;
@@ -273,7 +274,7 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 					case SQLITE_BLOB:
 					default:
 						{
-							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
 							break;
 						}
 					case SQLITE3_TEXT:
@@ -301,13 +302,13 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 					case SQLITE_BLOB:
 					default:
 						{
-							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
 							break;
 						}
 					case SQLITE3_TEXT:
 					{
 						if (value_byte_size_blob_or_utf8)
-							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
 						else
 							elog(ERROR, "Void text disallowed for PostgreSQL numeric column");
 						break;
@@ -322,7 +323,7 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 					case SQLITE_INTEGER:
 					case SQLITE_FLOAT:
 						{
-							sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
 							break;
 						}
 					case SQLITE_BLOB: /* <-- first proper and recommended SQLite affinity of value for pgtyp */
@@ -354,7 +355,7 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 					}
 					default:
 					{
-						sqlite_value_to_pg_error (pgtyp, pgtypmod, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+						sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
 						break;
 					}
 				}
@@ -645,12 +646,15 @@ static const char* sqlite_datatype(int t)
  * Human readable message about disallowed combination of PostgreSQL columnn
  * data type and SQLite data value affinity
  */
-static void sqlite_value_to_pg_error (Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_colid, int sqlite_value_affinity, int affinity_for_pg_column, int value_byte_size_blob_or_utf8)
+static void sqlite_value_to_pg_error (Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid, int sqlite_value_affinity, int affinity_for_pg_column, int value_byte_size_blob_or_utf8)
 {
-	const char	*sqlite_affinity = 0;
-	const char	*pg_eqv_affinity = 0;
-	const char	*pg_dataTypeName = 0;
-	const int	 max_logged_byte_length = NAMEDATALEN;
+	Oid			pgtyp = att->atttypid;
+	int32		pgtypmod = att->atttypmod;
+	NameData	pgColND = att->attname;
+	const char *sqlite_affinity = 0;
+	const char *pg_eqv_affinity = 0;
+	const char *pg_dataTypeName = 0;
+	const int	max_logged_byte_length = NAMEDATALEN;
 
 	pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(pgtyp, pgtypmod));
 	sqlite_affinity = sqlite_datatype(sqlite_value_affinity);
@@ -661,13 +665,13 @@ static void sqlite_value_to_pg_error (Oid pgtyp, int pgtypmod, sqlite3_stmt * st
 		const unsigned char	*text_value = sqlite3_column_text(stmt, stmt_colid);
 		ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
 						errmsg("SQLite data affinity \"%s\" disallowed for PostgreSQL data type \"%s\"", sqlite_affinity, pg_dataTypeName),
-						errhint("expected SQLite affinity \"%s\", incorrect value = '%s'", pg_eqv_affinity, text_value)));
+						errhint("In column \"%.*s\" expected SQLite affinity \"%s\", incorrect value = '%s'", (int)sizeof(pgColND.data), pgColND.data, pg_eqv_affinity, text_value)));
 	}
 	else
 	{
 		ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
 						errmsg("SQLite data affinity \"%s\" disallowed for PostgreSQL data type \"%s\"", sqlite_affinity, pg_dataTypeName),
-						errhint("expected SQLite affinity \"%s\", a long incorrect value (%d bytes)", pg_eqv_affinity, value_byte_size_blob_or_utf8)));
+						errhint("In column \"%.*s\" expected SQLite affinity \"%s\", a long incorrect value (%d bytes)", (int)sizeof(pgColND.data), pgColND.data, pg_eqv_affinity, value_byte_size_blob_or_utf8)));
 	}
 }
 

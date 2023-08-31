@@ -1574,11 +1574,9 @@ make_tuple_from_result_row(sqlite3_stmt * stmt,
 	foreach(lc, retrieved_attrs)
 	{
 		int			attnum = lfirst_int(lc) - 1;
-		Oid			pgtype = TupleDescAttr(tupleDescriptor, attnum)->atttypid;
-		int32		pgtypmod = TupleDescAttr(tupleDescriptor, attnum)->atttypmod;		
-		int			sqlite_value_affinity;
+		Form_pg_attribute att = TupleDescAttr(tupleDescriptor, attnum);
+		int			sqlite_value_affinity = sqlite3_column_type(stmt, stmt_colid);
 
-		sqlite_value_affinity = sqlite3_column_type(stmt, stmt_colid);
 		if ( sqlite_value_affinity != SQLITE_NULL)
 		{
 			/* TODO: Processing of column options about special convert behaviour 
@@ -1590,8 +1588,8 @@ make_tuple_from_result_row(sqlite3_stmt * stmt,
 			 * Flags about special convert behaviour from options on database, table or column level
 			 */
 
-			sqlite_coverted = sqlite_convert_to_pg(pgtype, pgtypmod,
-												   stmt, stmt_colid, festate->attinmeta,
+			sqlite_coverted = sqlite_convert_to_pg(att, stmt, stmt_colid, 
+												   festate->attinmeta,
 												   attnum, sqlite_value_affinity,
 												   AffinityBehaviourFlags);
 			if (!sqlite_coverted.isnull) {
