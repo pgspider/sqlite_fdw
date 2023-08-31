@@ -5398,7 +5398,7 @@ sqlite_execute_dml_stmt(ForeignScanState *node)
 	ExprContext *econtext = node->ss.ps.ps_ExprContext;
 	int			numParams = dmstate->numParams;
 	const char **values = dmstate->param_values;
-	Oid			foreignTableId = RelationGetRelid(dmstate->resultRel);
+	Oid			foreignTableId = RelationGetRelid(dmstate->rel);
 	int			rc;
 
 	/*

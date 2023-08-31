@@ -99,8 +99,8 @@ static unsigned char sqlite3UuidHexToInt(int h) {
  * buffer zStr should be at least 37 bytes in length.   The output will
  * be zero-terminated.
  *
- *static void sqlite3_uuid_blob_to_str(const unsigned char* aBlob, /* Input blob * /
- *                                     unsigned char* zStr         /* Write the answer here * /
+ *static void sqlite3_uuid_blob_to_str(const unsigned char* aBlob, / * Input blob * /
+ *                                     unsigned char* zStr         / * Write the answer here * /
  *) {
  *    static const char zDigits[] = "0123456789abcdef";
  *    int i, k;
