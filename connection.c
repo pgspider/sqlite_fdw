@@ -217,9 +217,7 @@ sqlite_open_db(const char *dbpath)
 				(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
 				 errmsg("failed to open SQLite DB. rc=%d err=%s", rc, perr)));
 	}
-	/* add UUID functions for data unifying during deparsing 
-	 * Please remove this call and deattach uuid_extension.c
-	 * after SQLite 3.41+ support where unhex function is availlable */
+	/* add UUID functions for data unifying during deparsing */
 	rc = sqlite_uuid_init(conn);
 	return conn;
 }
@@ -1064,4 +1062,3 @@ sqlite_append_stmt_to_list(List *list, sqlite3_stmt * stmt)
 	MemoryContextSwitchTo(oldcontext);
 	return list;
 }
-

@@ -5232,7 +5232,7 @@ sqlite_execute_insert(EState *estate,
 #if PG_VERSION_NUM >= 140000
 			sqlite_bind_sql_var(type, pgtypmod, bindnum, value, fmstate->stmt, &isnull, foreignTableId);
 #else
-			sqlite_bind_sql_var(type, pgtypmod, bindnum, value, fmstate->stmt, &isnull, 0);
+			sqlite_bind_sql_var(type, pgtypmod, bindnum, value, fmstate->stmt, &isnull, InvalidOid);
 #endif			
 			bindnum++;
 		}

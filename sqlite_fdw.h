@@ -361,7 +361,6 @@ extern void sqlite_classify_conditions(PlannerInfo *root,
 									   List *input_conds,
 									   List **remote_conds,
 									   List **local_conds);
-int			strcmp_case_independend(const char *str1, const char *str2);
 
 /* connection.c headers */
 sqlite3    *sqlite_get_connection(ForeignServer *server, bool truncatable);
