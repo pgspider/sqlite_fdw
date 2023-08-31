@@ -21,6 +21,7 @@
 #include "utils/builtins.h"
 #include "utils/lsyscache.h"
 #include "utils/uuid.h"
+#include "utils/timestamp.h"
 
 #include "nodes/makefuncs.h"
 #include "catalog/pg_type.h"
@@ -259,6 +260,10 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 				switch (sqlite_value_affinity)
 				{
 					case SQLITE_INTEGER:
+						{
+							Timestamp value = (Timestamp)sqlite3_column_int64(stmt, stmt_colid);
+							return (struct NullableDatum) {TimestampGetDatum(value), false};
+						}
 					case SQLITE_FLOAT:
 						{
 							double		value = sqlite3_column_double(stmt, stmt_colid);
@@ -376,6 +381,11 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 	return (struct NullableDatum){value_datum, false};
 }
 
+/*
+ * sqlite_bind_blob_algo:
+ * Common part of extracting and preparing PostgreSQL bytea data
+ * for SQLite binding as blob
+ */
 int sqlite_bind_blob_algo (int attnum, Datum value, sqlite3_stmt * stmt)
 {
 	int			len;
@@ -650,14 +660,14 @@ static void sqlite_value_to_pg_error (Oid pgtyp, int pgtypmod, sqlite3_stmt * st
 	{
 		const unsigned char	*text_value = sqlite3_column_text(stmt, stmt_colid);
 		ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-								errmsg("SQLite data affinity \"%s\" disallowed for PostgreSQL data type \"%s\"", sqlite_affinity, pg_dataTypeName),
-								errhint("expected SQLite affinity \"%s\", incorrect value = '%s'", pg_eqv_affinity, text_value)));
+						errmsg("SQLite data affinity \"%s\" disallowed for PostgreSQL data type \"%s\"", sqlite_affinity, pg_dataTypeName),
+						errhint("expected SQLite affinity \"%s\", incorrect value = '%s'", pg_eqv_affinity, text_value)));
 	}
 	else
 	{
 		ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-								errmsg("SQLite data affinity \"%s\" disallowed for PostgreSQL data type \"%s\"", sqlite_affinity, pg_dataTypeName),
-								errhint("expected SQLite affinity \"%s\", a long incorrect value (%d bytes)", pg_eqv_affinity, value_byte_size_blob_or_utf8)));
+						errmsg("SQLite data affinity \"%s\" disallowed for PostgreSQL data type \"%s\"", sqlite_affinity, pg_dataTypeName),
+						errhint("expected SQLite affinity \"%s\", a long incorrect value (%d bytes)", pg_eqv_affinity, value_byte_size_blob_or_utf8)));
 	}
 }
 
