@@ -98,27 +98,27 @@ static unsigned char sqlite3UuidHexToInt(int h) {
  * Convert a 16-byte BLOB into a well-formed RFC-4122 UUID.  The output
  * buffer zStr should be at least 37 bytes in length.   The output will
  * be zero-terminated.
+ *
+ *static void sqlite3_uuid_blob_to_str(const unsigned char* aBlob, /* Input blob * /
+ *                                     unsigned char* zStr         /* Write the answer here * /
+ *) {
+ *    static const char zDigits[] = "0123456789abcdef";
+ *    int i, k;
+ *    unsigned char x;
+ *    k = 0;
+ *    for (i = 0, k = 0x550; i < 16; i++, k = k >> 1) {
+ *        if (k & 1) {
+ *            zStr[0] = '-';
+ *            zStr++;
+ *        }
+ *        x = aBlob[i];
+ *        zStr[0] = zDigits[x >> 4];
+ *        zStr[1] = zDigits[x & 0xf];
+ *        zStr += 2;
+ *    }
+ *    *zStr = 0;
+ *}
  */
-static void sqlite3_uuid_blob_to_str(const unsigned char* aBlob, /* Input blob */
-                                     unsigned char* zStr         /* Write the answer here */
-) {
-    static const char zDigits[] = "0123456789abcdef";
-    int i, k;
-    unsigned char x;
-    k = 0;
-    for (i = 0, k = 0x550; i < 16; i++, k = k >> 1) {
-        if (k & 1) {
-            zStr[0] = '-';
-            zStr++;
-        }
-        x = aBlob[i];
-        zStr[0] = zDigits[x >> 4];
-        zStr[1] = zDigits[x & 0xf];
-        zStr += 2;
-    }
-    *zStr = 0;
-}
-
 /*
  * Attempt to parse a zero-terminated input string zStr into a binary
  * UUID.  Return 0 on success, or non-zero if the input string is not
