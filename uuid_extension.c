@@ -171,35 +171,35 @@ static const unsigned char* sqlite3_uuid_input_to_blob(sqlite3_value* pIn, /* In
 
 /*
  * uuid_generate generates a version 4 UUID as a string
+ *
+ *static void uuid_generate(sqlite3_context* context, int argc, sqlite3_value** argv) {
+ *    unsigned char aBlob[16];
+ *    unsigned char zStr[37];
+ *    (void)argc;
+ *    (void)argv;
+ *    sqlite3_randomness(16, aBlob);
+ *    aBlob[6] = (aBlob[6] & 0x0f) + 0x40;
+ *    aBlob[8] = (aBlob[8] & 0x3f) + 0x80;
+ *    sqlite3_uuid_blob_to_str(aBlob, zStr);
+ *    sqlite3_result_text(context, (char*)zStr, 36, SQLITE_TRANSIENT);
+ *}
  */
-static void uuid_generate(sqlite3_context* context, int argc, sqlite3_value** argv) {
-    unsigned char aBlob[16];
-    unsigned char zStr[37];
-    (void)argc;
-    (void)argv;
-    sqlite3_randomness(16, aBlob);
-    aBlob[6] = (aBlob[6] & 0x0f) + 0x40;
-    aBlob[8] = (aBlob[8] & 0x3f) + 0x80;
-    sqlite3_uuid_blob_to_str(aBlob, zStr);
-    sqlite3_result_text(context, (char*)zStr, 36, SQLITE_TRANSIENT);
-}
-
 /*
  * uuid_str converts a UUID X into a well-formed UUID string.
  * X can be either a string or a blob.
+ *
+ * static void uuid_str(sqlite3_context* context, int argc, sqlite3_value** argv) {
+ *    unsigned char aBlob[16];
+ *    unsigned char zStr[37];
+ *    const unsigned char* pBlob;
+ *    (void)argc;
+ *    pBlob = sqlite3_uuid_input_to_blob(argv[0], aBlob);
+ *    if (pBlob == 0)
+ *        return;
+ *    sqlite3_uuid_blob_to_str(pBlob, zStr);
+ *    sqlite3_result_text(context, (char*)zStr, 36, SQLITE_TRANSIENT);
+ *}
  */
-static void uuid_str(sqlite3_context* context, int argc, sqlite3_value** argv) {
-    unsigned char aBlob[16];
-    unsigned char zStr[37];
-    const unsigned char* pBlob;
-    (void)argc;
-    pBlob = sqlite3_uuid_input_to_blob(argv[0], aBlob);
-    if (pBlob == 0)
-        return;
-    sqlite3_uuid_blob_to_str(pBlob, zStr);
-    sqlite3_result_text(context, (char*)zStr, 36, SQLITE_TRANSIENT);
-}
-
 /*
  * uuid_blob converts a UUID X into a 16-byte blob.
  * X can be either a string or a blob.
