@@ -662,7 +662,7 @@ SELECT * FROM "type_UUID+";
 (40 rows)
 
 --Testcase 158:
-ALTER FOREIGN TABLE "type_UUID+" ALTER COLUMN "u" OPTIONS (ADD column_type 'BLOB');
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" OPTIONS (SET column_type 'BLOB');
 --Testcase 159:
 SELECT * FROM "type_UUID+" where "u" = 'A0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A11';
  i  |                  u                   |  t   | l  
@@ -700,7 +700,7 @@ SELECT * FROM "type_UUID+" where "u" = 'A0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A11';
 (3 rows)
 
 --Testcase 161:
-ALTER FOREIGN TABLE "type_UUID+" ALTER COLUMN "u" OPTIONS (SET column_type 'TEXT');
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" OPTIONS (SET column_type 'TEXT');
 --Testcase 162:
 SELECT * FROM "type_UUID+" where "u" = 'A0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A11';
  i  |                  u                   |  t   | l  
@@ -764,7 +764,7 @@ SELECT * FROM "type_UUID+" where "u" = 'B0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A12';
 (20 rows)
 
 --Testcase 165:
-ALTER FOREIGN TABLE "type_UUID+" ALTER COLUMN "u" OPTIONS (SET column_type 'BLOB');
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" OPTIONS (SET column_type 'BLOB');
 --Testcase 166:
 SELECT * FROM "type_UUID+" where "u" = 'B0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A12';
  i  |                  u                   |  t   | l  
@@ -804,7 +804,7 @@ UPDATE "type_UUID" SET "u" = '{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a15}' WHERE "i" =
 (3 rows)
 
 --Testcase 169:
-ALTER FOREIGN TABLE "type_UUID+" ALTER COLUMN "u" OPTIONS (SET column_type 'TEXT');
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" OPTIONS (SET column_type 'TEXT');
 --Testcase 170:
 EXPLAIN VERBOSE
 UPDATE "type_UUID" SET "u" = '{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a15}' WHERE "i" = 25;
@@ -816,7 +816,7 @@ UPDATE "type_UUID" SET "u" = '{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a15}' WHERE "i" =
 (3 rows)
 
 --Testcase 171:
-ALTER FOREIGN TABLE "type_UUID+" ALTER COLUMN "u" OPTIONS (SET column_type 'BLOB');
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" OPTIONS (SET column_type 'BLOB');
 --Testcase 172:
 DELETE FROM "type_UUID" WHERE "u" = 'b0eebc999c0b4ef8bb6d6bb9bd380a12';
 --Testcase 173:
@@ -866,7 +866,7 @@ SELECT * FROM "type_UUID+";
 (1 row)
 
 --Testcase 177:
-ALTER FOREIGN TABLE "type_UUID+" ALTER COLUMN "u" OPTIONS (SET column_type 'TEXT');
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" OPTIONS (SET column_type 'TEXT');
 --Testcase 175:
 DELETE FROM "type_UUID" WHERE "u" = 'b0eebc999c0b4ef8bb6d6bb9bd380a15';
 --Testcase 176:
@@ -891,7 +891,7 @@ INSERT INTO "type_UUID" ("i", "u") VALUES (41, '{b0eebc99-9c0b4ef8-bb6d6bb9-bd38
 SELECT * FROM "type_UUID+" WHERE "i" = 41;
  i  |                  u                   |  t   | l  
 ----+--------------------------------------+------+----
- 41 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a15 | blob | 16
+ 41 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a15 | text | 36
 (1 row)
 
 --Testcase 180:
@@ -914,7 +914,7 @@ SELECT * FROM "type_UUID+";
 (1 row)
 
 --Testcase 183:
-ALTER FOREIGN TABLE "type_UUID+" ALTER COLUMN "u" OPTIONS (SET column_type 'BLOB');
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" OPTIONS (SET column_type 'BLOB');
 --Testcase 184:
 EXPLAIN VERBOSE
 UPDATE "type_UUID" SET "u" = '{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a15}' WHERE "u" = '{b0eebc99-9c0b4ef8-bb6d6bb9-00000a15}';

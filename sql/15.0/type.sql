@@ -369,14 +369,14 @@ CREATE FOREIGN TABLE "type_UUID+"( "i" int OPTIONS (key 'true'), "u" uuid, "t" t
 --Testcase 157:
 SELECT * FROM "type_UUID+";
 --Testcase 158:
-ALTER FOREIGN TABLE "type_UUID+" ALTER COLUMN "u" OPTIONS (ADD column_type 'BLOB');
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" OPTIONS (SET column_type 'BLOB');
 --Testcase 159:
 SELECT * FROM "type_UUID+" where "u" = 'A0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A11';
 --Testcase 160:
 EXPLAIN VERBOSE
 SELECT * FROM "type_UUID+" where "u" = 'A0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A11';
 --Testcase 161:
-ALTER FOREIGN TABLE "type_UUID+" ALTER COLUMN "u" OPTIONS (SET column_type 'TEXT');
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" OPTIONS (SET column_type 'TEXT');
 --Testcase 162:
 SELECT * FROM "type_UUID+" where "u" = 'A0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A11';
 --Testcase 163:
@@ -385,7 +385,7 @@ SELECT * FROM "type_UUID+" where "u" = 'A0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A11';
 --Testcase 164:
 SELECT * FROM "type_UUID+" where "u" = 'B0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A12';
 --Testcase 165:
-ALTER FOREIGN TABLE "type_UUID+" ALTER COLUMN "u" OPTIONS (SET column_type 'BLOB');
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" OPTIONS (SET column_type 'BLOB');
 --Testcase 166:
 SELECT * FROM "type_UUID+" where "u" = 'B0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A12';
 --Testcase 167:
@@ -394,12 +394,12 @@ UPDATE "type_UUID" SET "u" = '{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a15}' WHERE "i" =
 EXPLAIN VERBOSE
 UPDATE "type_UUID" SET "u" = '{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a15}' WHERE "i" = 25;
 --Testcase 169:
-ALTER FOREIGN TABLE "type_UUID+" ALTER COLUMN "u" OPTIONS (SET column_type 'TEXT');
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" OPTIONS (SET column_type 'TEXT');
 --Testcase 170:
 EXPLAIN VERBOSE
 UPDATE "type_UUID" SET "u" = '{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a15}' WHERE "i" = 25;
 --Testcase 171:
-ALTER FOREIGN TABLE "type_UUID+" ALTER COLUMN "u" OPTIONS (SET column_type 'BLOB');
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" OPTIONS (SET column_type 'BLOB');
 --Testcase 172:
 DELETE FROM "type_UUID" WHERE "u" = 'b0eebc999c0b4ef8bb6d6bb9bd380a12';
 --Testcase 173:
@@ -412,7 +412,7 @@ DELETE FROM "type_UUID" WHERE "u" = 'a0eebc99-9c0b4ef8-bb6d6bb9-bd380a11';
 --Testcase 176:
 SELECT * FROM "type_UUID+";
 --Testcase 177:
-ALTER FOREIGN TABLE "type_UUID+" ALTER COLUMN "u" OPTIONS (SET column_type 'TEXT');
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" OPTIONS (SET column_type 'TEXT');
 --Testcase 175:
 DELETE FROM "type_UUID" WHERE "u" = 'b0eebc999c0b4ef8bb6d6bb9bd380a15';
 --Testcase 176:
@@ -432,7 +432,7 @@ UPDATE "type_UUID" SET "u" = '{b0eebc99-9c0b4ef8-bb6d6bb9-00000a15}' WHERE "u" =
 --Testcase 182:
 SELECT * FROM "type_UUID+";
 --Testcase 183:
-ALTER FOREIGN TABLE "type_UUID+" ALTER COLUMN "u" OPTIONS (SET column_type 'BLOB');
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" OPTIONS (SET column_type 'BLOB');
 --Testcase 184:
 EXPLAIN VERBOSE
 UPDATE "type_UUID" SET "u" = '{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a15}' WHERE "u" = '{b0eebc99-9c0b4ef8-bb6d6bb9-00000a15}';
