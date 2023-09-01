@@ -457,6 +457,16 @@ DELETE FROM "type_UUID" WHERE "i" IN (42, 43);
 INSERT INTO "type_UUID" ("i", "u") VALUES (44, NULL);
 --Testcase 194:
 SELECT * FROM "type_UUID+";
+--Testcase 195:
+SELECT * FROM "type_UUID+" WHERE "u" IS NULL;
+--Testcase 196:
+SELECT * FROM "type_UUID+" WHERE "u" IS NOT NULL;
+--Testcase 197:
+EXPLAIN VERBOSE
+SELECT * FROM "type_UUID+" WHERE "u" IS NULL;
+--Testcase 198:
+EXPLAIN VERBOSE
+SELECT * FROM "type_UUID+" WHERE "u" IS NOT NULL;
 
 --Testcase 47:
 DROP EXTENSION sqlite_fdw CASCADE;

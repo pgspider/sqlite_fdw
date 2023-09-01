@@ -963,6 +963,40 @@ SELECT * FROM "type_UUID+";
  44 |                                      | null |   
 (2 rows)
 
+--Testcase 195:
+SELECT * FROM "type_UUID+" WHERE "u" IS NULL;
+ i  | u |  t   | l 
+----+---+------+---
+ 44 |   | null |  
+(1 row)
+
+--Testcase 196:
+SELECT * FROM "type_UUID+" WHERE "u" IS NOT NULL;
+ i  |                  u                   |  t   | l  
+----+--------------------------------------+------+----
+ 41 | b0eebc99-9c0b-4ef8-bb6d-6bb900000a15 | blob | 16
+(1 row)
+
+--Testcase 197:
+EXPLAIN VERBOSE
+SELECT * FROM "type_UUID+" WHERE "u" IS NULL;
+                                                                           QUERY PLAN                                                                           
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public."type_UUID+"  (cost=10.00..5.00 rows=5 width=54)
+   Output: i, u, t, l
+   SQLite query: SELECT `i`, coalesce(sqlite_fdw_uuid_blob(`u`),`u`), `t`, `l` FROM main."type_UUID+" WHERE ((coalesce(sqlite_fdw_uuid_blob(`u`),`u`) IS NULL))
+(3 rows)
+
+--Testcase 198:
+EXPLAIN VERBOSE
+SELECT * FROM "type_UUID+" WHERE "u" IS NOT NULL;
+                                                                             QUERY PLAN                                                                             
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public."type_UUID+"  (cost=10.00..1045.00 rows=1045 width=54)
+   Output: i, u, t, l
+   SQLite query: SELECT `i`, coalesce(sqlite_fdw_uuid_blob(`u`),`u`), `t`, `l` FROM main."type_UUID+" WHERE ((coalesce(sqlite_fdw_uuid_blob(`u`),`u`) IS NOT NULL))
+(3 rows)
+
 --Testcase 47:
 DROP EXTENSION sqlite_fdw CASCADE;
 NOTICE:  drop cascades to 44 other objects
