@@ -930,8 +930,7 @@ ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" TYPE bytea;
 --Testcase 186:
 INSERT INTO "type_UUID" ("i", "u") VALUES (42, decode('a0eebc999c0b4ef8bb6d6bb9bd380a11f1', 'hex'));
 --Testcase 187:
-INSERT INTO "type_UUID" ("i", "u") VALUES (43, decode('b0eebc999c0b4ef8bb6d6bb9bd380a1', 'hex'));
-ERROR:  invalid hexadecimal data: odd number of digits
+INSERT INTO "type_UUID" ("i", "u") VALUES (43, decode('b0eebc999c0b4ef8bb6d6bb9bd380a', 'hex'));
 --Testcase 188:
 ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" TYPE uuid;
 --Testcase 189:
@@ -940,9 +939,29 @@ ERROR:  PostgreSQL uuid data type allows only 16 bytes SQLite blob value
 HINT:  incorrect value is 17 bytes length
 --Testcase 190:
 SELECT * FROM "type_UUID+" WHERE "i" = 43;
- i | u | t | l 
----+---+---+---
-(0 rows)
+ERROR:  PostgreSQL uuid data type allows only 16 bytes SQLite blob value
+HINT:  incorrect value is 15 bytes length
+--Testcase 191:
+EXPLAIN VERBOSE
+DELETE FROM "type_UUID" WHERE "i" IN (42, 43);
+                                   QUERY PLAN                                    
+---------------------------------------------------------------------------------
+ Delete on public."type_UUID"  (cost=10.00..29.00 rows=0 width=0)
+   ->  Foreign Delete on public."type_UUID"  (cost=10.00..29.00 rows=29 width=4)
+         SQLite query: DELETE FROM main."type_UUID" WHERE (`i` IN (42, 43))
+(3 rows)
+
+--Testcase 192:
+DELETE FROM "type_UUID" WHERE "i" IN (42, 43);
+--Testcase 193:
+INSERT INTO "type_UUID" ("i", "u") VALUES (44, NULL);
+--Testcase 194:
+SELECT * FROM "type_UUID+";
+ i  |                  u                   |  t   | l  
+----+--------------------------------------+------+----
+ 41 | b0eebc99-9c0b-4ef8-bb6d-6bb900000a15 | blob | 16
+ 44 |                                      | null |   
+(2 rows)
 
 --Testcase 47:
 DROP EXTENSION sqlite_fdw CASCADE;

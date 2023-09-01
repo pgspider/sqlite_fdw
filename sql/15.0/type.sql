@@ -441,13 +441,22 @@ ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" TYPE bytea;
 --Testcase 186:
 INSERT INTO "type_UUID" ("i", "u") VALUES (42, decode('a0eebc999c0b4ef8bb6d6bb9bd380a11f1', 'hex'));
 --Testcase 187:
-INSERT INTO "type_UUID" ("i", "u") VALUES (43, decode('b0eebc999c0b4ef8bb6d6bb9bd380a1', 'hex'));
+INSERT INTO "type_UUID" ("i", "u") VALUES (43, decode('b0eebc999c0b4ef8bb6d6bb9bd380a', 'hex'));
 --Testcase 188:
 ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" TYPE uuid;
 --Testcase 189:
 SELECT * FROM "type_UUID+" WHERE "i" = 42;
 --Testcase 190:
 SELECT * FROM "type_UUID+" WHERE "i" = 43;
+--Testcase 191:
+EXPLAIN VERBOSE
+DELETE FROM "type_UUID" WHERE "i" IN (42, 43);
+--Testcase 192:
+DELETE FROM "type_UUID" WHERE "i" IN (42, 43);
+--Testcase 193:
+INSERT INTO "type_UUID" ("i", "u") VALUES (44, NULL);
+--Testcase 194:
+SELECT * FROM "type_UUID+";
 
 --Testcase 47:
 DROP EXTENSION sqlite_fdw CASCADE;
