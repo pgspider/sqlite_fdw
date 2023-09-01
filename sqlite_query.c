@@ -438,7 +438,7 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 	Oid			type = att->atttypid;
 	int32		pgtypmod = att->atttypmod;
 	attnum++;
-	elog(DEBUG2, "sqlite_fdw : %s %d type=%u relid=%u ", __func__, attnum, type, relid);
+	elog(DEBUG2, "sqlite_fdw : %s %d type=%u relid=%u typmod=%d ", __func__, attnum, type, relid, pgtypmod);
 
 	if (*isnull)
 	{
@@ -569,20 +569,11 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 			}
 		default:
 			{
-				if (pgtypmod > 0)
-				{
-					NameData	pgColND = att->attname;
-					const char	*pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(type, pgtypmod));
-					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-									errmsg("cannot convert constant value to Sqlite value"),
-									errhint("Constant value data type: \"%s\" in column \"%.*s\"", pg_dataTypeName, (int)sizeof(pgColND.data), pgColND.data)));
-				}
-				else
-				{
-					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-									errmsg("cannot convert constant value to Sqlite value"),
-									errhint("Constant value data type Oid: %u", type)));
-				}
+				NameData	pgColND = att->attname;
+				const char	*pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(type, pgtypmod));
+				ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+								errmsg("cannot convert constant value to Sqlite value"),
+								errhint("Constant value data type: \"%s\" in column \"%.*s\"", pg_dataTypeName, (int)sizeof(pgColND.data), pgColND.data)));
 				break;
 			}
 	}

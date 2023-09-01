@@ -5172,10 +5172,10 @@ sqlite_execute_insert(EState *estate,
 	Relation	rel = resultRelInfo->ri_RelationDesc;
 	TupleDesc	tupdesc = RelationGetDescr(rel);
 	Oid			foreignTableId = RelationGetRelid(rel);
-	elog(DEBUG3, "sqlite_fdw : %s forRelId %u", __func__, foreignTableId);
-#endif
-
+	elog(DEBUG1, "sqlite_fdw : %s for RelId %u", __func__, foreignTableId);
+#else	
 	elog(DEBUG1, "sqlite_fdw : %s", __func__);
+#endif
 
 	oldcontext = MemoryContextSwitchTo(fmstate->temp_cxt);
 
