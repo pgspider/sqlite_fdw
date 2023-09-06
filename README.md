@@ -45,6 +45,7 @@ Features
 - `CASE` expressions are pushdowned.
 - `LIMIT` and `OFFSET` are pushdowned (*when all tables queried are fdw)
 - Support `GROUP BY`, `HAVING` push-down.
+- `mod()` is pushdowned. In PostgreSQL gives [argument-dependend data type](https://www.postgresql.org/docs/current/functions-math.html), but result from SQLite always [have `real` affinity](https://www.sqlite.org/lang_mathfunc.html#mod).
 - `upper`, `lower` and other character case functions are **not** pushed down because they does not work with UNICODE character in SQLite.
 - `WITH TIES` option is **not** pushed down.
 
