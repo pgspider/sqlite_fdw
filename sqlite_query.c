@@ -146,7 +146,12 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 						int			value = sqlite3_column_int(stmt, stmt_colid);
 						return (struct NullableDatum) {Int32GetDatum(value), false};
 					}
-					case SQLITE_FLOAT:
+					case SQLITE_FLOAT: /* TODO: This code is untill mod() pushdowning fix here*/
+					{
+						int			value = sqlite3_column_int(stmt, stmt_colid);
+						elog(DEBUG2, "sqlite_fdw : real aff. was readed for pg int32");
+						return (struct NullableDatum) {Int32GetDatum(value), false};
+					}
 					case SQLITE_BLOB:
 					default:
 						{
@@ -173,7 +178,12 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 							sqlite3_int64 value = sqlite3_column_int64(stmt, stmt_colid);
 							return (struct NullableDatum) {Int64GetDatum(value), false};
 						}
-					case SQLITE_FLOAT:
+					case SQLITE_FLOAT: /* TODO: This code is untill mod() pushdowning fix here*/
+					{
+						int			value = sqlite3_column_int(stmt, stmt_colid);
+						elog(DEBUG2, "sqlite_fdw : real aff. was readed for pg int64");
+						return (struct NullableDatum) {Int32GetDatum(value), false};
+					}					
 					case SQLITE_BLOB:
 					default:
 						{
