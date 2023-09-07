@@ -2871,10 +2871,10 @@ sqliteExecForeignUpdate(EState *estate,
 		int			attnum = lfirst_int(lc);
 		bool		is_null;
 		Datum		value = 0;
+		Form_pg_attribute bind_att = NULL;		
 #if PG_VERSION_NUM >= 140000
 		TupleDesc	tupdesc = RelationGetDescr(fmstate->rel);
 		Form_pg_attribute attr = TupleDescAttr(tupdesc, attnum - 1);
-		Form_pg_attribute bind_att = NULL;
 
 		/* Ignore generated columns and skip bind value */
 		if (attr->attgenerated)
