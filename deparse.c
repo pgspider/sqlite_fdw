@@ -1973,7 +1973,7 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 
 		/* Required only to be passed down to deparseTargetList(). */
 		List	   *retrieved_attrs;
-		
+
 		/*
 		 * The lock on the relation will be held by upper callers, so it's
 		 * fine to open it with no lock here.
