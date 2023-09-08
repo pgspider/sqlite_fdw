@@ -2594,13 +2594,14 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 			appendStringInfo(buf, "B\'%s\'", extval);
 			break;
 		case BOOLOID:
-			extval = OidOutputFunctionCall(typoutput, node->constvalue);
-			if (strcmp(extval, "t") == 0)
-				appendStringInfoString(buf, "1");
-			else
-				appendStringInfoString(buf, "0");
+			{
+				extval = OidOutputFunctionCall(typoutput, node->constvalue);
+				if (strcmp(extval, "t") == 0)
+					appendStringInfoString(buf, "1");
+				else
+					appendStringInfoString(buf, "0");
+			}
 			break;
-
 		case BYTEAOID:
 			/*
 			 * the string for BYTEA always seems to be in the format "\\x##"
@@ -2613,26 +2614,27 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 			appendStringInfo(buf, "X\'%s\'", extval + 2);
 			break;
 		case TIMESTAMPOID:
-			convert_timestamp_tounixepoch = false;
-			extval = OidOutputFunctionCall(typoutput, node->constvalue);
+			{		
+				convert_timestamp_tounixepoch = false;
+				extval = OidOutputFunctionCall(typoutput, node->constvalue);
 
-			if (context->complementarynode != NULL)
-			{
-				varnode = get_complementary_var_node(context->complementarynode);
-				if (varnode != NULL)
+				if (context->complementarynode != NULL)
 				{
-					sqlitecolumntype = sqlite_deparse_column_option(varnode->varno, varnode->varattno, context->root, "column_type");
+					varnode = get_complementary_var_node(context->complementarynode);
+					if (varnode != NULL)
+					{
+						sqlitecolumntype = sqlite_deparse_column_option(varnode->varno, varnode->varattno, context->root, "column_type");
 
-					if (sqlitecolumntype != NULL && strcasecmp(sqlitecolumntype, "INT") == 0)
-						convert_timestamp_tounixepoch = true;
+						if (sqlitecolumntype != NULL && strcasecmp(sqlitecolumntype, "INT") == 0)
+							convert_timestamp_tounixepoch = true;
+					}
 				}
+
+				if (convert_timestamp_tounixepoch)
+					appendStringInfo(buf, "strftime('%%s', '%s')", extval);
+				else
+					sqlite_deparse_string_literal(buf, extval);
 			}
-
-			if (convert_timestamp_tounixepoch)
-				appendStringInfo(buf, "strftime('%%s', '%s')", extval);
-			else
-				sqlite_deparse_string_literal(buf, extval);
-
 			break;
 		case UUIDOID: 
 			/* always deparse to BLOB because this is internal PostgreSQL storage 
@@ -2642,14 +2644,18 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 			 * allows us to quickly convert postgres escaped strings to sqlite
 			 * ones for comparison
 			 */
-			extval = OidOutputFunctionCall(typoutput, node->constvalue);
-			appendStringInfo(buf, "X\'");
-			for (int i = 0; i < strlen(extval); i++) {
-				char c = extval[i];
-				if ( c != '-' )
-					appendStringInfoChar(buf, c);
+ 			{
+				int i = 0;
+				extval = OidOutputFunctionCall(typoutput, node->constvalue);
+				appendStringInfo(buf, "X\'");
+				for (i = 0; i < strlen(extval); i++)
+				{
+					char c = extval[i];
+					if ( c != '-' )
+						appendStringInfoChar(buf, c);
+				}
+	  			appendStringInfo(buf, "\'");
 			}
-  				appendStringInfo(buf, "\'");
 			break;
 		default:
 			extval = OidOutputFunctionCall(typoutput, node->constvalue);
@@ -2761,7 +2767,7 @@ sqlite_deparse_func_expr(FuncExpr *node, deparse_expr_cxt *context)
 }
 
 /*
- * Deparse given operator expression.   To avoid problems around
+ * Deparse given operator expression. To avoid problems around
  * priority of operations, we always parenthesize the arguments.
  */
 static void
