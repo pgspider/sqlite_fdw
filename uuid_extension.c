@@ -97,7 +97,7 @@ static unsigned char sqlite_fdw_data_norm_UuidHexToInt(int h) {
  * buffer zStr should be at least 37 bytes in length.   The output will
  * be zero-terminated.
  *
- *static void sqlite_fdw_data_norm__uuid_blob_to_str(const unsigned char* aBlob, / * Input blob * /
+ *static void sqlite_fdw_data_norm_uuid_blob_to_str(const unsigned char* aBlob, / * Input blob * /
  *                                     unsigned char* zStr         / * Write the answer here * /
  *) {
  *    static const char zDigits[] = "0123456789abcdef";
@@ -122,7 +122,7 @@ static unsigned char sqlite_fdw_data_norm_UuidHexToInt(int h) {
  * UUID.  Return 0 on success, or non-zero if the input string is not
  * parsable.
  */
-static int sqlite_fdw_data_norm__uuid_str_to_blob(const unsigned char* zStr, /* Input string */
+static int sqlite_fdw_data_norm_uuid_str_to_blob(const unsigned char* zStr, /* Input string */
                                     unsigned char* aBlob       /* Write results here */
 ) {
     int i;
@@ -153,7 +153,7 @@ static const unsigned char* sqlite_fdw_data_norm_uuid_input_to_blob(sqlite3_valu
     switch (sqlite3_value_type(pIn)) {
         case SQLITE_TEXT: {
             const unsigned char* z = sqlite3_value_text(pIn);
-            if (sqlite_fdw_data_norm__uuid_str_to_blob(z, pBuf))
+            if (sqlite_fdw_data_norm_uuid_str_to_blob(z, pBuf))
                 return 0;
             return pBuf;
         }
