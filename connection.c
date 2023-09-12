@@ -217,8 +217,10 @@ sqlite_open_db(const char *dbpath)
 				(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
 				 errmsg("failed to open SQLite DB. rc=%d err=%s", rc, perr)));
 	}
-	/* add UUID functions for data unifying during deparsing */
-	rc = sqlite_uuid_init(conn);
+	/* add included inner SQLite functions from separate c file
+	 * for using in data unifying during deparsing
+	 */
+	rc = sqlite_fdw_data_norm_functs_init(conn);
 	if (rc != SQLITE_OK)
 	{
 		char	   *perr = pstrdup(err);

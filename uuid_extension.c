@@ -13,20 +13,18 @@
  * 		uuid_extension.c
  *
  *-------------------------------------------------------------------------
- * WARNING: PLEASE REMOVE THIS FILE AFTER SQLITE 3.41+ SUPPORT BECASUE OF 
- * AVAILLABLE UNHEX FUNCTION
  */
 
 /*
  * This SQLite extension implements functions that handling RFC-4122 UUIDs
  * Three SQL functions are implemented:
  *
- *     uuid4()       - generate a version 4 UUID as a string
- *     uuid_str(X)   - convert a UUID X into a well-formed UUID string
- *     uuid_blob(X)  - convert a UUID X into a 16-byte blob
+ *     gen_random_uuid() - generate a version 4 UUID as a string
+ *     uuid_str(X)       - convert a UUID X into a well-formed UUID string
+ *     uuid_blob(X)      - convert a UUID X into a 16-byte blob
  *
- * The output from uuid4() and uuid_str(X) are always well-formed RFC-4122
- * UUID strings in this format:
+ * The output from gen_random_uuid() and uuid_str(X) are always well-formed
+ * RFC-4122 UUID strings in this format:
  *
  *        xxxxxxxx-xxxx-Mxxx-Nxxx-xxxxxxxxxxxx
  *
@@ -72,7 +70,7 @@
 
 #include "sqlite3.h"
 
-int sqlite_uuid_init(sqlite3* db);
+int sqlite_fdw_data_norm_functs_init(sqlite3* db);
 
 #if !defined(SQLITE_ASCII) && !defined(SQLITE_EBCDIC)
 #define SQLITE_ASCII 1
@@ -83,7 +81,7 @@ int sqlite_uuid_init(sqlite3* db);
  * This routine only works if h really is a valid hexadecimal
  * character:  0..9a..fA..F
  */
-static unsigned char sqlite3UuidHexToInt(int h) {
+static unsigned char sqlite_fdw_data_norm_UuidHexToInt(int h) {
     assert((h >= '0' && h <= '9') || (h >= 'a' && h <= 'f') || (h >= 'A' && h <= 'F'));
 #ifdef SQLITE_ASCII
     h += 9 * (1 & (h >> 6));
@@ -99,7 +97,7 @@ static unsigned char sqlite3UuidHexToInt(int h) {
  * buffer zStr should be at least 37 bytes in length.   The output will
  * be zero-terminated.
  *
- *static void sqlite3_uuid_blob_to_str(const unsigned char* aBlob, / * Input blob * /
+ *static void sqlite_fdw_data_norm__uuid_blob_to_str(const unsigned char* aBlob, / * Input blob * /
  *                                     unsigned char* zStr         / * Write the answer here * /
  *) {
  *    static const char zDigits[] = "0123456789abcdef";
@@ -124,7 +122,7 @@ static unsigned char sqlite3UuidHexToInt(int h) {
  * UUID.  Return 0 on success, or non-zero if the input string is not
  * parsable.
  */
-static int sqlite3_uuid_str_to_blob(const unsigned char* zStr, /* Input string */
+static int sqlite_fdw_data_norm__uuid_str_to_blob(const unsigned char* zStr, /* Input string */
                                     unsigned char* aBlob       /* Write results here */
 ) {
     int i;
@@ -134,7 +132,7 @@ static int sqlite3_uuid_str_to_blob(const unsigned char* zStr, /* Input string *
         if (zStr[0] == '-')
             zStr++;
         if (isxdigit(zStr[0]) && isxdigit(zStr[1])) {
-            aBlob[i] = (sqlite3UuidHexToInt(zStr[0]) << 4) + sqlite3UuidHexToInt(zStr[1]);
+            aBlob[i] = (sqlite_fdw_data_norm_UuidHexToInt(zStr[0]) << 4) + sqlite_fdw_data_norm_UuidHexToInt(zStr[1]);
             zStr += 2;
         } else {
             return 1;
@@ -149,13 +147,13 @@ static int sqlite3_uuid_str_to_blob(const unsigned char* zStr, /* Input string *
  * Render sqlite3_value pIn as a 16-byte UUID blob.  Return a pointer
  * to the blob, or NULL if the input is not well-formed.
  */
-static const unsigned char* sqlite3_uuid_input_to_blob(sqlite3_value* pIn, /* Input text */
+static const unsigned char* sqlite_fdw_data_norm_uuid_input_to_blob(sqlite3_value* pIn, /* Input text */
                                                        unsigned char* pBuf /* output buffer */
 ) {
     switch (sqlite3_value_type(pIn)) {
         case SQLITE_TEXT: {
             const unsigned char* z = sqlite3_value_text(pIn);
-            if (sqlite3_uuid_str_to_blob(z, pBuf))
+            if (sqlite_fdw_data_norm__uuid_str_to_blob(z, pBuf))
                 return 0;
             return pBuf;
         }
@@ -180,7 +178,7 @@ static const unsigned char* sqlite3_uuid_input_to_blob(sqlite3_value* pIn, /* In
  *    sqlite3_randomness(16, aBlob);
  *    aBlob[6] = (aBlob[6] & 0x0f) + 0x40;
  *    aBlob[8] = (aBlob[8] & 0x3f) + 0x80;
- *    sqlite3_uuid_blob_to_str(aBlob, zStr);
+ *    sqlite_fdw_data_norm_uuid_blob_to_str(aBlob, zStr);
  *    sqlite3_result_text(context, (char*)zStr, 36, SQLITE_TRANSIENT);
  *}
  */
@@ -193,10 +191,10 @@ static const unsigned char* sqlite3_uuid_input_to_blob(sqlite3_value* pIn, /* In
  *    unsigned char zStr[37];
  *    const unsigned char* pBlob;
  *    (void)argc;
- *    pBlob = sqlite3_uuid_input_to_blob(argv[0], aBlob);
+ *    pBlob = sqlite_fdw_data_norm_uuid_input_to_blob(argv[0], aBlob);
  *    if (pBlob == 0)
  *        return;
- *    sqlite3_uuid_blob_to_str(pBlob, zStr);
+ *    sqlite_fdw_data_norm_uuid_blob_to_str(pBlob, zStr);
  *    sqlite3_result_text(context, (char*)zStr, 36, SQLITE_TRANSIENT);
  *}
  */
@@ -208,13 +206,13 @@ static void uuid_blob(sqlite3_context* context, int argc, sqlite3_value** argv) 
     unsigned char aBlob[16];
     const unsigned char* pBlob;
     (void)argc;
-    pBlob = sqlite3_uuid_input_to_blob(argv[0], aBlob);
+    pBlob = sqlite_fdw_data_norm_uuid_input_to_blob(argv[0], aBlob);
     if (pBlob == 0)
         return;
     sqlite3_result_blob(context, pBlob, 16, SQLITE_TRANSIENT);
 }
 
-int sqlite_uuid_init(sqlite3* db) {
+int sqlite_fdw_data_norm_functs_init(sqlite3* db) {
     /*
      * static const int flags = SQLITE_UTF8 | SQLITE_INNOCUOUS;
      */
