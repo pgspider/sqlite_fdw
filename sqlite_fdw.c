@@ -28,6 +28,11 @@
 #include "optimizer/planmain.h"
 #include "optimizer/planner.h"
 #include "optimizer/cost.h"
+#if (PG_VERSION_NUM >= 130010 && PG_VERSION_NUM < 140000) || \
+	(PG_VERSION_NUM >= 140007 && PG_VERSION_NUM < 150000) || \
+	(PG_VERSION_NUM >= 150002)
+#include "optimizer/inherit.h"
+#endif
 #include "optimizer/clauses.h"
 #include "optimizer/restrictinfo.h"
 #include "optimizer/paths.h"
@@ -520,7 +525,9 @@ sqliteGetForeignRelSize(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntable
 {
 	SqliteFdwRelationInfo *fpinfo;
 	ListCell   *lc;
+#if PG_VERSION_NUM < 160000
 	RangeTblEntry *rte = planner_rt_fetch(baserel->relid, root);
+#endif
 
 	elog(DEBUG1, "sqlite_fdw : %s", __func__);
 
@@ -543,13 +550,18 @@ sqliteGetForeignRelSize(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntable
 
 	/*
 	 * If the table or the server is configured to use remote estimates,
-	 * identify which user to do remote access as during planning.  This
-	 * should match what ExecCheckRTEPerms() does.  If we fail due to lack of
-	 * permissions, the query would have failed at runtime anyway.
+	 * identify which user to do remote access as during planning.
+	 * This should match what ExecCheckPermissions() does (ExecCheckRTEPerms() for older version).
+	 * If we fail due to lack of permissions, the query would have failed at runtime anyway.
 	 */
 	if (fpinfo->use_remote_estimate)
 	{
+#if (PG_VERSION_NUM < 160000)
 		Oid			userid = rte->checkAsUser ? rte->checkAsUser : GetUserId();
+#else
+		Oid			userid;
+		userid = OidIsValid(baserel->userid) ? baserel->userid : GetUserId();
+#endif
 
 		fpinfo->user = GetUserMapping(userid, fpinfo->server->serverid);
 	}
@@ -1314,8 +1326,6 @@ sqliteGetForeignPlan(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntableid,
 		 */
 		if (outer_plan)
 		{
-			ListCell   *lc;
-
 			/*
 			 * Right now, we only consider grouping and aggregation beyond
 			 * joins. Queries involving aggregates or grouping do not require
@@ -1480,7 +1490,8 @@ sqliteBeginForeignScan(ForeignScanState *node, int eflags)
 
 	/*
 	 * Identify which user to do the remote access as.  This should match what
-	 * ExecCheckRTEPerms() does.  In case of a join or aggregate, use the
+	 * ExecCheckRTEPerms() does (ExecCheckRTEPerms() for older version).
+	 * From PostgreSQL 16, in case of a join or aggregate, use the
 	 * lowest-numbered member RTE as a representative; we would get the same
 	 * result from any.
 	 */
@@ -1488,7 +1499,12 @@ sqliteBeginForeignScan(ForeignScanState *node, int eflags)
 		rtindex = fsplan->scan.scanrelid;
 	else
 	{
+#if PG_VERSION_NUM >= 160000
+		rtindex = bms_next_member(fsplan->fs_base_relids, -1);
+#else
 		rtindex = bms_next_member(fsplan->fs_relids, -1);
+#endif
+
 #if (PG_VERSION_NUM < 100000)
 		/* PostgreSQL version 9.6.x need to get rtindex from ForeignPlan */
 		if (rtindex == -2)
@@ -1890,22 +1906,32 @@ sqlitePlanForeignModify(PlannerInfo *root,
 	}
 	else if (operation == CMD_UPDATE)
 	{
+		AttrNumber	attno;
+#if (PG_VERSION_NUM >= 130010 && PG_VERSION_NUM < 140000) || \
+	(PG_VERSION_NUM >= 140007 && PG_VERSION_NUM < 150000) || \
+	(PG_VERSION_NUM >= 150002)
+		int			col;
+		RelOptInfo *rel = find_base_rel(root, resultRelation);
+		Bitmapset  *allUpdatedCols = get_rel_all_updated_cols(root, rel);
 
+		col = -1;
+		while ((col = bms_next_member(allUpdatedCols, col))>= 0)
+		{
+			/* bit numbers are offset by FirstLowInvalidHeapAttributeNumber */
+			attno = col + FirstLowInvalidHeapAttributeNumber;
+#else
 		Bitmapset  *tmpset;
 
-		AttrNumber	col;
-#if (PG_VERSION_NUM >= 120000)
 		tmpset = bms_union(rte->updatedCols, rte->extraUpdatedCols);
-#else
-		tmpset = bms_copy(rte->updatedCols);
-#endif
-		while ((col = bms_first_member(tmpset)) >= 0)
+
+		while ((attno = bms_first_member(tmpset)) >= 0)
 		{
-			col += FirstLowInvalidHeapAttributeNumber;
-			if (col <= InvalidAttrNumber)	/* shouldn't happen */
+			attno += FirstLowInvalidHeapAttributeNumber;
+#endif
+			if (attno <= InvalidAttrNumber)	/* shouldn't happen */
 				elog(ERROR, "system-column update is not supported");
 
-			targetAttrs = lappend_int(targetAttrs, col);
+			targetAttrs = lappend_int(targetAttrs, attno);
 		}
 	}
 
@@ -2154,9 +2180,13 @@ sqliteGetForeignModifyBatchSize(ResultRelInfo *resultRelInfo)
 #if SQLITE_VERSION_NUMBER < 3008008
 	int			limitRow;
 #endif
+#if PG_VERSION_NUM >= 160000
+	SqliteFdwExecState *fmstate = (SqliteFdwExecState *) resultRelInfo->ri_FdwState;
+#else
 	SqliteFdwExecState *fmstate = resultRelInfo->ri_FdwState ?
 	(SqliteFdwExecState *) resultRelInfo->ri_FdwState :
 	NULL;
+#endif
 
 	/* should be called only once */
 	Assert(resultRelInfo->ri_BatchSize == 0);
@@ -2192,6 +2222,16 @@ sqliteGetForeignModifyBatchSize(ResultRelInfo *resultRelInfo)
 		 (resultRelInfo->ri_TrigDesc->trig_insert_before_row ||
 		  resultRelInfo->ri_TrigDesc->trig_insert_after_row)))
 		return 1;
+
+	/*
+	 * If the foreign table has no columns, disable batching as the INSERT
+	 * syntax doesn't allow batching multiple empty rows into a zero-column
+	 * table in a single statement.  This is needed for COPY FROM, in which
+	 * case fmstate must be non-NULL.
+	 */
+	if (fmstate && list_length(fmstate->target_attrs) == 0)
+		return 1;
+
 
 	/*
 	 * The batch size is used specified for server/table. Make sure we don't
@@ -2267,8 +2307,11 @@ sqlite_find_modifytable_subplan(PlannerInfo *root,
 	if (IsA(subplan, ForeignScan))
 	{
 		ForeignScan *fscan = (ForeignScan *) subplan;
-
+#if (PG_VERSION_NUMBER >= 160000)
+		if (bms_is_member(rtindex, fscan->fs_base_relids))
+#else
 		if (bms_is_member(rtindex, fscan->fs_relids))
+#endif
 			return fscan;
 	}
 
@@ -2561,6 +2604,9 @@ sqliteBeginDirectModify(ForeignScanState *node, int eflags)
 #endif
 
 	/* Get info about foreign table. */
+#if PG_VERSION_NUM >= 160000
+	rtindex = node->resultRelInfo->ri_RangeTableIndex;
+#endif
 	if (fsplan->scan.scanrelid == 0)
 		dmstate->rel = ExecOpenScanRelation(estate, rtindex, eflags);
 	else
@@ -3451,8 +3497,13 @@ sqlite_adjust_foreign_grouping_path_cost(PlannerInfo *root,
 	 * pathkeys, adjust the costs with that function.  Otherwise, adjust the
 	 * costs by applying the same heuristic as for the scan or join case.
 	 */
+#if PG_VERSION_NUM >= 160000
+	if (!grouping_is_sortable(root->processed_groupClause) ||
+	!pathkeys_contained_in(pathkeys, root->group_pathkeys))
+#else
 	if (!grouping_is_sortable(root->parse->groupClause) ||
-		!pathkeys_contained_in(pathkeys, root->group_pathkeys))
+	!pathkeys_contained_in(pathkeys, root->group_pathkeys))
+#endif
 	{
 		Path		sort_path;	/* dummy for result of cost_sort */
 
@@ -3764,7 +3815,11 @@ sqlite_foreign_grouping_ok(PlannerInfo *root, RelOptInfo *grouped_rel)
 		Index		sgref = get_pathtarget_sortgroupref(grouping_target, i);
 		ListCell   *l;
 
-		/* Check whether this expression is part of GROUP BY clause */
+		/*
+		 * Check whether this expression is part of GROUP BY clause.  Note we
+		 * check the whole GROUP BY clause not just processed_groupClause,
+		 * because we will ship all of it, cf. appendGroupByClause.
+		 */
 		if (sgref && get_sortgroupref_clause_noerr(sgref, query->groupClause))
 		{
 			TargetEntry *tle;
@@ -3826,10 +3881,10 @@ sqlite_foreign_grouping_ok(PlannerInfo *root, RelOptInfo *grouped_rel)
 				 */
 				foreach(l, aggvars)
 				{
-					Expr	   *expr = (Expr *) lfirst(l);
+					Expr	   *aggref = (Expr *) lfirst(l);
 
-					if (IsA(expr, Aggref))
-						tlist = add_to_flat_tlist(tlist, list_make1(expr));
+					if (IsA(aggref, Aggref))
+						tlist = add_to_flat_tlist(tlist, list_make1(aggref));
 				}
 			}
 		}
@@ -3843,7 +3898,6 @@ sqlite_foreign_grouping_ok(PlannerInfo *root, RelOptInfo *grouped_rel)
 	 */
 	if (root->hasHavingQual && query->havingQual)
 	{
-		ListCell   *lc;
 
 		foreach(lc, (List *) query->havingQual)
 		{
@@ -3865,6 +3919,9 @@ sqlite_foreign_grouping_ok(PlannerInfo *root, RelOptInfo *grouped_rel)
 									  true,
 									  false,
 									  false,
+#if (PG_VERSION_NUM >= 160000)
+									  false,
+#endif
 									  root->qual_security_level,
 									  grouped_rel->relids,
 									  NULL,
@@ -3887,7 +3944,6 @@ sqlite_foreign_grouping_ok(PlannerInfo *root, RelOptInfo *grouped_rel)
 	if (fpinfo->local_conds)
 	{
 		List	   *aggvars = NIL;
-		ListCell   *lc;
 
 		foreach(lc, fpinfo->local_conds)
 		{
@@ -4780,21 +4836,32 @@ sqlite_estimate_path_cost_size(PlannerInfo *root,
 			/*
 			 * Get number of grouping columns and possible number of groups
 			 */
+#if PG_VERSION_NUM >= 160000
+			numGroupCols = list_length(root->processed_groupClause);
+			numGroups = estimate_num_groups(root,
+											get_sortgrouplist_exprs(root->processed_groupClause,
+																	fpinfo->grouped_tlist),
+#else
 			numGroupCols = list_length(root->parse->groupClause);
 			numGroups = estimate_num_groups(root,
 											get_sortgrouplist_exprs(root->parse->groupClause,
 																	fpinfo->grouped_tlist),
+#endif
 											input_rows, NULL
 #if PG_VERSION_NUM >= 140000
 											,NULL
 #endif
-				);
+						);
 
 			/*
 			 * Get the retrieved_rows and rows estimates.  If there are HAVING
 			 * quals, account for their selectivity.
 			 */
+#if PG_VERSION_NUM >= 160000
+			if (root->hasHavingQual)
+#else
 			if (root->parse->havingQual)
+#endif
 			{
 				/*
 				 * Factor in the selectivity of the remotely-checked quals
@@ -4855,7 +4922,11 @@ sqlite_estimate_path_cost_size(PlannerInfo *root,
 			run_cost += cpu_tuple_cost * numGroups;
 
 			/* Account for the eval cost of HAVING quals, if any */
+#if PG_VERSION_NUM >= 160000
+			if (root->hasHavingQual)
+#else
 			if (root->parse->havingQual)
+#endif
 			{
 				QualCost	remote_cost;
 
