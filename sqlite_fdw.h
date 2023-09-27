@@ -50,7 +50,7 @@
 #endif
 
 /* Code version is updated at new release. */
-#define CODE_VERSION   20300
+#define CODE_VERSION   20400
 
 #if (PG_VERSION_NUM < 100000)
 /*
