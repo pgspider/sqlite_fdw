@@ -195,7 +195,8 @@ CREATE TABLE bool_test_tmp(
 -- FOR AGGREGATEQ.SQL
 
 create table minmaxtest(f1 int);
-
+create table agg_tb(v int, id integer primary key autoincrement);
+create table agg_tb2(v text);
 create table agg_t1 (a int, b int, c int, d int, primary key (a, b));
 create table agg_t2 (x int, y int, z int, primary key (x, y));
 create table agg_t3 (a float8, b float8, id integer primary key autoincrement);
@@ -214,14 +215,16 @@ create table agg_t14(x int, y int, id integer primary key autoincrement);
 create table agg_data_2k(g int , id integer primary key autoincrement);
 create table agg_data_20k(g int , id integer primary key autoincrement);
 create table t1(f1 int4, f2 int8);
-create table t2(f1 int8, f22 int8);
+create table t2(f1 int8, f2 int8);
 create table agg_t15(a text, b int, c int, id integer primary key autoincrement);
 create table agg_t16(a text, b text, id integer primary key autoincrement);
 create table agg_t17(foo text, bar text);
+create table agg_t170(v int);
 create table agg_t18 (inner_c int);
 create table agg_t19 (outer_c int);
 create table agg_t20 (x text);
 create table agg_t21 (x int);
+CREATE TABLE float_tb(f real);
 
 -- multi-arg aggs
 create table multi_arg_agg (a int, b int, c text);
@@ -238,11 +241,21 @@ create table agg_hash_4 (c1 numeric, c2 text, c3 int);
 
 -- FOR float4.sql
 create table testdata(bits text, id integer primary key autoincrement);
+CREATE TABLE NON_ERROR_THROWING_API_FLOAT4(f1 text, id serial);
+
+-- FOR float8.sql
+CREATE TABLE NON_ERROR_THROWING_API_FLOAT8(f1 text, id serial);
 
 -- FOR int4.sql
 create table numeric_tmp(f1 numeric, f2 numeric , id integer primary key autoincrement);
+CREATE TABLE NON_ERROR_THROWING_API_INT4(f1 text, id serial);
+CREATE TABLE special_case_int4 (f1 text, id integer primary key autoincrement);
 
 CREATE TABLE VARCHAR_TBL(f1 varchar(4));
+
+-- FOR int8.sql
+CREATE TABLE NON_ERROR_THROWING_API_INT8(f1 text, id serial);
+CREATE TABLE special_case_int8 (f1 text, id integer primary key autoincrement);
 
 --Testcase 8:
 INSERT INTO VARCHAR_TBL (f1) VALUES ('a');
@@ -252,6 +265,7 @@ INSERT INTO VARCHAR_TBL (f1) VALUES ('ab');
 INSERT INTO VARCHAR_TBL (f1) VALUES ('abcd');
 
 create table bytea_test_table(v bytea);
+create table pagg_test (x int, y int);
 
 -- FOR numeric.sql
 
@@ -271,11 +285,14 @@ CREATE TABLE v (id int4, x numeric, val float8, primary key (id));
 INSERT INTO v(x) VALUES ('1e340'), ('-1e340');
 CREATE TABLE fract_only (id int, val numeric(4,4));
 CREATE TABLE ceil_floor_round (a numeric primary key);
+CREATE TABLE ceil_round_float8(a float8);
 CREATE TABLE width_bucket_tbl (id1 numeric, id2 numeric, id3 numeric, id4 int, id integer primary key autoincrement);
 CREATE TABLE width_bucket_test (operand_num numeric, operand_f8 float8);
 CREATE TABLE num_input_test (n1 numeric);
+CREATE TABLE num_trigger_test(n1 float8);
 
 CREATE TABLE num_tmp (n1 numeric, n2 numeric, id integer primary key autoincrement);
+
 CREATE TABLE to_number_tbl(a text, id integer primary key autoincrement);
 CREATE TABLE num_typemod_test (
   millions numeric(3, -6),
@@ -284,6 +301,8 @@ CREATE TABLE num_typemod_test (
   thousandths numeric(3, 3),
   millionths numeric(3, 6)
 );
+
+CREATE TABLE NON_ERROR_THROWING_API_INT4_NUMERIC(f1 text, id serial);
 
 -- FOR join.sql
 

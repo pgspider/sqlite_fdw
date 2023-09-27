@@ -14,13 +14,11 @@
 #include "sqlite_fdw.h"
 
 #include <stdio.h>
-
 #include <sqlite3.h>
 
 #include "catalog/pg_type_d.h"
 #include "utils/builtins.h"
 #include "utils/lsyscache.h"
-
 #include "nodes/makefuncs.h"
 #include "catalog/pg_type.h"
 #include "parser/parse_type.h"
@@ -30,7 +28,7 @@ static int32
 			sqlite_affinity_eqv_to_pgtype(Oid pgtyp);
 static const char*
 			sqlite_datatype(int t);
-static void 
+static void
 			sqlite_value_to_pg_error (Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_colid, int sqlite_value_affinity, int affinity_for_pg_column, int value_byte_size_blob_or_utf8);
 static char *
 			sqlite_text_value_to_pg_db_encoding(sqlite3_stmt * stmt, int stmt_colid);
@@ -46,7 +44,7 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 	Datum		value_datum = 0;
 	char	   *valstr = NULL;
 	int			affinity_for_pg_column = sqlite_affinity_eqv_to_pgtype(pgtyp);
-	int		 	value_byte_size_blob_or_utf8 = sqlite3_column_bytes(stmt, stmt_colid); // Compute always, void text and void BLOB will be special cases
+	int		 	value_byte_size_blob_or_utf8 = sqlite3_column_bytes(stmt, stmt_colid); /* Compute always, void text and void BLOB will be special cases */
 
 	if (affinity_for_pg_column != sqlite_value_affinity && sqlite_value_affinity == SQLITE3_TEXT)
 	{
@@ -57,11 +55,10 @@ sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_coli
 	{
 		case BYTEAOID:
 			{
-				// int			value_byte_size_blob_or_utf = sqlite3_column_bytes(stmt, stmt_colid); // Calculated always for detectind void values
 				value_datum = (Datum) palloc0(value_byte_size_blob_or_utf8 + VARHDRSZ);
 				memcpy(VARDATA(value_datum), sqlite3_column_blob(stmt, stmt_colid), value_byte_size_blob_or_utf8);
 				SET_VARSIZE(value_datum, value_byte_size_blob_or_utf8 + VARHDRSZ);
-				return (struct NullableDatum) { PointerGetDatum(value_datum), false};
+				return (struct NullableDatum) { PointerGetDatum((const void *) value_datum), false};
 			}
 		case INT2OID:
 			{
@@ -373,11 +370,11 @@ static void sqlite_value_to_pg_error (Oid pgtyp, int pgtypmod, sqlite3_stmt * st
 	const char	*pg_eqv_affinity = 0;
 	const char	*pg_dataTypeName = 0;
 	const int	 max_logged_byte_length = NAMEDATALEN;
-	
+
 	pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(pgtyp, pgtypmod));
 	sqlite_affinity = sqlite_datatype(sqlite_value_affinity);
 	pg_eqv_affinity = sqlite_datatype(affinity_for_pg_column);
-	
+
 	if (value_byte_size_blob_or_utf8 < max_logged_byte_length)
 	{
 		const unsigned char	*text_value = sqlite3_column_text(stmt, stmt_colid);

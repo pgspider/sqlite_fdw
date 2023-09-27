@@ -24,6 +24,10 @@
 #include "catalog/pg_operator.h"
 #include "catalog/pg_opfamily.h"
 #include "catalog/pg_proc.h"
+#if PG_VERSION_NUM >= 160000
+#include "catalog/pg_ts_config.h"
+#endif
+#include "catalog/pg_ts_dict.h"
 #include "catalog/pg_type.h"
 #include "commands/defrem.h"
 #include "nodes/nodeFuncs.h"
@@ -108,7 +112,7 @@ static bool sqlite_foreign_expr_walker(Node *node,
 /*
  * Functions to construct string representation of a node tree.
  */
-static void sqlite_deparse_expr(Expr *expr, deparse_expr_cxt *context);
+static void sqlite_deparse_expr(Expr *node, deparse_expr_cxt *context);
 static void sqlite_deparse_var(Var *node, deparse_expr_cxt *context);
 static void sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype);
 static void sqlite_deparse_param(Param *node, deparse_expr_cxt *context);
@@ -356,6 +360,7 @@ sqlite_is_foreign_pathkey(PlannerInfo *root,
 				   PathKey *pathkey)
 {
 	EquivalenceClass *pathkey_ec = pathkey->pk_eclass;
+	EquivalenceMember *em;
 
 	/*
 	 * is_foreign_expr would detect volatile expressions as well, but checking
@@ -368,8 +373,34 @@ sqlite_is_foreign_pathkey(PlannerInfo *root,
 	if (!sqlite_is_builtin(pathkey->pk_opfamily))
 		return false;
 
-	/* can push if a suitable EC member exists */
-	return (sqlite_find_em_for_rel(root, pathkey_ec, baserel) != NULL);
+	/* Find a suitable EC member */
+	em = sqlite_find_em_for_rel(root, pathkey_ec, baserel);
+	if (em)
+	{
+		Oid			oprid;
+		TypeCacheEntry *typentry;
+
+		oprid = get_opfamily_member(pathkey->pk_opfamily,
+									em->em_datatype,
+									em->em_datatype,
+									pathkey->pk_strategy);
+		if (!OidIsValid(oprid))
+			elog(ERROR, "missing operator %d(%u,%u) in opfamily %u",
+				 pathkey->pk_strategy, em->em_datatype, em->em_datatype,
+				 pathkey->pk_opfamily);
+
+		/* See whether operator is default < or > for sort expr's datatype. */
+		typentry = lookup_type_cache(exprType((Node *) em->em_expr),
+									TYPECACHE_LT_OPR | TYPECACHE_GT_OPR);
+
+		/* SQLite does not support USING, so do not push down it */
+		if (oprid != typentry->lt_opr && oprid != typentry->gt_opr)
+			return false;
+	}
+	else
+		return false;
+
+	return true;
 }
 
 /*
@@ -3370,6 +3401,13 @@ sqlite_append_group_by_clause(List *tlist, deparse_expr_cxt *context)
 	 */
 	Assert(!query->groupingSets);
 
+	/*
+	 * We intentionally print query->groupClause not processed_groupClause,
+	 * leaving it to the remote planner to get rid of any redundant GROUP BY
+	 * items again.  This is necessary in case processed_groupClause reduced
+	 * to empty, and in any case the redundancy situation on the remote might
+	 * be different than what we think here.
+	 */
 	foreach(lc, query->groupClause)
 	{
 		SortGroupClause *grp = (SortGroupClause *) lfirst(lc);
@@ -3522,25 +3560,13 @@ static void sqlite_append_order_by_suffix(Oid sortop, Oid sortcoltype,
 	typentry = lookup_type_cache(sortcoltype,
 								 TYPECACHE_LT_OPR | TYPECACHE_GT_OPR);
 
+	/* SQLite does not support USING */
+	Assert (sortop == typentry->lt_opr || sortop == typentry->gt_opr);
+
 	if (sortop == typentry->lt_opr)
 		appendStringInfoString(buf, " ASC");
 	else if (sortop == typentry->gt_opr)
 		appendStringInfoString(buf, " DESC");
-	else
-	{
-		HeapTuple	opertup;
-		Form_pg_operator operform;
-
-		appendStringInfoString(buf, " USING ");
-
-		/* Append operator name. */
-		opertup = SearchSysCache1(OPEROID, ObjectIdGetDatum(sortop));
-		if (!HeapTupleIsValid(opertup))
-			elog(ERROR, "cache lookup failed for operator %u", sortop);
-		operform = (Form_pg_operator) GETSTRUCT(opertup);
-		sqlite_deparse_operator_name(buf, operform);
-		ReleaseSysCache(opertup);
-	}
 
 	if (nulls_first)
 		appendStringInfoString(buf, " NULLS FIRST");
@@ -3744,7 +3770,21 @@ sqlite_get_relation_column_alias_ids(Var *node, RelOptInfo *foreignrel,
 	i = 1;
 	foreach(lc, foreignrel->reltarget->exprs)
 	{
+#if PG_VERSION_NUM >= 160000
+		Var		   *tlvar = (Var *) lfirst(lc);
+
+		/*
+		 * Match reltarget entries only on varno/varattno.  Ideally there
+		 * would be some cross-check on varnullingrels, but it's unclear what
+		 * to do exactly; we don't have enough context to know what that value
+		 * should be.
+		 */
+		if (IsA(tlvar, Var) &&
+			tlvar->varno == node->varno &&
+			tlvar->varattno == node->varattno)
+#else
 		if (equal(lfirst(lc), (Node *) node))
+#endif
 		{
 			*colno = i;
 			return;
