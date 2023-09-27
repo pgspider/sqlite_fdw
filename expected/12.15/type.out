@@ -1005,7 +1005,6 @@ SELECT * FROM "type_UUID+" WHERE "u" IS NOT NULL;
 --Testcase 47:
 DROP EXTENSION sqlite_fdw CASCADE;
 NOTICE:  drop cascades to 44 other objects
->>>>>>> origin/master
 DETAIL:  drop cascades to server sqlite_svr
 drop cascades to foreign table department
 drop cascades to foreign table employee
@@ -1030,10 +1029,8 @@ drop cascades to foreign table "type_TIMESTAMP"
 drop cascades to foreign table "type_BLOB"
 drop cascades to foreign table "type_DATE"
 drop cascades to foreign table "type_TIME"
-<<<<<<< HEAD
 drop cascades to foreign table "type_UUID"
-=======
->>>>>>> origin/master
+drop cascades to foreign table "type_UUID+"
 drop cascades to foreign table "BitT"
 drop cascades to foreign table notype
 drop cascades to foreign table typetest
@@ -1051,9 +1048,4 @@ drop cascades to foreign table "RO_RW_test"
 drop cascades to foreign table "Unicode data"
 drop cascades to foreign table type_json
 drop cascades to foreign table "type_BOOLEAN"
-<<<<<<< HEAD
-=======
-drop cascades to foreign table "type_UUID"
-drop cascades to foreign table "type_UUID+"
->>>>>>> origin/master
 drop cascades to server sqlite2
