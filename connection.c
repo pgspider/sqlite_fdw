@@ -723,7 +723,9 @@ sqlite_fdw_get_connections(PG_FUNCTION_ARGS)
 	MemoryContext oldcontext;
 #endif
 
-#if PG_VERSION_NUM >= 150000
+#if PG_VERSION_NUM >= 160000
+	InitMaterializedSRF(fcinfo, 0);
+#elif PG_VERSION_NUM >= 150000
 	SetSingleFuncCall(fcinfo, 0);
 #else
 	/* check to see if caller supports us returning a tuplestore */
@@ -767,8 +769,8 @@ sqlite_fdw_get_connections(PG_FUNCTION_ARGS)
 	while ((entry = (ConnCacheEntry *) hash_seq_search(&scan)))
 	{
 		ForeignServer *server;
-		Datum		values[SQLITE_FDW_GET_CONNECTIONS_COLS];
-		bool		nulls[SQLITE_FDW_GET_CONNECTIONS_COLS];
+		Datum		values[SQLITE_FDW_GET_CONNECTIONS_COLS] = {0};
+		bool		nulls[SQLITE_FDW_GET_CONNECTIONS_COLS] = {0};
 
 		/* We only look for open remote connections */
 		if (!entry->conn)
@@ -776,8 +778,6 @@ sqlite_fdw_get_connections(PG_FUNCTION_ARGS)
 
 		server = GetForeignServerExtended(entry->serverid, FSV_MISSING_OK);
 
-		MemSet(values, 0, sizeof(values));
-		MemSet(nulls, 0, sizeof(nulls));
 
 		/*
 		 * The foreign server may have been dropped in current explicit
@@ -824,7 +824,7 @@ sqlite_fdw_get_connections(PG_FUNCTION_ARGS)
 		values[1] = BoolGetDatum(!entry->invalidated);
 #if PG_VERSION_NUM >= 150000
 		tuplestore_putvalues(rsinfo->setResult, rsinfo->setDesc, values, nulls);
-#else 
+#else
 		tuplestore_putvalues(tupstore, tupdesc, values, nulls);
 #endif
 	}

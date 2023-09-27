@@ -2,7 +2,7 @@ SQLite Foreign Data Wrapper for PostgreSQL
 ==========================================
 
 This is a foreign data wrapper (FDW) to connect [PostgreSQL](https://www.postgresql.org/)
-to [SQLite](https://sqlite.org/) database file. This FDW works with PostgreSQL 11, 12, 13, 14, 15 and confirmed with SQLite 3.38.5.
+to [SQLite](https://sqlite.org/) database file. This FDW works with PostgreSQL 12, 13, 14, 15, 16 and confirmed with SQLite 3.42.0.
 
 <img src="https://upload.wikimedia.org/wikipedia/commons/2/29/Postgresql_elephant.svg" align="center" height="100" alt="PostgreSQL"/>	+	<img src="https://upload.wikimedia.org/wikipedia/commons/3/38/SQLite370.svg" align="center" height="100" alt="SQLite"/>
 
@@ -94,7 +94,7 @@ For Debian or Ubuntu:
 `apt-get install libsqlite3-dev`
 `apt-get install postgresql-server-dev-XX`, where XX matches your postgres version, i.e. `apt-get install postgresql-server-dev-15`
 
-You can also [download SQLite source code][1] and [build SQLite][2].
+You can also [download SQLite source code][1] and [build SQLite][2] with FTS5 for full-text search.
 
 #### 2. Build and install sqlite_fdw
 
@@ -287,7 +287,7 @@ Returns standard "version integer" as `major version * 10000 + minor version * 1
 ```
 sqlite_fdw_version
 --------------------
-              20300
+              20400
 ```
 Identifier case handling
 ------------------------
@@ -529,30 +529,30 @@ Test directory have structure as following:
 
 ```sql
 +---sql
-|   +---11.7
+|   +---12.15
 |   |       filename1.sql
 |   |       filename2.sql
 |   |
-|   +---12.12
+|   +---13.11
 |   |       filename1.sql
 |   |       filename2.sql
 |   |
 .................
-|   \---15.0
+|   \---15.3
 |          filename1.sql
 |          filename2.sql
 |
 \---expected
-|   +---11.7
+|   +---12.15
 |   |       filename1.out
 |   |       filename2.out
 |   |
-|   +---12.12
+|   +---13.11
 |   |       filename1.out
 |   |       filename2.out
 |   |
 .................
-|   \---15.0
+|   \---15.3
             filename1.out
             filename2.out
 ```

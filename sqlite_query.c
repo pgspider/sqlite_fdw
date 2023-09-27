@@ -14,7 +14,6 @@
 #include "sqlite_fdw.h"
 
 #include <stdio.h>
-
 #include <sqlite3.h>
 
 #include "catalog/pg_type_d.h"
@@ -22,7 +21,6 @@
 #include "utils/lsyscache.h"
 #include "utils/uuid.h"
 #include "utils/timestamp.h"
-
 #include "nodes/makefuncs.h"
 #include "catalog/pg_type.h"
 #include "parser/parse_type.h"
@@ -105,7 +103,7 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 						value_datum = (Datum) palloc0(value_byte_size_blob_or_utf8 + VARHDRSZ);
 						memcpy(VARDATA(value_datum), sqlite3_column_blob(stmt, stmt_colid), value_byte_size_blob_or_utf8);
 						SET_VARSIZE(value_datum, value_byte_size_blob_or_utf8 + VARHDRSZ);
-						return (struct NullableDatum) {PointerGetDatum(value_datum), false};
+						return (struct NullableDatum) {PointerGetDatum((const void *)value_datum), false};
 					}
 				}
 				break;
