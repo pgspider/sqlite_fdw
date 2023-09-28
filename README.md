@@ -2,7 +2,7 @@ SQLite Foreign Data Wrapper for PostgreSQL
 ==========================================
 
 This is a foreign data wrapper (FDW) to connect [PostgreSQL](https://www.postgresql.org/)
-to [SQLite](https://sqlite.org/) database file. This FDW works with PostgreSQL 11, 12, 13, 14, 15 and confirmed with SQLite 3.38.5.
+to [SQLite](https://sqlite.org/) database file. This FDW works with PostgreSQL 12, 13, 14, 15, 16 and confirmed with SQLite 3.42.0.
 
 <img src="https://upload.wikimedia.org/wikipedia/commons/2/29/Postgresql_elephant.svg" align="center" height="100" alt="PostgreSQL"/>	+	<img src="https://upload.wikimedia.org/wikipedia/commons/3/38/SQLite370.svg" align="center" height="100" alt="SQLite"/>
 
@@ -93,7 +93,7 @@ For Debian or Ubuntu:
 `apt-get install libsqlite3-dev`
 `apt-get install postgresql-server-dev-XX`, where XX matches your postgres version, i.e. `apt-get install postgresql-server-dev-15`
 
-You can also [download SQLite source code][1] and [build SQLite][2].
+You can also [download SQLite source code][1] and [build SQLite][2] with FTS5 for full-text search.
 
 #### 2. Build and install sqlite_fdw
 
@@ -114,6 +114,7 @@ make install
 
 RPM is a software distribution file format for such Linux distributives as REHL, openSUSE, Fuduntu, ALT Linux, Fedora etc. You can build RPM with actual code base before release with following commands in the main directory of your copy of this repository:
 
+After `rpm.spec` will be added to `sqlite_fdw` the follow commands will be available:
 ```sh
 rpmbuild -bs rpm.spec # for source RPM file
 rpmbuild -bb rpm.spec # for binary RPM file for current processor architecture
@@ -166,19 +167,19 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 - **database** as *string*, **required**
 
   SQLite database path.
-  
+
 - **updatable** as *boolean*, optional, default *true*
 
   This option allow or disallow write operations on SQLite database file.
-    
+
 - **truncatable** as *boolean*, optional, default *true*
 
   Allows foreign tables to be truncated using the `TRUNCATE` command.
-  
+
 - **keep_connections** as *boolean*, optional, default *true*
-  
+
   Allows to keep connections to SQLite while there is no SQL operations between PostgreSQL and SQLite.
-  
+
 - **batch_size** as *integer*, optional, default *1*
 
   Specifies the number of rows which should be inserted in a single `INSERT` operation. This setting can be overridden for individual tables.
@@ -190,7 +191,7 @@ There is no user or password conceptions in SQLite, hence `sqlite_fdw` no need a
 In OS `sqlite_fdw` works as executed code with permissions of user of PostgreSQL server. Usually it is `postgres` OS user. For interacting with SQLite database without access errors ensure this user have follow permissions:
 - read permission on all directories by path to the SQLite database file;
 - read permission on SQLite database file;
-- write permissions both on SQLite database file and *directory it contains* if you need a modification. During `INSERT`, `UPDATE` or `DELETE` in SQLite database, SQLite engine functions makes [temporary files with transaction data](https://www.sqlite.org/tempfiles.html) in the directory near SQLite database file. Hence without write permissions you'll have a message `failed to execute remote SQL: rc=8 attempt to write a readonly database`. 
+- write permissions both on SQLite database file and *directory it contains* if you need a modification. During `INSERT`, `UPDATE` or `DELETE` in SQLite database, SQLite engine functions makes temporary files with transaction data in the directory near SQLite database file. Hence without write permissions you'll have a message `failed to execute remote SQL: rc=8 attempt to write a readonly database`.
 
 ### CREATE FOREIGN TABLE options
 
@@ -202,17 +203,17 @@ In OS `sqlite_fdw` works as executed code with permissions of user of PostgreSQL
   SQLite table name. Use if not equal to name of foreign table in PostgreSQL. Also see about [identifier case handling](#identifier-case-handling).
 
 - **truncatable** as *boolean*, optional, default from the same `CREATE SERVER` option
-  
+
   See `CREATE SERVER` options section for details.
 
 - **batch_size** as *integer*, optional, default from the same `CREATE SERVER` option
 
   See `CREATE SERVER` options section for details.
-  
+
 - **updatable** as *boolean*, optional, default *true*
 
   This option can allow or disallow write operations on a SQLite table independed of the same server option.
-  
+
 `sqlite_fdw` accepts the following column-level options via the
 `CREATE FOREIGN TABLE` command:
 
@@ -264,9 +265,9 @@ functions, `sqlite_fdw` provides the following user-callable utility functions:
 - **sqlite_fdw_version()**;
 Returns standard "version integer" as `major version * 10000 + minor version * 100 + bugfix`.
 ```
-sqlite_fdw_version 
+sqlite_fdw_version
 --------------------
-              20300
+              20400
 ```
 Identifier case handling
 ------------------------
@@ -402,7 +403,7 @@ If you want to update tables, please add `OPTIONS (key 'true')` to a primary key
 	  a integer OPTIONS (key 'true'),
 	  b text
 	)
-	SERVER sqlite_server 
+	SERVER sqlite_server
 	OPTIONS (
 	  table 't1_sqlite'
 	);
@@ -508,30 +509,30 @@ Testing directory have structure as following:
 
 ```sql
 +---sql
-|   +---11.7
+|   +---12.15
 |   |       filename1.sql
 |   |       filename2.sql
-|   | 
-|   +---12.12
+|   |
+|   +---13.11
 |   |       filename1.sql
 |   |       filename2.sql
-|   | 
-.................  
-|   \---15.0
+|   |
+.................
+|   \---15.3
 |          filename1.sql
 |          filename2.sql
-|          
+|
 \---expected
-|   +---11.7
+|   +---12.15
 |   |       filename1.out
 |   |       filename2.out
-|   | 
-|   +---12.12
+|   |
+|   +---13.11
 |   |       filename1.out
 |   |       filename2.out
-|   | 
-.................  
-|   \---15.0
+|   |
+.................
+|   \---15.3
             filename1.out
             filename2.out
 ```
