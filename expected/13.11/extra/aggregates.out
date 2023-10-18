@@ -3453,11 +3453,11 @@ begin
   end loop;
 end;
 $d$;
-NOTICE:  drop cascades to table t1c
 NOTICE:  drop cascades to 3 other objects
 DETAIL:  drop cascades to table minmaxtest1
 drop cascades to table minmaxtest2
 drop cascades to table minmaxtest3
+NOTICE:  drop cascades to table t1c
 --Testcase 586:
 DROP SERVER sqlite_svr CASCADE;
 --Testcase 587:
