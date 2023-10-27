@@ -1072,7 +1072,7 @@ SELECT * FROM "type_BIT" WHERE b = '110110';
  6 | 110110
 (1 row)
 
---Testcase 217
+--Testcase 217:
 DROP FOREIGN TABLE "type_VARBIT";
 --Testcase 218:
 CREATE FOREIGN TABLE "type_VARBIT"( "i" int OPTIONS (key 'true'), "b" varbit(70)) SERVER sqlite_svr OPTIONS (table 'type_VARBIT');
@@ -1164,11 +1164,11 @@ SELECT * FROM "type_VARBIT+" WHERE "i" > 10;
  11 | 1001001010110010100101010001111101101011011011110110001010101   | integer | 19
  12 | 10010010101100101001010100011111011010110110111101100010101010  | integer | 19
  13 | 100100101011001010010101000111110110101101101111011000101010101 | integer | 19
-(3 rows) 
+(3 rows)
  
 --Testcase 47:
 DROP EXTENSION sqlite_fdw CASCADE;
-NOTICE:  drop cascades to 45 other objects
+NOTICE:  drop cascades to 48 other objects
 DETAIL:  drop cascades to server sqlite_svr
 drop cascades to foreign table department
 drop cascades to foreign table employee
@@ -1193,6 +1193,7 @@ drop cascades to foreign table "type_TIMESTAMP"
 drop cascades to foreign table "type_BLOB"
 drop cascades to foreign table "type_DATE"
 drop cascades to foreign table "type_TIME"
+drop cascades to foreign table "BitT"
 drop cascades to foreign table notype
 drop cascades to foreign table typetest
 drop cascades to foreign table "type_TEXT"
@@ -1209,10 +1210,10 @@ drop cascades to foreign table "RO_RW_test"
 drop cascades to foreign table "Unicode data"
 drop cascades to foreign table type_json
 drop cascades to foreign table "type_BOOLEAN"
+drop cascades to foreign table "type_UUID"
+drop cascades to foreign table "type_UUID+"
 drop cascades to foreign table "type_BIT"
 drop cascades to foreign table "type_BIT+"
 drop cascades to foreign table "type_VARBIT"
 drop cascades to foreign table "type_VARBIT+"
-drop cascades to foreign table "type_UUID"
-drop cascades to foreign table "type_UUID+"
 drop cascades to server sqlite2

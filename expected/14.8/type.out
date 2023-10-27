@@ -671,7 +671,7 @@ SELECT * FROM "type_VARBIT+" WHERE "i" > 10;
 
 --Testcase 47:
 DROP EXTENSION sqlite_fdw CASCADE;
-NOTICE:  drop cascades to 45 other objects
+NOTICE:  drop cascades to 47 other objects
 DETAIL:  drop cascades to server sqlite_svr
 drop cascades to foreign table department
 drop cascades to foreign table employee
