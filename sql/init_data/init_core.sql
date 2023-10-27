@@ -41,8 +41,6 @@ INSERT INTO INT2_TBL(f1) VALUES ('0   ');
 INSERT INTO INT2_TBL(f1) VALUES ('  1234 ');
 --Testcase 3:
 INSERT INTO INT2_TBL(f1) VALUES ('    -1234');
---Testcase 4:
-INSERT INTO INT2_TBL(f1) VALUES ('34.5');
 -- largest and smallest values
 --Testcase 5:
 INSERT INTO INT2_TBL(f1) VALUES ('32767');
