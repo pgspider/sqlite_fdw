@@ -134,7 +134,7 @@ static void sqlite_print_remote_placeholder(Oid paramtype, int32 paramtypmod,
 static void sqlite_deparse_relation(StringInfo buf, Relation rel);
 static void sqlite_deparse_target_list(StringInfo buf, PlannerInfo *root, Index rtindex, Relation rel,
 									   Bitmapset *attrs_used, bool qualify_col, List **retrieved_attrs, bool is_concat, bool check_null);
-static void sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *root, bool qualify_col);
+static void sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *root, bool qualify_col, bool dml_context);
 static void sqlite_deparse_select(List *tlist, List **retrieved_attrs, deparse_expr_cxt *context);
 static void sqlite_deparse_case_expr(CaseExpr *node, deparse_expr_cxt *context);
 static void sqlite_deparse_null_if_expr(NullIfExpr *node, deparse_expr_cxt *context);
@@ -193,7 +193,7 @@ sqlite_deparse_relation(StringInfo buf, Relation rel)
 	 */
 	foreach(lc, table->options)
 	{
-		DefElem    *def = (DefElem *) lfirst(lc);
+		DefElem	*def = (DefElem *) lfirst(lc);
 
 		if (strcmp(def->defname, "table") == 0)
 			relname = defGetString(def);
@@ -345,12 +345,13 @@ sqlite_is_valid_type(Oid type)
 		case TIMEOID:
 		case TIMESTAMPOID:
 		case TIMESTAMPTZOID:
+		case UUIDOID:
 			return true;
 	}
 	return false;
 }
 
-/* 
+/*
  * Returns true if it's safe to push down the sort expression described by
  * 'pathkey' to the foreign server.
  */
@@ -1737,7 +1738,7 @@ sqlite_deparse_insert(StringInfo buf, PlannerInfo *root,
 					appendStringInfoString(buf, ", ");
 				first = false;
 
-				sqlite_deparse_column_ref(buf, rtindex, attnum, root, false);
+				sqlite_deparse_column_ref(buf, rtindex, attnum, root, false, true);
 #if PG_VERSION_NUM >= 140000
 			}
 #endif
@@ -1891,7 +1892,7 @@ sqlite_deparse_target_list(StringInfo buf,
 
 			first = false;
 
-			sqlite_deparse_column_ref(buf, rtindex, i, root, qualify_col);
+			sqlite_deparse_column_ref(buf, rtindex, i, root, qualify_col, false);
 
 			if (check_null)
 				appendStringInfoString(buf, " IS NOT NULL) ");
@@ -1989,7 +1990,7 @@ sqlite_deparse_truncate(StringInfo buf,
  * If it has a column_name FDW option, use that instead of attribute name.
  */
 static void
-sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *root, bool qualify_col)
+sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *root, bool qualify_col, bool dml_context)
 {
 	RangeTblEntry *rte;
 
@@ -2046,7 +2047,9 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 		char	   *colname = NULL;
 		List	   *options;
 		ListCell   *lc;
+		Oid			pg_atttyp = 0;
 
+		elog(DEBUG3, "sqlite_fdw : %s , varattrno != 0", __func__);
 		/* varno must not be any of OUTER_VAR, INNER_VAR and INDEX_VAR. */
 		Assert(!IS_SPECIAL_VARNO(varno));
 
@@ -2057,14 +2060,15 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 		options = GetForeignColumnOptions(rte->relid, varattno);
 		foreach(lc, options)
 		{
-			DefElem    *def = (DefElem *) lfirst(lc);
+			DefElem	*def = (DefElem *) lfirst(lc);
 
 			if (strcmp(def->defname, "column_name") == 0)
 			{
 				colname = defGetString(def);
+				elog(DEBUG3, "opt = %s\n", def->defname);
 				break;
 			}
-			elog(DEBUG1, "column name = %s\n", def->defname);
+			elog(DEBUG1, "column name = %s\n", colname);
 		}
 
 		/*
@@ -2077,11 +2081,34 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 #else
 			colname = get_attname(rte->relid, varattno);
 #endif
-
-		if (qualify_col)
-			ADD_REL_QUALIFIER(buf, varno);
-
-		appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+		pg_atttyp = get_atttype(rte->relid, varattno);
+		
+		/* PostgreSQL data types with possible mixed affinity SQLite base we should
+		 * normalize to preferred form in SQLite before transfer to PostgreSQL.
+		 * Recommended form for normalisation is someone from 1<->1 with PostgreSQL
+		 * internal storage, hence usually this will not original text data.
+		 */
+		if (pg_atttyp == UUIDOID && !dml_context )
+		{
+			elog(DEBUG2, "UUID unification for \"%s\"", colname);
+			/* Please remove to UNHEX and deattach uuid_extension.c after SQLite 3.41+ support */
+			appendStringInfoString(buf, "coalesce(sqlite_fdw_uuid_blob(");
+			if (qualify_col)
+				ADD_REL_QUALIFIER(buf, varno);
+			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+			appendStringInfoString(buf, "),");
+			if (qualify_col)
+				ADD_REL_QUALIFIER(buf, varno);
+			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+			appendStringInfoString(buf, ")");
+		}
+		else 
+		{
+			elog(DEBUG3, "column name without data unification = \"%s\"", colname);
+			if (qualify_col)
+				ADD_REL_QUALIFIER(buf, varno);
+			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+		}
 	}
 }
 
@@ -2100,13 +2127,13 @@ sqlite_deparse_column_option(int varno, int varattno, PlannerInfo *root, char *o
 	rte = planner_rt_fetch(varno, root);
 
 	/*
-	 * If it's a column of a foreign table, and it has the column_name FDW
+	 * If it's a column of a foreign table, and it has the optionname value named FDW
 	 * option, use that value.
 	 */
 	options = GetForeignColumnOptions(rte->relid, varattno);
 	foreach(lc, options)
 	{
-		DefElem    *def = (DefElem *) lfirst(lc);
+		DefElem	*def = (DefElem *) lfirst(lc);
 
 		if (strcmp(def->defname, optionname) == 0)
 		{
@@ -2114,7 +2141,6 @@ sqlite_deparse_column_option(int varno, int varattno, PlannerInfo *root, char *o
 			break;
 		}
 	}
-
 	return coloptionvalue;
 }
 
@@ -2138,7 +2164,7 @@ sqlite_deparse_string_literal(StringInfo buf, const char *val)
 	const char *valptr;
 
 	sqlite_text_val = pg_text_value_to_sqlite_text(val);
-	
+
 	appendStringInfoChar(buf, '\'');
 	for (valptr = sqlite_text_val; *valptr; valptr++)
 	{
@@ -2256,7 +2282,7 @@ sqlite_deparse_update(StringInfo buf, PlannerInfo *root,
 			if (!first)
 				appendStringInfoString(buf, ", ");
 			first = false;
-			sqlite_deparse_column_ref(buf, rtindex, attnum, root, false);
+			sqlite_deparse_column_ref(buf, rtindex, attnum, root, false, true);
 			appendStringInfo(buf, " = ?");
 			pindex++;
 #if PG_VERSION_NUM >= 140000
@@ -2269,7 +2295,7 @@ sqlite_deparse_update(StringInfo buf, PlannerInfo *root,
 		int			attnum = lfirst_int(lc);
 
 		appendStringInfo(buf, i == 0 ? " WHERE " : " AND ");
-		sqlite_deparse_column_ref(buf, rtindex, attnum, root, false);
+		sqlite_deparse_column_ref(buf, rtindex, attnum, root, false, true);
 		appendStringInfo(buf, "=?");
 		i++;
 	}
@@ -2304,6 +2330,7 @@ sqlite_deparse_direct_update_sql(StringInfo buf, PlannerInfo *root,
 	ListCell   *lc;
 	ListCell   *lc2;
 
+	elog(DEBUG3, "sqlite_fdw : %s\n", __func__);
 	/* Set up context struct for recursion */
 	context.root = root;
 	context.foreignrel = foreignrel;
@@ -2343,7 +2370,7 @@ sqlite_deparse_direct_update_sql(StringInfo buf, PlannerInfo *root,
 			appendStringInfoString(buf, ", ");
 		first = false;
 
-		sqlite_deparse_column_ref(buf, rtindex, attnum, root, false);
+		sqlite_deparse_column_ref(buf, rtindex, attnum, root, false, true);
 		appendStringInfoString(buf, " = ");
 		sqlite_deparse_expr((Expr *) tle->expr, &context);
 	}
@@ -2389,7 +2416,7 @@ sqlite_deparse_delete(StringInfo buf, PlannerInfo *root,
 		int			attnum = lfirst_int(lc);
 
 		appendStringInfo(buf, i == 0 ? " WHERE " : " AND ");
-		sqlite_deparse_column_ref(buf, rtindex, attnum, root, false);
+		sqlite_deparse_column_ref(buf, rtindex, attnum, root, false, true);
 		appendStringInfo(buf, "=?");
 		i++;
 	}
@@ -2416,6 +2443,8 @@ sqlite_deparse_direct_delete_sql(StringInfo buf, PlannerInfo *root,
 								 List **retrieved_attrs)
 {
 	deparse_expr_cxt context;
+	
+	elog(DEBUG1, "sqlite_fdw : %s", __func__);
 
 	/* Set up context struct for recursion */
 	context.root = root;
@@ -2481,7 +2510,7 @@ sqlite_deparse_var(Var *node, deparse_expr_cxt *context)
 	if (bms_is_member(node->varno, relids) && node->varlevelsup == 0)
 	{
 		/* Var belongs to foreign table */
-		sqlite_deparse_column_ref(buf, node->varno, node->varattno, context->root, qualify_col);
+		sqlite_deparse_column_ref(buf, node->varno, node->varattno, context->root, qualify_col, false);
 	}
 	else
 	{
@@ -2576,7 +2605,7 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 				extval = OidOutputFunctionCall(typoutput, node->constvalue);
 
 				/*
-				 * No need to quote unless it's a special value such as 'NaN'.
+				 * No need to quote unless it's a special value such as 'NaN' or 'Infinity'.
 				 * See comments in get_const_expr().
 				 */
 				if (strspn(extval, "0123456789+-eE.") == strlen(extval))
@@ -2596,15 +2625,15 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 			appendStringInfo(buf, "B\'%s\'", extval);
 			break;
 		case BOOLOID:
-			extval = OidOutputFunctionCall(typoutput, node->constvalue);
-			if (strcmp(extval, "t") == 0)
-				appendStringInfoString(buf, "1");
-			else
-				appendStringInfoString(buf, "0");
+			{
+				extval = OidOutputFunctionCall(typoutput, node->constvalue);
+				if (strcmp(extval, "t") == 0)
+					appendStringInfoString(buf, "1");
+				else
+					appendStringInfoString(buf, "0");
+			}
 			break;
-
 		case BYTEAOID:
-
 			/*
 			 * the string for BYTEA always seems to be in the format "\\x##"
 			 * where # is a hex digit, Even if the value passed in is
@@ -2616,26 +2645,48 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 			appendStringInfo(buf, "X\'%s\'", extval + 2);
 			break;
 		case TIMESTAMPOID:
-			convert_timestamp_tounixepoch = false;
-			extval = OidOutputFunctionCall(typoutput, node->constvalue);
+			{		
+				convert_timestamp_tounixepoch = false;
+				extval = OidOutputFunctionCall(typoutput, node->constvalue);
 
-			if (context->complementarynode != NULL)
-			{
-				varnode = get_complementary_var_node(context->complementarynode);
-				if (varnode != NULL)
+				if (context->complementarynode != NULL)
 				{
-					sqlitecolumntype = sqlite_deparse_column_option(varnode->varno, varnode->varattno, context->root, "column_type");
+					varnode = get_complementary_var_node(context->complementarynode);
+					if (varnode != NULL)
+					{
+						sqlitecolumntype = sqlite_deparse_column_option(varnode->varno, varnode->varattno, context->root, "column_type");
 
-					if (sqlitecolumntype != NULL && strcmp(sqlitecolumntype, "INT") == 0)
-						convert_timestamp_tounixepoch = true;
+						if (sqlitecolumntype != NULL && strcasecmp(sqlitecolumntype, "INT") == 0)
+							convert_timestamp_tounixepoch = true;
+					}
 				}
+
+				if (convert_timestamp_tounixepoch)
+					appendStringInfo(buf, "strftime('%%s', '%s')", extval);
+				else
+					sqlite_deparse_string_literal(buf, extval);
 			}
-
-			if (convert_timestamp_tounixepoch)
-				appendStringInfo(buf, "strftime('%%s', '%s')", extval);
-			else
-				sqlite_deparse_string_literal(buf, extval);
-
+			break;
+		case UUIDOID: 
+			/* always deparse to BLOB because this is internal PostgreSQL storage 
+			 * the string for BYTEA always seems to be in the format "\\x##"
+			 * where # is a hex digit, Even if the value passed in is
+			 * 'hi'::bytea we will receive "\x6869". Making this assumption
+			 * allows us to quickly convert postgres escaped strings to sqlite
+			 * ones for comparison
+			 */
+ 			{
+				int i = 0;
+				extval = OidOutputFunctionCall(typoutput, node->constvalue);
+				appendStringInfo(buf, "X\'");
+				for (i = 0; i < strlen(extval); i++)
+				{
+					char c = extval[i];
+					if ( c != '-' )
+						appendStringInfoChar(buf, c);
+				}
+	  			appendStringInfo(buf, "\'");
+			}
 			break;
 		default:
 			extval = OidOutputFunctionCall(typoutput, node->constvalue);
@@ -2747,7 +2798,7 @@ sqlite_deparse_func_expr(FuncExpr *node, deparse_expr_cxt *context)
 }
 
 /*
- * Deparse given operator expression.   To avoid problems around
+ * Deparse given operator expression. To avoid problems around
  * priority of operations, we always parenthesize the arguments.
  */
 static void
@@ -3269,7 +3320,7 @@ sqlite_is_builtin(Oid oid)
 {
 #if PG_VERSION_NUM >= 120000
 	return (oid < FirstGenbkiObjectId);
-#else 
+#else
 	return (oid < FirstBootstrapObjectId);
 #endif
 }
@@ -3463,7 +3514,7 @@ sqlite_append_order_by_clause(List *pathkeys, bool has_final_sort, deparse_expr_
 	appendStringInfo(buf, " ORDER BY");
 	foreach(lcell, pathkeys)
 	{
-		PathKey    *pathkey = lfirst(lcell);
+		PathKey	*pathkey = lfirst(lcell);
 		Expr	   *em_expr;
 		int			sqliteVersion = sqlite3_libversion_number();
 
@@ -3541,7 +3592,7 @@ sqlite_append_order_by_clause(List *pathkeys, bool has_final_sort, deparse_expr_
  * Append the ASC, DESC, USING <OPERATOR> and NULLS FIRST / NULLS LAST parts
  * of an ORDER BY clause.
  */
-static void sqlite_append_order_by_suffix(Oid sortop, Oid sortcoltype, 
+static void sqlite_append_order_by_suffix(Oid sortop, Oid sortcoltype,
 										  bool nulls_first,
 										  deparse_expr_cxt *context)
 {
