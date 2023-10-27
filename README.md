@@ -45,6 +45,7 @@ Features
 - `CASE` expressions are pushdowned.
 - `LIMIT` and `OFFSET` are pushdowned (*when all tables queried are fdw)
 - Support `GROUP BY`, `HAVING` push-down.
+- `mod()` is pushdowned. In PostgreSQL gives [argument-dependend data type](https://www.postgresql.org/docs/current/functions-math.html), but result from SQLite always [have `real` affinity](https://www.sqlite.org/lang_mathfunc.html#mod).
 - `upper`, `lower` and other character case functions are **not** pushed down because they does not work with UNICODE character in SQLite.
 - `WITH TIES` option is **not** pushed down.
 
@@ -113,11 +114,50 @@ make install
 Usage
 -----
 
-## CREATE SERVER options
+### Datatypes
+**WARNING! The table above represents roadmap**, work still in progress. Untill it will be ended please refer real behaviour in non-obvious cases, where there is no ✔ or ∅ mark.
+
+This table represents `sqlite_fdw` behaviour if in PostgreSQL foreign table column some [affinity](https://www.sqlite.org/datatype3.html) of SQLite data is detected.
+
+* **∅** - no support (runtime error)
+* **V** - transparent transformation
+* **b** - show per-bit form
+* **T** - cast to text in SQLite utf-8 encoding, then to **PostgreSQL text with current encoding of database** and then transparent transformation if applicable
+* **✔** - transparent transformation where PostgreSQL datatype is equal to SQLite affinity
+* **V+** - transparent transformation if appliacable
+* **?** - not described/not tested
+* **-** - transparent transformation is possible for PostgreSQL (always or for some special values), but not implemented in `sqlite_fdw`.
+
+SQLite `NULL` affinity always can be transparent converted for a nullable column in PostgreSQL.
+
+| PostgreSQL   | SQLite <br> INT  | SQLite <br> REAL | SQLite <br> BLOB | SQLite <br> TEXT | SQLite <br> TEXT but <br>empty|SQLite<br>nearest<br>affinity|
+|-------------:|:------------:|:------------:|:------------:|:------------:|:------------:|-------------:|
+|         bool |      V       |       ?      |      T       |      -       |      ∅       | INT          |
+|       bit(n) |      V       |       ∅      |      V       |      ?       |      ∅       | INT          |
+|        bytea |      b       |       b      |      ✔       |      -       |      ?       | BLOB         |
+|         date |      V       |       V      |      T       |      V+      |    `NULL`    | ?            |
+|       float4 |      V+      |       ✔      |      T       |      -       |    `NULL`    | REAL         |
+|       float8 |      V+      |       ✔      |      T       |      -       |    `NULL`    | REAL         |
+|         int2 |      ✔       |       ?      |      T       |      -       |    `NULL`    | INT          |
+|         int4 |      ✔       |       ?      |      T       |      -       |    `NULL`    | INT          |
+|         int8 |      ✔       |       ?      |      T       |      -       |    `NULL`    | INT          |
+|         json |      ?       |       ?      |      T       |      V+      |      ?       | TEXT         |
+|         name |      ?       |       ?      |      T       |      V       |    `NULL`    | TEXT         |
+|      numeric |      V       |       V      |      T       |      ∅       |    `NULL`    | REAL         |
+|         text |      ?       |       ?      |      T       |      ✔       |      V       | TEXT         |
+|         time |      V       |       V      |      T       |      V+      |    `NULL`    | ?            |
+|    timestamp |      V       |       V      |      T       |      V+      |    `NULL`    | ?            |
+|timestamp + tz|      V       |       V      |      T       |      V+      |    `NULL`    | ?            |
+|         uuid |      ∅       |       ∅      |V+<br>(only<br>16 bytes)| V+ |      ∅       | TEXT, BLOB   |
+|      varchar |      ?       |       ?      |      T       |      ✔       |      V       | TEXT         |
+
+
+
+### CREATE SERVER options
 
 `sqlite_fdw` accepts the following options via the `CREATE SERVER` command:
 
-- **database** as *string*, **required**
+- **database** as *string*, **required**, no default
 
   SQLite database path.
 
@@ -137,7 +177,7 @@ Usage
 
   Specifies the number of rows which should be inserted in a single `INSERT` operation. This setting can be overridden for individual tables.
 
-## CREATE USER MAPPING options
+### CREATE USER MAPPING options
 
 There is no user or password conceptions in SQLite, hence `sqlite_fdw` no need any `CREATE USER MAPPING` command.
 
@@ -146,7 +186,7 @@ In OS `sqlite_fdw` works as executed code with permissions of user of PostgreSQL
 - read permission on SQLite database file;
 - write permissions both on SQLite database file and *directory it contains* if you need a modification. During `INSERT`, `UPDATE` or `DELETE` in SQLite database, SQLite engine functions makes temporary files with transaction data in the directory near SQLite database file. Hence without write permissions you'll have a message `failed to execute remote SQL: rc=8 attempt to write a readonly database`.
 
-## CREATE FOREIGN TABLE options
+### CREATE FOREIGN TABLE options
 
 `sqlite_fdw` accepts the following table-level options via the
 `CREATE FOREIGN TABLE` command:
@@ -176,18 +216,45 @@ In OS `sqlite_fdw` works as executed code with permissions of user of PostgreSQL
 
 - **column_type** as *string*, optional, no default
 
-  Option to convert INT SQLite column (epoch Unix Time) to be treated/visualized as TIMESTAMP in PostgreSQL.
+	Gives preferred SQLite affinity for some PostgreSQL data types can be stored in different ways in SQLite. Default preferred SQLite affinity for this types is `text`.
+	
+  - Use `INT` value for SQLite column (epoch Unix Time) to be treated/visualized as `timestamp` in PostgreSQL.
+  - Use `BLOB` value for SQLite column to be treated/visualized as `uuid` in PostgreSQL.
 
 - **key** as *boolean*, optional, default *false*
 
   Indicates a column as a part of primary key or unique key of SQLite table.
 
-## IMPORT FOREIGN SCHEMA options
+### IMPORT FOREIGN SCHEMA options
 
 `sqlite_fdw` supports [IMPORT FOREIGN SCHEMA](https://www.postgresql.org/docs/current/sql-importforeignschema.html)
-(PostgreSQL 9.5+) and accepts no custom options for this command.
+(PostgreSQL 9.5+) and accepts following options via the `IMPORT FOREIGN SCHEMA` command:
 
-## TRUNCATE support
+- **import_default** as *boolean*, optional, default *false*
+
+  Allow borrowing default values from SQLite table DDL.
+
+- **import_not_null** as *boolean*, optional, default *true*
+
+  Allow borrowing `NULL`/`NOT NULL` constraints from SQLite table DDL.
+
+#### Datatype tranlsation rules for `IMPORT FOREIGN SCHEMA`
+
+| SQLite       | PostgreSQL       |
+|-------------:|:----------------:|
+| int          | bigint           |
+| char         | text             |
+| clob         | text             |
+| text         | text             |
+| blob         | bytea            |
+| real         | double precision |
+| floa         | double precision |
+| doub         | double precision |
+| datetime     | timestamp        |
+| time         | time             |
+| date         | date             |
+
+### TRUNCATE support
 
 `sqlite_fdw` implements the foreign data wrapper `TRUNCATE` API, available
 from PostgreSQL 14.
@@ -225,10 +292,11 @@ sqlite_fdw_version
 Identifier case handling
 ------------------------
 
-PostgreSQL folds identifiers to lower case by default, SQlite is case insensetive by default. It's important
+PostgreSQL folds identifiers to lower case by default, SQLite is case insensetive by default
+and doesn't differ uppercase and lowercase ASCII base latin letters. It's important
 to be aware of potential issues with table and column names.
 
-This SQL isn't correct for SQLite: `Error: duplicate column name: a`, but is correct for PostgreSQL
+Following SQL isn't correct for SQLite: `Error: duplicate column name: a`, but is correct for PostgreSQL
 
 ```sql
 	CREATE TABLE T (
@@ -236,6 +304,24 @@ This SQL isn't correct for SQLite: `Error: duplicate column name: a`, but is cor
 	  "a" NUMERIC
 	);
 ```
+Following SQLs is correct for both SQLite and PostgreSQL because there is no column
+names with ASCII base latin letters *only*.
+
+```sql
+	CREATE TABLE T_кир (
+	  "А" INTEGER,
+	  "а" NUMERIC
+	);
+	CREATE TABLE T_ελλ (
+	  "Α" INTEGER,
+	  "α" NUMERIC
+	);
+	CREATE TABLE T_dia (
+	  "Ä" INTEGER,
+	  "ä" NUMERIC
+	);		
+```
+
 For SQLite there is no difference between
 
 ```sql
@@ -431,6 +517,11 @@ Limitations
 ### Boolean values
 - `sqlite_fdw` boolean values support exists only for `bool` columns in foreign table. SQLite documentation recommends to store boolean as value with `integer` [affinity](https://www.sqlite.org/datatype3.html). `NULL` isn't converted, 1 converted to `true`, all other `NOT NULL` values converted to `false`. During `SELECT ... WHERE condition_column` condition converted only to `condition_column`.
 - `sqlite_fdw` don't provides limited support of boolean values if `bool` column in foreign table mapped to SQLite `text` [affinity](https://www.sqlite.org/datatype3.html).
+
+### UUID values
+- `sqlite_fdw` UUID values support exists only for `uuid` columns in foreign table. SQLite documentation recommends to store UUID as value with both `blob` and `text` [affinity](https://www.sqlite.org/datatype3.html). `sqlite_fdw` can pushdown both reading and filtering both `text` and `blob` values.
+- Expected affinity of UUID value in SQLite table determined by `column_type` option of the column
+for `INSERT` and `UPDATE` commands.
 
 Tests
 -----

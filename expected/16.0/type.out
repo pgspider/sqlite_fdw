@@ -499,9 +499,507 @@ SELECT * FROM "type_DOUBLE"; -- OK
 
 --Testcase 107:
 ALTER FOREIGN TABLE "type_DOUBLE" ALTER COLUMN col TYPE float8;
+--Testcase 108:
+DROP FOREIGN TABLE "type_UUID";
+--Testcase 109:
+CREATE FOREIGN TABLE "type_UUID"( "i" int OPTIONS (key 'true'), "u" uuid) SERVER sqlite_svr OPTIONS (table 'type_UUID');
+--Testcase 110:
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" TYPE text;
+--Testcase 111:
+INSERT INTO "type_UUID" ("i", "u") VALUES (1, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+--Testcase 112:
+INSERT INTO "type_UUID" ("i", "u") VALUES (2, 'A0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A11');
+--Testcase 113:
+INSERT INTO "type_UUID" ("i", "u") VALUES (3, '{a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11}');
+--Testcase 114:
+INSERT INTO "type_UUID" ("i", "u") VALUES (4, 'a0eebc999c0b4ef8bb6d6bb9bd380a11');
+--Testcase 115:
+INSERT INTO "type_UUID" ("i", "u") VALUES (5, 'a0ee-bc99-9c0b-4ef8-bb6d-6bb9-bd38-0a11');
+--Testcase 116:
+INSERT INTO "type_UUID" ("i", "u") VALUES (6, '{a0eebc99-9c0b4ef8-bb6d6bb9-bd380a11}');
+--Testcase 117:
+INSERT INTO "type_UUID" ("i", "u") VALUES (7, 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12');
+--Testcase 118:
+INSERT INTO "type_UUID" ("i", "u") VALUES (8, 'B0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A12');
+--Testcase 119:
+INSERT INTO "type_UUID" ("i", "u") VALUES (9, '{b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12}');
+--Testcase 120:
+INSERT INTO "type_UUID" ("i", "u") VALUES (10, '{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a12}');
+--Testcase 121:
+INSERT INTO "type_UUID" ("i", "u") VALUES (11, 'b0eebc999c0b4ef8bb6d6bb9bd380a12');
+--Testcase 122:
+INSERT INTO "type_UUID" ("i", "u") VALUES (12, 'b0ee-bc99-9c0b-4ef8-bb6d-6bb9-bd38-0a12');
+--Testcase 123:
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" TYPE bytea;
+--Testcase 124:
+INSERT INTO "type_UUID" ("i", "u") VALUES (13, decode('a0eebc999c0b4ef8bb6d6bb9bd380a11', 'hex'));
+--Testcase 125:
+INSERT INTO "type_UUID" ("i", "u") VALUES (14, decode('b0eebc999c0b4ef8bb6d6bb9bd380a12', 'hex'));
+--Testcase 126:
+INSERT INTO "type_UUID" ("i", "u") VALUES (15, decode('a0eebc999c0b4ef8bb6d6bb9bd380a11', 'hex'));
+--Testcase 127:
+INSERT INTO "type_UUID" ("i", "u") VALUES (16, decode('b0eebc999c0b4ef8bb6d6bb9bd380a12', 'hex'));
+--Testcase 128:
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" TYPE uuid;
+--Testcase 129:
+INSERT INTO "type_UUID" ("i", "u") VALUES (17, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+--Testcase 130:
+INSERT INTO "type_UUID" ("i", "u") VALUES (18, 'A0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A11');
+--Testcase 131:
+INSERT INTO "type_UUID" ("i", "u") VALUES (19, '{a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11}');
+--Testcase 132:
+INSERT INTO "type_UUID" ("i", "u") VALUES (20, 'a0eebc999c0b4ef8bb6d6bb9bd380a11');
+--Testcase 133:
+INSERT INTO "type_UUID" ("i", "u") VALUES (21, 'a0ee-bc99-9c0b-4ef8-bb6d-6bb9-bd38-0a11');
+--Testcase 134:
+INSERT INTO "type_UUID" ("i", "u") VALUES (22, '{a0eebc99-9c0b4ef8-bb6d6bb9-bd380a11}');
+--Testcase 135:
+INSERT INTO "type_UUID" ("i", "u") VALUES (23, 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12');
+--Testcase 136:
+INSERT INTO "type_UUID" ("i", "u") VALUES (24, 'B0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A12');
+--Testcase 137:
+INSERT INTO "type_UUID" ("i", "u") VALUES (25, '{b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12}');
+--Testcase 138:
+INSERT INTO "type_UUID" ("i", "u") VALUES (26, 'b0eebc999c0b4ef8bb6d6bb9bd380a12');
+--Testcase 139:
+INSERT INTO "type_UUID" ("i", "u") VALUES (27, 'b0ee-bc99-9c0b-4ef8-bb6d-6bb9-bd38-0a12');
+--Testcase 140:
+INSERT INTO "type_UUID" ("i", "u") VALUES (28, '{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a12}');
+--Testcase 141:
+EXPLAIN VERBOSE
+INSERT INTO "type_UUID" ("i", "u") VALUES (28, '{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a12}');
+                            QUERY PLAN                            
+------------------------------------------------------------------
+ Insert on public."type_UUID"  (cost=0.00..0.01 rows=0 width=0)
+   Batch Size: 1
+   ->  Result  (cost=0.00..0.01 rows=1 width=20)
+         Output: 28, 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12'::uuid
+(4 rows)
+
+--Testcase 142:
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" OPTIONS (ADD column_type 'BLOB');
+--Testcase 143:
+INSERT INTO "type_UUID" ("i", "u") VALUES (29, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+--Testcase 144:
+INSERT INTO "type_UUID" ("i", "u") VALUES (30, 'A0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A11');
+--Testcase 145:
+INSERT INTO "type_UUID" ("i", "u") VALUES (31, '{a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11}');
+--Testcase 146:
+INSERT INTO "type_UUID" ("i", "u") VALUES (32, 'a0eebc999c0b4ef8bb6d6bb9bd380a11');
+--Testcase 147:
+INSERT INTO "type_UUID" ("i", "u") VALUES (33, 'a0ee-bc99-9c0b-4ef8-bb6d-6bb9-bd38-0a11');
+--Testcase 148:
+INSERT INTO "type_UUID" ("i", "u") VALUES (34, '{a0eebc99-9c0b4ef8-bb6d6bb9-bd380a11}');
+--Testcase 149:
+INSERT INTO "type_UUID" ("i", "u") VALUES (35, 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12');
+--Testcase 150:
+INSERT INTO "type_UUID" ("i", "u") VALUES (36, 'B0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A12');
+--Testcase 151:
+INSERT INTO "type_UUID" ("i", "u") VALUES (37, '{b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12}');
+--Testcase 152:
+INSERT INTO "type_UUID" ("i", "u") VALUES (38, 'b0eebc999c0b4ef8bb6d6bb9bd380a12');
+--Testcase 153:
+INSERT INTO "type_UUID" ("i", "u") VALUES (39, 'b0ee-bc99-9c0b-4ef8-bb6d-6bb9-bd38-0a12');
+--Testcase 154:
+INSERT INTO "type_UUID" ("i", "u") VALUES (40, '{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a12}');
+--Testcase 155:
+EXPLAIN VERBOSE
+INSERT INTO "type_UUID" ("i", "u") VALUES (39, 'b0ee-bc99-9c0b-4ef8-bb6d-6bb9-bd38-0a12');
+                            QUERY PLAN                            
+------------------------------------------------------------------
+ Insert on public."type_UUID"  (cost=0.00..0.01 rows=0 width=0)
+   Batch Size: 1
+   ->  Result  (cost=0.00..0.01 rows=1 width=20)
+         Output: 39, 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12'::uuid
+(4 rows)
+
+--Testcase 156:
+CREATE FOREIGN TABLE "type_UUID+"( "i" int OPTIONS (key 'true'), "u" uuid, "t" text, "l" smallint) SERVER sqlite_svr OPTIONS (table 'type_UUID+');
+--Testcase 157:
+SELECT * FROM "type_UUID+";
+ i  |                  u                   |  t   | l  
+----+--------------------------------------+------+----
+  1 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+  2 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+  3 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 38
+  4 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 32
+  5 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 39
+  6 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 37
+  7 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+  8 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+  9 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 38
+ 10 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 37
+ 11 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 32
+ 12 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 39
+ 13 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 14 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+ 15 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 16 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+ 17 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+ 18 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+ 19 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+ 20 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+ 21 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+ 22 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+ 23 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+ 24 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+ 25 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+ 26 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+ 27 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+ 28 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+ 29 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 30 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 31 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 32 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 33 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 34 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 35 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+ 36 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+ 37 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+ 38 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+ 39 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+ 40 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+(40 rows)
+
+--Testcase 158:
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" OPTIONS (SET column_type 'BLOB');
+--Testcase 159:
+SELECT * FROM "type_UUID+" where "u" = 'A0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A11';
+ i  |                  u                   |  t   | l  
+----+--------------------------------------+------+----
+  1 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+  2 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+  3 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 38
+  4 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 32
+  5 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 39
+  6 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 37
+ 13 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 15 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 17 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+ 18 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+ 19 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+ 20 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+ 21 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+ 22 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+ 29 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 30 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 31 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 32 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 33 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 34 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+(20 rows)
+
+--Testcase 160:
+EXPLAIN VERBOSE
+SELECT * FROM "type_UUID+" where "u" = 'A0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A11';
+                                                                                          QUERY PLAN                                                                                          
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public."type_UUID+"  (cost=10.00..5.00 rows=5 width=54)
+   Output: i, u, t, l
+   SQLite query: SELECT `i`, coalesce(sqlite_fdw_uuid_blob(`u`),`u`), `t`, `l` FROM main."type_UUID+" WHERE ((coalesce(sqlite_fdw_uuid_blob(`u`),`u`) = X'a0eebc999c0b4ef8bb6d6bb9bd380a11'))
+(3 rows)
+
+--Testcase 161:
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" OPTIONS (SET column_type 'TEXT');
+--Testcase 162:
+SELECT * FROM "type_UUID+" where "u" = 'A0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A11';
+ i  |                  u                   |  t   | l  
+----+--------------------------------------+------+----
+  1 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+  2 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+  3 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 38
+  4 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 32
+  5 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 39
+  6 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 37
+ 13 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 15 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 17 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+ 18 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+ 19 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+ 20 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+ 21 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+ 22 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+ 29 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 30 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 31 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 32 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 33 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 34 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+(20 rows)
+
+--Testcase 163:
+EXPLAIN VERBOSE
+SELECT * FROM "type_UUID+" where "u" = 'A0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A11';
+                                                                                          QUERY PLAN                                                                                          
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public."type_UUID+"  (cost=10.00..5.00 rows=5 width=54)
+   Output: i, u, t, l
+   SQLite query: SELECT `i`, coalesce(sqlite_fdw_uuid_blob(`u`),`u`), `t`, `l` FROM main."type_UUID+" WHERE ((coalesce(sqlite_fdw_uuid_blob(`u`),`u`) = X'a0eebc999c0b4ef8bb6d6bb9bd380a11'))
+(3 rows)
+
+--Testcase 164:
+SELECT * FROM "type_UUID+" where "u" = 'B0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A12';
+ i  |                  u                   |  t   | l  
+----+--------------------------------------+------+----
+  7 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+  8 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+  9 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 38
+ 10 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 37
+ 11 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 32
+ 12 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 39
+ 14 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+ 16 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+ 23 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+ 24 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+ 25 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+ 26 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+ 27 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+ 28 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+ 35 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+ 36 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+ 37 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+ 38 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+ 39 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+ 40 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+(20 rows)
+
+--Testcase 165:
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" OPTIONS (SET column_type 'BLOB');
+--Testcase 166:
+SELECT * FROM "type_UUID+" where "u" = 'B0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A12';
+ i  |                  u                   |  t   | l  
+----+--------------------------------------+------+----
+  7 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+  8 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+  9 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 38
+ 10 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 37
+ 11 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 32
+ 12 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 39
+ 14 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+ 16 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+ 23 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+ 24 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+ 25 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+ 26 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+ 27 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+ 28 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | text | 36
+ 35 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+ 36 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+ 37 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+ 38 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+ 39 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+ 40 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12 | blob | 16
+(20 rows)
+
+--Testcase 167:
+UPDATE "type_UUID" SET "u" = '{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a15}' WHERE "i" = 25;
+--Testcase 168:
+EXPLAIN VERBOSE
+UPDATE "type_UUID" SET "u" = '{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a15}' WHERE "i" = 25;
+                                                   QUERY PLAN                                                   
+----------------------------------------------------------------------------------------------------------------
+ Update on public."type_UUID"  (cost=10.00..6.00 rows=0 width=0)
+   ->  Foreign Update on public."type_UUID"  (cost=10.00..6.00 rows=6 width=64)
+         SQLite query: UPDATE main."type_UUID" SET `u` = X'b0eebc999c0b4ef8bb6d6bb9bd380a15' WHERE ((`i` = 25))
+(3 rows)
+
+--Testcase 169:
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" OPTIONS (SET column_type 'TEXT');
+--Testcase 170:
+EXPLAIN VERBOSE
+UPDATE "type_UUID" SET "u" = '{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a15}' WHERE "i" = 25;
+                                                   QUERY PLAN                                                   
+----------------------------------------------------------------------------------------------------------------
+ Update on public."type_UUID"  (cost=10.00..6.00 rows=0 width=0)
+   ->  Foreign Update on public."type_UUID"  (cost=10.00..6.00 rows=6 width=64)
+         SQLite query: UPDATE main."type_UUID" SET `u` = X'b0eebc999c0b4ef8bb6d6bb9bd380a15' WHERE ((`i` = 25))
+(3 rows)
+
+--Testcase 171:
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" OPTIONS (SET column_type 'BLOB');
+--Testcase 172:
+DELETE FROM "type_UUID" WHERE "u" = 'b0eebc999c0b4ef8bb6d6bb9bd380a12';
+--Testcase 173:
+EXPLAIN VERBOSE
+DELETE FROM "type_UUID" WHERE "u" = 'b0eebc999c0b4ef8bb6d6bb9bd380a12';
+                                                                 QUERY PLAN                                                                 
+--------------------------------------------------------------------------------------------------------------------------------------------
+ Delete on public."type_UUID"  (cost=10.00..15.00 rows=0 width=0)
+   ->  Foreign Delete on public."type_UUID"  (cost=10.00..15.00 rows=15 width=4)
+         SQLite query: DELETE FROM main."type_UUID" WHERE ((coalesce(sqlite_fdw_uuid_blob(`u`),`u`) = X'b0eebc999c0b4ef8bb6d6bb9bd380a12'))
+(3 rows)
+
+--Testcase 174:
+SELECT * FROM "type_UUID+";
+ i  |                  u                   |  t   | l  
+----+--------------------------------------+------+----
+  1 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+  2 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+  3 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 38
+  4 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 32
+  5 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 39
+  6 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 37
+ 13 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 15 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 17 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+ 18 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+ 19 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+ 20 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+ 21 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+ 22 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | text | 36
+ 25 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a15 | blob | 16
+ 29 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 30 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 31 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 32 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 33 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+ 34 | a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11 | blob | 16
+(21 rows)
+
+--Testcase 175:
+DELETE FROM "type_UUID" WHERE "u" = 'a0eebc99-9c0b4ef8-bb6d6bb9-bd380a11';
+--Testcase 176:
+SELECT * FROM "type_UUID+";
+ i  |                  u                   |  t   | l  
+----+--------------------------------------+------+----
+ 25 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a15 | blob | 16
+(1 row)
+
+--Testcase 177:
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" OPTIONS (SET column_type 'TEXT');
+--Testcase 175:
+DELETE FROM "type_UUID" WHERE "u" = 'b0eebc999c0b4ef8bb6d6bb9bd380a15';
+--Testcase 176:
+EXPLAIN VERBOSE
+DELETE FROM "type_UUID" WHERE "u" = 'b0eebc999c0b4ef8bb6d6bb9bd380a15';
+                                                                 QUERY PLAN                                                                 
+--------------------------------------------------------------------------------------------------------------------------------------------
+ Delete on public."type_UUID"  (cost=10.00..15.00 rows=0 width=0)
+   ->  Foreign Delete on public."type_UUID"  (cost=10.00..15.00 rows=15 width=4)
+         SQLite query: DELETE FROM main."type_UUID" WHERE ((coalesce(sqlite_fdw_uuid_blob(`u`),`u`) = X'b0eebc999c0b4ef8bb6d6bb9bd380a15'))
+(3 rows)
+
+--Testcase 177:
+SELECT * FROM "type_UUID+";
+ i | u | t | l 
+---+---+---+---
+(0 rows)
+
+--Testcase 178:
+INSERT INTO "type_UUID" ("i", "u") VALUES (41, '{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a15}');
+--Testcase 179:
+SELECT * FROM "type_UUID+" WHERE "i" = 41;
+ i  |                  u                   |  t   | l  
+----+--------------------------------------+------+----
+ 41 | b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a15 | text | 36
+(1 row)
+
+--Testcase 180:
+UPDATE "type_UUID" SET "u" = '{b0eebc99-9c0b4ef8-bb6d6bb9-00000a15}' WHERE "u" = '{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a15}';
+--Testcase 181:
+EXPLAIN VERBOSE
+UPDATE "type_UUID" SET "u" = '{b0eebc99-9c0b4ef8-bb6d6bb9-00000a15}' WHERE "u" = '{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a15}';
+                                                                                     QUERY PLAN                                                                                      
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Update on public."type_UUID"  (cost=10.00..6.00 rows=0 width=0)
+   ->  Foreign Update on public."type_UUID"  (cost=10.00..6.00 rows=6 width=64)
+         SQLite query: UPDATE main."type_UUID" SET `u` = X'b0eebc999c0b4ef8bb6d6bb900000a15' WHERE ((coalesce(sqlite_fdw_uuid_blob(`u`),`u`) = X'b0eebc999c0b4ef8bb6d6bb9bd380a15'))
+(3 rows)
+
+--Testcase 182:
+SELECT * FROM "type_UUID+";
+ i  |                  u                   |  t   | l  
+----+--------------------------------------+------+----
+ 41 | b0eebc99-9c0b-4ef8-bb6d-6bb900000a15 | blob | 16
+(1 row)
+
+--Testcase 183:
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" OPTIONS (SET column_type 'BLOB');
+--Testcase 184:
+EXPLAIN VERBOSE
+UPDATE "type_UUID" SET "u" = '{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a15}' WHERE "u" = '{b0eebc99-9c0b4ef8-bb6d6bb9-00000a15}';
+                                                                                     QUERY PLAN                                                                                      
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Update on public."type_UUID"  (cost=10.00..6.00 rows=0 width=0)
+   ->  Foreign Update on public."type_UUID"  (cost=10.00..6.00 rows=6 width=64)
+         SQLite query: UPDATE main."type_UUID" SET `u` = X'b0eebc999c0b4ef8bb6d6bb9bd380a15' WHERE ((coalesce(sqlite_fdw_uuid_blob(`u`),`u`) = X'b0eebc999c0b4ef8bb6d6bb900000a15'))
+(3 rows)
+
+--Testcase 185:
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" TYPE bytea;
+--Testcase 186:
+INSERT INTO "type_UUID" ("i", "u") VALUES (42, decode('a0eebc999c0b4ef8bb6d6bb9bd380a11f1', 'hex'));
+--Testcase 187:
+INSERT INTO "type_UUID" ("i", "u") VALUES (43, decode('b0eebc999c0b4ef8bb6d6bb9bd380a', 'hex'));
+--Testcase 188:
+ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" TYPE uuid;
+--Testcase 189:
+SELECT * FROM "type_UUID+" WHERE "i" = 42;
+ERROR:  PostgreSQL uuid data type allows only 16 bytes SQLite blob value
+HINT:  incorrect value is 17 bytes length
+--Testcase 190:
+SELECT * FROM "type_UUID+" WHERE "i" = 43;
+ERROR:  PostgreSQL uuid data type allows only 16 bytes SQLite blob value
+HINT:  incorrect value is 15 bytes length
+--Testcase 191:
+EXPLAIN VERBOSE
+DELETE FROM "type_UUID" WHERE "i" IN (42, 43);
+                                   QUERY PLAN                                    
+---------------------------------------------------------------------------------
+ Delete on public."type_UUID"  (cost=10.00..29.00 rows=0 width=0)
+   ->  Foreign Delete on public."type_UUID"  (cost=10.00..29.00 rows=29 width=4)
+         SQLite query: DELETE FROM main."type_UUID" WHERE (`i` IN (42, 43))
+(3 rows)
+
+--Testcase 192:
+DELETE FROM "type_UUID" WHERE "i" IN (42, 43);
+--Testcase 193:
+INSERT INTO "type_UUID" ("i", "u") VALUES (44, NULL);
+--Testcase 194:
+SELECT * FROM "type_UUID+";
+ i  |                  u                   |  t   | l  
+----+--------------------------------------+------+----
+ 41 | b0eebc99-9c0b-4ef8-bb6d-6bb900000a15 | blob | 16
+ 44 |                                      | null |   
+(2 rows)
+
+--Testcase 195:
+SELECT * FROM "type_UUID+" WHERE "u" IS NULL;
+ i  | u |  t   | l 
+----+---+------+---
+ 44 |   | null |  
+(1 row)
+
+--Testcase 196:
+SELECT * FROM "type_UUID+" WHERE "u" IS NOT NULL;
+ i  |                  u                   |  t   | l  
+----+--------------------------------------+------+----
+ 41 | b0eebc99-9c0b-4ef8-bb6d-6bb900000a15 | blob | 16
+(1 row)
+
+--Testcase 197:
+EXPLAIN VERBOSE
+SELECT * FROM "type_UUID+" WHERE "u" IS NULL;
+                                                                           QUERY PLAN                                                                           
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public."type_UUID+"  (cost=10.00..5.00 rows=5 width=54)
+   Output: i, u, t, l
+   SQLite query: SELECT `i`, coalesce(sqlite_fdw_uuid_blob(`u`),`u`), `t`, `l` FROM main."type_UUID+" WHERE ((coalesce(sqlite_fdw_uuid_blob(`u`),`u`) IS NULL))
+(3 rows)
+
+--Testcase 198:
+EXPLAIN VERBOSE
+SELECT * FROM "type_UUID+" WHERE "u" IS NOT NULL;
+                                                                             QUERY PLAN                                                                             
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public."type_UUID+"  (cost=10.00..1045.00 rows=1045 width=54)
+   Output: i, u, t, l
+   SQLite query: SELECT `i`, coalesce(sqlite_fdw_uuid_blob(`u`),`u`), `t`, `l` FROM main."type_UUID+" WHERE ((coalesce(sqlite_fdw_uuid_blob(`u`),`u`) IS NOT NULL))
+(3 rows)
+
 --Testcase 47:
 DROP EXTENSION sqlite_fdw CASCADE;
-NOTICE:  drop cascades to 42 other objects
+NOTICE:  drop cascades to 44 other objects
 DETAIL:  drop cascades to server sqlite_svr
 drop cascades to foreign table department
 drop cascades to foreign table employee
@@ -543,4 +1041,6 @@ drop cascades to foreign table "RO_RW_test"
 drop cascades to foreign table "Unicode data"
 drop cascades to foreign table type_json
 drop cascades to foreign table "type_BOOLEAN"
+drop cascades to foreign table "type_UUID"
+drop cascades to foreign table "type_UUID+"
 drop cascades to server sqlite2
