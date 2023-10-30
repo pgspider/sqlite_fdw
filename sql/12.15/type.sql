@@ -468,5 +468,9 @@ SELECT * FROM "type_UUID+" WHERE "u" IS NULL;
 EXPLAIN VERBOSE
 SELECT * FROM "type_UUID+" WHERE "u" IS NOT NULL;
 
+--Testcase 241:
+EXPLAIN VERBOSE
+SELECT "i", "u", gen_random_uuid() FROM "type_UUID";
+
 --Testcase 47:
 DROP EXTENSION sqlite_fdw CASCADE;

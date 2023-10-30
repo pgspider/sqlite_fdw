@@ -613,7 +613,9 @@ sqlite_foreign_expr_walker(Node *node,
 					  || strcmp(opername, "round") == 0
 					  || strcmp(opername, "rtrim") == 0
 					  || strcmp(opername, "substr") == 0
-					  || strcmp(opername, "mod") == 0))
+					  || strcmp(opername, "mod") == 0
+  					  || strcmp(opername, "gen_random_uuid") == 0
+					  || strcmp(opername, "uuid_generate_v4") == 0))
 				{
 					return false;
 				}
@@ -621,7 +623,6 @@ sqlite_foreign_expr_walker(Node *node,
 				if (!sqlite_foreign_expr_walker((Node *) func->args,
 												glob_cxt, &inner_cxt, case_arg_cxt))
 					return false;
-
 
 				/*
 				 * If function's input collation is not derived from a foreign
