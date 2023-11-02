@@ -747,9 +747,10 @@ char *int642binstr(sqlite3_int64 num, char *s, size_t len)
  */
 sqlite3_int64 binstr2int64(const char *s)
 {
+    sqlite3_int64 rc = 0;
 	char *bs = s;
-    sqlite3_int64 rc;
-    for (rc = 0; '\0' != *bs; bs++)
+
+    for (; '\0' != *bs; bs++)
     {
 		if ('1' == *bs)
 		{
