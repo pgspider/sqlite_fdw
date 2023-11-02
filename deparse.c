@@ -2629,7 +2629,7 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 							errmsg("SQLite FDW dosens't support very long bit/varbit data"),
 							errhint("bit length %ld, maxmum %ld", strlen(extval), SQLITE_FDW_BIT_DATATYPE_BUF_SIZE - 1)));
 				}
-				appendStringInfo(buf, "%lld", binstr2int(extval));
+				appendStringInfo(buf, "%lld", binstr2int64(extval));
 			}
 			break;
 		case BOOLOID:

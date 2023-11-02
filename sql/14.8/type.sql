@@ -146,7 +146,7 @@ DELETE FROM type_JSON;
 
 -- drop column
 --Testcase 62:
-DROP FOREIGN TABLE "type_BOOLEAN";
+DROP FOREIGN TABLE IF EXISTS "type_BOOLEAN";
 --Testcase 63:
 CREATE FOREIGN TABLE "type_BOOLEAN" (colx int, col boolean) SERVER sqlite_svr;
 --Testcase 64:
@@ -267,11 +267,11 @@ SELECT * FROM "type_DOUBLE"; -- OK
 ALTER FOREIGN TABLE "type_DOUBLE" ALTER COLUMN col TYPE float8;
 
 --Testcase 178:
-DROP FOREIGN TABLE "type_BIT";
+DROP FOREIGN TABLE IF EXISTS "type_BIT";
 --Testcase 179:
 CREATE FOREIGN TABLE "type_BIT"( "i" int OPTIONS (key 'true'), "b" bit(6)) SERVER sqlite_svr OPTIONS (table 'type_BIT');
 --Testcase 180:
-DROP FOREIGN TABLE "type_BIT+";
+DROP FOREIGN TABLE IF EXISTS "type_BIT+";
 --Testcase 181:
 CREATE FOREIGN TABLE "type_BIT+"( "i" int OPTIONS (key 'true'), "b" bit(6), "t" text, "l" smallint, "bi" bigint OPTIONS (column_name 'b')) SERVER sqlite_svr OPTIONS (table 'type_BIT+');
 --Testcase 182:
@@ -304,11 +304,11 @@ SELECT * FROM "type_BIT" WHERE b > '110110';
 SELECT * FROM "type_BIT" WHERE b = '110110';
 
 --Testcase 196:
-DROP FOREIGN TABLE "type_VARBIT";
+DROP FOREIGN TABLE IF EXISTS "type_VARBIT";
 --Testcase 197:
 CREATE FOREIGN TABLE "type_VARBIT"( "i" int OPTIONS (key 'true'), "b" varbit(70)) SERVER sqlite_svr OPTIONS (table 'type_VARBIT');
 --Testcase 199:
-DROP FOREIGN TABLE "type_VARBIT+";
+DROP FOREIGN TABLE IF EXISTS "type_VARBIT+";
 --Testcase 200:
 CREATE FOREIGN TABLE "type_VARBIT+"( "i" int OPTIONS (key 'true'), "b" varbit(70), "t" text, "l" smallint) SERVER sqlite_svr OPTIONS (table 'type_VARBIT+');
 --Testcase 201:

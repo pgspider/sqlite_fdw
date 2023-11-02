@@ -117,7 +117,7 @@ Usage
 ### Datatypes
 **WARNING! The table above represents roadmap**, work still in progress. Untill it will be ended please refer real behaviour in non-obvious cases, where there is no ✔ or ∅ mark.
 
-This table represents `sqlite_fdw` behaviour if in PostgreSQL foreign table column some [affinity](https://www.sqlite.org/datatype3.html) of SQLite data is detected.
+This table represents `sqlite_fdw` behaviour if in PostgreSQL foreign table column some [affinity](https://www.sqlite.org/datatype3.html) of SQLite data is detected. Some details about data values support see in [limitations](#limitations).
 
 * **∅** - no support (runtime error)
 * **V** - transparent transformation
@@ -133,7 +133,7 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 | PostgreSQL   | SQLite <br> INT  | SQLite <br> REAL | SQLite <br> BLOB | SQLite <br> TEXT | SQLite <br> TEXT but <br>empty|SQLite<br>nearest<br>affinity|
 |-------------:|:------------:|:------------:|:------------:|:------------:|:------------:|-------------:|
 |         bool |      V       |       ?      |      T       |      -       |      ∅       | INT          |
-|       bit(n) |      V       |       ∅      |      V       |      ?       |      ∅       | INT          |
+|       bit(n) |    V n<=64   |       ∅      |      V       |      ?       |      ∅       | INT          |
 |        bytea |      b       |       b      |      ✔       |      -       |      ?       | BLOB         |
 |         date |      V       |       V      |      T       |      V+      |    `NULL`    | ?            |
 |       float4 |      V+      |       ✔      |      T       |      -       |    `NULL`    | REAL         |
@@ -150,8 +150,7 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 |timestamp + tz|      V       |       V      |      T       |      V+      |    `NULL`    | ?            |
 |         uuid |      ∅       |       ∅      |V+<br>(only<br>16 bytes)| V+ |      ∅       | TEXT, BLOB   |
 |      varchar |      ?       |       ?      |      T       |      ✔       |      V       | TEXT         |
-
-
+|    varbit(n) |    V n<=64   |       ∅      |      V       |      ?       |      ∅       | INT          |
 
 ### CREATE SERVER options
 
@@ -522,6 +521,9 @@ Limitations
 - `sqlite_fdw` UUID values support exists only for `uuid` columns in foreign table. SQLite documentation recommends to store UUID as value with both `blob` and `text` [affinity](https://www.sqlite.org/datatype3.html). `sqlite_fdw` can pushdown both reading and filtering both `text` and `blob` values.
 - Expected affinity of UUID value in SQLite table determined by `column_type` option of the column
 for `INSERT` and `UPDATE` commands.
+
+### bit and varbit support
+- `sqlite_fdw` PostgreSQL `bit`/`varbit` values support based on `int` SQLite data affinity, because there is no per bit operations for SQLite `blob` affinity data. Maximum SQLite `int` affinity value is 8 bytes length, hence maximum `bit`/`varbit` values length is 64.
 
 Tests
 -----

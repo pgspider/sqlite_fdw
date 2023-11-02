@@ -309,7 +309,7 @@ SELECT * FROM type_JSON;
 DELETE FROM type_JSON;
 -- drop column
 --Testcase 62:
-DROP FOREIGN TABLE "type_BOOLEAN";
+DROP FOREIGN TABLE IF EXISTS "type_BOOLEAN";
 --Testcase 63:
 CREATE FOREIGN TABLE "type_BOOLEAN" (colx int, col boolean) SERVER sqlite_svr;
 --Testcase 64:
@@ -500,7 +500,7 @@ SELECT * FROM "type_DOUBLE"; -- OK
 --Testcase 107:
 ALTER FOREIGN TABLE "type_DOUBLE" ALTER COLUMN col TYPE float8;
 --Testcase 108:
-DROP FOREIGN TABLE "type_UUID";
+DROP FOREIGN TABLE IF EXISTS "type_UUID";
 --Testcase 109:
 CREATE FOREIGN TABLE "type_UUID"( "i" int OPTIONS (key 'true'), "u" uuid) SERVER sqlite_svr OPTIONS (table 'type_UUID');
 --Testcase 110:
@@ -998,12 +998,12 @@ SELECT * FROM "type_UUID+" WHERE "u" IS NOT NULL;
 (3 rows)
 
 --Testcase 199:
-DROP FOREIGN TABLE "type_BIT";
+DROP FOREIGN TABLE IF EXISTS "type_BIT";
 --Testcase 200:
 CREATE FOREIGN TABLE "type_BIT"( "i" int OPTIONS (key 'true'), "b" bit(6)) SERVER sqlite_svr OPTIONS (table 'type_BIT');
 --Testcase 201:
-DROP FOREIGN TABLE "type_BIT+";
-ERROR:  foreign table "type_BIT+" does not exist
+DROP FOREIGN TABLE IF EXISTS "type_BIT+";
+NOTICE:  foreign table "type_BIT+" does not exist, skipping
 --Testcase 202:
 CREATE FOREIGN TABLE "type_BIT+"( "i" int OPTIONS (key 'true'), "b" bit(6), "t" text, "l" smallint, "bi" bigint OPTIONS (column_name 'b')) SERVER sqlite_svr OPTIONS (table 'type_BIT+');
 --Testcase 203:
@@ -1074,12 +1074,12 @@ SELECT * FROM "type_BIT" WHERE b = '110110';
 (1 row)
 
 --Testcase 217:
-DROP FOREIGN TABLE "type_VARBIT";
+DROP FOREIGN TABLE IF EXISTS "type_VARBIT";
 --Testcase 218:
 CREATE FOREIGN TABLE "type_VARBIT"( "i" int OPTIONS (key 'true'), "b" varbit(70)) SERVER sqlite_svr OPTIONS (table 'type_VARBIT');
 --Testcase 219:
-DROP FOREIGN TABLE "type_VARBIT+";
-ERROR:  foreign table "type_VARBIT+" does not exist
+DROP FOREIGN TABLE IF EXISTS "type_VARBIT+";
+NOTICE:  foreign table "type_VARBIT+" does not exist, skipping
 --Testcase 220:
 CREATE FOREIGN TABLE "type_VARBIT+"( "i" int OPTIONS (key 'true'), "b" varbit(70), "t" text, "l" smallint) SERVER sqlite_svr OPTIONS (table 'type_VARBIT+');
 --Testcase 221:

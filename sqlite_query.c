@@ -40,7 +40,7 @@ int
 static char *
 			sqlite_text_value_to_pg_db_encoding(sqlite3_stmt * stmt, int stmt_colid);
 char *
-			int2binstr(sqlite3_int64 num, char *s, size_t len);
+			int642binstr(sqlite3_int64 num, char *s, size_t len);
 
 /*
  * convert_sqlite_to_pg: Convert Sqlite data into PostgreSQL's compatible data types
@@ -376,7 +376,7 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 			{
 				char * buffer = palloc0(SQLITE_FDW_BIT_DATATYPE_BUF_SIZE);			
 				sqlite3_int64 sqlti = sqlite3_column_int64(stmt, stmt_colid);				
-				buffer = int2binstr(sqlti, buffer, SQLITE_FDW_BIT_DATATYPE_BUF_SIZE);
+				buffer = int642binstr(sqlti, buffer, SQLITE_FDW_BIT_DATATYPE_BUF_SIZE);
 				valstr = buffer;
 				elog(DEBUG4, "sqlite_fdw : BIT buf l=%ld v = %s", SQLITE_FDW_BIT_DATATYPE_BUF_SIZE, buffer);
 				break;
@@ -604,7 +604,7 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 							errmsg("SQLite FDW dosens't support very long bit/varbit data"),
 							errhint("bit length %ld, maxmum %ld", strlen(outputString), SQLITE_FDW_BIT_DATATYPE_BUF_SIZE - 1)));
 				}
-				dat = binstr2int(outputString);
+				dat = binstr2int64(outputString);
 				ret = sqlite3_bind_int64(stmt, attnum, dat);
 				break;
 			}
@@ -725,9 +725,10 @@ static char * sqlite_text_value_to_pg_db_encoding(sqlite3_stmt * stmt, int stmt_
 }
 
 /*
- * Converts int64 frrom SQLite to PostgreSQL string from 0 and 1 only
+ * Converts int64 from SQLite to PostgreSQL string from 0 and 1 only
+ * s must be allocated with length not less than len + 1 bytes
  */
-char *int2binstr(sqlite3_int64 num, char *s, size_t len)
+char *int642binstr(sqlite3_int64 num, char *s, size_t len)
 {
 	s[--len] = '\0';
     do
@@ -739,15 +740,22 @@ char *int2binstr(sqlite3_int64 num, char *s, size_t len)
 /*
  * Converts PostgreSQL string from 0 and 1 only to int64 for SQLite
  */
-sqlite3_int64 binstr2int(const char *s)
+sqlite3_int64 binstr2int64(const char *s)
 {
+	char *bs = s;
     sqlite3_int64 rc;
-    for (rc = 0; '\0' != *s; s++) {
-		if ('1' == *s) {
+    for (rc = 0; '\0' != *bs; bs++)
+    {
+		if ('1' == *bs)
+		{
             rc = (rc * 2) + 1;
-        } else if ('0' == *s) {
+        }
+        else if ('0' == *bs)
+        {
             rc *= 2;
-        } else {
+        }
+        else
+        {
             errno = EINVAL;
             return -1;
         }
