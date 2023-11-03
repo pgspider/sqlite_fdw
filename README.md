@@ -572,6 +572,16 @@ For pull request, please make sure these items below for testing:
 - Execute test cases and update expectations for the latest version of PostgreSQL
 - Test creation and execution for other PostgreSQL versions are welcome but not required.
 
+Preferred code style see in PostgreSQL source codes. For example
+
+```C
+for (;;)
+{
+}
+if ()
+{
+}
+```
 Useful links
 ------------
 

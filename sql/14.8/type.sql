@@ -266,91 +266,153 @@ SELECT * FROM "type_DOUBLE"; -- OK
 --Testcase 107:
 ALTER FOREIGN TABLE "type_DOUBLE" ALTER COLUMN col TYPE float8;
 
---Testcase 178:
+--Testcase 199:
 DROP FOREIGN TABLE IF EXISTS "type_BIT";
---Testcase 179:
+--Testcase 200:
 CREATE FOREIGN TABLE "type_BIT"( "i" int OPTIONS (key 'true'), "b" bit(6)) SERVER sqlite_svr OPTIONS (table 'type_BIT');
---Testcase 180:
+--Testcase 201:
 DROP FOREIGN TABLE IF EXISTS "type_BIT+";
---Testcase 181:
+--Testcase 202:
 CREATE FOREIGN TABLE "type_BIT+"( "i" int OPTIONS (key 'true'), "b" bit(6), "t" text, "l" smallint, "bi" bigint OPTIONS (column_name 'b')) SERVER sqlite_svr OPTIONS (table 'type_BIT+');
---Testcase 182:
+--Testcase 203:
 INSERT INTO "type_BIT" ("i", "b") VALUES (1, 1);
---Testcase 183:
+--Testcase 204:
 INSERT INTO "type_BIT" ("i", "b") VALUES (2, 2);
---Testcase 184:
+--Testcase 205:
 INSERT INTO "type_BIT" ("i", "b") VALUES (3, '1');
---Testcase 185:
+--Testcase 206:
 INSERT INTO "type_BIT" ("i", "b") VALUES (4, '10');
---Testcase 186:
+--Testcase 207:
 INSERT INTO "type_BIT" ("i", "b") VALUES (5, '101');
---Testcase 187:
+--Testcase 208:
 INSERT INTO "type_BIT" ("i", "b") VALUES (6, '110110');
---Testcase 188:
+--Testcase 209:
 INSERT INTO "type_BIT" ("i", "b") VALUES (7, '111001');
---Testcase 189:
+--Testcase 210:
 INSERT INTO "type_BIT" ("i", "b") VALUES (8, '110000');
---Testcase 190:
+--Testcase 211:
 INSERT INTO "type_BIT" ("i", "b") VALUES (9, '100001');
---Testcase 191:
+--Testcase 212:
 INSERT INTO "type_BIT" ("i", "b") VALUES (10, 53);
---Testcase 192:
+--Testcase 213:
 SELECT * FROM "type_BIT+";
---Testcase 193:
+--Testcase 214:
 SELECT * FROM "type_BIT" WHERE b < '110110';
---Testcase 194:
+--Testcase 215:
 SELECT * FROM "type_BIT" WHERE b > '110110';
---Testcase 195:
+--Testcase 216:
 SELECT * FROM "type_BIT" WHERE b = '110110';
 
---Testcase 196:
+--Testcase 217:
 DROP FOREIGN TABLE IF EXISTS "type_VARBIT";
---Testcase 197:
+--Testcase 218:
 CREATE FOREIGN TABLE "type_VARBIT"( "i" int OPTIONS (key 'true'), "b" varbit(70)) SERVER sqlite_svr OPTIONS (table 'type_VARBIT');
---Testcase 199:
+--Testcase 219:
 DROP FOREIGN TABLE IF EXISTS "type_VARBIT+";
---Testcase 200:
+--Testcase 220:
 CREATE FOREIGN TABLE "type_VARBIT+"( "i" int OPTIONS (key 'true'), "b" varbit(70), "t" text, "l" smallint) SERVER sqlite_svr OPTIONS (table 'type_VARBIT+');
---Testcase 201:
+--Testcase 221:
 INSERT INTO "type_VARBIT" ("i", "b") VALUES (1, '1');
---Testcase 202:
+--Testcase 222:
 INSERT INTO "type_VARBIT" ("i", "b") VALUES (2, '10');
---Testcase 203:
+--Testcase 223:
 INSERT INTO "type_VARBIT" ("i", "b") VALUES (3, '11');
---Testcase 204:
+--Testcase 224:
 INSERT INTO "type_VARBIT" ("i", "b") VALUES (4, '100');
---Testcase 205:
+--Testcase 225:
 INSERT INTO "type_VARBIT" ("i", "b") VALUES (5, '101');
---Testcase 206:
+--Testcase 226:
 INSERT INTO "type_VARBIT" ("i", "b") VALUES (6, '110110');
---Testcase 207:
+--Testcase 227:
 INSERT INTO "type_VARBIT" ("i", "b") VALUES (7, '111001');
---Testcase 208:
+--Testcase 228:
 INSERT INTO "type_VARBIT" ("i", "b") VALUES (8, '110000');
---Testcase 209:
+--Testcase 229:
 INSERT INTO "type_VARBIT" ("i", "b") VALUES (9, '100001');
---Testcase 210:
+--Testcase 230:
 INSERT INTO "type_VARBIT" ("i", "b") VALUES (10, '0100100101011001010010101000111110110101101101111011000101010');
---Testcase 211:
+--Testcase 231:
 INSERT INTO "type_VARBIT" ("i", "b") VALUES (11, '01001001010110010100101010001111101101011011011110110001010101');
 
---Testcase 212
+--Testcase 232
 SELECT * FROM "type_VARBIT+";
---Testcase 213:
+--Testcase 233:
 SELECT * FROM "type_VARBIT+" WHERE b < '110110';
---Testcase 214:
+--Testcase 234:
 SELECT * FROM "type_VARBIT+" WHERE b > '110110';
---Testcase 215:
+--Testcase 235:
 SELECT * FROM "type_VARBIT+" WHERE b = '110110';
 
---Testcase 216:
+--Testcase 236:
 INSERT INTO "type_VARBIT" ("i", "b") VALUES (12, '010010010101100101001010100011111011010110110111101100010101010');
---Testcase 217:
+--Testcase 237:
 INSERT INTO "type_VARBIT" ("i", "b") VALUES (13, '0100100101011001010010101000111110110101101101111011000101010101');
---Testcase 218: 65 b
+--Testcase 238: very long bit string, expected ERROR, 65 bits
 INSERT INTO "type_VARBIT" ("i", "b") VALUES (14, '01001001010110010100101010001111101101011011011110110001010101010');
---Testcase 219:
+--Testcase 239:
 SELECT * FROM "type_VARBIT+" WHERE "i" > 10;
+
+--Testcase 240:
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" | b2."b" "res" FROM "type_BIT" b1 INNER JOIN "type_BIT" b2 ON true;
+--Testcase 241:
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" & b2."b" "res" FROM "type_BIT" b1 INNER JOIN "type_BIT" b2 ON true;
+--Testcase 242:
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" # b2."b" "res" FROM "type_BIT" b1 INNER JOIN "type_BIT" b2 ON true;
+--Testcase 243:
+SELECT "i", "b", "b" >> 2 "res" FROM "type_BIT";
+--Testcase 244:
+SELECT "i", "b", "b" << 3 "res" FROM "type_BIT";
+--Testcase 245:
+SELECT "i", "b", ~ "b" "res" FROM "type_BIT";
+--Testcase 246:
+EXPLAIN VERBOSE
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" | b2."b" "res" FROM "type_BIT" b1 INNER JOIN "type_BIT" b2 ON true;
+--Testcase 247:
+EXPLAIN VERBOSE
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" & b2."b" "res" FROM "type_BIT" b1 INNER JOIN "type_BIT" b2 ON true;
+--Testcase 248:
+EXPLAIN VERBOSE
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" # b2."b" "res" FROM "type_BIT" b1 INNER JOIN "type_BIT" b2 ON true;
+--Testcase 249:
+EXPLAIN VERBOSE
+SELECT "i", "b", "b" >> 2 "res" FROM "type_BIT";
+--Testcase 250:
+EXPLAIN VERBOSE
+SELECT "i", "b", "b" << 3 "res" FROM "type_BIT";
+--Testcase 251:
+EXPLAIN VERBOSE
+SELECT "i", "b", ~ "b" "res" FROM "type_BIT";
+
+--Testcase 252:
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" | b2."b" "res" FROM "type_VARBIT" b1 INNER JOIN "type_VARBIT" b2 ON true;
+--Testcase 253:
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" & b2."b" "res" FROM "type_VARBIT" b1 INNER JOIN "type_VARBIT" b2 ON true;
+--Testcase 254:
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" # b2."b" "res" FROM "type_VARBIT" b1 INNER JOIN "type_VARBIT" b2 ON true;
+--Testcase 255:
+SELECT "i", "b", "b" >> 2 "res" FROM "type_VARBIT";
+--Testcase 256:
+SELECT "i", "b", "b" << 3 "res" FROM "type_VARBIT";
+--Testcase 257:
+SELECT "i", "b", ~ "b" "res" FROM "type_VARBIT";
+--Testcase 258:
+EXPLAIN VERBOSE
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" | b2."b" "res" FROM "type_VARBIT" b1 INNER JOIN "type_VARBIT" b2 ON true;
+--Testcase 259:
+EXPLAIN VERBOSE
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" & b2."b" "res" FROM "type_VARBIT" b1 INNER JOIN "type_VARBIT" b2 ON true;
+--Testcase 260:
+EXPLAIN VERBOSE
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" # b2."b" "res" FROM "type_VARBIT" b1 INNER JOIN "type_VARBIT" b2 ON true;
+--Testcase 261:
+EXPLAIN VERBOSE
+SELECT "i", "b", "b" >> 2 "res" FROM "type_VARBIT";
+--Testcase 262:
+EXPLAIN VERBOSE
+SELECT "i", "b", "b" << 3 "res" FROM "type_VARBIT";
+--Testcase 263:
+EXPLAIN VERBOSE
+SELECT "i", "b", ~ "b" "res" FROM "type_VARBIT";
 
 --Testcase 47:
 DROP EXTENSION sqlite_fdw CASCADE;

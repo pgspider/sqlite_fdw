@@ -549,10 +549,72 @@ SELECT * FROM "type_VARBIT+" WHERE b = '110110';
 INSERT INTO "type_VARBIT" ("i", "b") VALUES (12, '010010010101100101001010100011111011010110110111101100010101010');
 --Testcase 237:
 INSERT INTO "type_VARBIT" ("i", "b") VALUES (13, '0100100101011001010010101000111110110101101101111011000101010101');
---Testcase 238: 65 b
+--Testcase 238: very long bit string, expected ERROR, 65 bits
 INSERT INTO "type_VARBIT" ("i", "b") VALUES (14, '01001001010110010100101010001111101101011011011110110001010101010');
 --Testcase 239:
 SELECT * FROM "type_VARBIT+" WHERE "i" > 10;
+
+--Testcase 240:
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" | b2."b" "res" FROM "type_BIT" b1 INNER JOIN "type_BIT" b2 ON true;
+--Testcase 241:
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" & b2."b" "res" FROM "type_BIT" b1 INNER JOIN "type_BIT" b2 ON true;
+--Testcase 242:
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" # b2."b" "res" FROM "type_BIT" b1 INNER JOIN "type_BIT" b2 ON true;
+--Testcase 243:
+SELECT "i", "b", "b" >> 2 "res" FROM "type_BIT";
+--Testcase 244:
+SELECT "i", "b", "b" << 3 "res" FROM "type_BIT";
+--Testcase 245:
+SELECT "i", "b", ~ "b" "res" FROM "type_BIT";
+--Testcase 246:
+EXPLAIN VERBOSE
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" | b2."b" "res" FROM "type_BIT" b1 INNER JOIN "type_BIT" b2 ON true;
+--Testcase 247:
+EXPLAIN VERBOSE
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" & b2."b" "res" FROM "type_BIT" b1 INNER JOIN "type_BIT" b2 ON true;
+--Testcase 248:
+EXPLAIN VERBOSE
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" # b2."b" "res" FROM "type_BIT" b1 INNER JOIN "type_BIT" b2 ON true;
+--Testcase 249:
+EXPLAIN VERBOSE
+SELECT "i", "b", "b" >> 2 "res" FROM "type_BIT";
+--Testcase 250:
+EXPLAIN VERBOSE
+SELECT "i", "b", "b" << 3 "res" FROM "type_BIT";
+--Testcase 251:
+EXPLAIN VERBOSE
+SELECT "i", "b", ~ "b" "res" FROM "type_BIT";
+
+--Testcase 252:
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" | b2."b" "res" FROM "type_VARBIT" b1 INNER JOIN "type_VARBIT" b2 ON true;
+--Testcase 253:
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" & b2."b" "res" FROM "type_VARBIT" b1 INNER JOIN "type_VARBIT" b2 ON true;
+--Testcase 254:
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" # b2."b" "res" FROM "type_VARBIT" b1 INNER JOIN "type_VARBIT" b2 ON true;
+--Testcase 255:
+SELECT "i", "b", "b" >> 2 "res" FROM "type_VARBIT";
+--Testcase 256:
+SELECT "i", "b", "b" << 3 "res" FROM "type_VARBIT";
+--Testcase 257:
+SELECT "i", "b", ~ "b" "res" FROM "type_VARBIT";
+--Testcase 258:
+EXPLAIN VERBOSE
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" | b2."b" "res" FROM "type_VARBIT" b1 INNER JOIN "type_VARBIT" b2 ON true;
+--Testcase 259:
+EXPLAIN VERBOSE
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" & b2."b" "res" FROM "type_VARBIT" b1 INNER JOIN "type_VARBIT" b2 ON true;
+--Testcase 260:
+EXPLAIN VERBOSE
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" # b2."b" "res" FROM "type_VARBIT" b1 INNER JOIN "type_VARBIT" b2 ON true;
+--Testcase 261:
+EXPLAIN VERBOSE
+SELECT "i", "b", "b" >> 2 "res" FROM "type_VARBIT";
+--Testcase 262:
+EXPLAIN VERBOSE
+SELECT "i", "b", "b" << 3 "res" FROM "type_VARBIT";
+--Testcase 263:
+EXPLAIN VERBOSE
+SELECT "i", "b", ~ "b" "res" FROM "type_VARBIT";
 
 --Testcase 47:
 DROP EXTENSION sqlite_fdw CASCADE;
