@@ -523,7 +523,8 @@ Limitations
 for `INSERT` and `UPDATE` commands.
 
 ### bit and varbit support
-- `sqlite_fdw` PostgreSQL `bit`/`varbit` values support based on `int` SQLite data affinity, because there is no per bit operations for SQLite `blob` affinity data. Maximum SQLite `int` affinity value is 8 bytes length, hence maximum `bit`/`varbit` values length is 64.
+- `sqlite_fdw` PostgreSQL `bit`/`varbit` values support based on `int` SQLite data affinity, because there is no per bit operations for SQLite `blob` affinity data. Maximum SQLite `int` affinity value is 8 bytes length, hence maximum `bit`/`varbit` values length is 64 bits.
+- `sqlite_fdw` doesn't support `#` (XOR) operator becasuse there is no equal SQLite operator.
 
 Tests
 -----
@@ -568,18 +569,22 @@ Contributing
 
 Opening issues and pull requests on GitHub are welcome.
 For pull request, please make sure these items below for testing:
-- Create test cases (if needed) for the latest version of PostgreSQL supported by sqlite_fdw.
+- Create test cases (if needed) for the latest version of PostgreSQL supported by `sqlite_fdw`. All error testcases should have a comment about test purpose.
 - Execute test cases and update expectations for the latest version of PostgreSQL
 - Test creation and execution for other PostgreSQL versions are welcome but not required.
 
 Preferred code style see in PostgreSQL source codes. For example
 
 ```C
-for (;;)
+type
+funct_name (type arg ...)
 {
-}
-if ()
-{
+	for (;;)
+	{
+	}
+	if ()
+	{
+	}
 }
 ```
 Useful links

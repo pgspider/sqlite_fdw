@@ -2888,12 +2888,14 @@ sqlite_deparse_operator_name(StringInfo buf, Form_pg_operator opform)
 		}
 		else if (strcmp(cur_opname, "~~*") == 0 ||
 				 strcmp(cur_opname, "!~~*") == 0 ||
-				 strcmp(cur_opname, "~") == 0 ||
+				 strcmp(cur_opname, "#") == 0 ||
 				 strcmp(cur_opname, "!~") == 0 ||
 				 strcmp(cur_opname, "~*") == 0 ||
 				 strcmp(cur_opname, "!~*") == 0)
 		{
-			elog(ERROR, "OPERATOR is not supported");
+			ereport(ERROR, (errcode(ERRCODE_FDW_ERROR),
+							errmsg("SQL operator is not supported"),
+							errhint("operator name: %s", cur_opname)));
 		}
 
 		else

@@ -476,15 +476,15 @@ CREATE FOREIGN TABLE "type_BIT"( "i" int OPTIONS (key 'true'), "b" bit(6)) SERVE
 DROP FOREIGN TABLE IF EXISTS "type_BIT+";
 --Testcase 202:
 CREATE FOREIGN TABLE "type_BIT+"( "i" int OPTIONS (key 'true'), "b" bit(6), "t" text, "l" smallint, "bi" bigint OPTIONS (column_name 'b')) SERVER sqlite_svr OPTIONS (table 'type_BIT+');
---Testcase 203:
+--Testcase 203: type mismatch
 INSERT INTO "type_BIT" ("i", "b") VALUES (1, 1);
---Testcase 204:
+--Testcase 204: type mismatch
 INSERT INTO "type_BIT" ("i", "b") VALUES (2, 2);
---Testcase 205:
+--Testcase 205: improper data length
 INSERT INTO "type_BIT" ("i", "b") VALUES (3, '1');
---Testcase 206:
+--Testcase 206: improper data length
 INSERT INTO "type_BIT" ("i", "b") VALUES (4, '10');
---Testcase 207:
+--Testcase 207: improper data length
 INSERT INTO "type_BIT" ("i", "b") VALUES (5, '101');
 --Testcase 208:
 INSERT INTO "type_BIT" ("i", "b") VALUES (6, '110110');
@@ -494,7 +494,7 @@ INSERT INTO "type_BIT" ("i", "b") VALUES (7, '111001');
 INSERT INTO "type_BIT" ("i", "b") VALUES (8, '110000');
 --Testcase 211:
 INSERT INTO "type_BIT" ("i", "b") VALUES (9, '100001');
---Testcase 212:
+--Testcase 212: type mismatch with proper data length
 INSERT INTO "type_BIT" ("i", "b") VALUES (10, 53);
 --Testcase 213:
 SELECT * FROM "type_BIT+";
@@ -555,11 +555,11 @@ INSERT INTO "type_VARBIT" ("i", "b") VALUES (14, '010010010101100101001010100011
 SELECT * FROM "type_VARBIT+" WHERE "i" > 10;
 
 --Testcase 240:
-SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" | b2."b" "res" FROM "type_BIT" b1 INNER JOIN "type_BIT" b2 ON true;
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" | b2."b" "res" FROM "type_BIT" b1 INNER JOIN "type_BIT" b2 ON true WHERE (b1."b" >> 2) < (b1."b" & b2."b");
 --Testcase 241:
-SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" & b2."b" "res" FROM "type_BIT" b1 INNER JOIN "type_BIT" b2 ON true;
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" & b2."b" "res" FROM "type_BIT" b1 INNER JOIN "type_BIT" b2 ON true WHERE (b1."b" >> 2) < (b1."b" & b2."b");
 --Testcase 242:
-SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" # b2."b" "res" FROM "type_BIT" b1 INNER JOIN "type_BIT" b2 ON true;
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" # b2."b" "res" FROM "type_BIT" b1 INNER JOIN "type_BIT" b2 ON true WHERE (b1."b" >> 2) < (b1."b" & b2."b");
 --Testcase 243:
 SELECT "i", "b", "b" >> 2 "res" FROM "type_BIT";
 --Testcase 244:
@@ -568,13 +568,13 @@ SELECT "i", "b", "b" << 3 "res" FROM "type_BIT";
 SELECT "i", "b", ~ "b" "res" FROM "type_BIT";
 --Testcase 246:
 EXPLAIN VERBOSE
-SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" | b2."b" "res" FROM "type_BIT" b1 INNER JOIN "type_BIT" b2 ON true;
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" | b2."b" "res" FROM "type_BIT" b1 INNER JOIN "type_BIT" b2 ON true WHERE (b1."b" >> 2) < (b1."b" & b2."b");
 --Testcase 247:
 EXPLAIN VERBOSE
-SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" & b2."b" "res" FROM "type_BIT" b1 INNER JOIN "type_BIT" b2 ON true;
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" & b2."b" "res" FROM "type_BIT" b1 INNER JOIN "type_BIT" b2 ON true WHERE (b1."b" >> 2) < (b1."b" & b2."b");
 --Testcase 248:
 EXPLAIN VERBOSE
-SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" # b2."b" "res" FROM "type_BIT" b1 INNER JOIN "type_BIT" b2 ON true;
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" # b2."b" "res" FROM "type_BIT" b1 INNER JOIN "type_BIT" b2 ON true WHERE (b1."b" >> 2) < (b1."b" & b2."b");
 --Testcase 249:
 EXPLAIN VERBOSE
 SELECT "i", "b", "b" >> 2 "res" FROM "type_BIT";
@@ -585,12 +585,12 @@ SELECT "i", "b", "b" << 3 "res" FROM "type_BIT";
 EXPLAIN VERBOSE
 SELECT "i", "b", ~ "b" "res" FROM "type_BIT";
 
---Testcase 252:
-SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" | b2."b" "res" FROM "type_VARBIT" b1 INNER JOIN "type_VARBIT" b2 ON true;
---Testcase 253:
-SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" & b2."b" "res" FROM "type_VARBIT" b1 INNER JOIN "type_VARBIT" b2 ON true;
---Testcase 254:
-SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" # b2."b" "res" FROM "type_VARBIT" b1 INNER JOIN "type_VARBIT" b2 ON true;
+--Testcase 252: bit strings of different sizes
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" | b2."b" "res" FROM "type_VARBIT" b1 INNER JOIN "type_VARBIT" b2 ON true WHERE (b1."b" >> 2) < (b1."b" & b2."b");
+--Testcase 253: bit strings of different sizes
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" & b2."b" "res" FROM "type_VARBIT" b1 INNER JOIN "type_VARBIT" b2 ON true WHERE (b1."b" >> 2) < (b1."b" & b2."b");
+--Testcase 254: bit strings of different sizes
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" # b2."b" "res" FROM "type_VARBIT" b1 INNER JOIN "type_VARBIT" b2 ON true WHERE (b1."b" >> 2) < (b1."b" & b2."b");
 --Testcase 255:
 SELECT "i", "b", "b" >> 2 "res" FROM "type_VARBIT";
 --Testcase 256:
@@ -599,13 +599,13 @@ SELECT "i", "b", "b" << 3 "res" FROM "type_VARBIT";
 SELECT "i", "b", ~ "b" "res" FROM "type_VARBIT";
 --Testcase 258:
 EXPLAIN VERBOSE
-SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" | b2."b" "res" FROM "type_VARBIT" b1 INNER JOIN "type_VARBIT" b2 ON true;
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" | b2."b" "res" FROM "type_VARBIT" b1 INNER JOIN "type_VARBIT" b2 ON true WHERE (b1."b" >> 2) < (b1."b" & b2."b");
 --Testcase 259:
 EXPLAIN VERBOSE
-SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" & b2."b" "res" FROM "type_VARBIT" b1 INNER JOIN "type_VARBIT" b2 ON true;
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" & b2."b" "res" FROM "type_VARBIT" b1 INNER JOIN "type_VARBIT" b2 ON true WHERE (b1."b" >> 2) < (b1."b" & b2."b");
 --Testcase 260:
 EXPLAIN VERBOSE
-SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" # b2."b" "res" FROM "type_VARBIT" b1 INNER JOIN "type_VARBIT" b2 ON true;
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" # b2."b" "res" FROM "type_VARBIT" b1 INNER JOIN "type_VARBIT" b2 ON true WHERE (b1."b" >> 2) < (b1."b" & b2."b");
 --Testcase 261:
 EXPLAIN VERBOSE
 SELECT "i", "b", "b" >> 2 "res" FROM "type_VARBIT";
@@ -615,6 +615,80 @@ SELECT "i", "b", "b" << 3 "res" FROM "type_VARBIT";
 --Testcase 263:
 EXPLAIN VERBOSE
 SELECT "i", "b", ~ "b" "res" FROM "type_VARBIT";
+
+--Testcase 264:
+SELECT "i", "b", "b" & B'101011' "res" FROM "type_BIT";
+--Testcase 265:
+SELECT "i", "b", "b" | B'101011' "res" FROM "type_BIT";
+--Testcase 266:
+SELECT "i", "b", "b" # B'101011' "res" FROM "type_BIT";
+--Testcase 267:
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" & B'101011') IS NOT NULL;
+--Testcase 268:
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" | B'101011') IS NOT NULL;
+--Testcase 269:
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" # B'101011') IS NOT NULL;
+--Testcase 270:
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" >> 1) IS NOT NULL;
+--Testcase 271:
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" << 2) IS NOT NULL;
+--Testcase 272:
+SELECT "i", "b" FROM "type_BIT" WHERE (~ "b") IS NOT NULL;
+--Testcase 273:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" & B'101011') IS NOT NULL;
+--Testcase 274:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" | B'101011') IS NOT NULL;
+--Testcase 275:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" # B'101011') IS NOT NULL;
+--Testcase 276:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" >> 1) IS NOT NULL;
+--Testcase 277:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" << 2) IS NOT NULL;
+--Testcase 278:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE (~ "b") IS NOT NULL;
+
+--Testcase 279:
+SELECT "i", "b", "b" & B'101011' "res" FROM "type_BIT";
+--Testcase 280:
+SELECT "i", "b", "b" | B'101011' "res" FROM "type_BIT";
+--Testcase 281:
+SELECT "i", "b", "b" # B'101011' "res" FROM "type_BIT";
+--Testcase 282:
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" & B'101011') IS NOT NULL;
+--Testcase 283:
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" | B'101011') IS NOT NULL;
+--Testcase 284:
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" # B'101011') IS NOT NULL;
+--Testcase 285:
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" >> 1) IS NOT NULL;
+--Testcase 286:
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" << 2) IS NOT NULL;
+--Testcase 287:
+SELECT "i", "b" FROM "type_BIT" WHERE (~ "b") IS NOT NULL;
+--Testcase 288:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" & B'101011') IS NOT NULL;
+--Testcase 289:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" | B'101011') IS NOT NULL;
+--Testcase 290:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" # B'101011') IS NOT NULL;
+--Testcase 291:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" >> 1) IS NOT NULL;
+--Testcase 292:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" << 2) IS NOT NULL;
+--Testcase 293:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE (~ "b") IS NOT NULL;
 
 --Testcase 47:
 DROP EXTENSION sqlite_fdw CASCADE;

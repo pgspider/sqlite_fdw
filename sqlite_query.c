@@ -379,8 +379,8 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 		case BITOID:
 			{
 				char * buffer = (char *) palloc0(SQLITE_FDW_BIT_DATATYPE_BUF_SIZE);
-
 				sqlite3_int64 sqlti = sqlite3_column_int64(stmt, stmt_colid);
+
 				buffer = int642binstr(sqlti, buffer, SQLITE_FDW_BIT_DATATYPE_BUF_SIZE);
 				valstr = buffer;
 				elog(DEBUG4, "sqlite_fdw : BIT buf l=%ld v = %s", SQLITE_FDW_BIT_DATATYPE_BUF_SIZE, buffer);
@@ -774,4 +774,3 @@ binstr2int64(const char *s)
     }
     return rc;
 }
-

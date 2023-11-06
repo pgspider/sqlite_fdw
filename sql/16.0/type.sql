@@ -476,15 +476,15 @@ CREATE FOREIGN TABLE "type_BIT"( "i" int OPTIONS (key 'true'), "b" bit(6)) SERVE
 DROP FOREIGN TABLE IF EXISTS "type_BIT+";
 --Testcase 202:
 CREATE FOREIGN TABLE "type_BIT+"( "i" int OPTIONS (key 'true'), "b" bit(6), "t" text, "l" smallint, "bi" bigint OPTIONS (column_name 'b')) SERVER sqlite_svr OPTIONS (table 'type_BIT+');
---Testcase 203:
+--Testcase 203: type mismatch
 INSERT INTO "type_BIT" ("i", "b") VALUES (1, 1);
---Testcase 204:
+--Testcase 204: type mismatch
 INSERT INTO "type_BIT" ("i", "b") VALUES (2, 2);
---Testcase 205:
+--Testcase 205: improper data length
 INSERT INTO "type_BIT" ("i", "b") VALUES (3, '1');
---Testcase 206:
+--Testcase 206: improper data length
 INSERT INTO "type_BIT" ("i", "b") VALUES (4, '10');
---Testcase 207:
+--Testcase 207: improper data length
 INSERT INTO "type_BIT" ("i", "b") VALUES (5, '101');
 --Testcase 208:
 INSERT INTO "type_BIT" ("i", "b") VALUES (6, '110110');
@@ -494,7 +494,7 @@ INSERT INTO "type_BIT" ("i", "b") VALUES (7, '111001');
 INSERT INTO "type_BIT" ("i", "b") VALUES (8, '110000');
 --Testcase 211:
 INSERT INTO "type_BIT" ("i", "b") VALUES (9, '100001');
---Testcase 212:
+--Testcase 212: type mismatch with proper data length
 INSERT INTO "type_BIT" ("i", "b") VALUES (10, 53);
 --Testcase 213:
 SELECT * FROM "type_BIT+";
@@ -615,6 +615,80 @@ SELECT "i", "b", "b" << 3 "res" FROM "type_VARBIT";
 --Testcase 263:
 EXPLAIN VERBOSE
 SELECT "i", "b", ~ "b" "res" FROM "type_VARBIT";
+
+--Testcase 264:
+SELECT "i", "b", "b" & B'101011' "res" FROM "type_BIT";
+--Testcase 265:
+SELECT "i", "b", "b" | B'101011' "res" FROM "type_BIT";
+--Testcase 266:
+SELECT "i", "b", "b" # B'101011' "res" FROM "type_BIT";
+--Testcase 267:
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" & B'101011') IS NOT NULL;
+--Testcase 268:
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" | B'101011') IS NOT NULL;
+--Testcase 269:
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" # B'101011') IS NOT NULL;
+--Testcase 270:
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" >> 1) IS NOT NULL;
+--Testcase 271:
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" << 2) IS NOT NULL;
+--Testcase 272:
+SELECT "i", "b" FROM "type_BIT" WHERE (~ "b") IS NOT NULL;
+--Testcase 273:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" & B'101011') IS NOT NULL;
+--Testcase 274:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" | B'101011') IS NOT NULL;
+--Testcase 275:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" # B'101011') IS NOT NULL;
+--Testcase 276:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" >> 1) IS NOT NULL;
+--Testcase 277:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" << 2) IS NOT NULL;
+--Testcase 278:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE (~ "b") IS NOT NULL;
+
+--Testcase 279:
+SELECT "i", "b", "b" & B'101011' "res" FROM "type_BIT";
+--Testcase 280:
+SELECT "i", "b", "b" | B'101011' "res" FROM "type_BIT";
+--Testcase 281:
+SELECT "i", "b", "b" # B'101011' "res" FROM "type_BIT";
+--Testcase 282:
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" & B'101011') IS NOT NULL;
+--Testcase 283:
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" | B'101011') IS NOT NULL;
+--Testcase 284:
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" # B'101011') IS NOT NULL;
+--Testcase 285:
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" >> 1) IS NOT NULL;
+--Testcase 286:
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" << 2) IS NOT NULL;
+--Testcase 287:
+SELECT "i", "b" FROM "type_BIT" WHERE (~ "b") IS NOT NULL;
+--Testcase 288:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" & B'101011') IS NOT NULL;
+--Testcase 289:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" | B'101011') IS NOT NULL;
+--Testcase 290:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" # B'101011') IS NOT NULL;
+--Testcase 291:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" >> 1) IS NOT NULL;
+--Testcase 292:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" << 2) IS NOT NULL;
+--Testcase 293:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE (~ "b") IS NOT NULL;
 
 --Testcase 47:
 DROP EXTENSION sqlite_fdw CASCADE;
