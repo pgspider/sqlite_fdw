@@ -768,8 +768,9 @@ binstr2int64(const char *s)
         }
         else
         {
-            errno = EINVAL;
-            return -1;
+			ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+							errmsg("Not 0 or 1 in bit string"),
+							errhint("value: %s", s)));
         }
     }
     return rc;
