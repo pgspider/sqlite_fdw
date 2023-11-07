@@ -580,6 +580,9 @@ Preferred code style see in PostgreSQL source codes. For example
 type
 funct_name (type arg ...)
 {
+	t1 var1 = value1;
+	t2 var2 = value2;
+
 	for (;;)
 	{
 	}
