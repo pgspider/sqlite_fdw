@@ -608,7 +608,7 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 				{
 					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
 							errmsg("SQLite FDW dosens't support very long bit/varbit data"),
-							errhint("bit length %ld, maxmum %ld", strlen(outputString), SQLITE_FDW_BIT_DATATYPE_BUF_SIZE - 1)));
+							errhint("bit length %ld, maximum %ld", strlen(outputString), SQLITE_FDW_BIT_DATATYPE_BUF_SIZE - 1)));
 				}
 				dat = binstr2int64(outputString);
 				ret = sqlite3_bind_int64(stmt, attnum, dat);
