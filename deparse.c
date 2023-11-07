@@ -2888,7 +2888,7 @@ sqlite_deparse_operator_name(StringInfo buf, Form_pg_operator opform)
 		}
 		else if (strcmp(cur_opname, "~~*") == 0 ||
 				 strcmp(cur_opname, "!~~*") == 0 ||
-				 /* ~ operator are both one of text RegEx operators and bit string NOT */
+				 /* ~ operator is both one of text RegEx operators and bit string NOT */
 				 (strcmp(cur_opname, "~") == 0 && opform->oprresult != VARBITOID && opform->oprresult != BITOID) ||
 				 strcmp(cur_opname, "!~") == 0 ||
 				 strcmp(cur_opname, "~*") == 0 ||
@@ -2898,7 +2898,6 @@ sqlite_deparse_operator_name(StringInfo buf, Form_pg_operator opform)
 							errmsg("SQL operator is not supported"),
 							errhint("operator name: %s", cur_opname)));
 		}
-
 		else
 		{
 			appendStringInfoString(buf, cur_opname);
