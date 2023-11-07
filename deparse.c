@@ -675,17 +675,17 @@ sqlite_foreign_expr_walker(Node *node,
 				ReleaseSysCache(tuple);
 
 				/*
-				 * Factorial (!) and Bitwise XOR (^) cannot be pushed down to
-				 * SQLite
+				 * Factorial (!) and Bitwise XOR (^), (#) 
+				 * cannot be pushed down to SQLite
+				 * Full list see in https://www.postgresql.org/docs/current/functions-bitstring.html
+				 * ILIKE cannot be pushed down to SQLite
+				 * Full list see in https://www.postgresql.org/docs/current/functions-matching.html
 				 */
 				if (strcmp(cur_opname, "!") == 0
-					|| strcmp(cur_opname, "^") == 0)
-				{
-					return false;
-				}
-
-				/* ILIKE cannot be pushed down to SQLite */
-				if (strcmp(cur_opname, "~~*") == 0 || strcmp(cur_opname, "!~~*") == 0)
+					|| strcmp(cur_opname, "^") == 0
+					|| strcmp(cur_opname, "#") == 0
+					|| strcmp(cur_opname, "~~*") == 0
+					|| strcmp(cur_opname, "!~~*") == 0)
 				{
 					return false;
 				}
@@ -2888,7 +2888,8 @@ sqlite_deparse_operator_name(StringInfo buf, Form_pg_operator opform)
 		}
 		else if (strcmp(cur_opname, "~~*") == 0 ||
 				 strcmp(cur_opname, "!~~*") == 0 ||
-				 strcmp(cur_opname, "#") == 0 ||
+				 /* ~ operator are both one of text RegEx operators and bit string NOT */
+				 (strcmp(cur_opname, "~") == 0 && opform->oprresult != VARBITOID && opform->oprresult != BITOID) ||
 				 strcmp(cur_opname, "!~") == 0 ||
 				 strcmp(cur_opname, "~*") == 0 ||
 				 strcmp(cur_opname, "!~*") == 0)

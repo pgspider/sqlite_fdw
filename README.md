@@ -48,6 +48,7 @@ Features
 - `mod()` is pushdowned. In PostgreSQL gives [argument-dependend data type](https://www.postgresql.org/docs/current/functions-math.html), but result from SQLite always [have `real` affinity](https://www.sqlite.org/lang_mathfunc.html#mod).
 - `upper`, `lower` and other character case functions are **not** pushed down because they does not work with UNICODE character in SQLite.
 - `WITH TIES` option is **not** pushed down.
+- Bit string `#` (XOR) operator is **not** pushed down becasuse there is no equal SQLite operator.
 
 ### Notes about pushdowning
 
@@ -524,7 +525,7 @@ for `INSERT` and `UPDATE` commands.
 
 ### bit and varbit support
 - `sqlite_fdw` PostgreSQL `bit`/`varbit` values support based on `int` SQLite data affinity, because there is no per bit operations for SQLite `blob` affinity data. Maximum SQLite `int` affinity value is 8 bytes length, hence maximum `bit`/`varbit` values length is 64 bits.
-- `sqlite_fdw` doesn't support `#` (XOR) operator becasuse there is no equal SQLite operator.
+- `sqlite_fdw` doesn't pushdown `#` (XOR) operator becasuse there is no equal SQLite operator.
 
 Tests
 -----
