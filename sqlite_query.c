@@ -356,7 +356,7 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 					case SQLITE3_TEXT: /* <-- second proper and recommended SQLite affinity of value for pgtyp */
 					{
 						if (value_byte_size_blob_or_utf8)
-							valstr = sqlite_text_value_to_pg_db_encoding(stmt, stmt_colid);
+							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
 						else
 							elog(ERROR, "Void text disallowed for PostgreSQL uuid column");
 						break;

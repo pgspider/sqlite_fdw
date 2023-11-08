@@ -613,9 +613,7 @@ sqlite_foreign_expr_walker(Node *node,
 					  || strcmp(opername, "round") == 0
 					  || strcmp(opername, "rtrim") == 0
 					  || strcmp(opername, "substr") == 0
-					  || strcmp(opername, "mod") == 0
-  					  || strcmp(opername, "gen_random_uuid") == 0
-					  || strcmp(opername, "uuid_generate_v4") == 0))
+					  || strcmp(opername, "mod") == 0 ))
 				{
 					return false;
 				}
@@ -2089,15 +2087,19 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 		 * Recommended form for normalisation is someone from 1<->1 with PostgreSQL
 		 * internal storage, hence usually this will not original text data.
 		 */
-		if (pg_atttyp == UUIDOID && !dml_context )
+		if (!dml_context && pg_atttyp == BOOLOID)
 		{
-			elog(DEBUG2, "UUID unification for \"%s\"", colname);
-			/* Please remove to UNHEX and deattach uuid_extension.c after SQLite 3.41+ support */
-			appendStringInfoString(buf, "coalesce(sqlite_fdw_uuid_blob(");
+			elog(DEBUG2, "boolean unification for \"%s\"", colname);
+			appendStringInfoString(buf, "sqlite_fdw_bool(");
 			if (qualify_col)
 				ADD_REL_QUALIFIER(buf, varno);
 			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
-			appendStringInfoString(buf, "),");
+			appendStringInfoString(buf, ")");
+		}
+		else if (!dml_context && pg_atttyp == UUIDOID)
+		{
+			elog(DEBUG2, "UUID unification for \"%s\"", colname);
+			appendStringInfoString(buf, "sqlite_fdw_uuid_blob(");
 			if (qualify_col)
 				ADD_REL_QUALIFIER(buf, varno);
 			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
@@ -2105,7 +2107,7 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 		}
 		else 
 		{
-			elog(DEBUG3, "column name without data unification = \"%s\"", colname);
+			elog(DEBUG4, "column name without data unification = \"%s\"", colname);
 			if (qualify_col)
 				ADD_REL_QUALIFIER(buf, varno);
 			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));

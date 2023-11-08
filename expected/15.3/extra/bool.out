@@ -1,0 +1,212 @@
+--SET log_min_messages  TO DEBUG1;
+--SET client_min_messages  TO DEBUG1;
+--Testcase 44:
+CREATE EXTENSION sqlite_fdw;
+--Testcase 45:
+CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
+OPTIONS (database '/tmp/sqlitefdw_test.db');
+--Testcase 46:
+CREATE SERVER sqlite2 FOREIGN DATA WRAPPER sqlite_fdw;
+--Testcase 01:
+CREATE FOREIGN TABLE "type_BOOLEAN" (i int OPTIONS (key 'true'), b text) SERVER sqlite_svr;
+--Testcase 02:
+INSERT INTO "type_BOOLEAN"(i, b) VALUES (1, TRUE);
+--Testcase 03:
+INSERT INTO "type_BOOLEAN"(i, b) VALUES (2, FALSE);
+--Testcase 04:
+CREATE FOREIGN TABLE "type_BOOLEAN+"( "i" int, "b" bool, "t" text, "l" smallint) SERVER sqlite_svr OPTIONS (table 'type_BOOLEAN+');
+--Testcase 05:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (3, 'Yes');
+--Testcase 06:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (4, 'YeS');
+--Testcase 07:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (5, 'yes');
+--Testcase 08:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (6, 'no');
+--Testcase 09:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (7, 'No');
+--Testcase 10:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (8, 'nO');
+--Testcase 11:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (9, 'off');
+--Testcase 12:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (10, 'oFf');
+--Testcase 13:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (11, 'on');
+--Testcase 14:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (12, 'ON');
+--Testcase 15:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (13, 't');
+--Testcase 16:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (14, 'T');
+--Testcase 17:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (15, 'Y');
+--Testcase 18:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (16, 'y');
+--Testcase 19:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (17, 'F');
+--Testcase 20:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (18, 'f');
+--Testcase 21:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (19, 'x');
+--Testcase 22:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (20, '0');
+--Testcase 23:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (21, '1');
+--Testcase 24:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (22, NULL);
+--Testcase 25:
+SELECT * FROM "type_BOOLEAN";
+ i  |   b   
+----+-------
+  1 | true
+  2 | false
+  3 | Yes
+  4 | YeS
+  5 | yes
+  6 | no
+  7 | No
+  8 | nO
+  9 | off
+ 10 | oFf
+ 11 | on
+ 12 | ON
+ 13 | t
+ 14 | T
+ 15 | Y
+ 16 | y
+ 17 | F
+ 18 | f
+ 19 | x
+ 20 | 0
+ 21 | 1
+ 22 | 
+(22 rows)
+
+--Testcase 26:
+ALTER FOREIGN TABLE "type_BOOLEAN" ALTER COLUMN "b" TYPE bool;
+--Testcase 27:
+EXPLAIN VERBOSE
+SELECT * FROM "type_BOOLEAN";
+                                   QUERY PLAN                                   
+--------------------------------------------------------------------------------
+ Foreign Scan on public."type_BOOLEAN"  (cost=10.00..2824.00 rows=2824 width=5)
+   Output: i, b
+   SQLite query: SELECT `i`, sqlite_fdw_bool(`b`) FROM main."type_BOOLEAN"
+(3 rows)
+
+--Testcase 28:
+EXPLAIN VERBOSE
+SELECT * FROM "type_BOOLEAN+";
+                                      QUERY PLAN                                      
+--------------------------------------------------------------------------------------
+ Foreign Scan on public."type_BOOLEAN+"  (cost=10.00..1300.00 rows=1300 width=39)
+   Output: i, b, t, l
+   SQLite query: SELECT `i`, sqlite_fdw_bool(`b`), `t`, `l` FROM main."type_BOOLEAN+"
+(3 rows)
+
+--Testcase 29: ERR - invalid text affinity because not ISO:SQL text input
+SELECT * FROM "type_BOOLEAN+";
+ERROR:  SQLite data affinity "text" disallowed for PostgreSQL data type "boolean"
+HINT:  In column "b" expected SQLite affinity "integer", incorrect value = 'x'
+--Testcase 30
+DELETE FROM "type_BOOLEAN" WHERE i = 19;
+--Testcase 31:
+SELECT * FROM "type_BOOLEAN+";
+ i  | b |    t    | l 
+----+---+---------+---
+  1 | t | text    | 4
+  2 | f | text    | 5
+  3 | t | text    | 3
+  4 | t | text    | 3
+  5 | t | text    | 3
+  6 | f | text    | 2
+  7 | f | text    | 2
+  8 | f | text    | 2
+  9 | f | text    | 3
+ 10 | f | text    | 3
+ 11 | t | text    | 2
+ 12 | t | text    | 2
+ 13 | t | text    | 1
+ 14 | t | text    | 1
+ 15 | t | text    | 1
+ 16 | t | text    | 1
+ 17 | f | text    | 1
+ 18 | f | text    | 1
+ 20 | f | integer | 1
+ 21 | t | integer | 1
+ 22 |   | null    |  
+(21 rows)
+
+--Testcase 32:
+SELECT * FROM "type_BOOLEAN+" WHERE b IS NULL;
+ i  | b |  t   | l 
+----+---+------+---
+ 22 |   | null |  
+(1 row)
+
+--Testcase 33:
+SELECT * FROM "type_BOOLEAN+" WHERE b IS NOT NULL;
+ i  | b |    t    | l 
+----+---+---------+---
+  1 | t | text    | 4
+  2 | f | text    | 5
+  3 | t | text    | 3
+  4 | t | text    | 3
+  5 | t | text    | 3
+  6 | f | text    | 2
+  7 | f | text    | 2
+  8 | f | text    | 2
+  9 | f | text    | 3
+ 10 | f | text    | 3
+ 11 | t | text    | 2
+ 12 | t | text    | 2
+ 13 | t | text    | 1
+ 14 | t | text    | 1
+ 15 | t | text    | 1
+ 16 | t | text    | 1
+ 17 | f | text    | 1
+ 18 | f | text    | 1
+ 20 | f | integer | 1
+ 21 | t | integer | 1
+(20 rows)
+
+--Testcase 34:
+SELECT * FROM "type_BOOLEAN+" WHERE b;
+ i  | b |    t    | l 
+----+---+---------+---
+  1 | t | text    | 4
+  3 | t | text    | 3
+  4 | t | text    | 3
+  5 | t | text    | 3
+ 11 | t | text    | 2
+ 12 | t | text    | 2
+ 13 | t | text    | 1
+ 14 | t | text    | 1
+ 15 | t | text    | 1
+ 16 | t | text    | 1
+ 21 | t | integer | 1
+(11 rows)
+
+--Testcase 35:
+SELECT * FROM "type_BOOLEAN+" WHERE NOT b;
+ i  | b |    t    | l 
+----+---+---------+---
+  2 | f | text    | 5
+  6 | f | text    | 2
+  7 | f | text    | 2
+  8 | f | text    | 2
+  9 | f | text    | 3
+ 10 | f | text    | 3
+ 17 | f | text    | 1
+ 18 | f | text    | 1
+ 20 | f | integer | 1
+(9 rows)
+
+--Testcase 47:
+DROP EXTENSION sqlite_fdw CASCADE;
+NOTICE:  drop cascades to 4 other objects
+DETAIL:  drop cascades to server sqlite_svr
+drop cascades to foreign table "type_BOOLEAN"
+drop cascades to foreign table "type_BOOLEAN+"
+drop cascades to server sqlite2

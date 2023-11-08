@@ -3145,14 +3145,14 @@ sqliteImportForeignSchema(ImportForeignSchemaStmt *stmt,
 				bool		not_null;
 				char	   *default_val;
 				int			primary_key;
-				int			rc = sqlite3_step(pragma_stmt);
+				int			rc1 = sqlite3_step(pragma_stmt);
 
-				if (rc == SQLITE_DONE)
+				if (rc1 == SQLITE_DONE)
 					break;
-				else if (rc != SQLITE_ROW)
+				else if (rc1 != SQLITE_ROW)
 				{
 					/* Not pass sql_stmt because it is finalized in PG_CATCH */
-					sqlitefdw_report_error(ERROR, NULL, db, sqlite3_sql(pragma_stmt), rc);
+					sqlitefdw_report_error(ERROR, NULL, db, sqlite3_sql(pragma_stmt), rc1);
 				}
 				col_name = (char *) sqlite3_column_text(pragma_stmt, 1);
 				type_name = (char *) sqlite3_column_text(pragma_stmt, 2);

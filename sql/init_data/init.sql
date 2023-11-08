@@ -22,7 +22,8 @@ create table grem1_2 (a int primary key, b int generated always as (a * 2) store
 CREATE TABLE case_exp(c1 int primary key, c3 text, c6 varchar(10));
 
 CREATE TABLE "type_STRING" (col text primary key);
-CREATE TABLE "type_BOOLEAN" (col boolean primary key);
+CREATE TABLE "type_BOOLEAN" (i int primary key, b boolean);
+CREATE VIEW  "type_BOOLEAN+" AS SELECT *, typeof("b") t, length("b") l FROM "type_BOOLEAN";
 CREATE TABLE "type_BYTE" (col char(1) primary key);
 CREATE TABLE "type_SINT" (col smallint primary key);
 CREATE TABLE "type_BINT" (col bigint primary key);
