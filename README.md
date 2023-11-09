@@ -595,9 +595,10 @@ Useful links
 
 License
 -------
+This FDW linensed under PostgreSQL-like license.
 
-Copyright (c) 2018, TOSHIBA CORPORATION
-Copyright (c) 2011 - 2016, EnterpriseDB Corporation
+Copyright © 2018 - 2024, TOSHIBA CORPORATION
+Copyright © 2011 - 2016, EnterpriseDB Corporation
 
 Permission to use, copy, modify, and distribute this software and its documentation for any purpose, without fee, and without a written agreement is hereby granted, provided that the above copyright notice and this paragraph and the following two paragraphs appear in all copies.
 

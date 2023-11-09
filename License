@@ -1,6 +1,8 @@
-SQLite Foreign Data Wrapper for PostgreSQL
+SQLite Foreign Data Wrapper for PostgreSQL linensed under
+The PostgreSQL Licence
+(for the newest text see https://opensource.org/license/postgresql/)
 
-Copyright (c) 2018, TOSHIBA CORPORATION
+Copyright (c) 2018 - 2024, TOSHIBA CORPORATION
 Copyright (c) 2011 - 2016, EnterpriseDB Corporation
 
 Permission to use, copy, modify, and distribute this software and its
