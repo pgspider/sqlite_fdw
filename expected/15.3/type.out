@@ -659,7 +659,7 @@ INSERT INTO "type_VARBIT" ("i", "b") VALUES (13, '010010010101100101001010100011
 --Testcase 238: very long bit string, expected ERROR, 65 bits
 INSERT INTO "type_VARBIT" ("i", "b") VALUES (14, '01001001010110010100101010001111101101011011011110110001010101010');
 ERROR:  SQLite FDW dosens't support very long bit/varbit data
-HINT:  bit length 65, maxmum 64
+HINT:  bit length 65, maximum 64
 --Testcase 239:
 SELECT * FROM "type_VARBIT+" WHERE "i" > 10;
  i  |                                b                                |    t    | l  
