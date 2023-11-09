@@ -39,6 +39,8 @@ int
 			sqlite_bind_blob_algo (int attnum, Datum value, sqlite3_stmt * stmt);
 static char *
 			sqlite_text_value_to_pg_db_encoding(sqlite3_stmt * stmt, int stmt_colid);
+static void
+			pg_column_void_text_error (Form_pg_attribute att);
 
 /*
  * convert_sqlite_to_pg: Convert Sqlite data into PostgreSQL's compatible data types
@@ -356,6 +358,9 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 					case SQLITE3_TEXT: /* <-- second proper and recommended SQLite affinity of value for pgtyp */
 					{
 						if (value_byte_size_blob_or_utf8)
+							/* SQLite UUID normalization added C function always get blob
+							 * form, of UUID, hence this case should cause error
+							 */
 							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
 						else
 							pg_column_void_text_error(att);
@@ -395,7 +400,8 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
  * Common part of extracting and preparing PostgreSQL bytea data
  * for SQLite binding as blob
  */
-int sqlite_bind_blob_algo (int attnum, Datum value, sqlite3_stmt * stmt)
+int
+sqlite_bind_blob_algo (int attnum, Datum value, sqlite3_stmt * stmt)
 {
 	int			len;
 	char	   *dat = NULL;
@@ -613,6 +619,7 @@ sqlite_affinity_eqv_to_pgtype(Oid type)
 		case NUMERICOID:
 			return SQLITE_FLOAT;
 		case BYTEAOID:
+		case UUIDOID:
 			return SQLITE_BLOB;
 		default:
 			return SQLITE3_TEXT;
@@ -623,7 +630,8 @@ sqlite_affinity_eqv_to_pgtype(Oid type)
  * Give equivalent string for SQLite data affinity by int from enum
  * SQLITE_INTEGER etc.
  */
-static const char* sqlite_datatype(int t)
+static const char*
+sqlite_datatype(int t)
 {
 	static const char *azType[] = { "?", "integer", "real", "text", "blob", "null" };
 	switch (t)
@@ -647,7 +655,8 @@ static const char* sqlite_datatype(int t)
  * Human readable message about disallowed combination of PostgreSQL columnn
  * data type and SQLite data value affinity
  */
-static void sqlite_value_to_pg_error (Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid, int sqlite_value_affinity, int affinity_for_pg_column, int value_byte_size_blob_or_utf8)
+static void
+sqlite_value_to_pg_error (Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid, int sqlite_value_affinity, int affinity_for_pg_column, int value_byte_size_blob_or_utf8)
 {
 	Oid			pgtyp = att->atttypid;
 	int32		pgtypmod = att->atttypmod;
@@ -689,11 +698,12 @@ pg_column_void_text_error (Form_pg_attribute att)
 
        pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(pgtyp, pgtypmod));
        ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-                                       errmsg("Void text disallowed for PostgreSQL \"%s\" column", pg_dataTypeName)
+                                       errmsg("Void text disallowed for PostgreSQL \"%s\" column", pg_dataTypeName),
                                        errhint("Column name \"%.*s\"", (int)sizeof(pgColND.data), pgColND.data)));
 }
 
-static char * sqlite_text_value_to_pg_db_encoding(sqlite3_stmt * stmt, int stmt_colid)
+static char *
+sqlite_text_value_to_pg_db_encoding(sqlite3_stmt * stmt, int stmt_colid)
 {
 	int pg_database_encoding = GetDatabaseEncoding(); /* very fast call, see PostgreSQL mbutils.c */
 	char *utf8_text_value;
