@@ -22,6 +22,7 @@ create table grem1_2 (a int primary key, b int generated always as (a * 2) store
 CREATE TABLE case_exp(c1 int primary key, c3 text, c6 varchar(10));
 
 CREATE TABLE "type_STRING" (col text primary key);
+CREATE TABLE "type_BOOLEANpk" (col boolean primary key);
 CREATE TABLE "type_BOOLEAN" (i int primary key, b boolean);
 CREATE VIEW  "type_BOOLEAN+" AS SELECT *, typeof("b") t, length("b") l FROM "type_BOOLEAN";
 CREATE TABLE "type_BYTE" (col char(1) primary key);
@@ -34,6 +35,7 @@ CREATE TABLE "type_TIMESTAMP" (col timestamp primary key, b timestamp);--, c dat
 CREATE TABLE "type_BLOB" (col blob primary key);
 CREATE TABLE "type_DATE" (col date primary key);
 CREATE TABLE "type_TIME" (col time primary key);
+CREATE TABLE "type_UUIDpk" (col uuid primary key);
 CREATE TABLE "type_UUID" (i int, u uuid);
 CREATE VIEW  "type_UUID+" AS SELECT *, typeof("u") t, length("u") l FROM "type_UUID";
 CREATE TABLE BitT (p integer primary key, a BIT(3), b BIT VARYING(5));
@@ -45,7 +47,7 @@ INSERT INTO  alltypetest VALUES (583647,   127,        12767,       388607,     
 
 -- a table that is missing some fields
 CREATE TABLE shorty (
-   id  integer primary key, 
+   id  integer primary key,
    c   character(10)
 );
 
