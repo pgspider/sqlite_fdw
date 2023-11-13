@@ -525,37 +525,164 @@ for `INSERT` and `UPDATE` commands.
 
 Tests
 -----
-Test directory have structure as following:
 
-```sql
-+---sql
-|   +---12.15
-|   |       filename1.sql
-|   |       filename2.sql
-|   |
-|   +---13.11
-|   |       filename1.sql
-|   |       filename2.sql
-|   |
-.................
-|   \---15.3
-|          filename1.sql
-|          filename2.sql
-|
-\---expected
-|   +---12.15
-|   |       filename1.out
-|   |       filename2.out
-|   |
-|   +---13.11
-|   |       filename1.out
-|   |       filename2.out
-|   |
-.................
-|   \---15.3
-            filename1.out
-            filename2.out
+To get multiversional testing PosgtreSQL environment select `cd` or make `mkdir`
+special directory and just execute inside
+```bash
+git clone 'git@github.com:pgspider/sqlite_fdw.git';
+cd sqlite_fdw;
+testing/get_environment.sh;
 ```
+This will run long downloading, configuring, compile and testing process for all
+availlable PostgreSQL versions for this FDW. Note `testing/get_environment.sh` file and `testing` directory will be purged, the scripts will be moved. If you will have no errors, you can test your own changes.
+
+After this long getting process  will be endded the following scripts will be availlable:
+* `../getmvpgenv.sh` - get (based on `git clone`) or refresh (based on `git pull`), configure, compile and test all PostgreSQL source code versions. First parameter - name of FDW directory, e. g. `sqlite_fdw`. Second parameter - address of multiversional source codes in `..` directory (e. g. from `sqlite_fdw`), default 'PostgreSQL source'.
+* `../mulver_test.sh` - do multiversional testing with existed in PostgreSQL sources code of tested fdw. First parameter - name of FDW directory for testing, e. g. `sqlite_fdw`, default 'PostgreSQL source'. Second parameter - address of multiversional source codes in `..` directory (e. g. from `sqlite_fdw`). Thitd parameter - number of tested version (e. g. `12_15`), otherewise for all.
+* `../new_mulver_cycle.sh`- do multiversional testing with code refreshed from your tested directory. First parameter - name of FDW directory for testing, e. g. `sqlite_fdw`. Second parameter - address of multiversional source codes in `..` directory (e. g. from `sqlite_fdw`), default 'PostgreSQL source'. Thitd parameter - number of tested version (e. g. `12_15`), otherewise for all.
+
+After script executing multiversional testing environment directory tree can be look like this. You can have near some directories for testing of the FDW. Just always use needed name as first parameter in scripts.
+
+```
+├── YOUR_TESTING_FDW_SOURCE_CODE_DIRECTORY
+├── OTHER_TESTING_FDW_SOURCE_CODE_DIRECTORY
+├── OTHER_BRANCH_TESTING_FDW_SOURCE_CODE_DIRECTORY
+├── get_environment.sh
+├── getmvpgenv.sh
+├── git sqlite_fdw
+├── mulver_test.sh
+├── new_mulver_cycle.sh
+├── PostgreSQL source # here are links to all results directories and diff files
+│   ├── 12_15_regr.diff -> REL_12_15/postgresql/contrib/sqlite_fdw/regression.diffs
+│   ├── 12_15_results -> REL_12_15/postgresql/contrib/sqlite_fdw/results/12.15
+│   ├── 13_11_regr.diff -> REL_13_11/postgresql/contrib/sqlite_fdw/regression.diffs
+│   ├── 13_11_results -> REL_13_11/postgresql/contrib/sqlite_fdw/results/13.11
+│   ├── 14_8_regr.diff -> REL_14_8/postgresql/contrib/sqlite_fdw/regression.diffs
+│   ├── 14_8_results -> REL_14_8/postgresql/contrib/sqlite_fdw/results/14.8
+│   ├── 15_3_regr.diff -> REL_15_3/postgresql/contrib/sqlite_fdw/regression.diffs
+│   ├── 15_3_results -> REL_15_3/postgresql/contrib/sqlite_fdw/results/15.3
+│   ├── 16_0_regr.diff -> REL_16_0/postgresql/contrib/sqlite_fdw/regression.diffs
+│   ├── 16_0_results -> REL_16_0/postgresql/contrib/sqlite_fdw/results/16.0
+│   ├── REL_12_15
+│   │   └── postgresql
+│   │       ├── aclocal.m4
+│   │       ├── config
+│   │       │   ├── ac_func_accept_argtypes.m4
+..............................
+│   │       ├── contrib
+│   │       │   ├── adminpack
+│   │       │   │   └── ............
+.....................................
+│   │       │   ├── sqlite_fdw
+│   │       │   │   └── ............
+│   │       │   │   
+.....................................
+
+│   ├── REL_13_11
+│   │   └── postgresql
+│   │       └── ............
+│   ├── REL_14_8
+│   │   └── postgresql
+│   │       └── ............
+.....................................
+```
+
+Test directory in the FDW source code directory have structure as following:
+
+```
+├── sql
+│   ├── 12.15
+│   │   ├── aggregate.sql
+│   │   ├── extra
+│   │   │   ├── aggregates.sql
+│   │   │   ├── encodings.sql
+│   │   │   ├── float4.sql
+│   │   │   ├── float8.sql
+│   │   │   ├── insert.sql
+│   │   │   ├── int4.sql
+│   │   │   ├── int8.sql
+│   │   │   ├── join.sql
+│   │   │   ├── limit.sql
+│   │   │   ├── numeric.sql
+│   │   │   ├── prepare.sql
+│   │   │   ├── select_having.sql
+│   │   │   ├── select.sql
+│   │   │   ├── sqlite_fdw_post.sql
+│   │   │   ├── timestamp.sql
+│   │   │   └── update.sql
+│   │   ├── selectfunc.sql
+│   │   ├── sqlite_fdw.sql
+│   │   └── type.sql
+│   ├── 13.11
+│   │   ├── ..............
+..............................
+│   │   └── type.sql
+│   ├── 14.8
+│   │   ├── ..............
+│   │   └── ..............
+│   ├── 15.3
+│   │   ├── ..............
+│   │   └── ..............
+│   ├── 16.0
+│   │   ├── ..............
+│   │   └── ..............
+│   └── init_data
+│       ├── agg.data
+│       ├── datetimes.data
+│       ├── init_core.sql
+│       ├── init_post.sql
+│       ├── init_selectfunc.sql
+│       ├── init.sql
+│       ├── onek.data
+│       ├── person.data
+│       ├── streets.data
+│       ├── student.data
+│       └── tenk.data
+└── expected
+    ├── 12.15
+    │   ├── aggregate.out
+    │   ├── extra
+    │   │   ├── aggregates.out
+    │   │   ├── encodings.out
+    │   │   ├── float4.out
+    │   │   ├── float8.out
+    │   │   ├── insert.out
+    │   │   ├── int4.out
+    │   │   ├── int8.out
+    │   │   ├── join.out
+    │   │   ├── limit.out
+    │   │   ├── numeric.out
+    │   │   ├── prepare.out
+    │   │   ├── select_having.out
+    │   │   ├── select.out
+    │   │   ├── sqlite_fdw_post.out
+    │   │   ├── timestamp.out
+    │   │   └── update.out
+    │   ├── selectfunc.out
+    │   ├── sqlite_fdw.out
+    │   └── type.out
+    ├── 13.11
+    │   ├── aggregate.out
+    │   ├── extra
+    │   │   ├── aggregates.out
+    │   │   ├── .............
+    │   │   ├── .............
+.................................
+    │   │   └── update.out
+    │   ├── selectfunc.out
+    │   ├── sqlite_fdw.out
+    │   └── type.out
+    ├── 14.8
+    │   ├── ..............
+    │   └── ..............
+    ├── 15.3
+    │   ├── ..............
+    │   └── ..............
+    └── 16.0
+        ├── ..............
+        └── ..............
+```
+
 The test cases for each version are based on the test of corresponding version of PostgreSQL.
 You can execute test by test.sh directly.
 The version of PostgreSQL is detected automatically by $(VERSION) variable in Makefile.

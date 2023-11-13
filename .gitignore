@@ -38,6 +38,7 @@
 
 # Log files
 log/
+make_check.out
 
 # Debug files
 *.dSYM/
@@ -59,3 +60,6 @@ dkms.conf
 x64/
 Debug/
 Release/
+
+#Getting scripts for multiversional testing environment
+testing
