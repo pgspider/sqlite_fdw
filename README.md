@@ -48,6 +48,7 @@ Features
 - `mod()` is pushdowned. In PostgreSQL gives [argument-dependend data type](https://www.postgresql.org/docs/current/functions-math.html), but result from SQLite always [have `real` affinity](https://www.sqlite.org/lang_mathfunc.html#mod).
 - `upper`, `lower` and other character case functions are **not** pushed down because they does not work with UNICODE character in SQLite.
 - `WITH TIES` option is **not** pushed down.
+- Bit string `#` (XOR) operator is **not** pushed down becasuse there is no equal SQLite operator.
 
 ### Notes about pushdowning
 
@@ -117,11 +118,10 @@ Usage
 ### Datatypes
 **WARNING! The table above represents roadmap**, work still in progress. Untill it will be ended please refer real behaviour in non-obvious cases, where there is no ✔ or ∅ mark.
 
-This table represents `sqlite_fdw` behaviour if in PostgreSQL foreign table column some [affinity](https://www.sqlite.org/datatype3.html) of SQLite data is detected.
+This table represents `sqlite_fdw` behaviour if in PostgreSQL foreign table column some [affinity](https://www.sqlite.org/datatype3.html) of SQLite data is detected. Some details about data values support see in [limitations](#limitations).
 
 * **∅** - no support (runtime error)
 * **V** - transparent transformation
-* **b** - show per-bit form
 * **T** - cast to text in SQLite utf-8 encoding, then to **PostgreSQL text with current encoding of database** and then transparent transformation if applicable
 * **✔** - transparent transformation where PostgreSQL datatype is equal to SQLite affinity
 * **V+** - transparent transformation if appliacable
@@ -133,7 +133,7 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 | PostgreSQL   | SQLite <br> INT  | SQLite <br> REAL | SQLite <br> BLOB | SQLite <br> TEXT | SQLite <br> TEXT but <br>empty|SQLite<br>nearest<br>affinity|
 |-------------:|:------------:|:------------:|:------------:|:------------:|:------------:|-------------:|
 |         bool |      V       |       ∅      |      T       |      V+      |      ∅       | INT          |
-|       bit(n) |      V       |       ∅      |      ∅       |      ∅       |      ∅       | INT          |
+|       bit(n) |    V n<=64   |       ∅      |      ∅       |      ∅       |      ∅       | INT          |
 |        bytea |      b       |       b      |      ✔       |      -       |      ?       | BLOB         |
 |         date |      V       |       V      |      T       |      V+      |    `NULL`    | ?            |
 |       float4 |      V+      |       ✔      |      T       |      -       |    `NULL`    | REAL         |
@@ -150,6 +150,7 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 |timestamp + tz|      V       |       V      |      T       |      V+      |    `NULL`    | ?            |
 |         uuid |      ∅       |       ∅      |V+<br>(only<br>16 bytes)| V+ |      ∅       | TEXT, BLOB   |
 |      varchar |      ?       |       ?      |      T       |      ✔       |      V       | TEXT         |
+|    varbit(n) |    V n<=64   |       ∅      |      V       |      ∅       |      ∅       | INT          |
 
 ### CREATE SERVER options
 
@@ -522,6 +523,10 @@ Limitations
 - Expected affinity of UUID value in SQLite table determined by `column_type` option of the column
 for `INSERT` and `UPDATE` commands. In PostgreSQL 14- only `text` data affinity is availlable, PostgreSQL 14+ supports also `blob` data affinity.
 
+### bit and varbit support
+- `sqlite_fdw` PostgreSQL `bit`/`varbit` values support based on `int` SQLite data affinity, because there is no per bit operations for SQLite `blob` affinity data. Maximum SQLite `int` affinity value is 8 bytes length, hence maximum `bit`/`varbit` values length is 64 bits.
+- `sqlite_fdw` doesn't pushdown `#` (XOR) operator becasuse there is no equal SQLite operator.
+
 Tests
 -----
 Test directory have structure as following:
@@ -565,10 +570,27 @@ Contributing
 
 Opening issues and pull requests on GitHub are welcome.
 For pull request, please make sure these items below for testing:
-- Create test cases (if needed) for the latest version of PostgreSQL supported by sqlite_fdw.
+- Create test cases (if needed) for the latest version of PostgreSQL supported by `sqlite_fdw`. All error testcases should have a comment about test purpose.
 - Execute test cases and update expectations for the latest version of PostgreSQL
 - Test creation and execution for other PostgreSQL versions are welcome but not required.
 
+Preferred code style see in PostgreSQL source codes. For example
+
+```C
+type
+funct_name (type arg ...)
+{
+	t1 var1 = value1;
+	t2 var2 = value2;
+
+	for (;;)
+	{
+	}
+	if ()
+	{
+	}
+}
+```
 Useful links
 ------------
 

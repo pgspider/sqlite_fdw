@@ -41,6 +41,8 @@ static char *
 			sqlite_text_value_to_pg_db_encoding(sqlite3_stmt * stmt, int stmt_colid);
 static void
 			pg_column_void_text_error (Form_pg_attribute att);
+static char *
+			int642binstr(sqlite3_int64 num, char *s, size_t len);
 
 /*
  * convert_sqlite_to_pg: Convert Sqlite data into PostgreSQL's compatible data types
@@ -149,6 +151,7 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 					case SQLITE_FLOAT: /* TODO: This code is untill mod() pushdowning fix here*/
 					{
 						int			value = sqlite3_column_int(stmt, stmt_colid);
+
 						elog(DEBUG2, "sqlite_fdw : real aff. was readed for pg int32");
 						return (struct NullableDatum) {Int32GetDatum(value), false};
 					}
@@ -181,9 +184,10 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 					case SQLITE_FLOAT: /* TODO: This code is untill mod() pushdowning fix here*/
 					{
 						int			value = sqlite3_column_int(stmt, stmt_colid);
+
 						elog(DEBUG2, "sqlite_fdw : real aff. was readed for pg int64");
 						return (struct NullableDatum) {Int32GetDatum(value), false};
-					}					
+					}
 					case SQLITE_BLOB:
 					default:
 						{
@@ -306,6 +310,7 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 					case SQLITE_FLOAT: /* <-- proper and recommended SQLite affinity of value for pgtyp */
 						{
 							double		value = sqlite3_column_double(stmt, stmt_colid);
+
 							valstr = DatumGetCString(DirectFunctionCall1(float8out, Float8GetDatum((float8) value)));
 							break; /* !!! use valstr later! */
 						}
@@ -349,6 +354,7 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 							{
 								const unsigned char * sqlite_blob = 0;
 								pg_uuid_t  *retval = (pg_uuid_t *) palloc0(sizeof(pg_uuid_t));
+
 								sqlite_blob = sqlite3_column_blob(stmt, stmt_colid);
 								memcpy(retval->data, sqlite_blob, UUID_LEN);
 								return (struct NullableDatum){UUIDPGetDatum(retval), false};
@@ -372,6 +378,17 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 						break;
 					}
 				}
+				break;
+			}
+		case VARBITOID:
+		case BITOID:
+			{
+				char * buffer = (char *) palloc0(SQLITE_FDW_BIT_DATATYPE_BUF_SIZE);
+				sqlite3_int64 sqlti = sqlite3_column_int64(stmt, stmt_colid);
+
+				buffer = int642binstr(sqlti, buffer, SQLITE_FDW_BIT_DATATYPE_BUF_SIZE);
+				valstr = buffer;
+				elog(DEBUG4, "sqlite_fdw : BIT buf l=%ld v = %s", SQLITE_FDW_BIT_DATATYPE_BUF_SIZE, buffer);
 				break;
 			}
 		/* some popular datatypes for default algorythm branch
@@ -563,13 +580,13 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 
 				if (uuid_as_blob)
 				{
-					unsigned char *dat = palloc0(UUID_LEN);		
+					unsigned char *dat = palloc0(UUID_LEN);
 					pg_uuid_t* pg_uuid = DatumGetUUIDP(value);
 					elog(DEBUG2, "sqlite_fdw : bind uuid as blob");
-					memcpy(dat, pg_uuid->data, UUID_LEN);					
+					memcpy(dat, pg_uuid->data, UUID_LEN);
 					ret = sqlite3_bind_blob(stmt, attnum, dat, UUID_LEN, SQLITE_TRANSIENT);
 				}
-				else 
+				else
 				{
 					/* uuid as text */
 					char	   *outputString = NULL;
@@ -579,6 +596,27 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 					outputString = OidOutputFunctionCall(outputFunctionId, value); /* uuid text belongs to ASCII subset, no need to translate encoding */
 					ret = sqlite3_bind_text(stmt, attnum, outputString, -1, SQLITE_TRANSIENT);
 				}
+				break;
+			}
+		case VARBITOID:
+		case BITOID:
+			{
+				sqlite3_int64 dat;
+				char	   *outputString = NULL;
+				Oid			outputFunctionId = InvalidOid;
+				bool		typeVarLength = false;
+
+				getTypeOutputInfo(type, &outputFunctionId, &typeVarLength);
+				outputString = OidOutputFunctionCall(outputFunctionId, value);
+				elog(DEBUG4, "sqlite_fdw : BIT bind  %s", outputString);
+				if (strlen(outputString) > SQLITE_FDW_BIT_DATATYPE_BUF_SIZE - 1 )
+				{
+					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+							errmsg("SQLite FDW dosens't support very long bit/varbit data"),
+							errhint("bit length %ld, maximum %ld", strlen(outputString), SQLITE_FDW_BIT_DATATYPE_BUF_SIZE - 1)));
+				}
+				dat = binstr2int64(outputString);
+				ret = sqlite3_bind_int64(stmt, attnum, dat);
 				break;
 			}
 		default:
@@ -716,4 +754,47 @@ sqlite_text_value_to_pg_db_encoding(sqlite3_stmt * stmt, int stmt_colid)
 	else
 		/* There is no UTF16 in PostgreSQL for fast sqlite3_column_text16, hence always convert */
 		return (char *) pg_do_encoding_conversion((unsigned char *) utf8_text_value, strlen(utf8_text_value), PG_UTF8, pg_database_encoding);
+}
+
+/*
+ * Converts int64 from SQLite to PostgreSQL string from 0 and 1 only
+ * s must be allocated with length not less than len + 1 bytes
+ */
+static char *
+int642binstr(sqlite3_int64 num, char *s, size_t len)
+{
+	s[--len] = '\0';
+    do
+		s[--len] = ((num & 1) ? '1' : '0');
+	while ((num >>= 1) != 0);
+    return s + len;
+}
+
+/*
+ * Converts PostgreSQL string from 0 and 1 only to int64 for SQLite
+ */
+sqlite3_int64
+binstr2int64(const char *s)
+{
+    sqlite3_int64 rc = 0;
+	char *bs = (char *)s;
+
+    for (; '\0' != *bs; bs++)
+    {
+		if ('1' == *bs)
+		{
+            rc = (rc * 2) + 1;
+        }
+        else if ('0' == *bs)
+        {
+            rc *= 2;
+        }
+        else
+        {
+			ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+							errmsg("Not 0 or 1 in bit string"),
+							errhint("value: %s", s)));
+        }
+    }
+    return rc;
 }

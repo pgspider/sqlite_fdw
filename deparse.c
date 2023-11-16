@@ -674,17 +674,17 @@ sqlite_foreign_expr_walker(Node *node,
 				ReleaseSysCache(tuple);
 
 				/*
-				 * Factorial (!) and Bitwise XOR (^) cannot be pushed down to
-				 * SQLite
+				 * Factorial (!) and Bitwise XOR (^), (#) 
+				 * cannot be pushed down to SQLite
+				 * Full list see in https://www.postgresql.org/docs/current/functions-bitstring.html
+				 * ILIKE cannot be pushed down to SQLite
+				 * Full list see in https://www.postgresql.org/docs/current/functions-matching.html
 				 */
 				if (strcmp(cur_opname, "!") == 0
-					|| strcmp(cur_opname, "^") == 0)
-				{
-					return false;
-				}
-
-				/* ILIKE cannot be pushed down to SQLite */
-				if (strcmp(cur_opname, "~~*") == 0 || strcmp(cur_opname, "!~~*") == 0)
+					|| strcmp(cur_opname, "^") == 0
+					|| strcmp(cur_opname, "#") == 0
+					|| strcmp(cur_opname, "~~*") == 0
+					|| strcmp(cur_opname, "!~~*") == 0)
 				{
 					return false;
 				}
@@ -2624,8 +2624,16 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 			break;
 		case BITOID:
 		case VARBITOID:
-			extval = OidOutputFunctionCall(typoutput, node->constvalue);
-			appendStringInfo(buf, "B\'%s\'", extval);
+			{
+				extval = OidOutputFunctionCall(typoutput, node->constvalue);
+				if (strlen(extval) > SQLITE_FDW_BIT_DATATYPE_BUF_SIZE - 1 )
+				{
+					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+							errmsg("SQLite FDW dosens't support very long bit/varbit data"),
+							errhint("bit length %ld, maxmum %ld", strlen(extval), SQLITE_FDW_BIT_DATATYPE_BUF_SIZE - 1)));
+				}
+				appendStringInfo(buf, "%lld", binstr2int64(extval));
+			}
 			break;
 		case BOOLOID:
 			{
@@ -2883,14 +2891,16 @@ sqlite_deparse_operator_name(StringInfo buf, Form_pg_operator opform)
 		}
 		else if (strcmp(cur_opname, "~~*") == 0 ||
 				 strcmp(cur_opname, "!~~*") == 0 ||
-				 strcmp(cur_opname, "~") == 0 ||
+				 /* ~ operator is both one of text RegEx operators and bit string NOT */
+				 (strcmp(cur_opname, "~") == 0 && opform->oprresult != VARBITOID && opform->oprresult != BITOID) ||
 				 strcmp(cur_opname, "!~") == 0 ||
 				 strcmp(cur_opname, "~*") == 0 ||
 				 strcmp(cur_opname, "!~*") == 0)
 		{
-			elog(ERROR, "OPERATOR is not supported");
+			ereport(ERROR, (errcode(ERRCODE_FDW_ERROR),
+							errmsg("SQL operator is not supported"),
+							errhint("operator name: %s", cur_opname)));
 		}
-
 		else
 		{
 			appendStringInfoString(buf, cur_opname);

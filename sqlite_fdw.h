@@ -43,6 +43,8 @@
 
 #define CR_NO_ERROR 0
 
+#define SQLITE_FDW_BIT_DATATYPE_BUF_SIZE sizeof(sqlite3_int64) * CHAR_BIT + 1
+
 #if (PG_VERSION_NUM < 120000)
 #define table_close(rel, lock)	heap_close(rel, lock)
 #define table_open(rel, lock)	heap_open(rel, lock)
@@ -379,5 +381,8 @@ void		sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite
 extern void sqlite_do_sql_command(sqlite3 * conn, const char *sql, int level, List **busy_connection);
 
 int sqlite_fdw_data_norm_functs_init(sqlite3* db);
+
+/* sqlite_query.c haders */
+sqlite3_int64 binstr2int64(const char *s);
 
 #endif							/* SQLITE_FDW_H */

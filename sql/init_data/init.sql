@@ -35,6 +35,10 @@ CREATE TABLE "type_TIMESTAMP" (col timestamp primary key, b timestamp);--, c dat
 CREATE TABLE "type_BLOB" (col blob primary key);
 CREATE TABLE "type_DATE" (col date primary key);
 CREATE TABLE "type_TIME" (col time primary key);
+CREATE TABLE "type_BIT" (i int, b bit);
+CREATE VIEW  "type_BIT+" AS SELECT *, typeof(b) t, length(b) l FROM "type_BIT";
+CREATE TABLE "type_VARBIT" (i int, b bit);
+CREATE VIEW  "type_VARBIT+" AS SELECT *, typeof(b) t, length(b) l FROM "type_VARBIT";
 CREATE TABLE "type_UUIDpk" (col uuid primary key);
 CREATE TABLE "type_UUID" (i int, u uuid);
 CREATE VIEW  "type_UUID+" AS SELECT *, typeof("u") t, length("u") l FROM "type_UUID";
