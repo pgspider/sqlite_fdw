@@ -510,7 +510,6 @@ SELECT * FROM "type_DOUBLE"; -- OK
 
 --Testcase 107:
 ALTER FOREIGN TABLE "type_DOUBLE" ALTER COLUMN col TYPE float8;
-
 --Testcase 199:
 DROP FOREIGN TABLE IF EXISTS "type_BIT";
 --Testcase 200:
@@ -1309,7 +1308,8 @@ SELECT "i", "b" FROM "type_BIT" WHERE (~ "b") IS NOT NULL;
 
 --Testcase 47:
 DROP EXTENSION sqlite_fdw CASCADE;
-NOTICE:  drop cascades to 48 other objects
+NOTICE:  drop cascades to 49 other objects
+DETAIL:  drop cascades to server sqlite_svr
 drop cascades to foreign table department
 drop cascades to foreign table employee
 drop cascades to foreign table empdata
@@ -1336,7 +1336,6 @@ drop cascades to foreign table "type_DATE"
 drop cascades to foreign table "type_TIME"
 drop cascades to foreign table "type_UUIDpk"
 drop cascades to foreign table "type_UUID"
-drop cascades to foreign table "type_UUID+"
 drop cascades to foreign table "BitT"
 drop cascades to foreign table notype
 drop cascades to foreign table typetest

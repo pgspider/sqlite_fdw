@@ -1308,7 +1308,7 @@ SELECT "i", "b" FROM "type_BIT" WHERE (~ "b") IS NOT NULL;
 
 --Testcase 47:
 DROP EXTENSION sqlite_fdw CASCADE;
-NOTICE:  drop cascades to 47 other objects
+NOTICE:  drop cascades to 49 other objects
 DETAIL:  drop cascades to server sqlite_svr
 drop cascades to foreign table department
 drop cascades to foreign table employee
