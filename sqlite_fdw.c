@@ -1114,8 +1114,6 @@ sqliteGetForeignPaths(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntableid
 		ParamPathInfo *param_info = (ParamPathInfo *) lfirst(lc);
 		double		rows;
 		int			width;
-		Cost		startup_cost;
-		Cost		total_cost;
 
 		/* Get a cost estimate from the remote */
 		sqlite_estimate_path_cost_size(root, baserel,
@@ -3145,8 +3143,8 @@ sqliteImportForeignSchema(ImportForeignSchemaStmt *stmt,
 				bool		not_null;
 				char	   *default_val;
 				int			primary_key;
-				int			rc = sqlite3_step(pragma_stmt);
-
+				
+				rc = sqlite3_step(pragma_stmt);
 				if (rc == SQLITE_DONE)
 					break;
 				else if (rc != SQLITE_ROW)
@@ -3758,7 +3756,7 @@ sqlite_foreign_grouping_ok(PlannerInfo *root, RelOptInfo *grouped_rel)
 	PathTarget *grouping_target;
 	SqliteFdwRelationInfo *fpinfo = (SqliteFdwRelationInfo *) grouped_rel->fdw_private;
 	SqliteFdwRelationInfo *ofpinfo;
-	List	   *aggvars;
+	List	   *aggvars = NIL;
 	ListCell   *lc;
 	int			i;
 	List	   *tlist = NIL;
@@ -3934,8 +3932,6 @@ sqlite_foreign_grouping_ok(PlannerInfo *root, RelOptInfo *grouped_rel)
 	 */
 	if (fpinfo->local_conds)
 	{
-		List	   *aggvars = NIL;
-
 		foreach(lc, fpinfo->local_conds)
 		{
 			RestrictInfo *rinfo = lfirst_node(RestrictInfo, lc);

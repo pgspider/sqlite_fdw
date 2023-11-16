@@ -309,7 +309,7 @@ SELECT * FROM type_JSON;
 DELETE FROM type_JSON;
 -- drop column
 --Testcase 62:
-DROP FOREIGN TABLE "type_BOOLEAN";
+DROP FOREIGN TABLE IF EXISTS "type_BOOLEAN";
 --Testcase 63:
 CREATE FOREIGN TABLE "type_BOOLEAN" (colx int, col boolean) SERVER sqlite_svr;
 --Testcase 64:
@@ -500,7 +500,7 @@ SELECT * FROM "type_DOUBLE"; -- OK
 --Testcase 107:
 ALTER FOREIGN TABLE "type_DOUBLE" ALTER COLUMN col TYPE float8;
 --Testcase 108:
-DROP FOREIGN TABLE "type_UUID";
+DROP FOREIGN TABLE IF EXISTS "type_UUID";
 --Testcase 109:
 CREATE FOREIGN TABLE "type_UUID"( "i" int OPTIONS (key 'true'), "u" uuid) SERVER sqlite_svr OPTIONS (table 'type_UUID');
 --Testcase 110:
@@ -995,9 +995,763 @@ SELECT * FROM "type_UUID+" WHERE "u" IS NOT NULL;
    SQLite query: SELECT `i`, coalesce(sqlite_fdw_uuid_blob(`u`),`u`), `t`, `l` FROM main."type_UUID+" WHERE ((coalesce(sqlite_fdw_uuid_blob(`u`),`u`) IS NOT NULL))
 (3 rows)
 
+--Testcase 199:
+DROP FOREIGN TABLE IF EXISTS "type_BIT";
+--Testcase 200:
+CREATE FOREIGN TABLE "type_BIT"( "i" int OPTIONS (key 'true'), "b" bit(6)) SERVER sqlite_svr OPTIONS (table 'type_BIT');
+--Testcase 201:
+DROP FOREIGN TABLE IF EXISTS "type_BIT+";
+NOTICE:  foreign table "type_BIT+" does not exist, skipping
+--Testcase 202:
+CREATE FOREIGN TABLE "type_BIT+"( "i" int OPTIONS (key 'true'), "b" bit(6), "t" text, "l" smallint, "bi" bigint OPTIONS (column_name 'b')) SERVER sqlite_svr OPTIONS (table 'type_BIT+');
+--Testcase 203: type mismatch
+INSERT INTO "type_BIT" ("i", "b") VALUES (1, 1);
+ERROR:  column "b" is of type bit but expression is of type integer
+LINE 1: INSERT INTO "type_BIT" ("i", "b") VALUES (1, 1);
+                                                     ^
+HINT:  You will need to rewrite or cast the expression.
+--Testcase 204: type mismatch
+INSERT INTO "type_BIT" ("i", "b") VALUES (2, 2);
+ERROR:  column "b" is of type bit but expression is of type integer
+LINE 1: INSERT INTO "type_BIT" ("i", "b") VALUES (2, 2);
+                                                     ^
+HINT:  You will need to rewrite or cast the expression.
+--Testcase 205: improper data length
+INSERT INTO "type_BIT" ("i", "b") VALUES (3, '1');
+ERROR:  bit string length 1 does not match type bit(6)
+--Testcase 206: improper data length
+INSERT INTO "type_BIT" ("i", "b") VALUES (4, '10');
+ERROR:  bit string length 2 does not match type bit(6)
+--Testcase 207: improper data length
+INSERT INTO "type_BIT" ("i", "b") VALUES (5, '101');
+ERROR:  bit string length 3 does not match type bit(6)
+--Testcase 208:
+INSERT INTO "type_BIT" ("i", "b") VALUES (6, '110110');
+--Testcase 209:
+INSERT INTO "type_BIT" ("i", "b") VALUES (7, '111001');
+--Testcase 210:
+INSERT INTO "type_BIT" ("i", "b") VALUES (8, '110000');
+--Testcase 211:
+INSERT INTO "type_BIT" ("i", "b") VALUES (9, '100001');
+--Testcase 212: type mismatch with proper data length
+INSERT INTO "type_BIT" ("i", "b") VALUES (10, 53);
+ERROR:  column "b" is of type bit but expression is of type integer
+LINE 1: INSERT INTO "type_BIT" ("i", "b") VALUES (10, 53);
+                                                      ^
+HINT:  You will need to rewrite or cast the expression.
+--Testcase 213:
+SELECT * FROM "type_BIT+";
+ i |   b    |    t    | l | bi 
+---+--------+---------+---+----
+ 6 | 110110 | integer | 2 | 54
+ 7 | 111001 | integer | 2 | 57
+ 8 | 110000 | integer | 2 | 48
+ 9 | 100001 | integer | 2 | 33
+(4 rows)
+
+--Testcase 214:
+SELECT * FROM "type_BIT" WHERE b < '110110';
+ i |   b    
+---+--------
+ 8 | 110000
+ 9 | 100001
+(2 rows)
+
+--Testcase 215:
+SELECT * FROM "type_BIT" WHERE b > '110110';
+ i |   b    
+---+--------
+ 7 | 111001
+(1 row)
+
+--Testcase 216:
+SELECT * FROM "type_BIT" WHERE b = '110110';
+ i |   b    
+---+--------
+ 6 | 110110
+(1 row)
+
+--Testcase 217:
+DROP FOREIGN TABLE IF EXISTS "type_VARBIT";
+--Testcase 218:
+CREATE FOREIGN TABLE "type_VARBIT"( "i" int OPTIONS (key 'true'), "b" varbit(70)) SERVER sqlite_svr OPTIONS (table 'type_VARBIT');
+--Testcase 219:
+DROP FOREIGN TABLE IF EXISTS "type_VARBIT+";
+NOTICE:  foreign table "type_VARBIT+" does not exist, skipping
+--Testcase 220:
+CREATE FOREIGN TABLE "type_VARBIT+"( "i" int OPTIONS (key 'true'), "b" varbit(70), "t" text, "l" smallint) SERVER sqlite_svr OPTIONS (table 'type_VARBIT+');
+--Testcase 221:
+INSERT INTO "type_VARBIT" ("i", "b") VALUES (1, '1');
+--Testcase 222:
+INSERT INTO "type_VARBIT" ("i", "b") VALUES (2, '10');
+--Testcase 223:
+INSERT INTO "type_VARBIT" ("i", "b") VALUES (3, '11');
+--Testcase 224:
+INSERT INTO "type_VARBIT" ("i", "b") VALUES (4, '100');
+--Testcase 225:
+INSERT INTO "type_VARBIT" ("i", "b") VALUES (5, '101');
+--Testcase 226:
+INSERT INTO "type_VARBIT" ("i", "b") VALUES (6, '110110');
+--Testcase 227:
+INSERT INTO "type_VARBIT" ("i", "b") VALUES (7, '111001');
+--Testcase 228:
+INSERT INTO "type_VARBIT" ("i", "b") VALUES (8, '110000');
+--Testcase 229:
+INSERT INTO "type_VARBIT" ("i", "b") VALUES (9, '100001');
+--Testcase 230:
+INSERT INTO "type_VARBIT" ("i", "b") VALUES (10, '0100100101011001010010101000111110110101101101111011000101010');
+--Testcase 231:
+INSERT INTO "type_VARBIT" ("i", "b") VALUES (11, '01001001010110010100101010001111101101011011011110110001010101');
+--Testcase 232
+SELECT * FROM "type_VARBIT+";
+ i  |                               b                               |    t    | l  
+----+---------------------------------------------------------------+---------+----
+  1 | 1                                                             | integer |  1
+  2 | 10                                                            | integer |  1
+  3 | 11                                                            | integer |  1
+  4 | 100                                                           | integer |  1
+  5 | 101                                                           | integer |  1
+  6 | 110110                                                        | integer |  2
+  7 | 111001                                                        | integer |  2
+  8 | 110000                                                        | integer |  2
+  9 | 100001                                                        | integer |  2
+ 10 | 100100101011001010010101000111110110101101101111011000101010  | integer | 18
+ 11 | 1001001010110010100101010001111101101011011011110110001010101 | integer | 19
+(11 rows)
+
+--Testcase 233:
+SELECT * FROM "type_VARBIT+" WHERE b < '110110';
+ i |   b    |    t    | l 
+---+--------+---------+---
+ 1 | 1      | integer | 1
+ 2 | 10     | integer | 1
+ 3 | 11     | integer | 1
+ 4 | 100    | integer | 1
+ 5 | 101    | integer | 1
+ 8 | 110000 | integer | 2
+ 9 | 100001 | integer | 2
+(7 rows)
+
+--Testcase 234:
+SELECT * FROM "type_VARBIT+" WHERE b > '110110';
+ i  |                               b                               |    t    | l  
+----+---------------------------------------------------------------+---------+----
+  7 | 111001                                                        | integer |  2
+ 10 | 100100101011001010010101000111110110101101101111011000101010  | integer | 18
+ 11 | 1001001010110010100101010001111101101011011011110110001010101 | integer | 19
+(3 rows)
+
+--Testcase 235:
+SELECT * FROM "type_VARBIT+" WHERE b = '110110';
+ i |   b    |    t    | l 
+---+--------+---------+---
+ 6 | 110110 | integer | 2
+(1 row)
+
+--Testcase 236:
+INSERT INTO "type_VARBIT" ("i", "b") VALUES (12, '010010010101100101001010100011111011010110110111101100010101010');
+--Testcase 237:
+INSERT INTO "type_VARBIT" ("i", "b") VALUES (13, '0100100101011001010010101000111110110101101101111011000101010101');
+--Testcase 238: very long bit string, expected ERROR, 65 bits
+INSERT INTO "type_VARBIT" ("i", "b") VALUES (14, '01001001010110010100101010001111101101011011011110110001010101010');
+ERROR:  SQLite FDW dosens't support very long bit/varbit data
+HINT:  bit length 65, maximum 64
+--Testcase 239:
+SELECT * FROM "type_VARBIT+" WHERE "i" > 10;
+ i  |                                b                                |    t    | l  
+----+-----------------------------------------------------------------+---------+----
+ 11 | 1001001010110010100101010001111101101011011011110110001010101   | integer | 19
+ 12 | 10010010101100101001010100011111011010110110111101100010101010  | integer | 19
+ 13 | 100100101011001010010101000111110110101101101111011000101010101 | integer | 19
+(3 rows)
+
+--Testcase 240:
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" | b2."b" "res" FROM "type_BIT" b1 INNER JOIN "type_BIT" b2 ON true WHERE (b1."b" >> 2) < (b1."b" & b2."b");
+ i₁ |   b₁   | i₂ |   b₂   |  res   
+----+--------+----+--------+--------
+  6 | 110110 |  6 | 110110 | 110110
+  6 | 110110 |  7 | 111001 | 111111
+  6 | 110110 |  8 | 110000 | 110110
+  6 | 110110 |  9 | 100001 | 110111
+  7 | 111001 |  6 | 110110 | 111111
+  7 | 111001 |  7 | 111001 | 111001
+  7 | 111001 |  8 | 110000 | 111001
+  7 | 111001 |  9 | 100001 | 111001
+  8 | 110000 |  6 | 110110 | 110110
+  8 | 110000 |  7 | 111001 | 111001
+  8 | 110000 |  8 | 110000 | 110000
+  8 | 110000 |  9 | 100001 | 110001
+  9 | 100001 |  6 | 110110 | 110111
+  9 | 100001 |  7 | 111001 | 111001
+  9 | 100001 |  8 | 110000 | 110001
+  9 | 100001 |  9 | 100001 | 100001
+(16 rows)
+
+--Testcase 241:
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" & b2."b" "res" FROM "type_BIT" b1 INNER JOIN "type_BIT" b2 ON true WHERE (b1."b" >> 2) < (b1."b" & b2."b");
+ i₁ |   b₁   | i₂ |   b₂   |  res   
+----+--------+----+--------+--------
+  6 | 110110 |  6 | 110110 | 110110
+  6 | 110110 |  7 | 111001 | 110000
+  6 | 110110 |  8 | 110000 | 110000
+  6 | 110110 |  9 | 100001 | 100000
+  7 | 111001 |  6 | 110110 | 110000
+  7 | 111001 |  7 | 111001 | 111001
+  7 | 111001 |  8 | 110000 | 110000
+  7 | 111001 |  9 | 100001 | 100001
+  8 | 110000 |  6 | 110110 | 110000
+  8 | 110000 |  7 | 111001 | 110000
+  8 | 110000 |  8 | 110000 | 110000
+  8 | 110000 |  9 | 100001 | 100000
+  9 | 100001 |  6 | 110110 | 100000
+  9 | 100001 |  7 | 111001 | 100001
+  9 | 100001 |  8 | 110000 | 100000
+  9 | 100001 |  9 | 100001 | 100001
+(16 rows)
+
+--Testcase 242:
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" # b2."b" "res" FROM "type_BIT" b1 INNER JOIN "type_BIT" b2 ON true WHERE (b1."b" >> 2) < (b1."b" & b2."b");
+ i₁ |   b₁   | i₂ |   b₂   |  res   
+----+--------+----+--------+--------
+  6 | 110110 |  6 | 110110 | 000000
+  6 | 110110 |  7 | 111001 | 001111
+  6 | 110110 |  8 | 110000 | 000110
+  6 | 110110 |  9 | 100001 | 010111
+  7 | 111001 |  6 | 110110 | 001111
+  7 | 111001 |  7 | 111001 | 000000
+  7 | 111001 |  8 | 110000 | 001001
+  7 | 111001 |  9 | 100001 | 011000
+  8 | 110000 |  6 | 110110 | 000110
+  8 | 110000 |  7 | 111001 | 001001
+  8 | 110000 |  8 | 110000 | 000000
+  8 | 110000 |  9 | 100001 | 010001
+  9 | 100001 |  6 | 110110 | 010111
+  9 | 100001 |  7 | 111001 | 011000
+  9 | 100001 |  8 | 110000 | 010001
+  9 | 100001 |  9 | 100001 | 000000
+(16 rows)
+
+--Testcase 243:
+SELECT "i", "b", "b" >> 2 "res" FROM "type_BIT";
+ i |   b    |  res   
+---+--------+--------
+ 6 | 110110 | 001101
+ 7 | 111001 | 001110
+ 8 | 110000 | 001100
+ 9 | 100001 | 001000
+(4 rows)
+
+--Testcase 244:
+SELECT "i", "b", "b" << 3 "res" FROM "type_BIT";
+ i |   b    |  res   
+---+--------+--------
+ 6 | 110110 | 110000
+ 7 | 111001 | 001000
+ 8 | 110000 | 000000
+ 9 | 100001 | 001000
+(4 rows)
+
+--Testcase 245:
+SELECT "i", "b", ~ "b" "res" FROM "type_BIT";
+ i |   b    |  res   
+---+--------+--------
+ 6 | 110110 | 001001
+ 7 | 111001 | 000110
+ 8 | 110000 | 001111
+ 9 | 100001 | 011110
+(4 rows)
+
+--Testcase 246:
+EXPLAIN VERBOSE
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" | b2."b" "res" FROM "type_BIT" b1 INNER JOIN "type_BIT" b2 ON true WHERE (b1."b" >> 2) < (b1."b" & b2."b");
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan  (cost=100.00..73691.22 rows=1633932 width=58)
+   Output: b1.i, b1.b, b2.i, b2.b, (b1.b | b2.b)
+   SQLite query: SELECT r1.`i`, r1.`b`, r2.`i`, r2.`b` FROM (main."type_BIT" r1 INNER JOIN main."type_BIT" r2 ON ((((r1.`b` >> 2) < (r1.`b` & r2.`b`)))))
+(3 rows)
+
+--Testcase 247:
+EXPLAIN VERBOSE
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" & b2."b" "res" FROM "type_BIT" b1 INNER JOIN "type_BIT" b2 ON true WHERE (b1."b" >> 2) < (b1."b" & b2."b");
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan  (cost=100.00..73691.22 rows=1633932 width=58)
+   Output: b1.i, b1.b, b2.i, b2.b, (b1.b & b2.b)
+   SQLite query: SELECT r1.`i`, r1.`b`, r2.`i`, r2.`b` FROM (main."type_BIT" r1 INNER JOIN main."type_BIT" r2 ON ((((r1.`b` >> 2) < (r1.`b` & r2.`b`)))))
+(3 rows)
+
+--Testcase 248:
+EXPLAIN VERBOSE
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" # b2."b" "res" FROM "type_BIT" b1 INNER JOIN "type_BIT" b2 ON true WHERE (b1."b" >> 2) < (b1."b" & b2."b");
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan  (cost=100.00..73691.22 rows=1633932 width=58)
+   Output: b1.i, b1.b, b2.i, b2.b, (b1.b # b2.b)
+   SQLite query: SELECT r1.`i`, r1.`b`, r2.`i`, r2.`b` FROM (main."type_BIT" r1 INNER JOIN main."type_BIT" r2 ON ((((r1.`b` >> 2) < (r1.`b` & r2.`b`)))))
+(3 rows)
+
+--Testcase 249:
+EXPLAIN VERBOSE
+SELECT "i", "b", "b" >> 2 "res" FROM "type_BIT";
+                                 QUERY PLAN                                  
+-----------------------------------------------------------------------------
+ Foreign Scan on public."type_BIT"  (cost=10.00..2219.53 rows=2214 width=45)
+   Output: i, b, (b >> 2)
+   SQLite query: SELECT `i`, `b` FROM main."type_BIT"
+(3 rows)
+
+--Testcase 250:
+EXPLAIN VERBOSE
+SELECT "i", "b", "b" << 3 "res" FROM "type_BIT";
+                                 QUERY PLAN                                  
+-----------------------------------------------------------------------------
+ Foreign Scan on public."type_BIT"  (cost=10.00..2219.53 rows=2214 width=45)
+   Output: i, b, (b << 3)
+   SQLite query: SELECT `i`, `b` FROM main."type_BIT"
+(3 rows)
+
+--Testcase 251:
+EXPLAIN VERBOSE
+SELECT "i", "b", ~ "b" "res" FROM "type_BIT";
+                                 QUERY PLAN                                  
+-----------------------------------------------------------------------------
+ Foreign Scan on public."type_BIT"  (cost=10.00..2219.53 rows=2214 width=45)
+   Output: i, b, (~ b)
+   SQLite query: SELECT `i`, `b` FROM main."type_BIT"
+(3 rows)
+
+--Testcase 252: bit strings of different sizes
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" | b2."b" "res" FROM "type_VARBIT" b1 INNER JOIN "type_VARBIT" b2 ON true WHERE (b1."b" >> 2) < (b1."b" & b2."b");
+ERROR:  cannot OR bit strings of different sizes
+--Testcase 253: bit strings of different sizes
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" & b2."b" "res" FROM "type_VARBIT" b1 INNER JOIN "type_VARBIT" b2 ON true WHERE (b1."b" >> 2) < (b1."b" & b2."b");
+ERROR:  cannot AND bit strings of different sizes
+--Testcase 254: bit strings of different sizes
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" # b2."b" "res" FROM "type_VARBIT" b1 INNER JOIN "type_VARBIT" b2 ON true WHERE (b1."b" >> 2) < (b1."b" & b2."b");
+ERROR:  cannot XOR bit strings of different sizes
+--Testcase 255:
+SELECT "i", "b", "b" >> 2 "res" FROM "type_VARBIT";
+ i  |                                b                                |                               res                               
+----+-----------------------------------------------------------------+-----------------------------------------------------------------
+  1 | 1                                                               | 0
+  2 | 10                                                              | 00
+  3 | 11                                                              | 00
+  4 | 100                                                             | 001
+  5 | 101                                                             | 001
+  6 | 110110                                                          | 001101
+  7 | 111001                                                          | 001110
+  8 | 110000                                                          | 001100
+  9 | 100001                                                          | 001000
+ 10 | 100100101011001010010101000111110110101101101111011000101010    | 001001001010110010100101010001111101101011011011110110001010
+ 11 | 1001001010110010100101010001111101101011011011110110001010101   | 0010010010101100101001010100011111011010110110111101100010101
+ 12 | 10010010101100101001010100011111011010110110111101100010101010  | 00100100101011001010010101000111110110101101101111011000101010
+ 13 | 100100101011001010010101000111110110101101101111011000101010101 | 001001001010110010100101010001111101101011011011110110001010101
+(13 rows)
+
+--Testcase 256:
+SELECT "i", "b", "b" << 3 "res" FROM "type_VARBIT";
+ i  |                                b                                |                               res                               
+----+-----------------------------------------------------------------+-----------------------------------------------------------------
+  1 | 1                                                               | 0
+  2 | 10                                                              | 00
+  3 | 11                                                              | 00
+  4 | 100                                                             | 000
+  5 | 101                                                             | 000
+  6 | 110110                                                          | 110000
+  7 | 111001                                                          | 001000
+  8 | 110000                                                          | 000000
+  9 | 100001                                                          | 001000
+ 10 | 100100101011001010010101000111110110101101101111011000101010    | 100101011001010010101000111110110101101101111011000101010000
+ 11 | 1001001010110010100101010001111101101011011011110110001010101   | 1001010110010100101010001111101101011011011110110001010101000
+ 12 | 10010010101100101001010100011111011010110110111101100010101010  | 10010101100101001010100011111011010110110111101100010101010000
+ 13 | 100100101011001010010101000111110110101101101111011000101010101 | 100101011001010010101000111110110101101101111011000101010101000
+(13 rows)
+
+--Testcase 257:
+SELECT "i", "b", ~ "b" "res" FROM "type_VARBIT";
+ i  |                                b                                |                               res                               
+----+-----------------------------------------------------------------+-----------------------------------------------------------------
+  1 | 1                                                               | 0
+  2 | 10                                                              | 01
+  3 | 11                                                              | 00
+  4 | 100                                                             | 011
+  5 | 101                                                             | 010
+  6 | 110110                                                          | 001001
+  7 | 111001                                                          | 000110
+  8 | 110000                                                          | 001111
+  9 | 100001                                                          | 011110
+ 10 | 100100101011001010010101000111110110101101101111011000101010    | 011011010100110101101010111000001001010010010000100111010101
+ 11 | 1001001010110010100101010001111101101011011011110110001010101   | 0110110101001101011010101110000010010100100100001001110101010
+ 12 | 10010010101100101001010100011111011010110110111101100010101010  | 01101101010011010110101011100000100101001001000010011101010101
+ 13 | 100100101011001010010101000111110110101101101111011000101010101 | 011011010100110101101010111000001001010010010000100111010101010
+(13 rows)
+
+--Testcase 258:
+EXPLAIN VERBOSE
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" | b2."b" "res" FROM "type_VARBIT" b1 INNER JOIN "type_VARBIT" b2 ON true WHERE (b1."b" >> 2) < (b1."b" & b2."b");
+                                                                           QUERY PLAN                                                                           
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan  (cost=100.00..49842.39 rows=1104133 width=74)
+   Output: b1.i, b1.b, b2.i, b2.b, ((b1.b)::"bit" | (b2.b)::"bit")
+   SQLite query: SELECT r1.`i`, r1.`b`, r2.`i`, r2.`b` FROM (main."type_VARBIT" r1 INNER JOIN main."type_VARBIT" r2 ON ((((r1.`b` >> 2) < (r1.`b` & r2.`b`)))))
+(3 rows)
+
+--Testcase 259:
+EXPLAIN VERBOSE
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" & b2."b" "res" FROM "type_VARBIT" b1 INNER JOIN "type_VARBIT" b2 ON true WHERE (b1."b" >> 2) < (b1."b" & b2."b");
+                                                                           QUERY PLAN                                                                           
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan  (cost=100.00..49842.39 rows=1104133 width=74)
+   Output: b1.i, b1.b, b2.i, b2.b, ((b1.b)::"bit" & (b2.b)::"bit")
+   SQLite query: SELECT r1.`i`, r1.`b`, r2.`i`, r2.`b` FROM (main."type_VARBIT" r1 INNER JOIN main."type_VARBIT" r2 ON ((((r1.`b` >> 2) < (r1.`b` & r2.`b`)))))
+(3 rows)
+
+--Testcase 260:
+EXPLAIN VERBOSE
+SELECT b1."i" "i₁", b1."b" "b₁", b2."i" "i₂", b2."b" "b₂", b1."b" # b2."b" "res" FROM "type_VARBIT" b1 INNER JOIN "type_VARBIT" b2 ON true WHERE (b1."b" >> 2) < (b1."b" & b2."b");
+                                                                           QUERY PLAN                                                                           
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan  (cost=100.00..49842.39 rows=1104133 width=74)
+   Output: b1.i, b1.b, b2.i, b2.b, ((b1.b)::"bit" # (b2.b)::"bit")
+   SQLite query: SELECT r1.`i`, r1.`b`, r2.`i`, r2.`b` FROM (main."type_VARBIT" r1 INNER JOIN main."type_VARBIT" r2 ON ((((r1.`b` >> 2) < (r1.`b` & r2.`b`)))))
+(3 rows)
+
+--Testcase 261:
+EXPLAIN VERBOSE
+SELECT "i", "b", "b" >> 2 "res" FROM "type_VARBIT";
+                                   QUERY PLAN                                   
+--------------------------------------------------------------------------------
+ Foreign Scan on public."type_VARBIT"  (cost=10.00..1824.55 rows=1820 width=53)
+   Output: i, b, ((b)::"bit" >> 2)
+   SQLite query: SELECT `i`, `b` FROM main."type_VARBIT"
+(3 rows)
+
+--Testcase 262:
+EXPLAIN VERBOSE
+SELECT "i", "b", "b" << 3 "res" FROM "type_VARBIT";
+                                   QUERY PLAN                                   
+--------------------------------------------------------------------------------
+ Foreign Scan on public."type_VARBIT"  (cost=10.00..1824.55 rows=1820 width=53)
+   Output: i, b, ((b)::"bit" << 3)
+   SQLite query: SELECT `i`, `b` FROM main."type_VARBIT"
+(3 rows)
+
+--Testcase 263:
+EXPLAIN VERBOSE
+SELECT "i", "b", ~ "b" "res" FROM "type_VARBIT";
+                                   QUERY PLAN                                   
+--------------------------------------------------------------------------------
+ Foreign Scan on public."type_VARBIT"  (cost=10.00..1824.55 rows=1820 width=53)
+   Output: i, b, (~ (b)::"bit")
+   SQLite query: SELECT `i`, `b` FROM main."type_VARBIT"
+(3 rows)
+
+--Testcase 264:
+SELECT "i", "b", "b" & B'101011' "res" FROM "type_BIT";
+ i |   b    |  res   
+---+--------+--------
+ 6 | 110110 | 100010
+ 7 | 111001 | 101001
+ 8 | 110000 | 100000
+ 9 | 100001 | 100001
+(4 rows)
+
+--Testcase 265:
+SELECT "i", "b", "b" | B'101011' "res" FROM "type_BIT";
+ i |   b    |  res   
+---+--------+--------
+ 6 | 110110 | 111111
+ 7 | 111001 | 111011
+ 8 | 110000 | 111011
+ 9 | 100001 | 101011
+(4 rows)
+
+--Testcase 266:
+SELECT "i", "b", "b" # B'101011' "res" FROM "type_BIT";
+ i |   b    |  res   
+---+--------+--------
+ 6 | 110110 | 011101
+ 7 | 111001 | 010010
+ 8 | 110000 | 011011
+ 9 | 100001 | 001010
+(4 rows)
+
+--Testcase 267:
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" & B'101011') IS NOT NULL;
+ i |   b    
+---+--------
+ 6 | 110110
+ 7 | 111001
+ 8 | 110000
+ 9 | 100001
+(4 rows)
+
+--Testcase 268:
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" | B'101011') IS NOT NULL;
+ i |   b    
+---+--------
+ 6 | 110110
+ 7 | 111001
+ 8 | 110000
+ 9 | 100001
+(4 rows)
+
+--Testcase 269:
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" # B'101011') IS NOT NULL;
+ i |   b    
+---+--------
+ 6 | 110110
+ 7 | 111001
+ 8 | 110000
+ 9 | 100001
+(4 rows)
+
+--Testcase 270:
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" >> 1) IS NOT NULL;
+ i |   b    
+---+--------
+ 6 | 110110
+ 7 | 111001
+ 8 | 110000
+ 9 | 100001
+(4 rows)
+
+--Testcase 271:
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" << 2) IS NOT NULL;
+ i |   b    
+---+--------
+ 6 | 110110
+ 7 | 111001
+ 8 | 110000
+ 9 | 100001
+(4 rows)
+
+--Testcase 272:
+SELECT "i", "b" FROM "type_BIT" WHERE (~ "b") IS NOT NULL;
+ i |   b    
+---+--------
+ 6 | 110110
+ 7 | 111001
+ 8 | 110000
+ 9 | 100001
+(4 rows)
+
+--Testcase 273:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" & B'101011') IS NOT NULL;
+                                      QUERY PLAN                                       
+---------------------------------------------------------------------------------------
+ Foreign Scan on public."type_BIT"  (cost=10.00..2203.00 rows=2203 width=13)
+   Output: i, b
+   SQLite query: SELECT `i`, `b` FROM main."type_BIT" WHERE (((`b` & 43) IS NOT NULL))
+(3 rows)
+
+--Testcase 274:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" | B'101011') IS NOT NULL;
+                                      QUERY PLAN                                       
+---------------------------------------------------------------------------------------
+ Foreign Scan on public."type_BIT"  (cost=10.00..2203.00 rows=2203 width=13)
+   Output: i, b
+   SQLite query: SELECT `i`, `b` FROM main."type_BIT" WHERE (((`b` | 43) IS NOT NULL))
+(3 rows)
+
+--Testcase 275:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" # B'101011') IS NOT NULL;
+                                 QUERY PLAN                                  
+-----------------------------------------------------------------------------
+ Foreign Scan on public."type_BIT"  (cost=10.00..2203.00 rows=2203 width=13)
+   Output: i, b
+   Filter: (("type_BIT".b # '101011'::"bit") IS NOT NULL)
+   SQLite query: SELECT `i`, `b` FROM main."type_BIT"
+(4 rows)
+
+--Testcase 276:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" >> 1) IS NOT NULL;
+                                      QUERY PLAN                                       
+---------------------------------------------------------------------------------------
+ Foreign Scan on public."type_BIT"  (cost=10.00..2203.00 rows=2203 width=13)
+   Output: i, b
+   SQLite query: SELECT `i`, `b` FROM main."type_BIT" WHERE (((`b` >> 1) IS NOT NULL))
+(3 rows)
+
+--Testcase 277:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" << 2) IS NOT NULL;
+                                      QUERY PLAN                                       
+---------------------------------------------------------------------------------------
+ Foreign Scan on public."type_BIT"  (cost=10.00..2203.00 rows=2203 width=13)
+   Output: i, b
+   SQLite query: SELECT `i`, `b` FROM main."type_BIT" WHERE (((`b` << 2) IS NOT NULL))
+(3 rows)
+
+--Testcase 278:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE (~ "b") IS NOT NULL;
+                                     QUERY PLAN                                     
+------------------------------------------------------------------------------------
+ Foreign Scan on public."type_BIT"  (cost=10.00..2203.00 rows=2203 width=13)
+   Output: i, b
+   SQLite query: SELECT `i`, `b` FROM main."type_BIT" WHERE (((~ `b`) IS NOT NULL))
+(3 rows)
+
+--Testcase 279:
+SELECT "i", "b", "b" & B'101011' "res" FROM "type_BIT";
+ i |   b    |  res   
+---+--------+--------
+ 6 | 110110 | 100010
+ 7 | 111001 | 101001
+ 8 | 110000 | 100000
+ 9 | 100001 | 100001
+(4 rows)
+
+--Testcase 280:
+SELECT "i", "b", "b" | B'101011' "res" FROM "type_BIT";
+ i |   b    |  res   
+---+--------+--------
+ 6 | 110110 | 111111
+ 7 | 111001 | 111011
+ 8 | 110000 | 111011
+ 9 | 100001 | 101011
+(4 rows)
+
+--Testcase 281:
+SELECT "i", "b", "b" # B'101011' "res" FROM "type_BIT";
+ i |   b    |  res   
+---+--------+--------
+ 6 | 110110 | 011101
+ 7 | 111001 | 010010
+ 8 | 110000 | 011011
+ 9 | 100001 | 001010
+(4 rows)
+
+--Testcase 282:
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" & B'101011') IS NOT NULL;
+ i |   b    
+---+--------
+ 6 | 110110
+ 7 | 111001
+ 8 | 110000
+ 9 | 100001
+(4 rows)
+
+--Testcase 283:
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" | B'101011') IS NOT NULL;
+ i |   b    
+---+--------
+ 6 | 110110
+ 7 | 111001
+ 8 | 110000
+ 9 | 100001
+(4 rows)
+
+--Testcase 284:
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" # B'101011') IS NOT NULL;
+ i |   b    
+---+--------
+ 6 | 110110
+ 7 | 111001
+ 8 | 110000
+ 9 | 100001
+(4 rows)
+
+--Testcase 285:
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" >> 1) IS NOT NULL;
+ i |   b    
+---+--------
+ 6 | 110110
+ 7 | 111001
+ 8 | 110000
+ 9 | 100001
+(4 rows)
+
+--Testcase 286:
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" << 2) IS NOT NULL;
+ i |   b    
+---+--------
+ 6 | 110110
+ 7 | 111001
+ 8 | 110000
+ 9 | 100001
+(4 rows)
+
+--Testcase 287:
+SELECT "i", "b" FROM "type_BIT" WHERE (~ "b") IS NOT NULL;
+ i |   b    
+---+--------
+ 6 | 110110
+ 7 | 111001
+ 8 | 110000
+ 9 | 100001
+(4 rows)
+
+--Testcase 288:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" & B'101011') IS NOT NULL;
+                                      QUERY PLAN                                       
+---------------------------------------------------------------------------------------
+ Foreign Scan on public."type_BIT"  (cost=10.00..2203.00 rows=2203 width=13)
+   Output: i, b
+   SQLite query: SELECT `i`, `b` FROM main."type_BIT" WHERE (((`b` & 43) IS NOT NULL))
+(3 rows)
+
+--Testcase 289:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" | B'101011') IS NOT NULL;
+                                      QUERY PLAN                                       
+---------------------------------------------------------------------------------------
+ Foreign Scan on public."type_BIT"  (cost=10.00..2203.00 rows=2203 width=13)
+   Output: i, b
+   SQLite query: SELECT `i`, `b` FROM main."type_BIT" WHERE (((`b` | 43) IS NOT NULL))
+(3 rows)
+
+--Testcase 290:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" # B'101011') IS NOT NULL;
+                                 QUERY PLAN                                  
+-----------------------------------------------------------------------------
+ Foreign Scan on public."type_BIT"  (cost=10.00..2203.00 rows=2203 width=13)
+   Output: i, b
+   Filter: (("type_BIT".b # '101011'::"bit") IS NOT NULL)
+   SQLite query: SELECT `i`, `b` FROM main."type_BIT"
+(4 rows)
+
+--Testcase 291:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" >> 1) IS NOT NULL;
+                                      QUERY PLAN                                       
+---------------------------------------------------------------------------------------
+ Foreign Scan on public."type_BIT"  (cost=10.00..2203.00 rows=2203 width=13)
+   Output: i, b
+   SQLite query: SELECT `i`, `b` FROM main."type_BIT" WHERE (((`b` >> 1) IS NOT NULL))
+(3 rows)
+
+--Testcase 292:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE ("b" << 2) IS NOT NULL;
+                                      QUERY PLAN                                       
+---------------------------------------------------------------------------------------
+ Foreign Scan on public."type_BIT"  (cost=10.00..2203.00 rows=2203 width=13)
+   Output: i, b
+   SQLite query: SELECT `i`, `b` FROM main."type_BIT" WHERE (((`b` << 2) IS NOT NULL))
+(3 rows)
+
+--Testcase 293:
+EXPLAIN VERBOSE
+SELECT "i", "b" FROM "type_BIT" WHERE (~ "b") IS NOT NULL;
+                                     QUERY PLAN                                     
+------------------------------------------------------------------------------------
+ Foreign Scan on public."type_BIT"  (cost=10.00..2203.00 rows=2203 width=13)
+   Output: i, b
+   SQLite query: SELECT `i`, `b` FROM main."type_BIT" WHERE (((~ `b`) IS NOT NULL))
+(3 rows)
+
 --Testcase 47:
 DROP EXTENSION sqlite_fdw CASCADE;
-NOTICE:  drop cascades to 44 other objects
+NOTICE:  drop cascades to 48 other objects
 DETAIL:  drop cascades to server sqlite_svr
 drop cascades to foreign table department
 drop cascades to foreign table employee
@@ -1041,4 +1795,8 @@ drop cascades to foreign table type_json
 drop cascades to foreign table "type_BOOLEAN"
 drop cascades to foreign table "type_UUID"
 drop cascades to foreign table "type_UUID+"
+drop cascades to foreign table "type_BIT"
+drop cascades to foreign table "type_BIT+"
+drop cascades to foreign table "type_VARBIT"
+drop cascades to foreign table "type_VARBIT+"
 drop cascades to server sqlite2
