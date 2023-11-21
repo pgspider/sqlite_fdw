@@ -1,11 +1,11 @@
 --SET log_min_messages  TO DEBUG1;
 --SET client_min_messages  TO DEBUG1;
---Testcase 44:
+--Testcase 000:
 CREATE EXTENSION sqlite_fdw;
---Testcase 45:
+--Testcase 001:
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlitefdw_test.db');
---Testcase 46:
+--Testcase 002:
 CREATE SERVER sqlite2 FOREIGN DATA WRAPPER sqlite_fdw;
 --Testcase 01:
 CREATE FOREIGN TABLE "type_BOOLEAN" (i int OPTIONS (key 'true'), b bool) SERVER sqlite_svr;
@@ -16,90 +16,90 @@ INSERT INTO "type_BOOLEAN"(i, b) VALUES (2, FALSE);
 --Testcase 04:
 CREATE FOREIGN TABLE "type_BOOLEAN+"( "i" int, "b" bool, "t" text, "l" smallint) SERVER sqlite_svr OPTIONS (table 'type_BOOLEAN+');
 --Testcase 05:
-INSERT INTO "type_BOOLEAN"(i, b) VALUES (3, TRUE);
+ALTER FOREIGN TABLE "type_BOOLEAN" ALTER COLUMN "b" TYPE text;
 --Testcase 06:
-INSERT INTO "type_BOOLEAN"(i, b) VALUES (4, FALSE);
+INSERT INTO "type_BOOLEAN"(i, b) VALUES (3, TRUE);
 --Testcase 07:
-INSERT INTO "type_BOOLEAN"(i, b) VALUES (5, true);
+INSERT INTO "type_BOOLEAN"(i, b) VALUES (4, FALSE);
 --Testcase 08:
-INSERT INTO "type_BOOLEAN"(i, b) VALUES (6, false);
+INSERT INTO "type_BOOLEAN"(i, b) VALUES (5, true);
 --Testcase 09:
-INSERT INTO "type_BOOLEAN" (i, b) VALUES (7, 'Yes');
+INSERT INTO "type_BOOLEAN"(i, b) VALUES (6, false);
 --Testcase 10:
-INSERT INTO "type_BOOLEAN" (i, b) VALUES (8, 'YeS');
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (7, 'Yes');
 --Testcase 11:
-INSERT INTO "type_BOOLEAN" (i, b) VALUES (9, 'yes');
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (8, 'YeS');
 --Testcase 12:
-INSERT INTO "type_BOOLEAN" (i, b) VALUES (10, 'no');
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (9, 'yes');
 --Testcase 13:
-INSERT INTO "type_BOOLEAN" (i, b) VALUES (11, 'No');
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (10, 'no');
 --Testcase 14:
-INSERT INTO "type_BOOLEAN" (i, b) VALUES (12, 'nO');
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (11, 'No');
 --Testcase 15:
-INSERT INTO "type_BOOLEAN" (i, b) VALUES (13, 'off');
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (12, 'nO');
 --Testcase 16:
-INSERT INTO "type_BOOLEAN" (i, b) VALUES (14, 'oFf');
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (13, 'off');
 --Testcase 17:
-INSERT INTO "type_BOOLEAN" (i, b) VALUES (15, 'on');
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (14, 'oFf');
 --Testcase 18:
-INSERT INTO "type_BOOLEAN" (i, b) VALUES (16, 'ON');
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (15, 'on');
 --Testcase 19:
-INSERT INTO "type_BOOLEAN" (i, b) VALUES (17, 't');
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (16, 'ON');
 --Testcase 20:
-INSERT INTO "type_BOOLEAN" (i, b) VALUES (18, 'T');
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (17, 't');
 --Testcase 21:
-INSERT INTO "type_BOOLEAN" (i, b) VALUES (19, 'Y');
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (18, 'T');
 --Testcase 22:
-INSERT INTO "type_BOOLEAN" (i, b) VALUES (20, 'y');
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (19, 'Y');
 --Testcase 23:
-INSERT INTO "type_BOOLEAN" (i, b) VALUES (21, 'F');
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (20, 'y');
 --Testcase 24:
-INSERT INTO "type_BOOLEAN" (i, b) VALUES (22, 'f');
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (21, 'F');
 --Testcase 25:
-INSERT INTO "type_BOOLEAN" (i, b) VALUES (23, 'x');
-ERROR:  invalid input syntax for type boolean: "x"
-LINE 1: INSERT INTO "type_BOOLEAN" (i, b) VALUES (23, 'x');
-                                                      ^
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (22, 'f');
 --Testcase 26:
-INSERT INTO "type_BOOLEAN" (i, b) VALUES (24, '0');
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (23, 'x');
 --Testcase 27:
-INSERT INTO "type_BOOLEAN" (i, b) VALUES (25, '1');
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (24, '0');
 --Testcase 28:
-INSERT INTO "type_BOOLEAN" (i, b) VALUES (26, NULL);
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (25, '1');
 --Testcase 29:
-SELECT * FROM "type_BOOLEAN";
- i  | b 
-----+---
-  1 | t
-  2 | f
-  3 | t
-  4 | f
-  5 | t
-  6 | f
-  7 | t
-  8 | t
-  9 | t
- 10 | f
- 11 | f
- 12 | f
- 13 | f
- 14 | f
- 15 | t
- 16 | t
- 17 | t
- 18 | t
- 19 | t
- 20 | t
- 21 | f
- 22 | f
- 24 | f
- 25 | t
- 26 | 
-(25 rows)
-
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (26, NULL);
 --Testcase 30:
-ALTER FOREIGN TABLE "type_BOOLEAN" ALTER COLUMN "b" TYPE bool;
+SELECT * FROM "type_BOOLEAN";
+ i  |   b   
+----+-------
+  1 | 1
+  2 | 0
+  3 | true
+  4 | false
+  5 | true
+  6 | false
+  7 | Yes
+  8 | YeS
+  9 | yes
+ 10 | no
+ 11 | No
+ 12 | nO
+ 13 | off
+ 14 | oFf
+ 15 | on
+ 16 | ON
+ 17 | t
+ 18 | T
+ 19 | Y
+ 20 | y
+ 21 | F
+ 22 | f
+ 23 | x
+ 24 | 0
+ 25 | 1
+ 26 | 
+(26 rows)
+
 --Testcase 31:
+ALTER FOREIGN TABLE "type_BOOLEAN" ALTER COLUMN "b" TYPE bool;
+--Testcase 32:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT * FROM "type_BOOLEAN";
                                 QUERY PLAN                                 
@@ -109,7 +109,7 @@ SELECT * FROM "type_BOOLEAN";
    SQLite query: SELECT `i`, sqlite_fdw_bool(`b`) FROM main."type_BOOLEAN"
 (3 rows)
 
---Testcase 32:
+--Testcase 33:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT * FROM "type_BOOLEAN+";
                                       QUERY PLAN                                      
@@ -119,156 +119,129 @@ SELECT * FROM "type_BOOLEAN+";
    SQLite query: SELECT `i`, sqlite_fdw_bool(`b`), `t`, `l` FROM main."type_BOOLEAN+"
 (3 rows)
 
---Testcase 33: ERR - invalid text affinity because not ISO:SQL text input
+--Testcase 34: ERR - invalid text affinity because not ISO:SQL text input
 SELECT * FROM "type_BOOLEAN+";
- i  | b |    t    | l 
-----+---+---------+---
-  1 | t | integer | 1
-  2 | f | integer | 1
-  3 | t | integer | 1
-  4 | f | integer | 1
-  5 | t | integer | 1
-  6 | f | integer | 1
-  7 | t | integer | 1
-  8 | t | integer | 1
-  9 | t | integer | 1
- 10 | f | integer | 1
- 11 | f | integer | 1
- 12 | f | integer | 1
- 13 | f | integer | 1
- 14 | f | integer | 1
- 15 | t | integer | 1
- 16 | t | integer | 1
- 17 | t | integer | 1
- 18 | t | integer | 1
- 19 | t | integer | 1
- 20 | t | integer | 1
- 21 | f | integer | 1
- 22 | f | integer | 1
- 24 | f | integer | 1
- 25 | t | integer | 1
- 26 |   | null    |  
-(25 rows)
-
---Testcase 34
+ERROR:  SQLite data affinity "text" disallowed for PostgreSQL data type "boolean"
+HINT:  In column "b" expected SQLite affinity "integer", incorrect value = 'x'
+--Testcase 35
 DELETE FROM "type_BOOLEAN" WHERE i = 23;
---Testcase 35:
+--Testcase 36:
 SELECT * FROM "type_BOOLEAN+";
  i  | b |    t    | l 
 ----+---+---------+---
   1 | t | integer | 1
   2 | f | integer | 1
-  3 | t | integer | 1
-  4 | f | integer | 1
-  5 | t | integer | 1
-  6 | f | integer | 1
-  7 | t | integer | 1
-  8 | t | integer | 1
-  9 | t | integer | 1
- 10 | f | integer | 1
- 11 | f | integer | 1
- 12 | f | integer | 1
- 13 | f | integer | 1
- 14 | f | integer | 1
- 15 | t | integer | 1
- 16 | t | integer | 1
- 17 | t | integer | 1
- 18 | t | integer | 1
- 19 | t | integer | 1
- 20 | t | integer | 1
- 21 | f | integer | 1
- 22 | f | integer | 1
+  3 | t | text    | 4
+  4 | f | text    | 5
+  5 | t | text    | 4
+  6 | f | text    | 5
+  7 | t | text    | 3
+  8 | t | text    | 3
+  9 | t | text    | 3
+ 10 | f | text    | 2
+ 11 | f | text    | 2
+ 12 | f | text    | 2
+ 13 | f | text    | 3
+ 14 | f | text    | 3
+ 15 | t | text    | 2
+ 16 | t | text    | 2
+ 17 | t | text    | 1
+ 18 | t | text    | 1
+ 19 | t | text    | 1
+ 20 | t | text    | 1
+ 21 | f | text    | 1
+ 22 | f | text    | 1
  24 | f | integer | 1
  25 | t | integer | 1
  26 |   | null    |  
 (25 rows)
 
---Testcase 36:
+--Testcase 37:
 SELECT * FROM "type_BOOLEAN+" WHERE b IS NULL;
  i  | b |  t   | l 
 ----+---+------+---
  26 |   | null |  
 (1 row)
 
---Testcase 37:
+--Testcase 38:
 SELECT * FROM "type_BOOLEAN+" WHERE b IS NOT NULL;
  i  | b |    t    | l 
 ----+---+---------+---
   1 | t | integer | 1
   2 | f | integer | 1
-  3 | t | integer | 1
-  4 | f | integer | 1
-  5 | t | integer | 1
-  6 | f | integer | 1
-  7 | t | integer | 1
-  8 | t | integer | 1
-  9 | t | integer | 1
- 10 | f | integer | 1
- 11 | f | integer | 1
- 12 | f | integer | 1
- 13 | f | integer | 1
- 14 | f | integer | 1
- 15 | t | integer | 1
- 16 | t | integer | 1
- 17 | t | integer | 1
- 18 | t | integer | 1
- 19 | t | integer | 1
- 20 | t | integer | 1
- 21 | f | integer | 1
- 22 | f | integer | 1
+  3 | t | text    | 4
+  4 | f | text    | 5
+  5 | t | text    | 4
+  6 | f | text    | 5
+  7 | t | text    | 3
+  8 | t | text    | 3
+  9 | t | text    | 3
+ 10 | f | text    | 2
+ 11 | f | text    | 2
+ 12 | f | text    | 2
+ 13 | f | text    | 3
+ 14 | f | text    | 3
+ 15 | t | text    | 2
+ 16 | t | text    | 2
+ 17 | t | text    | 1
+ 18 | t | text    | 1
+ 19 | t | text    | 1
+ 20 | t | text    | 1
+ 21 | f | text    | 1
+ 22 | f | text    | 1
  24 | f | integer | 1
  25 | t | integer | 1
 (24 rows)
 
---Testcase 38:
+--Testcase 39:
 SELECT * FROM "type_BOOLEAN+" WHERE b;
  i  | b |    t    | l 
 ----+---+---------+---
   1 | t | integer | 1
-  3 | t | integer | 1
-  5 | t | integer | 1
-  7 | t | integer | 1
-  8 | t | integer | 1
-  9 | t | integer | 1
- 15 | t | integer | 1
- 16 | t | integer | 1
- 17 | t | integer | 1
- 18 | t | integer | 1
- 19 | t | integer | 1
- 20 | t | integer | 1
+  3 | t | text    | 4
+  5 | t | text    | 4
+  7 | t | text    | 3
+  8 | t | text    | 3
+  9 | t | text    | 3
+ 15 | t | text    | 2
+ 16 | t | text    | 2
+ 17 | t | text    | 1
+ 18 | t | text    | 1
+ 19 | t | text    | 1
+ 20 | t | text    | 1
  25 | t | integer | 1
 (13 rows)
 
---Testcase 39:
+--Testcase 40:
 SELECT * FROM "type_BOOLEAN+" WHERE NOT b;
  i  | b |    t    | l 
 ----+---+---------+---
   2 | f | integer | 1
-  4 | f | integer | 1
-  6 | f | integer | 1
- 10 | f | integer | 1
- 11 | f | integer | 1
- 12 | f | integer | 1
- 13 | f | integer | 1
- 14 | f | integer | 1
- 21 | f | integer | 1
- 22 | f | integer | 1
+  4 | f | text    | 5
+  6 | f | text    | 5
+ 10 | f | text    | 2
+ 11 | f | text    | 2
+ 12 | f | text    | 2
+ 13 | f | text    | 3
+ 14 | f | text    | 3
+ 21 | f | text    | 1
+ 22 | f | text    | 1
  24 | f | integer | 1
 (11 rows)
 
---Testcase 40:
-CREATE FOREIGN TABLE "type_BOOLEANpk" (col bool OPTIONS (key 'true')) SERVER sqlite_svr;
 --Testcase 41:
-INSERT INTO "type_BOOLEANpk" VALUES (TRUE);
+CREATE FOREIGN TABLE "type_BOOLEANpk" (col bool OPTIONS (key 'true')) SERVER sqlite_svr;
 --Testcase 42:
+INSERT INTO "type_BOOLEANpk" VALUES (TRUE);
+--Testcase 43:
 INSERT INTO "type_BOOLEANpk" VALUES (FALSE);
---Testcase 43: ERR - primary key
+--Testcase 44: ERR - primary key
 INSERT INTO "type_BOOLEANpk" VALUES (TRUE);
 ERROR:  failed to execute remote SQL: rc=19 UNIQUE constraint failed: type_BOOLEANpk.col 
    sql=INSERT INTO main."type_BOOLEANpk"(`col`) VALUES (?)
---Testcase 44:
+--Testcase 45:
 DELETE FROM "type_BOOLEANpk";
---Testcase 47:
+--Testcase 003:
 DROP EXTENSION sqlite_fdw CASCADE;
 NOTICE:  drop cascades to 5 other objects
 DETAIL:  drop cascades to server sqlite_svr
