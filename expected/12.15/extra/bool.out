@@ -241,11 +241,3412 @@ ERROR:  failed to execute remote SQL: rc=19 UNIQUE constraint failed: type_BOOLE
    sql=INSERT INTO main."type_BOOLEANpk"(`col`) VALUES (?)
 --Testcase 45:
 DELETE FROM "type_BOOLEANpk";
+--Testcase 46:
+ALTER FOREIGN TABLE "type_BOOLEAN" ALTER COLUMN "b" TYPE float8;
+--Testcase 47:
+INSERT INTO "type_BOOLEAN"(i, b) VALUES (27, 3.14159265358979);
+--Testcase 48:
+ALTER FOREIGN TABLE "type_BOOLEAN" ALTER COLUMN "b" TYPE bool;
+--Testcase 49: ERR - invalid float for bool column
+SELECT * FROM "type_BOOLEAN+";
+ERROR:  SQLite data affinity "real" disallowed for PostgreSQL data type "boolean"
+HINT:  In column "b" expected SQLite affinity "integer", incorrect value = '3.14159265358979'
+--Testcase 50
+DELETE FROM "type_BOOLEAN" WHERE i = 27;
+--Testcase 51:
+SELECT * FROM "type_BOOLEAN+";
+ i  | b |    t    | l 
+----+---+---------+---
+  1 | t | integer | 1
+  2 | f | integer | 1
+  3 | t | text    | 4
+  4 | f | text    | 5
+  5 | t | text    | 4
+  6 | f | text    | 5
+  7 | t | text    | 3
+  8 | t | text    | 3
+  9 | t | text    | 3
+ 10 | f | text    | 2
+ 11 | f | text    | 2
+ 12 | f | text    | 2
+ 13 | f | text    | 3
+ 14 | f | text    | 3
+ 15 | t | text    | 2
+ 16 | t | text    | 2
+ 17 | t | text    | 1
+ 18 | t | text    | 1
+ 19 | t | text    | 1
+ 20 | t | text    | 1
+ 21 | f | text    | 1
+ 22 | f | text    | 1
+ 24 | f | integer | 1
+ 25 | t | integer | 1
+ 26 |   | null    |  
+(25 rows)
+
+--Testcase 52:
+EXPLAIN (VERBOSE, COSTS OFF)
+UPDATE "type_BOOLEAN" SET b = NULL WHERE b;
+                                          QUERY PLAN                                          
+----------------------------------------------------------------------------------------------
+ Update on public."type_BOOLEAN"
+   ->  Foreign Update on public."type_BOOLEAN"
+         SQLite query: UPDATE main."type_BOOLEAN" SET `b` = NULL WHERE (sqlite_fdw_bool(`b`))
+(3 rows)
+
+--Testcase 53:
+EXPLAIN (VERBOSE, COSTS OFF)
+UPDATE "type_BOOLEAN" SET b = NULL WHERE NOT b;
+                                             QUERY PLAN                                             
+----------------------------------------------------------------------------------------------------
+ Update on public."type_BOOLEAN"
+   ->  Foreign Update on public."type_BOOLEAN"
+         SQLite query: UPDATE main."type_BOOLEAN" SET `b` = NULL WHERE ((NOT sqlite_fdw_bool(`b`)))
+(3 rows)
+
+--Testcase 54:
+EXPLAIN (VERBOSE, COSTS OFF)
+DELETE FROM "type_BOOLEAN" WHERE b;
+                                     QUERY PLAN                                     
+------------------------------------------------------------------------------------
+ Delete on public."type_BOOLEAN"
+   ->  Foreign Delete on public."type_BOOLEAN"
+         SQLite query: DELETE FROM main."type_BOOLEAN" WHERE (sqlite_fdw_bool(`b`))
+(3 rows)
+
+--Testcase 55:
+EXPLAIN (VERBOSE, COSTS OFF)
+DELETE FROM "type_BOOLEAN" WHERE NOT b;
+                                        QUERY PLAN                                        
+------------------------------------------------------------------------------------------
+ Delete on public."type_BOOLEAN"
+   ->  Foreign Delete on public."type_BOOLEAN"
+         SQLite query: DELETE FROM main."type_BOOLEAN" WHERE ((NOT sqlite_fdw_bool(`b`)))
+(3 rows)
+
+--Testcase 56:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT *, NOT b nb FROM "type_BOOLEAN+" b;
+                                      QUERY PLAN                                      
+--------------------------------------------------------------------------------------
+ Foreign Scan on public."type_BOOLEAN+" b
+   Output: i, b, t, l, (NOT b)
+   SQLite query: SELECT `i`, sqlite_fdw_bool(`b`), `t`, `l` FROM main."type_BOOLEAN+"
+(3 rows)
+
+--Testcase 57:
+SELECT *, NOT b nb FROM "type_BOOLEAN+" b;
+ i  | b |    t    | l | nb 
+----+---+---------+---+----
+  1 | t | integer | 1 | f
+  2 | f | integer | 1 | t
+  3 | t | text    | 4 | f
+  4 | f | text    | 5 | t
+  5 | t | text    | 4 | f
+  6 | f | text    | 5 | t
+  7 | t | text    | 3 | f
+  8 | t | text    | 3 | f
+  9 | t | text    | 3 | f
+ 10 | f | text    | 2 | t
+ 11 | f | text    | 2 | t
+ 12 | f | text    | 2 | t
+ 13 | f | text    | 3 | t
+ 14 | f | text    | 3 | t
+ 15 | t | text    | 2 | f
+ 16 | t | text    | 2 | f
+ 17 | t | text    | 1 | f
+ 18 | t | text    | 1 | f
+ 19 | t | text    | 1 | f
+ 20 | t | text    | 1 | f
+ 21 | f | text    | 1 | t
+ 22 | f | text    | 1 | t
+ 24 | f | integer | 1 | t
+ 25 | t | integer | 1 | f
+ 26 |   | null    |   | 
+(25 rows)
+
+--Testcase 58:
+CREATE FOREIGN TABLE "type_BOOLEAN_oper"( "i" int  OPTIONS (key 'true'), i1 smallint, b1 boolean, i2 smallint, b2 boolean) SERVER sqlite_svr OPTIONS (table 'type_BOOLEAN_oper');
+--Testcase 59: see INIT.SQL with mixed affinity boolean data
+SELECT * FROM "type_BOOLEAN_oper";
+  i  | i1 | b1 | i2 | b2 
+-----+----+----+----+----
+   1 |  1 | t  |  1 | t
+   2 |  1 | t  |  2 | t
+   3 |  1 | t  |  3 | t
+   4 |  1 | t  |  4 | f
+   5 |  1 | t  |  5 | f
+   6 |  1 | t  |  6 | f
+   7 |  1 | t  |  7 | f
+   8 |  1 | t  |  8 | f
+   9 |  1 | t  |  9 | t
+  10 |  1 | t  | 10 | t
+  11 |  1 | t  | 11 | t
+  12 |  1 | t  | 12 | t
+  13 |  1 | t  | 13 | t
+  14 |  1 | t  | 14 | t
+  15 |  1 | t  | 15 | f
+  16 |  1 | t  | 16 | f
+  17 |  1 | t  | 17 | f
+  18 |  1 | t  | 18 | f
+  19 |  1 | t  | 19 | t
+  20 |  1 | t  | 20 | f
+  21 |  1 | t  | 21 | t
+  22 |  1 | t  | 22 | 
+  23 |  2 | t  |  1 | t
+  24 |  2 | t  |  2 | t
+  25 |  2 | t  |  3 | t
+  26 |  2 | t  |  4 | f
+  27 |  2 | t  |  5 | f
+  28 |  2 | t  |  6 | f
+  29 |  2 | t  |  7 | f
+  30 |  2 | t  |  8 | f
+  31 |  2 | t  |  9 | t
+  32 |  2 | t  | 10 | t
+  33 |  2 | t  | 11 | t
+  34 |  2 | t  | 12 | t
+  35 |  2 | t  | 13 | t
+  36 |  2 | t  | 14 | t
+  37 |  2 | t  | 15 | f
+  38 |  2 | t  | 16 | f
+  39 |  2 | t  | 17 | f
+  40 |  2 | t  | 18 | f
+  41 |  2 | t  | 19 | t
+  42 |  2 | t  | 20 | f
+  43 |  2 | t  | 21 | t
+  44 |  2 | t  | 22 | 
+  45 |  3 | t  |  1 | t
+  46 |  3 | t  |  2 | t
+  47 |  3 | t  |  3 | t
+  48 |  3 | t  |  4 | f
+  49 |  3 | t  |  5 | f
+  50 |  3 | t  |  6 | f
+  51 |  3 | t  |  7 | f
+  52 |  3 | t  |  8 | f
+  53 |  3 | t  |  9 | t
+  54 |  3 | t  | 10 | t
+  55 |  3 | t  | 11 | t
+  56 |  3 | t  | 12 | t
+  57 |  3 | t  | 13 | t
+  58 |  3 | t  | 14 | t
+  59 |  3 | t  | 15 | f
+  60 |  3 | t  | 16 | f
+  61 |  3 | t  | 17 | f
+  62 |  3 | t  | 18 | f
+  63 |  3 | t  | 19 | t
+  64 |  3 | t  | 20 | f
+  65 |  3 | t  | 21 | t
+  66 |  3 | t  | 22 | 
+  67 |  4 | f  |  1 | t
+  68 |  4 | f  |  2 | t
+  69 |  4 | f  |  3 | t
+  70 |  4 | f  |  4 | f
+  71 |  4 | f  |  5 | f
+  72 |  4 | f  |  6 | f
+  73 |  4 | f  |  7 | f
+  74 |  4 | f  |  8 | f
+  75 |  4 | f  |  9 | t
+  76 |  4 | f  | 10 | t
+  77 |  4 | f  | 11 | t
+  78 |  4 | f  | 12 | t
+  79 |  4 | f  | 13 | t
+  80 |  4 | f  | 14 | t
+  81 |  4 | f  | 15 | f
+  82 |  4 | f  | 16 | f
+  83 |  4 | f  | 17 | f
+  84 |  4 | f  | 18 | f
+  85 |  4 | f  | 19 | t
+  86 |  4 | f  | 20 | f
+  87 |  4 | f  | 21 | t
+  88 |  4 | f  | 22 | 
+  89 |  5 | f  |  1 | t
+  90 |  5 | f  |  2 | t
+  91 |  5 | f  |  3 | t
+  92 |  5 | f  |  4 | f
+  93 |  5 | f  |  5 | f
+  94 |  5 | f  |  6 | f
+  95 |  5 | f  |  7 | f
+  96 |  5 | f  |  8 | f
+  97 |  5 | f  |  9 | t
+  98 |  5 | f  | 10 | t
+  99 |  5 | f  | 11 | t
+ 100 |  5 | f  | 12 | t
+ 101 |  5 | f  | 13 | t
+ 102 |  5 | f  | 14 | t
+ 103 |  5 | f  | 15 | f
+ 104 |  5 | f  | 16 | f
+ 105 |  5 | f  | 17 | f
+ 106 |  5 | f  | 18 | f
+ 107 |  5 | f  | 19 | t
+ 108 |  5 | f  | 20 | f
+ 109 |  5 | f  | 21 | t
+ 110 |  5 | f  | 22 | 
+ 111 |  6 | f  |  1 | t
+ 112 |  6 | f  |  2 | t
+ 113 |  6 | f  |  3 | t
+ 114 |  6 | f  |  4 | f
+ 115 |  6 | f  |  5 | f
+ 116 |  6 | f  |  6 | f
+ 117 |  6 | f  |  7 | f
+ 118 |  6 | f  |  8 | f
+ 119 |  6 | f  |  9 | t
+ 120 |  6 | f  | 10 | t
+ 121 |  6 | f  | 11 | t
+ 122 |  6 | f  | 12 | t
+ 123 |  6 | f  | 13 | t
+ 124 |  6 | f  | 14 | t
+ 125 |  6 | f  | 15 | f
+ 126 |  6 | f  | 16 | f
+ 127 |  6 | f  | 17 | f
+ 128 |  6 | f  | 18 | f
+ 129 |  6 | f  | 19 | t
+ 130 |  6 | f  | 20 | f
+ 131 |  6 | f  | 21 | t
+ 132 |  6 | f  | 22 | 
+ 133 |  7 | f  |  1 | t
+ 134 |  7 | f  |  2 | t
+ 135 |  7 | f  |  3 | t
+ 136 |  7 | f  |  4 | f
+ 137 |  7 | f  |  5 | f
+ 138 |  7 | f  |  6 | f
+ 139 |  7 | f  |  7 | f
+ 140 |  7 | f  |  8 | f
+ 141 |  7 | f  |  9 | t
+ 142 |  7 | f  | 10 | t
+ 143 |  7 | f  | 11 | t
+ 144 |  7 | f  | 12 | t
+ 145 |  7 | f  | 13 | t
+ 146 |  7 | f  | 14 | t
+ 147 |  7 | f  | 15 | f
+ 148 |  7 | f  | 16 | f
+ 149 |  7 | f  | 17 | f
+ 150 |  7 | f  | 18 | f
+ 151 |  7 | f  | 19 | t
+ 152 |  7 | f  | 20 | f
+ 153 |  7 | f  | 21 | t
+ 154 |  7 | f  | 22 | 
+ 155 |  8 | f  |  1 | t
+ 156 |  8 | f  |  2 | t
+ 157 |  8 | f  |  3 | t
+ 158 |  8 | f  |  4 | f
+ 159 |  8 | f  |  5 | f
+ 160 |  8 | f  |  6 | f
+ 161 |  8 | f  |  7 | f
+ 162 |  8 | f  |  8 | f
+ 163 |  8 | f  |  9 | t
+ 164 |  8 | f  | 10 | t
+ 165 |  8 | f  | 11 | t
+ 166 |  8 | f  | 12 | t
+ 167 |  8 | f  | 13 | t
+ 168 |  8 | f  | 14 | t
+ 169 |  8 | f  | 15 | f
+ 170 |  8 | f  | 16 | f
+ 171 |  8 | f  | 17 | f
+ 172 |  8 | f  | 18 | f
+ 173 |  8 | f  | 19 | t
+ 174 |  8 | f  | 20 | f
+ 175 |  8 | f  | 21 | t
+ 176 |  8 | f  | 22 | 
+ 177 |  9 | t  |  1 | t
+ 178 |  9 | t  |  2 | t
+ 179 |  9 | t  |  3 | t
+ 180 |  9 | t  |  4 | f
+ 181 |  9 | t  |  5 | f
+ 182 |  9 | t  |  6 | f
+ 183 |  9 | t  |  7 | f
+ 184 |  9 | t  |  8 | f
+ 185 |  9 | t  |  9 | t
+ 186 |  9 | t  | 10 | t
+ 187 |  9 | t  | 11 | t
+ 188 |  9 | t  | 12 | t
+ 189 |  9 | t  | 13 | t
+ 190 |  9 | t  | 14 | t
+ 191 |  9 | t  | 15 | f
+ 192 |  9 | t  | 16 | f
+ 193 |  9 | t  | 17 | f
+ 194 |  9 | t  | 18 | f
+ 195 |  9 | t  | 19 | t
+ 196 |  9 | t  | 20 | f
+ 197 |  9 | t  | 21 | t
+ 198 |  9 | t  | 22 | 
+ 199 | 10 | t  |  1 | t
+ 200 | 10 | t  |  2 | t
+ 201 | 10 | t  |  3 | t
+ 202 | 10 | t  |  4 | f
+ 203 | 10 | t  |  5 | f
+ 204 | 10 | t  |  6 | f
+ 205 | 10 | t  |  7 | f
+ 206 | 10 | t  |  8 | f
+ 207 | 10 | t  |  9 | t
+ 208 | 10 | t  | 10 | t
+ 209 | 10 | t  | 11 | t
+ 210 | 10 | t  | 12 | t
+ 211 | 10 | t  | 13 | t
+ 212 | 10 | t  | 14 | t
+ 213 | 10 | t  | 15 | f
+ 214 | 10 | t  | 16 | f
+ 215 | 10 | t  | 17 | f
+ 216 | 10 | t  | 18 | f
+ 217 | 10 | t  | 19 | t
+ 218 | 10 | t  | 20 | f
+ 219 | 10 | t  | 21 | t
+ 220 | 10 | t  | 22 | 
+ 221 | 11 | t  |  1 | t
+ 222 | 11 | t  |  2 | t
+ 223 | 11 | t  |  3 | t
+ 224 | 11 | t  |  4 | f
+ 225 | 11 | t  |  5 | f
+ 226 | 11 | t  |  6 | f
+ 227 | 11 | t  |  7 | f
+ 228 | 11 | t  |  8 | f
+ 229 | 11 | t  |  9 | t
+ 230 | 11 | t  | 10 | t
+ 231 | 11 | t  | 11 | t
+ 232 | 11 | t  | 12 | t
+ 233 | 11 | t  | 13 | t
+ 234 | 11 | t  | 14 | t
+ 235 | 11 | t  | 15 | f
+ 236 | 11 | t  | 16 | f
+ 237 | 11 | t  | 17 | f
+ 238 | 11 | t  | 18 | f
+ 239 | 11 | t  | 19 | t
+ 240 | 11 | t  | 20 | f
+ 241 | 11 | t  | 21 | t
+ 242 | 11 | t  | 22 | 
+ 243 | 12 | t  |  1 | t
+ 244 | 12 | t  |  2 | t
+ 245 | 12 | t  |  3 | t
+ 246 | 12 | t  |  4 | f
+ 247 | 12 | t  |  5 | f
+ 248 | 12 | t  |  6 | f
+ 249 | 12 | t  |  7 | f
+ 250 | 12 | t  |  8 | f
+ 251 | 12 | t  |  9 | t
+ 252 | 12 | t  | 10 | t
+ 253 | 12 | t  | 11 | t
+ 254 | 12 | t  | 12 | t
+ 255 | 12 | t  | 13 | t
+ 256 | 12 | t  | 14 | t
+ 257 | 12 | t  | 15 | f
+ 258 | 12 | t  | 16 | f
+ 259 | 12 | t  | 17 | f
+ 260 | 12 | t  | 18 | f
+ 261 | 12 | t  | 19 | t
+ 262 | 12 | t  | 20 | f
+ 263 | 12 | t  | 21 | t
+ 264 | 12 | t  | 22 | 
+ 265 | 13 | t  |  1 | t
+ 266 | 13 | t  |  2 | t
+ 267 | 13 | t  |  3 | t
+ 268 | 13 | t  |  4 | f
+ 269 | 13 | t  |  5 | f
+ 270 | 13 | t  |  6 | f
+ 271 | 13 | t  |  7 | f
+ 272 | 13 | t  |  8 | f
+ 273 | 13 | t  |  9 | t
+ 274 | 13 | t  | 10 | t
+ 275 | 13 | t  | 11 | t
+ 276 | 13 | t  | 12 | t
+ 277 | 13 | t  | 13 | t
+ 278 | 13 | t  | 14 | t
+ 279 | 13 | t  | 15 | f
+ 280 | 13 | t  | 16 | f
+ 281 | 13 | t  | 17 | f
+ 282 | 13 | t  | 18 | f
+ 283 | 13 | t  | 19 | t
+ 284 | 13 | t  | 20 | f
+ 285 | 13 | t  | 21 | t
+ 286 | 13 | t  | 22 | 
+ 287 | 14 | t  |  1 | t
+ 288 | 14 | t  |  2 | t
+ 289 | 14 | t  |  3 | t
+ 290 | 14 | t  |  4 | f
+ 291 | 14 | t  |  5 | f
+ 292 | 14 | t  |  6 | f
+ 293 | 14 | t  |  7 | f
+ 294 | 14 | t  |  8 | f
+ 295 | 14 | t  |  9 | t
+ 296 | 14 | t  | 10 | t
+ 297 | 14 | t  | 11 | t
+ 298 | 14 | t  | 12 | t
+ 299 | 14 | t  | 13 | t
+ 300 | 14 | t  | 14 | t
+ 301 | 14 | t  | 15 | f
+ 302 | 14 | t  | 16 | f
+ 303 | 14 | t  | 17 | f
+ 304 | 14 | t  | 18 | f
+ 305 | 14 | t  | 19 | t
+ 306 | 14 | t  | 20 | f
+ 307 | 14 | t  | 21 | t
+ 308 | 14 | t  | 22 | 
+ 309 | 15 | f  |  1 | t
+ 310 | 15 | f  |  2 | t
+ 311 | 15 | f  |  3 | t
+ 312 | 15 | f  |  4 | f
+ 313 | 15 | f  |  5 | f
+ 314 | 15 | f  |  6 | f
+ 315 | 15 | f  |  7 | f
+ 316 | 15 | f  |  8 | f
+ 317 | 15 | f  |  9 | t
+ 318 | 15 | f  | 10 | t
+ 319 | 15 | f  | 11 | t
+ 320 | 15 | f  | 12 | t
+ 321 | 15 | f  | 13 | t
+ 322 | 15 | f  | 14 | t
+ 323 | 15 | f  | 15 | f
+ 324 | 15 | f  | 16 | f
+ 325 | 15 | f  | 17 | f
+ 326 | 15 | f  | 18 | f
+ 327 | 15 | f  | 19 | t
+ 328 | 15 | f  | 20 | f
+ 329 | 15 | f  | 21 | t
+ 330 | 15 | f  | 22 | 
+ 331 | 16 | f  |  1 | t
+ 332 | 16 | f  |  2 | t
+ 333 | 16 | f  |  3 | t
+ 334 | 16 | f  |  4 | f
+ 335 | 16 | f  |  5 | f
+ 336 | 16 | f  |  6 | f
+ 337 | 16 | f  |  7 | f
+ 338 | 16 | f  |  8 | f
+ 339 | 16 | f  |  9 | t
+ 340 | 16 | f  | 10 | t
+ 341 | 16 | f  | 11 | t
+ 342 | 16 | f  | 12 | t
+ 343 | 16 | f  | 13 | t
+ 344 | 16 | f  | 14 | t
+ 345 | 16 | f  | 15 | f
+ 346 | 16 | f  | 16 | f
+ 347 | 16 | f  | 17 | f
+ 348 | 16 | f  | 18 | f
+ 349 | 16 | f  | 19 | t
+ 350 | 16 | f  | 20 | f
+ 351 | 16 | f  | 21 | t
+ 352 | 16 | f  | 22 | 
+ 353 | 17 | f  |  1 | t
+ 354 | 17 | f  |  2 | t
+ 355 | 17 | f  |  3 | t
+ 356 | 17 | f  |  4 | f
+ 357 | 17 | f  |  5 | f
+ 358 | 17 | f  |  6 | f
+ 359 | 17 | f  |  7 | f
+ 360 | 17 | f  |  8 | f
+ 361 | 17 | f  |  9 | t
+ 362 | 17 | f  | 10 | t
+ 363 | 17 | f  | 11 | t
+ 364 | 17 | f  | 12 | t
+ 365 | 17 | f  | 13 | t
+ 366 | 17 | f  | 14 | t
+ 367 | 17 | f  | 15 | f
+ 368 | 17 | f  | 16 | f
+ 369 | 17 | f  | 17 | f
+ 370 | 17 | f  | 18 | f
+ 371 | 17 | f  | 19 | t
+ 372 | 17 | f  | 20 | f
+ 373 | 17 | f  | 21 | t
+ 374 | 17 | f  | 22 | 
+ 375 | 18 | f  |  1 | t
+ 376 | 18 | f  |  2 | t
+ 377 | 18 | f  |  3 | t
+ 378 | 18 | f  |  4 | f
+ 379 | 18 | f  |  5 | f
+ 380 | 18 | f  |  6 | f
+ 381 | 18 | f  |  7 | f
+ 382 | 18 | f  |  8 | f
+ 383 | 18 | f  |  9 | t
+ 384 | 18 | f  | 10 | t
+ 385 | 18 | f  | 11 | t
+ 386 | 18 | f  | 12 | t
+ 387 | 18 | f  | 13 | t
+ 388 | 18 | f  | 14 | t
+ 389 | 18 | f  | 15 | f
+ 390 | 18 | f  | 16 | f
+ 391 | 18 | f  | 17 | f
+ 392 | 18 | f  | 18 | f
+ 393 | 18 | f  | 19 | t
+ 394 | 18 | f  | 20 | f
+ 395 | 18 | f  | 21 | t
+ 396 | 18 | f  | 22 | 
+ 397 | 19 | t  |  1 | t
+ 398 | 19 | t  |  2 | t
+ 399 | 19 | t  |  3 | t
+ 400 | 19 | t  |  4 | f
+ 401 | 19 | t  |  5 | f
+ 402 | 19 | t  |  6 | f
+ 403 | 19 | t  |  7 | f
+ 404 | 19 | t  |  8 | f
+ 405 | 19 | t  |  9 | t
+ 406 | 19 | t  | 10 | t
+ 407 | 19 | t  | 11 | t
+ 408 | 19 | t  | 12 | t
+ 409 | 19 | t  | 13 | t
+ 410 | 19 | t  | 14 | t
+ 411 | 19 | t  | 15 | f
+ 412 | 19 | t  | 16 | f
+ 413 | 19 | t  | 17 | f
+ 414 | 19 | t  | 18 | f
+ 415 | 19 | t  | 19 | t
+ 416 | 19 | t  | 20 | f
+ 417 | 19 | t  | 21 | t
+ 418 | 19 | t  | 22 | 
+ 419 | 20 | f  |  1 | t
+ 420 | 20 | f  |  2 | t
+ 421 | 20 | f  |  3 | t
+ 422 | 20 | f  |  4 | f
+ 423 | 20 | f  |  5 | f
+ 424 | 20 | f  |  6 | f
+ 425 | 20 | f  |  7 | f
+ 426 | 20 | f  |  8 | f
+ 427 | 20 | f  |  9 | t
+ 428 | 20 | f  | 10 | t
+ 429 | 20 | f  | 11 | t
+ 430 | 20 | f  | 12 | t
+ 431 | 20 | f  | 13 | t
+ 432 | 20 | f  | 14 | t
+ 433 | 20 | f  | 15 | f
+ 434 | 20 | f  | 16 | f
+ 435 | 20 | f  | 17 | f
+ 436 | 20 | f  | 18 | f
+ 437 | 20 | f  | 19 | t
+ 438 | 20 | f  | 20 | f
+ 439 | 20 | f  | 21 | t
+ 440 | 20 | f  | 22 | 
+ 441 | 21 | t  |  1 | t
+ 442 | 21 | t  |  2 | t
+ 443 | 21 | t  |  3 | t
+ 444 | 21 | t  |  4 | f
+ 445 | 21 | t  |  5 | f
+ 446 | 21 | t  |  6 | f
+ 447 | 21 | t  |  7 | f
+ 448 | 21 | t  |  8 | f
+ 449 | 21 | t  |  9 | t
+ 450 | 21 | t  | 10 | t
+ 451 | 21 | t  | 11 | t
+ 452 | 21 | t  | 12 | t
+ 453 | 21 | t  | 13 | t
+ 454 | 21 | t  | 14 | t
+ 455 | 21 | t  | 15 | f
+ 456 | 21 | t  | 16 | f
+ 457 | 21 | t  | 17 | f
+ 458 | 21 | t  | 18 | f
+ 459 | 21 | t  | 19 | t
+ 460 | 21 | t  | 20 | f
+ 461 | 21 | t  | 21 | t
+ 462 | 21 | t  | 22 | 
+ 463 | 22 |    |  1 | t
+ 464 | 22 |    |  2 | t
+ 465 | 22 |    |  3 | t
+ 466 | 22 |    |  4 | f
+ 467 | 22 |    |  5 | f
+ 468 | 22 |    |  6 | f
+ 469 | 22 |    |  7 | f
+ 470 | 22 |    |  8 | f
+ 471 | 22 |    |  9 | t
+ 472 | 22 |    | 10 | t
+ 473 | 22 |    | 11 | t
+ 474 | 22 |    | 12 | t
+ 475 | 22 |    | 13 | t
+ 476 | 22 |    | 14 | t
+ 477 | 22 |    | 15 | f
+ 478 | 22 |    | 16 | f
+ 479 | 22 |    | 17 | f
+ 480 | 22 |    | 18 | f
+ 481 | 22 |    | 19 | t
+ 482 | 22 |    | 20 | f
+ 483 | 22 |    | 21 | t
+ 484 | 22 |    | 22 | 
+(484 rows)
+
+--Testcase 60:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT i, b1, b2, b1 AND b2 a, b1 OR b2 o FROM "type_BOOLEAN_oper";
+                                               QUERY PLAN                                               
+--------------------------------------------------------------------------------------------------------
+ Foreign Scan on public."type_BOOLEAN_oper"
+   Output: i, b1, b2, (b1 AND b2), (b1 OR b2)
+   SQLite query: SELECT `i`, sqlite_fdw_bool(`b1`), sqlite_fdw_bool(`b2`) FROM main."type_BOOLEAN_oper"
+(3 rows)
+
+--Testcase 61:
+SELECT i, b1, b2, b1 AND b2 a, b1 OR b2 o FROM "type_BOOLEAN_oper";
+  i  | b1 | b2 | a | o 
+-----+----+----+---+---
+   1 | t  | t  | t | t
+   2 | t  | t  | t | t
+   3 | t  | t  | t | t
+   4 | t  | f  | f | t
+   5 | t  | f  | f | t
+   6 | t  | f  | f | t
+   7 | t  | f  | f | t
+   8 | t  | f  | f | t
+   9 | t  | t  | t | t
+  10 | t  | t  | t | t
+  11 | t  | t  | t | t
+  12 | t  | t  | t | t
+  13 | t  | t  | t | t
+  14 | t  | t  | t | t
+  15 | t  | f  | f | t
+  16 | t  | f  | f | t
+  17 | t  | f  | f | t
+  18 | t  | f  | f | t
+  19 | t  | t  | t | t
+  20 | t  | f  | f | t
+  21 | t  | t  | t | t
+  22 | t  |    |   | t
+  23 | t  | t  | t | t
+  24 | t  | t  | t | t
+  25 | t  | t  | t | t
+  26 | t  | f  | f | t
+  27 | t  | f  | f | t
+  28 | t  | f  | f | t
+  29 | t  | f  | f | t
+  30 | t  | f  | f | t
+  31 | t  | t  | t | t
+  32 | t  | t  | t | t
+  33 | t  | t  | t | t
+  34 | t  | t  | t | t
+  35 | t  | t  | t | t
+  36 | t  | t  | t | t
+  37 | t  | f  | f | t
+  38 | t  | f  | f | t
+  39 | t  | f  | f | t
+  40 | t  | f  | f | t
+  41 | t  | t  | t | t
+  42 | t  | f  | f | t
+  43 | t  | t  | t | t
+  44 | t  |    |   | t
+  45 | t  | t  | t | t
+  46 | t  | t  | t | t
+  47 | t  | t  | t | t
+  48 | t  | f  | f | t
+  49 | t  | f  | f | t
+  50 | t  | f  | f | t
+  51 | t  | f  | f | t
+  52 | t  | f  | f | t
+  53 | t  | t  | t | t
+  54 | t  | t  | t | t
+  55 | t  | t  | t | t
+  56 | t  | t  | t | t
+  57 | t  | t  | t | t
+  58 | t  | t  | t | t
+  59 | t  | f  | f | t
+  60 | t  | f  | f | t
+  61 | t  | f  | f | t
+  62 | t  | f  | f | t
+  63 | t  | t  | t | t
+  64 | t  | f  | f | t
+  65 | t  | t  | t | t
+  66 | t  |    |   | t
+  67 | f  | t  | f | t
+  68 | f  | t  | f | t
+  69 | f  | t  | f | t
+  70 | f  | f  | f | f
+  71 | f  | f  | f | f
+  72 | f  | f  | f | f
+  73 | f  | f  | f | f
+  74 | f  | f  | f | f
+  75 | f  | t  | f | t
+  76 | f  | t  | f | t
+  77 | f  | t  | f | t
+  78 | f  | t  | f | t
+  79 | f  | t  | f | t
+  80 | f  | t  | f | t
+  81 | f  | f  | f | f
+  82 | f  | f  | f | f
+  83 | f  | f  | f | f
+  84 | f  | f  | f | f
+  85 | f  | t  | f | t
+  86 | f  | f  | f | f
+  87 | f  | t  | f | t
+  88 | f  |    | f | 
+  89 | f  | t  | f | t
+  90 | f  | t  | f | t
+  91 | f  | t  | f | t
+  92 | f  | f  | f | f
+  93 | f  | f  | f | f
+  94 | f  | f  | f | f
+  95 | f  | f  | f | f
+  96 | f  | f  | f | f
+  97 | f  | t  | f | t
+  98 | f  | t  | f | t
+  99 | f  | t  | f | t
+ 100 | f  | t  | f | t
+ 101 | f  | t  | f | t
+ 102 | f  | t  | f | t
+ 103 | f  | f  | f | f
+ 104 | f  | f  | f | f
+ 105 | f  | f  | f | f
+ 106 | f  | f  | f | f
+ 107 | f  | t  | f | t
+ 108 | f  | f  | f | f
+ 109 | f  | t  | f | t
+ 110 | f  |    | f | 
+ 111 | f  | t  | f | t
+ 112 | f  | t  | f | t
+ 113 | f  | t  | f | t
+ 114 | f  | f  | f | f
+ 115 | f  | f  | f | f
+ 116 | f  | f  | f | f
+ 117 | f  | f  | f | f
+ 118 | f  | f  | f | f
+ 119 | f  | t  | f | t
+ 120 | f  | t  | f | t
+ 121 | f  | t  | f | t
+ 122 | f  | t  | f | t
+ 123 | f  | t  | f | t
+ 124 | f  | t  | f | t
+ 125 | f  | f  | f | f
+ 126 | f  | f  | f | f
+ 127 | f  | f  | f | f
+ 128 | f  | f  | f | f
+ 129 | f  | t  | f | t
+ 130 | f  | f  | f | f
+ 131 | f  | t  | f | t
+ 132 | f  |    | f | 
+ 133 | f  | t  | f | t
+ 134 | f  | t  | f | t
+ 135 | f  | t  | f | t
+ 136 | f  | f  | f | f
+ 137 | f  | f  | f | f
+ 138 | f  | f  | f | f
+ 139 | f  | f  | f | f
+ 140 | f  | f  | f | f
+ 141 | f  | t  | f | t
+ 142 | f  | t  | f | t
+ 143 | f  | t  | f | t
+ 144 | f  | t  | f | t
+ 145 | f  | t  | f | t
+ 146 | f  | t  | f | t
+ 147 | f  | f  | f | f
+ 148 | f  | f  | f | f
+ 149 | f  | f  | f | f
+ 150 | f  | f  | f | f
+ 151 | f  | t  | f | t
+ 152 | f  | f  | f | f
+ 153 | f  | t  | f | t
+ 154 | f  |    | f | 
+ 155 | f  | t  | f | t
+ 156 | f  | t  | f | t
+ 157 | f  | t  | f | t
+ 158 | f  | f  | f | f
+ 159 | f  | f  | f | f
+ 160 | f  | f  | f | f
+ 161 | f  | f  | f | f
+ 162 | f  | f  | f | f
+ 163 | f  | t  | f | t
+ 164 | f  | t  | f | t
+ 165 | f  | t  | f | t
+ 166 | f  | t  | f | t
+ 167 | f  | t  | f | t
+ 168 | f  | t  | f | t
+ 169 | f  | f  | f | f
+ 170 | f  | f  | f | f
+ 171 | f  | f  | f | f
+ 172 | f  | f  | f | f
+ 173 | f  | t  | f | t
+ 174 | f  | f  | f | f
+ 175 | f  | t  | f | t
+ 176 | f  |    | f | 
+ 177 | t  | t  | t | t
+ 178 | t  | t  | t | t
+ 179 | t  | t  | t | t
+ 180 | t  | f  | f | t
+ 181 | t  | f  | f | t
+ 182 | t  | f  | f | t
+ 183 | t  | f  | f | t
+ 184 | t  | f  | f | t
+ 185 | t  | t  | t | t
+ 186 | t  | t  | t | t
+ 187 | t  | t  | t | t
+ 188 | t  | t  | t | t
+ 189 | t  | t  | t | t
+ 190 | t  | t  | t | t
+ 191 | t  | f  | f | t
+ 192 | t  | f  | f | t
+ 193 | t  | f  | f | t
+ 194 | t  | f  | f | t
+ 195 | t  | t  | t | t
+ 196 | t  | f  | f | t
+ 197 | t  | t  | t | t
+ 198 | t  |    |   | t
+ 199 | t  | t  | t | t
+ 200 | t  | t  | t | t
+ 201 | t  | t  | t | t
+ 202 | t  | f  | f | t
+ 203 | t  | f  | f | t
+ 204 | t  | f  | f | t
+ 205 | t  | f  | f | t
+ 206 | t  | f  | f | t
+ 207 | t  | t  | t | t
+ 208 | t  | t  | t | t
+ 209 | t  | t  | t | t
+ 210 | t  | t  | t | t
+ 211 | t  | t  | t | t
+ 212 | t  | t  | t | t
+ 213 | t  | f  | f | t
+ 214 | t  | f  | f | t
+ 215 | t  | f  | f | t
+ 216 | t  | f  | f | t
+ 217 | t  | t  | t | t
+ 218 | t  | f  | f | t
+ 219 | t  | t  | t | t
+ 220 | t  |    |   | t
+ 221 | t  | t  | t | t
+ 222 | t  | t  | t | t
+ 223 | t  | t  | t | t
+ 224 | t  | f  | f | t
+ 225 | t  | f  | f | t
+ 226 | t  | f  | f | t
+ 227 | t  | f  | f | t
+ 228 | t  | f  | f | t
+ 229 | t  | t  | t | t
+ 230 | t  | t  | t | t
+ 231 | t  | t  | t | t
+ 232 | t  | t  | t | t
+ 233 | t  | t  | t | t
+ 234 | t  | t  | t | t
+ 235 | t  | f  | f | t
+ 236 | t  | f  | f | t
+ 237 | t  | f  | f | t
+ 238 | t  | f  | f | t
+ 239 | t  | t  | t | t
+ 240 | t  | f  | f | t
+ 241 | t  | t  | t | t
+ 242 | t  |    |   | t
+ 243 | t  | t  | t | t
+ 244 | t  | t  | t | t
+ 245 | t  | t  | t | t
+ 246 | t  | f  | f | t
+ 247 | t  | f  | f | t
+ 248 | t  | f  | f | t
+ 249 | t  | f  | f | t
+ 250 | t  | f  | f | t
+ 251 | t  | t  | t | t
+ 252 | t  | t  | t | t
+ 253 | t  | t  | t | t
+ 254 | t  | t  | t | t
+ 255 | t  | t  | t | t
+ 256 | t  | t  | t | t
+ 257 | t  | f  | f | t
+ 258 | t  | f  | f | t
+ 259 | t  | f  | f | t
+ 260 | t  | f  | f | t
+ 261 | t  | t  | t | t
+ 262 | t  | f  | f | t
+ 263 | t  | t  | t | t
+ 264 | t  |    |   | t
+ 265 | t  | t  | t | t
+ 266 | t  | t  | t | t
+ 267 | t  | t  | t | t
+ 268 | t  | f  | f | t
+ 269 | t  | f  | f | t
+ 270 | t  | f  | f | t
+ 271 | t  | f  | f | t
+ 272 | t  | f  | f | t
+ 273 | t  | t  | t | t
+ 274 | t  | t  | t | t
+ 275 | t  | t  | t | t
+ 276 | t  | t  | t | t
+ 277 | t  | t  | t | t
+ 278 | t  | t  | t | t
+ 279 | t  | f  | f | t
+ 280 | t  | f  | f | t
+ 281 | t  | f  | f | t
+ 282 | t  | f  | f | t
+ 283 | t  | t  | t | t
+ 284 | t  | f  | f | t
+ 285 | t  | t  | t | t
+ 286 | t  |    |   | t
+ 287 | t  | t  | t | t
+ 288 | t  | t  | t | t
+ 289 | t  | t  | t | t
+ 290 | t  | f  | f | t
+ 291 | t  | f  | f | t
+ 292 | t  | f  | f | t
+ 293 | t  | f  | f | t
+ 294 | t  | f  | f | t
+ 295 | t  | t  | t | t
+ 296 | t  | t  | t | t
+ 297 | t  | t  | t | t
+ 298 | t  | t  | t | t
+ 299 | t  | t  | t | t
+ 300 | t  | t  | t | t
+ 301 | t  | f  | f | t
+ 302 | t  | f  | f | t
+ 303 | t  | f  | f | t
+ 304 | t  | f  | f | t
+ 305 | t  | t  | t | t
+ 306 | t  | f  | f | t
+ 307 | t  | t  | t | t
+ 308 | t  |    |   | t
+ 309 | f  | t  | f | t
+ 310 | f  | t  | f | t
+ 311 | f  | t  | f | t
+ 312 | f  | f  | f | f
+ 313 | f  | f  | f | f
+ 314 | f  | f  | f | f
+ 315 | f  | f  | f | f
+ 316 | f  | f  | f | f
+ 317 | f  | t  | f | t
+ 318 | f  | t  | f | t
+ 319 | f  | t  | f | t
+ 320 | f  | t  | f | t
+ 321 | f  | t  | f | t
+ 322 | f  | t  | f | t
+ 323 | f  | f  | f | f
+ 324 | f  | f  | f | f
+ 325 | f  | f  | f | f
+ 326 | f  | f  | f | f
+ 327 | f  | t  | f | t
+ 328 | f  | f  | f | f
+ 329 | f  | t  | f | t
+ 330 | f  |    | f | 
+ 331 | f  | t  | f | t
+ 332 | f  | t  | f | t
+ 333 | f  | t  | f | t
+ 334 | f  | f  | f | f
+ 335 | f  | f  | f | f
+ 336 | f  | f  | f | f
+ 337 | f  | f  | f | f
+ 338 | f  | f  | f | f
+ 339 | f  | t  | f | t
+ 340 | f  | t  | f | t
+ 341 | f  | t  | f | t
+ 342 | f  | t  | f | t
+ 343 | f  | t  | f | t
+ 344 | f  | t  | f | t
+ 345 | f  | f  | f | f
+ 346 | f  | f  | f | f
+ 347 | f  | f  | f | f
+ 348 | f  | f  | f | f
+ 349 | f  | t  | f | t
+ 350 | f  | f  | f | f
+ 351 | f  | t  | f | t
+ 352 | f  |    | f | 
+ 353 | f  | t  | f | t
+ 354 | f  | t  | f | t
+ 355 | f  | t  | f | t
+ 356 | f  | f  | f | f
+ 357 | f  | f  | f | f
+ 358 | f  | f  | f | f
+ 359 | f  | f  | f | f
+ 360 | f  | f  | f | f
+ 361 | f  | t  | f | t
+ 362 | f  | t  | f | t
+ 363 | f  | t  | f | t
+ 364 | f  | t  | f | t
+ 365 | f  | t  | f | t
+ 366 | f  | t  | f | t
+ 367 | f  | f  | f | f
+ 368 | f  | f  | f | f
+ 369 | f  | f  | f | f
+ 370 | f  | f  | f | f
+ 371 | f  | t  | f | t
+ 372 | f  | f  | f | f
+ 373 | f  | t  | f | t
+ 374 | f  |    | f | 
+ 375 | f  | t  | f | t
+ 376 | f  | t  | f | t
+ 377 | f  | t  | f | t
+ 378 | f  | f  | f | f
+ 379 | f  | f  | f | f
+ 380 | f  | f  | f | f
+ 381 | f  | f  | f | f
+ 382 | f  | f  | f | f
+ 383 | f  | t  | f | t
+ 384 | f  | t  | f | t
+ 385 | f  | t  | f | t
+ 386 | f  | t  | f | t
+ 387 | f  | t  | f | t
+ 388 | f  | t  | f | t
+ 389 | f  | f  | f | f
+ 390 | f  | f  | f | f
+ 391 | f  | f  | f | f
+ 392 | f  | f  | f | f
+ 393 | f  | t  | f | t
+ 394 | f  | f  | f | f
+ 395 | f  | t  | f | t
+ 396 | f  |    | f | 
+ 397 | t  | t  | t | t
+ 398 | t  | t  | t | t
+ 399 | t  | t  | t | t
+ 400 | t  | f  | f | t
+ 401 | t  | f  | f | t
+ 402 | t  | f  | f | t
+ 403 | t  | f  | f | t
+ 404 | t  | f  | f | t
+ 405 | t  | t  | t | t
+ 406 | t  | t  | t | t
+ 407 | t  | t  | t | t
+ 408 | t  | t  | t | t
+ 409 | t  | t  | t | t
+ 410 | t  | t  | t | t
+ 411 | t  | f  | f | t
+ 412 | t  | f  | f | t
+ 413 | t  | f  | f | t
+ 414 | t  | f  | f | t
+ 415 | t  | t  | t | t
+ 416 | t  | f  | f | t
+ 417 | t  | t  | t | t
+ 418 | t  |    |   | t
+ 419 | f  | t  | f | t
+ 420 | f  | t  | f | t
+ 421 | f  | t  | f | t
+ 422 | f  | f  | f | f
+ 423 | f  | f  | f | f
+ 424 | f  | f  | f | f
+ 425 | f  | f  | f | f
+ 426 | f  | f  | f | f
+ 427 | f  | t  | f | t
+ 428 | f  | t  | f | t
+ 429 | f  | t  | f | t
+ 430 | f  | t  | f | t
+ 431 | f  | t  | f | t
+ 432 | f  | t  | f | t
+ 433 | f  | f  | f | f
+ 434 | f  | f  | f | f
+ 435 | f  | f  | f | f
+ 436 | f  | f  | f | f
+ 437 | f  | t  | f | t
+ 438 | f  | f  | f | f
+ 439 | f  | t  | f | t
+ 440 | f  |    | f | 
+ 441 | t  | t  | t | t
+ 442 | t  | t  | t | t
+ 443 | t  | t  | t | t
+ 444 | t  | f  | f | t
+ 445 | t  | f  | f | t
+ 446 | t  | f  | f | t
+ 447 | t  | f  | f | t
+ 448 | t  | f  | f | t
+ 449 | t  | t  | t | t
+ 450 | t  | t  | t | t
+ 451 | t  | t  | t | t
+ 452 | t  | t  | t | t
+ 453 | t  | t  | t | t
+ 454 | t  | t  | t | t
+ 455 | t  | f  | f | t
+ 456 | t  | f  | f | t
+ 457 | t  | f  | f | t
+ 458 | t  | f  | f | t
+ 459 | t  | t  | t | t
+ 460 | t  | f  | f | t
+ 461 | t  | t  | t | t
+ 462 | t  |    |   | t
+ 463 |    | t  |   | t
+ 464 |    | t  |   | t
+ 465 |    | t  |   | t
+ 466 |    | f  | f | 
+ 467 |    | f  | f | 
+ 468 |    | f  | f | 
+ 469 |    | f  | f | 
+ 470 |    | f  | f | 
+ 471 |    | t  |   | t
+ 472 |    | t  |   | t
+ 473 |    | t  |   | t
+ 474 |    | t  |   | t
+ 475 |    | t  |   | t
+ 476 |    | t  |   | t
+ 477 |    | f  | f | 
+ 478 |    | f  | f | 
+ 479 |    | f  | f | 
+ 480 |    | f  | f | 
+ 481 |    | t  |   | t
+ 482 |    | f  | f | 
+ 483 |    | t  |   | t
+ 484 |    |    |   | 
+(484 rows)
+
+--Testcase 62:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT i, b1, b2, b1 AND b2 a, b1 OR b2 o FROM "type_BOOLEAN_oper" WHERE b1 AND b2;
+                                                                            QUERY PLAN                                                                            
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public."type_BOOLEAN_oper"
+   Output: i, b1, b2, (b1 AND b2), (b1 OR b2)
+   SQLite query: SELECT `i`, sqlite_fdw_bool(`b1`), sqlite_fdw_bool(`b2`) FROM main."type_BOOLEAN_oper" WHERE (sqlite_fdw_bool(`b1`)) AND (sqlite_fdw_bool(`b2`))
+(3 rows)
+
+--Testcase 63:
+SELECT i, b1, b2, b1 AND b2 a, b1 OR b2 o FROM "type_BOOLEAN_oper" WHERE b1 AND b2;
+  i  | b1 | b2 | a | o 
+-----+----+----+---+---
+   1 | t  | t  | t | t
+   2 | t  | t  | t | t
+   3 | t  | t  | t | t
+   9 | t  | t  | t | t
+  10 | t  | t  | t | t
+  11 | t  | t  | t | t
+  12 | t  | t  | t | t
+  13 | t  | t  | t | t
+  14 | t  | t  | t | t
+  19 | t  | t  | t | t
+  21 | t  | t  | t | t
+  23 | t  | t  | t | t
+  24 | t  | t  | t | t
+  25 | t  | t  | t | t
+  31 | t  | t  | t | t
+  32 | t  | t  | t | t
+  33 | t  | t  | t | t
+  34 | t  | t  | t | t
+  35 | t  | t  | t | t
+  36 | t  | t  | t | t
+  41 | t  | t  | t | t
+  43 | t  | t  | t | t
+  45 | t  | t  | t | t
+  46 | t  | t  | t | t
+  47 | t  | t  | t | t
+  53 | t  | t  | t | t
+  54 | t  | t  | t | t
+  55 | t  | t  | t | t
+  56 | t  | t  | t | t
+  57 | t  | t  | t | t
+  58 | t  | t  | t | t
+  63 | t  | t  | t | t
+  65 | t  | t  | t | t
+ 177 | t  | t  | t | t
+ 178 | t  | t  | t | t
+ 179 | t  | t  | t | t
+ 185 | t  | t  | t | t
+ 186 | t  | t  | t | t
+ 187 | t  | t  | t | t
+ 188 | t  | t  | t | t
+ 189 | t  | t  | t | t
+ 190 | t  | t  | t | t
+ 195 | t  | t  | t | t
+ 197 | t  | t  | t | t
+ 199 | t  | t  | t | t
+ 200 | t  | t  | t | t
+ 201 | t  | t  | t | t
+ 207 | t  | t  | t | t
+ 208 | t  | t  | t | t
+ 209 | t  | t  | t | t
+ 210 | t  | t  | t | t
+ 211 | t  | t  | t | t
+ 212 | t  | t  | t | t
+ 217 | t  | t  | t | t
+ 219 | t  | t  | t | t
+ 221 | t  | t  | t | t
+ 222 | t  | t  | t | t
+ 223 | t  | t  | t | t
+ 229 | t  | t  | t | t
+ 230 | t  | t  | t | t
+ 231 | t  | t  | t | t
+ 232 | t  | t  | t | t
+ 233 | t  | t  | t | t
+ 234 | t  | t  | t | t
+ 239 | t  | t  | t | t
+ 241 | t  | t  | t | t
+ 243 | t  | t  | t | t
+ 244 | t  | t  | t | t
+ 245 | t  | t  | t | t
+ 251 | t  | t  | t | t
+ 252 | t  | t  | t | t
+ 253 | t  | t  | t | t
+ 254 | t  | t  | t | t
+ 255 | t  | t  | t | t
+ 256 | t  | t  | t | t
+ 261 | t  | t  | t | t
+ 263 | t  | t  | t | t
+ 265 | t  | t  | t | t
+ 266 | t  | t  | t | t
+ 267 | t  | t  | t | t
+ 273 | t  | t  | t | t
+ 274 | t  | t  | t | t
+ 275 | t  | t  | t | t
+ 276 | t  | t  | t | t
+ 277 | t  | t  | t | t
+ 278 | t  | t  | t | t
+ 283 | t  | t  | t | t
+ 285 | t  | t  | t | t
+ 287 | t  | t  | t | t
+ 288 | t  | t  | t | t
+ 289 | t  | t  | t | t
+ 295 | t  | t  | t | t
+ 296 | t  | t  | t | t
+ 297 | t  | t  | t | t
+ 298 | t  | t  | t | t
+ 299 | t  | t  | t | t
+ 300 | t  | t  | t | t
+ 305 | t  | t  | t | t
+ 307 | t  | t  | t | t
+ 397 | t  | t  | t | t
+ 398 | t  | t  | t | t
+ 399 | t  | t  | t | t
+ 405 | t  | t  | t | t
+ 406 | t  | t  | t | t
+ 407 | t  | t  | t | t
+ 408 | t  | t  | t | t
+ 409 | t  | t  | t | t
+ 410 | t  | t  | t | t
+ 415 | t  | t  | t | t
+ 417 | t  | t  | t | t
+ 441 | t  | t  | t | t
+ 442 | t  | t  | t | t
+ 443 | t  | t  | t | t
+ 449 | t  | t  | t | t
+ 450 | t  | t  | t | t
+ 451 | t  | t  | t | t
+ 452 | t  | t  | t | t
+ 453 | t  | t  | t | t
+ 454 | t  | t  | t | t
+ 459 | t  | t  | t | t
+ 461 | t  | t  | t | t
+(121 rows)
+
+--Testcase 64:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT i, b1, b2, b1 AND b2 a, b1 OR b2 o FROM "type_BOOLEAN_oper" WHERE b1 OR b2;
+                                                                           QUERY PLAN                                                                            
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public."type_BOOLEAN_oper"
+   Output: i, b1, b2, (b1 AND b2), (b1 OR b2)
+   SQLite query: SELECT `i`, sqlite_fdw_bool(`b1`), sqlite_fdw_bool(`b2`) FROM main."type_BOOLEAN_oper" WHERE ((sqlite_fdw_bool(`b1`) OR sqlite_fdw_bool(`b2`)))
+(3 rows)
+
+--Testcase 65:
+SELECT i, b1, b2, b1 AND b2 a, b1 OR b2 o FROM "type_BOOLEAN_oper" WHERE b1 OR b2;
+  i  | b1 | b2 | a | o 
+-----+----+----+---+---
+   1 | t  | t  | t | t
+   2 | t  | t  | t | t
+   3 | t  | t  | t | t
+   4 | t  | f  | f | t
+   5 | t  | f  | f | t
+   6 | t  | f  | f | t
+   7 | t  | f  | f | t
+   8 | t  | f  | f | t
+   9 | t  | t  | t | t
+  10 | t  | t  | t | t
+  11 | t  | t  | t | t
+  12 | t  | t  | t | t
+  13 | t  | t  | t | t
+  14 | t  | t  | t | t
+  15 | t  | f  | f | t
+  16 | t  | f  | f | t
+  17 | t  | f  | f | t
+  18 | t  | f  | f | t
+  19 | t  | t  | t | t
+  20 | t  | f  | f | t
+  21 | t  | t  | t | t
+  22 | t  |    |   | t
+  23 | t  | t  | t | t
+  24 | t  | t  | t | t
+  25 | t  | t  | t | t
+  26 | t  | f  | f | t
+  27 | t  | f  | f | t
+  28 | t  | f  | f | t
+  29 | t  | f  | f | t
+  30 | t  | f  | f | t
+  31 | t  | t  | t | t
+  32 | t  | t  | t | t
+  33 | t  | t  | t | t
+  34 | t  | t  | t | t
+  35 | t  | t  | t | t
+  36 | t  | t  | t | t
+  37 | t  | f  | f | t
+  38 | t  | f  | f | t
+  39 | t  | f  | f | t
+  40 | t  | f  | f | t
+  41 | t  | t  | t | t
+  42 | t  | f  | f | t
+  43 | t  | t  | t | t
+  44 | t  |    |   | t
+  45 | t  | t  | t | t
+  46 | t  | t  | t | t
+  47 | t  | t  | t | t
+  48 | t  | f  | f | t
+  49 | t  | f  | f | t
+  50 | t  | f  | f | t
+  51 | t  | f  | f | t
+  52 | t  | f  | f | t
+  53 | t  | t  | t | t
+  54 | t  | t  | t | t
+  55 | t  | t  | t | t
+  56 | t  | t  | t | t
+  57 | t  | t  | t | t
+  58 | t  | t  | t | t
+  59 | t  | f  | f | t
+  60 | t  | f  | f | t
+  61 | t  | f  | f | t
+  62 | t  | f  | f | t
+  63 | t  | t  | t | t
+  64 | t  | f  | f | t
+  65 | t  | t  | t | t
+  66 | t  |    |   | t
+  67 | f  | t  | f | t
+  68 | f  | t  | f | t
+  69 | f  | t  | f | t
+  75 | f  | t  | f | t
+  76 | f  | t  | f | t
+  77 | f  | t  | f | t
+  78 | f  | t  | f | t
+  79 | f  | t  | f | t
+  80 | f  | t  | f | t
+  85 | f  | t  | f | t
+  87 | f  | t  | f | t
+  89 | f  | t  | f | t
+  90 | f  | t  | f | t
+  91 | f  | t  | f | t
+  97 | f  | t  | f | t
+  98 | f  | t  | f | t
+  99 | f  | t  | f | t
+ 100 | f  | t  | f | t
+ 101 | f  | t  | f | t
+ 102 | f  | t  | f | t
+ 107 | f  | t  | f | t
+ 109 | f  | t  | f | t
+ 111 | f  | t  | f | t
+ 112 | f  | t  | f | t
+ 113 | f  | t  | f | t
+ 119 | f  | t  | f | t
+ 120 | f  | t  | f | t
+ 121 | f  | t  | f | t
+ 122 | f  | t  | f | t
+ 123 | f  | t  | f | t
+ 124 | f  | t  | f | t
+ 129 | f  | t  | f | t
+ 131 | f  | t  | f | t
+ 133 | f  | t  | f | t
+ 134 | f  | t  | f | t
+ 135 | f  | t  | f | t
+ 141 | f  | t  | f | t
+ 142 | f  | t  | f | t
+ 143 | f  | t  | f | t
+ 144 | f  | t  | f | t
+ 145 | f  | t  | f | t
+ 146 | f  | t  | f | t
+ 151 | f  | t  | f | t
+ 153 | f  | t  | f | t
+ 155 | f  | t  | f | t
+ 156 | f  | t  | f | t
+ 157 | f  | t  | f | t
+ 163 | f  | t  | f | t
+ 164 | f  | t  | f | t
+ 165 | f  | t  | f | t
+ 166 | f  | t  | f | t
+ 167 | f  | t  | f | t
+ 168 | f  | t  | f | t
+ 173 | f  | t  | f | t
+ 175 | f  | t  | f | t
+ 177 | t  | t  | t | t
+ 178 | t  | t  | t | t
+ 179 | t  | t  | t | t
+ 180 | t  | f  | f | t
+ 181 | t  | f  | f | t
+ 182 | t  | f  | f | t
+ 183 | t  | f  | f | t
+ 184 | t  | f  | f | t
+ 185 | t  | t  | t | t
+ 186 | t  | t  | t | t
+ 187 | t  | t  | t | t
+ 188 | t  | t  | t | t
+ 189 | t  | t  | t | t
+ 190 | t  | t  | t | t
+ 191 | t  | f  | f | t
+ 192 | t  | f  | f | t
+ 193 | t  | f  | f | t
+ 194 | t  | f  | f | t
+ 195 | t  | t  | t | t
+ 196 | t  | f  | f | t
+ 197 | t  | t  | t | t
+ 198 | t  |    |   | t
+ 199 | t  | t  | t | t
+ 200 | t  | t  | t | t
+ 201 | t  | t  | t | t
+ 202 | t  | f  | f | t
+ 203 | t  | f  | f | t
+ 204 | t  | f  | f | t
+ 205 | t  | f  | f | t
+ 206 | t  | f  | f | t
+ 207 | t  | t  | t | t
+ 208 | t  | t  | t | t
+ 209 | t  | t  | t | t
+ 210 | t  | t  | t | t
+ 211 | t  | t  | t | t
+ 212 | t  | t  | t | t
+ 213 | t  | f  | f | t
+ 214 | t  | f  | f | t
+ 215 | t  | f  | f | t
+ 216 | t  | f  | f | t
+ 217 | t  | t  | t | t
+ 218 | t  | f  | f | t
+ 219 | t  | t  | t | t
+ 220 | t  |    |   | t
+ 221 | t  | t  | t | t
+ 222 | t  | t  | t | t
+ 223 | t  | t  | t | t
+ 224 | t  | f  | f | t
+ 225 | t  | f  | f | t
+ 226 | t  | f  | f | t
+ 227 | t  | f  | f | t
+ 228 | t  | f  | f | t
+ 229 | t  | t  | t | t
+ 230 | t  | t  | t | t
+ 231 | t  | t  | t | t
+ 232 | t  | t  | t | t
+ 233 | t  | t  | t | t
+ 234 | t  | t  | t | t
+ 235 | t  | f  | f | t
+ 236 | t  | f  | f | t
+ 237 | t  | f  | f | t
+ 238 | t  | f  | f | t
+ 239 | t  | t  | t | t
+ 240 | t  | f  | f | t
+ 241 | t  | t  | t | t
+ 242 | t  |    |   | t
+ 243 | t  | t  | t | t
+ 244 | t  | t  | t | t
+ 245 | t  | t  | t | t
+ 246 | t  | f  | f | t
+ 247 | t  | f  | f | t
+ 248 | t  | f  | f | t
+ 249 | t  | f  | f | t
+ 250 | t  | f  | f | t
+ 251 | t  | t  | t | t
+ 252 | t  | t  | t | t
+ 253 | t  | t  | t | t
+ 254 | t  | t  | t | t
+ 255 | t  | t  | t | t
+ 256 | t  | t  | t | t
+ 257 | t  | f  | f | t
+ 258 | t  | f  | f | t
+ 259 | t  | f  | f | t
+ 260 | t  | f  | f | t
+ 261 | t  | t  | t | t
+ 262 | t  | f  | f | t
+ 263 | t  | t  | t | t
+ 264 | t  |    |   | t
+ 265 | t  | t  | t | t
+ 266 | t  | t  | t | t
+ 267 | t  | t  | t | t
+ 268 | t  | f  | f | t
+ 269 | t  | f  | f | t
+ 270 | t  | f  | f | t
+ 271 | t  | f  | f | t
+ 272 | t  | f  | f | t
+ 273 | t  | t  | t | t
+ 274 | t  | t  | t | t
+ 275 | t  | t  | t | t
+ 276 | t  | t  | t | t
+ 277 | t  | t  | t | t
+ 278 | t  | t  | t | t
+ 279 | t  | f  | f | t
+ 280 | t  | f  | f | t
+ 281 | t  | f  | f | t
+ 282 | t  | f  | f | t
+ 283 | t  | t  | t | t
+ 284 | t  | f  | f | t
+ 285 | t  | t  | t | t
+ 286 | t  |    |   | t
+ 287 | t  | t  | t | t
+ 288 | t  | t  | t | t
+ 289 | t  | t  | t | t
+ 290 | t  | f  | f | t
+ 291 | t  | f  | f | t
+ 292 | t  | f  | f | t
+ 293 | t  | f  | f | t
+ 294 | t  | f  | f | t
+ 295 | t  | t  | t | t
+ 296 | t  | t  | t | t
+ 297 | t  | t  | t | t
+ 298 | t  | t  | t | t
+ 299 | t  | t  | t | t
+ 300 | t  | t  | t | t
+ 301 | t  | f  | f | t
+ 302 | t  | f  | f | t
+ 303 | t  | f  | f | t
+ 304 | t  | f  | f | t
+ 305 | t  | t  | t | t
+ 306 | t  | f  | f | t
+ 307 | t  | t  | t | t
+ 308 | t  |    |   | t
+ 309 | f  | t  | f | t
+ 310 | f  | t  | f | t
+ 311 | f  | t  | f | t
+ 317 | f  | t  | f | t
+ 318 | f  | t  | f | t
+ 319 | f  | t  | f | t
+ 320 | f  | t  | f | t
+ 321 | f  | t  | f | t
+ 322 | f  | t  | f | t
+ 327 | f  | t  | f | t
+ 329 | f  | t  | f | t
+ 331 | f  | t  | f | t
+ 332 | f  | t  | f | t
+ 333 | f  | t  | f | t
+ 339 | f  | t  | f | t
+ 340 | f  | t  | f | t
+ 341 | f  | t  | f | t
+ 342 | f  | t  | f | t
+ 343 | f  | t  | f | t
+ 344 | f  | t  | f | t
+ 349 | f  | t  | f | t
+ 351 | f  | t  | f | t
+ 353 | f  | t  | f | t
+ 354 | f  | t  | f | t
+ 355 | f  | t  | f | t
+ 361 | f  | t  | f | t
+ 362 | f  | t  | f | t
+ 363 | f  | t  | f | t
+ 364 | f  | t  | f | t
+ 365 | f  | t  | f | t
+ 366 | f  | t  | f | t
+ 371 | f  | t  | f | t
+ 373 | f  | t  | f | t
+ 375 | f  | t  | f | t
+ 376 | f  | t  | f | t
+ 377 | f  | t  | f | t
+ 383 | f  | t  | f | t
+ 384 | f  | t  | f | t
+ 385 | f  | t  | f | t
+ 386 | f  | t  | f | t
+ 387 | f  | t  | f | t
+ 388 | f  | t  | f | t
+ 393 | f  | t  | f | t
+ 395 | f  | t  | f | t
+ 397 | t  | t  | t | t
+ 398 | t  | t  | t | t
+ 399 | t  | t  | t | t
+ 400 | t  | f  | f | t
+ 401 | t  | f  | f | t
+ 402 | t  | f  | f | t
+ 403 | t  | f  | f | t
+ 404 | t  | f  | f | t
+ 405 | t  | t  | t | t
+ 406 | t  | t  | t | t
+ 407 | t  | t  | t | t
+ 408 | t  | t  | t | t
+ 409 | t  | t  | t | t
+ 410 | t  | t  | t | t
+ 411 | t  | f  | f | t
+ 412 | t  | f  | f | t
+ 413 | t  | f  | f | t
+ 414 | t  | f  | f | t
+ 415 | t  | t  | t | t
+ 416 | t  | f  | f | t
+ 417 | t  | t  | t | t
+ 418 | t  |    |   | t
+ 419 | f  | t  | f | t
+ 420 | f  | t  | f | t
+ 421 | f  | t  | f | t
+ 427 | f  | t  | f | t
+ 428 | f  | t  | f | t
+ 429 | f  | t  | f | t
+ 430 | f  | t  | f | t
+ 431 | f  | t  | f | t
+ 432 | f  | t  | f | t
+ 437 | f  | t  | f | t
+ 439 | f  | t  | f | t
+ 441 | t  | t  | t | t
+ 442 | t  | t  | t | t
+ 443 | t  | t  | t | t
+ 444 | t  | f  | f | t
+ 445 | t  | f  | f | t
+ 446 | t  | f  | f | t
+ 447 | t  | f  | f | t
+ 448 | t  | f  | f | t
+ 449 | t  | t  | t | t
+ 450 | t  | t  | t | t
+ 451 | t  | t  | t | t
+ 452 | t  | t  | t | t
+ 453 | t  | t  | t | t
+ 454 | t  | t  | t | t
+ 455 | t  | f  | f | t
+ 456 | t  | f  | f | t
+ 457 | t  | f  | f | t
+ 458 | t  | f  | f | t
+ 459 | t  | t  | t | t
+ 460 | t  | f  | f | t
+ 461 | t  | t  | t | t
+ 462 | t  |    |   | t
+ 463 |    | t  |   | t
+ 464 |    | t  |   | t
+ 465 |    | t  |   | t
+ 471 |    | t  |   | t
+ 472 |    | t  |   | t
+ 473 |    | t  |   | t
+ 474 |    | t  |   | t
+ 475 |    | t  |   | t
+ 476 |    | t  |   | t
+ 481 |    | t  |   | t
+ 483 |    | t  |   | t
+(363 rows)
+
+--Testcase 66:
+UPDATE "type_BOOLEAN_oper" SET b1 = NULL WHERE NOT b1;
+--Testcase 67:
+SELECT * FROM "type_BOOLEAN_oper";
+  i  | i1 | b1 | i2 | b2 
+-----+----+----+----+----
+   1 |  1 | t  |  1 | t
+   2 |  1 | t  |  2 | t
+   3 |  1 | t  |  3 | t
+   4 |  1 | t  |  4 | f
+   5 |  1 | t  |  5 | f
+   6 |  1 | t  |  6 | f
+   7 |  1 | t  |  7 | f
+   8 |  1 | t  |  8 | f
+   9 |  1 | t  |  9 | t
+  10 |  1 | t  | 10 | t
+  11 |  1 | t  | 11 | t
+  12 |  1 | t  | 12 | t
+  13 |  1 | t  | 13 | t
+  14 |  1 | t  | 14 | t
+  15 |  1 | t  | 15 | f
+  16 |  1 | t  | 16 | f
+  17 |  1 | t  | 17 | f
+  18 |  1 | t  | 18 | f
+  19 |  1 | t  | 19 | t
+  20 |  1 | t  | 20 | f
+  21 |  1 | t  | 21 | t
+  22 |  1 | t  | 22 | 
+  23 |  2 | t  |  1 | t
+  24 |  2 | t  |  2 | t
+  25 |  2 | t  |  3 | t
+  26 |  2 | t  |  4 | f
+  27 |  2 | t  |  5 | f
+  28 |  2 | t  |  6 | f
+  29 |  2 | t  |  7 | f
+  30 |  2 | t  |  8 | f
+  31 |  2 | t  |  9 | t
+  32 |  2 | t  | 10 | t
+  33 |  2 | t  | 11 | t
+  34 |  2 | t  | 12 | t
+  35 |  2 | t  | 13 | t
+  36 |  2 | t  | 14 | t
+  37 |  2 | t  | 15 | f
+  38 |  2 | t  | 16 | f
+  39 |  2 | t  | 17 | f
+  40 |  2 | t  | 18 | f
+  41 |  2 | t  | 19 | t
+  42 |  2 | t  | 20 | f
+  43 |  2 | t  | 21 | t
+  44 |  2 | t  | 22 | 
+  45 |  3 | t  |  1 | t
+  46 |  3 | t  |  2 | t
+  47 |  3 | t  |  3 | t
+  48 |  3 | t  |  4 | f
+  49 |  3 | t  |  5 | f
+  50 |  3 | t  |  6 | f
+  51 |  3 | t  |  7 | f
+  52 |  3 | t  |  8 | f
+  53 |  3 | t  |  9 | t
+  54 |  3 | t  | 10 | t
+  55 |  3 | t  | 11 | t
+  56 |  3 | t  | 12 | t
+  57 |  3 | t  | 13 | t
+  58 |  3 | t  | 14 | t
+  59 |  3 | t  | 15 | f
+  60 |  3 | t  | 16 | f
+  61 |  3 | t  | 17 | f
+  62 |  3 | t  | 18 | f
+  63 |  3 | t  | 19 | t
+  64 |  3 | t  | 20 | f
+  65 |  3 | t  | 21 | t
+  66 |  3 | t  | 22 | 
+  67 |  4 |    |  1 | t
+  68 |  4 |    |  2 | t
+  69 |  4 |    |  3 | t
+  70 |  4 |    |  4 | f
+  71 |  4 |    |  5 | f
+  72 |  4 |    |  6 | f
+  73 |  4 |    |  7 | f
+  74 |  4 |    |  8 | f
+  75 |  4 |    |  9 | t
+  76 |  4 |    | 10 | t
+  77 |  4 |    | 11 | t
+  78 |  4 |    | 12 | t
+  79 |  4 |    | 13 | t
+  80 |  4 |    | 14 | t
+  81 |  4 |    | 15 | f
+  82 |  4 |    | 16 | f
+  83 |  4 |    | 17 | f
+  84 |  4 |    | 18 | f
+  85 |  4 |    | 19 | t
+  86 |  4 |    | 20 | f
+  87 |  4 |    | 21 | t
+  88 |  4 |    | 22 | 
+  89 |  5 |    |  1 | t
+  90 |  5 |    |  2 | t
+  91 |  5 |    |  3 | t
+  92 |  5 |    |  4 | f
+  93 |  5 |    |  5 | f
+  94 |  5 |    |  6 | f
+  95 |  5 |    |  7 | f
+  96 |  5 |    |  8 | f
+  97 |  5 |    |  9 | t
+  98 |  5 |    | 10 | t
+  99 |  5 |    | 11 | t
+ 100 |  5 |    | 12 | t
+ 101 |  5 |    | 13 | t
+ 102 |  5 |    | 14 | t
+ 103 |  5 |    | 15 | f
+ 104 |  5 |    | 16 | f
+ 105 |  5 |    | 17 | f
+ 106 |  5 |    | 18 | f
+ 107 |  5 |    | 19 | t
+ 108 |  5 |    | 20 | f
+ 109 |  5 |    | 21 | t
+ 110 |  5 |    | 22 | 
+ 111 |  6 |    |  1 | t
+ 112 |  6 |    |  2 | t
+ 113 |  6 |    |  3 | t
+ 114 |  6 |    |  4 | f
+ 115 |  6 |    |  5 | f
+ 116 |  6 |    |  6 | f
+ 117 |  6 |    |  7 | f
+ 118 |  6 |    |  8 | f
+ 119 |  6 |    |  9 | t
+ 120 |  6 |    | 10 | t
+ 121 |  6 |    | 11 | t
+ 122 |  6 |    | 12 | t
+ 123 |  6 |    | 13 | t
+ 124 |  6 |    | 14 | t
+ 125 |  6 |    | 15 | f
+ 126 |  6 |    | 16 | f
+ 127 |  6 |    | 17 | f
+ 128 |  6 |    | 18 | f
+ 129 |  6 |    | 19 | t
+ 130 |  6 |    | 20 | f
+ 131 |  6 |    | 21 | t
+ 132 |  6 |    | 22 | 
+ 133 |  7 |    |  1 | t
+ 134 |  7 |    |  2 | t
+ 135 |  7 |    |  3 | t
+ 136 |  7 |    |  4 | f
+ 137 |  7 |    |  5 | f
+ 138 |  7 |    |  6 | f
+ 139 |  7 |    |  7 | f
+ 140 |  7 |    |  8 | f
+ 141 |  7 |    |  9 | t
+ 142 |  7 |    | 10 | t
+ 143 |  7 |    | 11 | t
+ 144 |  7 |    | 12 | t
+ 145 |  7 |    | 13 | t
+ 146 |  7 |    | 14 | t
+ 147 |  7 |    | 15 | f
+ 148 |  7 |    | 16 | f
+ 149 |  7 |    | 17 | f
+ 150 |  7 |    | 18 | f
+ 151 |  7 |    | 19 | t
+ 152 |  7 |    | 20 | f
+ 153 |  7 |    | 21 | t
+ 154 |  7 |    | 22 | 
+ 155 |  8 |    |  1 | t
+ 156 |  8 |    |  2 | t
+ 157 |  8 |    |  3 | t
+ 158 |  8 |    |  4 | f
+ 159 |  8 |    |  5 | f
+ 160 |  8 |    |  6 | f
+ 161 |  8 |    |  7 | f
+ 162 |  8 |    |  8 | f
+ 163 |  8 |    |  9 | t
+ 164 |  8 |    | 10 | t
+ 165 |  8 |    | 11 | t
+ 166 |  8 |    | 12 | t
+ 167 |  8 |    | 13 | t
+ 168 |  8 |    | 14 | t
+ 169 |  8 |    | 15 | f
+ 170 |  8 |    | 16 | f
+ 171 |  8 |    | 17 | f
+ 172 |  8 |    | 18 | f
+ 173 |  8 |    | 19 | t
+ 174 |  8 |    | 20 | f
+ 175 |  8 |    | 21 | t
+ 176 |  8 |    | 22 | 
+ 177 |  9 | t  |  1 | t
+ 178 |  9 | t  |  2 | t
+ 179 |  9 | t  |  3 | t
+ 180 |  9 | t  |  4 | f
+ 181 |  9 | t  |  5 | f
+ 182 |  9 | t  |  6 | f
+ 183 |  9 | t  |  7 | f
+ 184 |  9 | t  |  8 | f
+ 185 |  9 | t  |  9 | t
+ 186 |  9 | t  | 10 | t
+ 187 |  9 | t  | 11 | t
+ 188 |  9 | t  | 12 | t
+ 189 |  9 | t  | 13 | t
+ 190 |  9 | t  | 14 | t
+ 191 |  9 | t  | 15 | f
+ 192 |  9 | t  | 16 | f
+ 193 |  9 | t  | 17 | f
+ 194 |  9 | t  | 18 | f
+ 195 |  9 | t  | 19 | t
+ 196 |  9 | t  | 20 | f
+ 197 |  9 | t  | 21 | t
+ 198 |  9 | t  | 22 | 
+ 199 | 10 | t  |  1 | t
+ 200 | 10 | t  |  2 | t
+ 201 | 10 | t  |  3 | t
+ 202 | 10 | t  |  4 | f
+ 203 | 10 | t  |  5 | f
+ 204 | 10 | t  |  6 | f
+ 205 | 10 | t  |  7 | f
+ 206 | 10 | t  |  8 | f
+ 207 | 10 | t  |  9 | t
+ 208 | 10 | t  | 10 | t
+ 209 | 10 | t  | 11 | t
+ 210 | 10 | t  | 12 | t
+ 211 | 10 | t  | 13 | t
+ 212 | 10 | t  | 14 | t
+ 213 | 10 | t  | 15 | f
+ 214 | 10 | t  | 16 | f
+ 215 | 10 | t  | 17 | f
+ 216 | 10 | t  | 18 | f
+ 217 | 10 | t  | 19 | t
+ 218 | 10 | t  | 20 | f
+ 219 | 10 | t  | 21 | t
+ 220 | 10 | t  | 22 | 
+ 221 | 11 | t  |  1 | t
+ 222 | 11 | t  |  2 | t
+ 223 | 11 | t  |  3 | t
+ 224 | 11 | t  |  4 | f
+ 225 | 11 | t  |  5 | f
+ 226 | 11 | t  |  6 | f
+ 227 | 11 | t  |  7 | f
+ 228 | 11 | t  |  8 | f
+ 229 | 11 | t  |  9 | t
+ 230 | 11 | t  | 10 | t
+ 231 | 11 | t  | 11 | t
+ 232 | 11 | t  | 12 | t
+ 233 | 11 | t  | 13 | t
+ 234 | 11 | t  | 14 | t
+ 235 | 11 | t  | 15 | f
+ 236 | 11 | t  | 16 | f
+ 237 | 11 | t  | 17 | f
+ 238 | 11 | t  | 18 | f
+ 239 | 11 | t  | 19 | t
+ 240 | 11 | t  | 20 | f
+ 241 | 11 | t  | 21 | t
+ 242 | 11 | t  | 22 | 
+ 243 | 12 | t  |  1 | t
+ 244 | 12 | t  |  2 | t
+ 245 | 12 | t  |  3 | t
+ 246 | 12 | t  |  4 | f
+ 247 | 12 | t  |  5 | f
+ 248 | 12 | t  |  6 | f
+ 249 | 12 | t  |  7 | f
+ 250 | 12 | t  |  8 | f
+ 251 | 12 | t  |  9 | t
+ 252 | 12 | t  | 10 | t
+ 253 | 12 | t  | 11 | t
+ 254 | 12 | t  | 12 | t
+ 255 | 12 | t  | 13 | t
+ 256 | 12 | t  | 14 | t
+ 257 | 12 | t  | 15 | f
+ 258 | 12 | t  | 16 | f
+ 259 | 12 | t  | 17 | f
+ 260 | 12 | t  | 18 | f
+ 261 | 12 | t  | 19 | t
+ 262 | 12 | t  | 20 | f
+ 263 | 12 | t  | 21 | t
+ 264 | 12 | t  | 22 | 
+ 265 | 13 | t  |  1 | t
+ 266 | 13 | t  |  2 | t
+ 267 | 13 | t  |  3 | t
+ 268 | 13 | t  |  4 | f
+ 269 | 13 | t  |  5 | f
+ 270 | 13 | t  |  6 | f
+ 271 | 13 | t  |  7 | f
+ 272 | 13 | t  |  8 | f
+ 273 | 13 | t  |  9 | t
+ 274 | 13 | t  | 10 | t
+ 275 | 13 | t  | 11 | t
+ 276 | 13 | t  | 12 | t
+ 277 | 13 | t  | 13 | t
+ 278 | 13 | t  | 14 | t
+ 279 | 13 | t  | 15 | f
+ 280 | 13 | t  | 16 | f
+ 281 | 13 | t  | 17 | f
+ 282 | 13 | t  | 18 | f
+ 283 | 13 | t  | 19 | t
+ 284 | 13 | t  | 20 | f
+ 285 | 13 | t  | 21 | t
+ 286 | 13 | t  | 22 | 
+ 287 | 14 | t  |  1 | t
+ 288 | 14 | t  |  2 | t
+ 289 | 14 | t  |  3 | t
+ 290 | 14 | t  |  4 | f
+ 291 | 14 | t  |  5 | f
+ 292 | 14 | t  |  6 | f
+ 293 | 14 | t  |  7 | f
+ 294 | 14 | t  |  8 | f
+ 295 | 14 | t  |  9 | t
+ 296 | 14 | t  | 10 | t
+ 297 | 14 | t  | 11 | t
+ 298 | 14 | t  | 12 | t
+ 299 | 14 | t  | 13 | t
+ 300 | 14 | t  | 14 | t
+ 301 | 14 | t  | 15 | f
+ 302 | 14 | t  | 16 | f
+ 303 | 14 | t  | 17 | f
+ 304 | 14 | t  | 18 | f
+ 305 | 14 | t  | 19 | t
+ 306 | 14 | t  | 20 | f
+ 307 | 14 | t  | 21 | t
+ 308 | 14 | t  | 22 | 
+ 309 | 15 |    |  1 | t
+ 310 | 15 |    |  2 | t
+ 311 | 15 |    |  3 | t
+ 312 | 15 |    |  4 | f
+ 313 | 15 |    |  5 | f
+ 314 | 15 |    |  6 | f
+ 315 | 15 |    |  7 | f
+ 316 | 15 |    |  8 | f
+ 317 | 15 |    |  9 | t
+ 318 | 15 |    | 10 | t
+ 319 | 15 |    | 11 | t
+ 320 | 15 |    | 12 | t
+ 321 | 15 |    | 13 | t
+ 322 | 15 |    | 14 | t
+ 323 | 15 |    | 15 | f
+ 324 | 15 |    | 16 | f
+ 325 | 15 |    | 17 | f
+ 326 | 15 |    | 18 | f
+ 327 | 15 |    | 19 | t
+ 328 | 15 |    | 20 | f
+ 329 | 15 |    | 21 | t
+ 330 | 15 |    | 22 | 
+ 331 | 16 |    |  1 | t
+ 332 | 16 |    |  2 | t
+ 333 | 16 |    |  3 | t
+ 334 | 16 |    |  4 | f
+ 335 | 16 |    |  5 | f
+ 336 | 16 |    |  6 | f
+ 337 | 16 |    |  7 | f
+ 338 | 16 |    |  8 | f
+ 339 | 16 |    |  9 | t
+ 340 | 16 |    | 10 | t
+ 341 | 16 |    | 11 | t
+ 342 | 16 |    | 12 | t
+ 343 | 16 |    | 13 | t
+ 344 | 16 |    | 14 | t
+ 345 | 16 |    | 15 | f
+ 346 | 16 |    | 16 | f
+ 347 | 16 |    | 17 | f
+ 348 | 16 |    | 18 | f
+ 349 | 16 |    | 19 | t
+ 350 | 16 |    | 20 | f
+ 351 | 16 |    | 21 | t
+ 352 | 16 |    | 22 | 
+ 353 | 17 |    |  1 | t
+ 354 | 17 |    |  2 | t
+ 355 | 17 |    |  3 | t
+ 356 | 17 |    |  4 | f
+ 357 | 17 |    |  5 | f
+ 358 | 17 |    |  6 | f
+ 359 | 17 |    |  7 | f
+ 360 | 17 |    |  8 | f
+ 361 | 17 |    |  9 | t
+ 362 | 17 |    | 10 | t
+ 363 | 17 |    | 11 | t
+ 364 | 17 |    | 12 | t
+ 365 | 17 |    | 13 | t
+ 366 | 17 |    | 14 | t
+ 367 | 17 |    | 15 | f
+ 368 | 17 |    | 16 | f
+ 369 | 17 |    | 17 | f
+ 370 | 17 |    | 18 | f
+ 371 | 17 |    | 19 | t
+ 372 | 17 |    | 20 | f
+ 373 | 17 |    | 21 | t
+ 374 | 17 |    | 22 | 
+ 375 | 18 |    |  1 | t
+ 376 | 18 |    |  2 | t
+ 377 | 18 |    |  3 | t
+ 378 | 18 |    |  4 | f
+ 379 | 18 |    |  5 | f
+ 380 | 18 |    |  6 | f
+ 381 | 18 |    |  7 | f
+ 382 | 18 |    |  8 | f
+ 383 | 18 |    |  9 | t
+ 384 | 18 |    | 10 | t
+ 385 | 18 |    | 11 | t
+ 386 | 18 |    | 12 | t
+ 387 | 18 |    | 13 | t
+ 388 | 18 |    | 14 | t
+ 389 | 18 |    | 15 | f
+ 390 | 18 |    | 16 | f
+ 391 | 18 |    | 17 | f
+ 392 | 18 |    | 18 | f
+ 393 | 18 |    | 19 | t
+ 394 | 18 |    | 20 | f
+ 395 | 18 |    | 21 | t
+ 396 | 18 |    | 22 | 
+ 397 | 19 | t  |  1 | t
+ 398 | 19 | t  |  2 | t
+ 399 | 19 | t  |  3 | t
+ 400 | 19 | t  |  4 | f
+ 401 | 19 | t  |  5 | f
+ 402 | 19 | t  |  6 | f
+ 403 | 19 | t  |  7 | f
+ 404 | 19 | t  |  8 | f
+ 405 | 19 | t  |  9 | t
+ 406 | 19 | t  | 10 | t
+ 407 | 19 | t  | 11 | t
+ 408 | 19 | t  | 12 | t
+ 409 | 19 | t  | 13 | t
+ 410 | 19 | t  | 14 | t
+ 411 | 19 | t  | 15 | f
+ 412 | 19 | t  | 16 | f
+ 413 | 19 | t  | 17 | f
+ 414 | 19 | t  | 18 | f
+ 415 | 19 | t  | 19 | t
+ 416 | 19 | t  | 20 | f
+ 417 | 19 | t  | 21 | t
+ 418 | 19 | t  | 22 | 
+ 419 | 20 |    |  1 | t
+ 420 | 20 |    |  2 | t
+ 421 | 20 |    |  3 | t
+ 422 | 20 |    |  4 | f
+ 423 | 20 |    |  5 | f
+ 424 | 20 |    |  6 | f
+ 425 | 20 |    |  7 | f
+ 426 | 20 |    |  8 | f
+ 427 | 20 |    |  9 | t
+ 428 | 20 |    | 10 | t
+ 429 | 20 |    | 11 | t
+ 430 | 20 |    | 12 | t
+ 431 | 20 |    | 13 | t
+ 432 | 20 |    | 14 | t
+ 433 | 20 |    | 15 | f
+ 434 | 20 |    | 16 | f
+ 435 | 20 |    | 17 | f
+ 436 | 20 |    | 18 | f
+ 437 | 20 |    | 19 | t
+ 438 | 20 |    | 20 | f
+ 439 | 20 |    | 21 | t
+ 440 | 20 |    | 22 | 
+ 441 | 21 | t  |  1 | t
+ 442 | 21 | t  |  2 | t
+ 443 | 21 | t  |  3 | t
+ 444 | 21 | t  |  4 | f
+ 445 | 21 | t  |  5 | f
+ 446 | 21 | t  |  6 | f
+ 447 | 21 | t  |  7 | f
+ 448 | 21 | t  |  8 | f
+ 449 | 21 | t  |  9 | t
+ 450 | 21 | t  | 10 | t
+ 451 | 21 | t  | 11 | t
+ 452 | 21 | t  | 12 | t
+ 453 | 21 | t  | 13 | t
+ 454 | 21 | t  | 14 | t
+ 455 | 21 | t  | 15 | f
+ 456 | 21 | t  | 16 | f
+ 457 | 21 | t  | 17 | f
+ 458 | 21 | t  | 18 | f
+ 459 | 21 | t  | 19 | t
+ 460 | 21 | t  | 20 | f
+ 461 | 21 | t  | 21 | t
+ 462 | 21 | t  | 22 | 
+ 463 | 22 |    |  1 | t
+ 464 | 22 |    |  2 | t
+ 465 | 22 |    |  3 | t
+ 466 | 22 |    |  4 | f
+ 467 | 22 |    |  5 | f
+ 468 | 22 |    |  6 | f
+ 469 | 22 |    |  7 | f
+ 470 | 22 |    |  8 | f
+ 471 | 22 |    |  9 | t
+ 472 | 22 |    | 10 | t
+ 473 | 22 |    | 11 | t
+ 474 | 22 |    | 12 | t
+ 475 | 22 |    | 13 | t
+ 476 | 22 |    | 14 | t
+ 477 | 22 |    | 15 | f
+ 478 | 22 |    | 16 | f
+ 479 | 22 |    | 17 | f
+ 480 | 22 |    | 18 | f
+ 481 | 22 |    | 19 | t
+ 482 | 22 |    | 20 | f
+ 483 | 22 |    | 21 | t
+ 484 | 22 |    | 22 | 
+(484 rows)
+
+--Testcase 68:
+UPDATE "type_BOOLEAN_oper" SET b1 = false WHERE b1 OR b2;
+--Testcase 69:
+EXPLAIN (VERBOSE, COSTS OFF)
+UPDATE "type_BOOLEAN_oper" SET b1 = false WHERE b1 OR b2;
+                                                         QUERY PLAN                                                          
+-----------------------------------------------------------------------------------------------------------------------------
+ Update on public."type_BOOLEAN_oper"
+   ->  Foreign Update on public."type_BOOLEAN_oper"
+         SQLite query: UPDATE main."type_BOOLEAN_oper" SET `b1` = 0 WHERE ((sqlite_fdw_bool(`b1`) OR sqlite_fdw_bool(`b2`)))
+(3 rows)
+
+--Testcase 70:
+SELECT * FROM "type_BOOLEAN_oper";
+  i  | i1 | b1 | i2 | b2 
+-----+----+----+----+----
+   1 |  1 | f  |  1 | t
+   2 |  1 | f  |  2 | t
+   3 |  1 | f  |  3 | t
+   4 |  1 | f  |  4 | f
+   5 |  1 | f  |  5 | f
+   6 |  1 | f  |  6 | f
+   7 |  1 | f  |  7 | f
+   8 |  1 | f  |  8 | f
+   9 |  1 | f  |  9 | t
+  10 |  1 | f  | 10 | t
+  11 |  1 | f  | 11 | t
+  12 |  1 | f  | 12 | t
+  13 |  1 | f  | 13 | t
+  14 |  1 | f  | 14 | t
+  15 |  1 | f  | 15 | f
+  16 |  1 | f  | 16 | f
+  17 |  1 | f  | 17 | f
+  18 |  1 | f  | 18 | f
+  19 |  1 | f  | 19 | t
+  20 |  1 | f  | 20 | f
+  21 |  1 | f  | 21 | t
+  22 |  1 | f  | 22 | 
+  23 |  2 | f  |  1 | t
+  24 |  2 | f  |  2 | t
+  25 |  2 | f  |  3 | t
+  26 |  2 | f  |  4 | f
+  27 |  2 | f  |  5 | f
+  28 |  2 | f  |  6 | f
+  29 |  2 | f  |  7 | f
+  30 |  2 | f  |  8 | f
+  31 |  2 | f  |  9 | t
+  32 |  2 | f  | 10 | t
+  33 |  2 | f  | 11 | t
+  34 |  2 | f  | 12 | t
+  35 |  2 | f  | 13 | t
+  36 |  2 | f  | 14 | t
+  37 |  2 | f  | 15 | f
+  38 |  2 | f  | 16 | f
+  39 |  2 | f  | 17 | f
+  40 |  2 | f  | 18 | f
+  41 |  2 | f  | 19 | t
+  42 |  2 | f  | 20 | f
+  43 |  2 | f  | 21 | t
+  44 |  2 | f  | 22 | 
+  45 |  3 | f  |  1 | t
+  46 |  3 | f  |  2 | t
+  47 |  3 | f  |  3 | t
+  48 |  3 | f  |  4 | f
+  49 |  3 | f  |  5 | f
+  50 |  3 | f  |  6 | f
+  51 |  3 | f  |  7 | f
+  52 |  3 | f  |  8 | f
+  53 |  3 | f  |  9 | t
+  54 |  3 | f  | 10 | t
+  55 |  3 | f  | 11 | t
+  56 |  3 | f  | 12 | t
+  57 |  3 | f  | 13 | t
+  58 |  3 | f  | 14 | t
+  59 |  3 | f  | 15 | f
+  60 |  3 | f  | 16 | f
+  61 |  3 | f  | 17 | f
+  62 |  3 | f  | 18 | f
+  63 |  3 | f  | 19 | t
+  64 |  3 | f  | 20 | f
+  65 |  3 | f  | 21 | t
+  66 |  3 | f  | 22 | 
+  67 |  4 | f  |  1 | t
+  68 |  4 | f  |  2 | t
+  69 |  4 | f  |  3 | t
+  70 |  4 |    |  4 | f
+  71 |  4 |    |  5 | f
+  72 |  4 |    |  6 | f
+  73 |  4 |    |  7 | f
+  74 |  4 |    |  8 | f
+  75 |  4 | f  |  9 | t
+  76 |  4 | f  | 10 | t
+  77 |  4 | f  | 11 | t
+  78 |  4 | f  | 12 | t
+  79 |  4 | f  | 13 | t
+  80 |  4 | f  | 14 | t
+  81 |  4 |    | 15 | f
+  82 |  4 |    | 16 | f
+  83 |  4 |    | 17 | f
+  84 |  4 |    | 18 | f
+  85 |  4 | f  | 19 | t
+  86 |  4 |    | 20 | f
+  87 |  4 | f  | 21 | t
+  88 |  4 |    | 22 | 
+  89 |  5 | f  |  1 | t
+  90 |  5 | f  |  2 | t
+  91 |  5 | f  |  3 | t
+  92 |  5 |    |  4 | f
+  93 |  5 |    |  5 | f
+  94 |  5 |    |  6 | f
+  95 |  5 |    |  7 | f
+  96 |  5 |    |  8 | f
+  97 |  5 | f  |  9 | t
+  98 |  5 | f  | 10 | t
+  99 |  5 | f  | 11 | t
+ 100 |  5 | f  | 12 | t
+ 101 |  5 | f  | 13 | t
+ 102 |  5 | f  | 14 | t
+ 103 |  5 |    | 15 | f
+ 104 |  5 |    | 16 | f
+ 105 |  5 |    | 17 | f
+ 106 |  5 |    | 18 | f
+ 107 |  5 | f  | 19 | t
+ 108 |  5 |    | 20 | f
+ 109 |  5 | f  | 21 | t
+ 110 |  5 |    | 22 | 
+ 111 |  6 | f  |  1 | t
+ 112 |  6 | f  |  2 | t
+ 113 |  6 | f  |  3 | t
+ 114 |  6 |    |  4 | f
+ 115 |  6 |    |  5 | f
+ 116 |  6 |    |  6 | f
+ 117 |  6 |    |  7 | f
+ 118 |  6 |    |  8 | f
+ 119 |  6 | f  |  9 | t
+ 120 |  6 | f  | 10 | t
+ 121 |  6 | f  | 11 | t
+ 122 |  6 | f  | 12 | t
+ 123 |  6 | f  | 13 | t
+ 124 |  6 | f  | 14 | t
+ 125 |  6 |    | 15 | f
+ 126 |  6 |    | 16 | f
+ 127 |  6 |    | 17 | f
+ 128 |  6 |    | 18 | f
+ 129 |  6 | f  | 19 | t
+ 130 |  6 |    | 20 | f
+ 131 |  6 | f  | 21 | t
+ 132 |  6 |    | 22 | 
+ 133 |  7 | f  |  1 | t
+ 134 |  7 | f  |  2 | t
+ 135 |  7 | f  |  3 | t
+ 136 |  7 |    |  4 | f
+ 137 |  7 |    |  5 | f
+ 138 |  7 |    |  6 | f
+ 139 |  7 |    |  7 | f
+ 140 |  7 |    |  8 | f
+ 141 |  7 | f  |  9 | t
+ 142 |  7 | f  | 10 | t
+ 143 |  7 | f  | 11 | t
+ 144 |  7 | f  | 12 | t
+ 145 |  7 | f  | 13 | t
+ 146 |  7 | f  | 14 | t
+ 147 |  7 |    | 15 | f
+ 148 |  7 |    | 16 | f
+ 149 |  7 |    | 17 | f
+ 150 |  7 |    | 18 | f
+ 151 |  7 | f  | 19 | t
+ 152 |  7 |    | 20 | f
+ 153 |  7 | f  | 21 | t
+ 154 |  7 |    | 22 | 
+ 155 |  8 | f  |  1 | t
+ 156 |  8 | f  |  2 | t
+ 157 |  8 | f  |  3 | t
+ 158 |  8 |    |  4 | f
+ 159 |  8 |    |  5 | f
+ 160 |  8 |    |  6 | f
+ 161 |  8 |    |  7 | f
+ 162 |  8 |    |  8 | f
+ 163 |  8 | f  |  9 | t
+ 164 |  8 | f  | 10 | t
+ 165 |  8 | f  | 11 | t
+ 166 |  8 | f  | 12 | t
+ 167 |  8 | f  | 13 | t
+ 168 |  8 | f  | 14 | t
+ 169 |  8 |    | 15 | f
+ 170 |  8 |    | 16 | f
+ 171 |  8 |    | 17 | f
+ 172 |  8 |    | 18 | f
+ 173 |  8 | f  | 19 | t
+ 174 |  8 |    | 20 | f
+ 175 |  8 | f  | 21 | t
+ 176 |  8 |    | 22 | 
+ 177 |  9 | f  |  1 | t
+ 178 |  9 | f  |  2 | t
+ 179 |  9 | f  |  3 | t
+ 180 |  9 | f  |  4 | f
+ 181 |  9 | f  |  5 | f
+ 182 |  9 | f  |  6 | f
+ 183 |  9 | f  |  7 | f
+ 184 |  9 | f  |  8 | f
+ 185 |  9 | f  |  9 | t
+ 186 |  9 | f  | 10 | t
+ 187 |  9 | f  | 11 | t
+ 188 |  9 | f  | 12 | t
+ 189 |  9 | f  | 13 | t
+ 190 |  9 | f  | 14 | t
+ 191 |  9 | f  | 15 | f
+ 192 |  9 | f  | 16 | f
+ 193 |  9 | f  | 17 | f
+ 194 |  9 | f  | 18 | f
+ 195 |  9 | f  | 19 | t
+ 196 |  9 | f  | 20 | f
+ 197 |  9 | f  | 21 | t
+ 198 |  9 | f  | 22 | 
+ 199 | 10 | f  |  1 | t
+ 200 | 10 | f  |  2 | t
+ 201 | 10 | f  |  3 | t
+ 202 | 10 | f  |  4 | f
+ 203 | 10 | f  |  5 | f
+ 204 | 10 | f  |  6 | f
+ 205 | 10 | f  |  7 | f
+ 206 | 10 | f  |  8 | f
+ 207 | 10 | f  |  9 | t
+ 208 | 10 | f  | 10 | t
+ 209 | 10 | f  | 11 | t
+ 210 | 10 | f  | 12 | t
+ 211 | 10 | f  | 13 | t
+ 212 | 10 | f  | 14 | t
+ 213 | 10 | f  | 15 | f
+ 214 | 10 | f  | 16 | f
+ 215 | 10 | f  | 17 | f
+ 216 | 10 | f  | 18 | f
+ 217 | 10 | f  | 19 | t
+ 218 | 10 | f  | 20 | f
+ 219 | 10 | f  | 21 | t
+ 220 | 10 | f  | 22 | 
+ 221 | 11 | f  |  1 | t
+ 222 | 11 | f  |  2 | t
+ 223 | 11 | f  |  3 | t
+ 224 | 11 | f  |  4 | f
+ 225 | 11 | f  |  5 | f
+ 226 | 11 | f  |  6 | f
+ 227 | 11 | f  |  7 | f
+ 228 | 11 | f  |  8 | f
+ 229 | 11 | f  |  9 | t
+ 230 | 11 | f  | 10 | t
+ 231 | 11 | f  | 11 | t
+ 232 | 11 | f  | 12 | t
+ 233 | 11 | f  | 13 | t
+ 234 | 11 | f  | 14 | t
+ 235 | 11 | f  | 15 | f
+ 236 | 11 | f  | 16 | f
+ 237 | 11 | f  | 17 | f
+ 238 | 11 | f  | 18 | f
+ 239 | 11 | f  | 19 | t
+ 240 | 11 | f  | 20 | f
+ 241 | 11 | f  | 21 | t
+ 242 | 11 | f  | 22 | 
+ 243 | 12 | f  |  1 | t
+ 244 | 12 | f  |  2 | t
+ 245 | 12 | f  |  3 | t
+ 246 | 12 | f  |  4 | f
+ 247 | 12 | f  |  5 | f
+ 248 | 12 | f  |  6 | f
+ 249 | 12 | f  |  7 | f
+ 250 | 12 | f  |  8 | f
+ 251 | 12 | f  |  9 | t
+ 252 | 12 | f  | 10 | t
+ 253 | 12 | f  | 11 | t
+ 254 | 12 | f  | 12 | t
+ 255 | 12 | f  | 13 | t
+ 256 | 12 | f  | 14 | t
+ 257 | 12 | f  | 15 | f
+ 258 | 12 | f  | 16 | f
+ 259 | 12 | f  | 17 | f
+ 260 | 12 | f  | 18 | f
+ 261 | 12 | f  | 19 | t
+ 262 | 12 | f  | 20 | f
+ 263 | 12 | f  | 21 | t
+ 264 | 12 | f  | 22 | 
+ 265 | 13 | f  |  1 | t
+ 266 | 13 | f  |  2 | t
+ 267 | 13 | f  |  3 | t
+ 268 | 13 | f  |  4 | f
+ 269 | 13 | f  |  5 | f
+ 270 | 13 | f  |  6 | f
+ 271 | 13 | f  |  7 | f
+ 272 | 13 | f  |  8 | f
+ 273 | 13 | f  |  9 | t
+ 274 | 13 | f  | 10 | t
+ 275 | 13 | f  | 11 | t
+ 276 | 13 | f  | 12 | t
+ 277 | 13 | f  | 13 | t
+ 278 | 13 | f  | 14 | t
+ 279 | 13 | f  | 15 | f
+ 280 | 13 | f  | 16 | f
+ 281 | 13 | f  | 17 | f
+ 282 | 13 | f  | 18 | f
+ 283 | 13 | f  | 19 | t
+ 284 | 13 | f  | 20 | f
+ 285 | 13 | f  | 21 | t
+ 286 | 13 | f  | 22 | 
+ 287 | 14 | f  |  1 | t
+ 288 | 14 | f  |  2 | t
+ 289 | 14 | f  |  3 | t
+ 290 | 14 | f  |  4 | f
+ 291 | 14 | f  |  5 | f
+ 292 | 14 | f  |  6 | f
+ 293 | 14 | f  |  7 | f
+ 294 | 14 | f  |  8 | f
+ 295 | 14 | f  |  9 | t
+ 296 | 14 | f  | 10 | t
+ 297 | 14 | f  | 11 | t
+ 298 | 14 | f  | 12 | t
+ 299 | 14 | f  | 13 | t
+ 300 | 14 | f  | 14 | t
+ 301 | 14 | f  | 15 | f
+ 302 | 14 | f  | 16 | f
+ 303 | 14 | f  | 17 | f
+ 304 | 14 | f  | 18 | f
+ 305 | 14 | f  | 19 | t
+ 306 | 14 | f  | 20 | f
+ 307 | 14 | f  | 21 | t
+ 308 | 14 | f  | 22 | 
+ 309 | 15 | f  |  1 | t
+ 310 | 15 | f  |  2 | t
+ 311 | 15 | f  |  3 | t
+ 312 | 15 |    |  4 | f
+ 313 | 15 |    |  5 | f
+ 314 | 15 |    |  6 | f
+ 315 | 15 |    |  7 | f
+ 316 | 15 |    |  8 | f
+ 317 | 15 | f  |  9 | t
+ 318 | 15 | f  | 10 | t
+ 319 | 15 | f  | 11 | t
+ 320 | 15 | f  | 12 | t
+ 321 | 15 | f  | 13 | t
+ 322 | 15 | f  | 14 | t
+ 323 | 15 |    | 15 | f
+ 324 | 15 |    | 16 | f
+ 325 | 15 |    | 17 | f
+ 326 | 15 |    | 18 | f
+ 327 | 15 | f  | 19 | t
+ 328 | 15 |    | 20 | f
+ 329 | 15 | f  | 21 | t
+ 330 | 15 |    | 22 | 
+ 331 | 16 | f  |  1 | t
+ 332 | 16 | f  |  2 | t
+ 333 | 16 | f  |  3 | t
+ 334 | 16 |    |  4 | f
+ 335 | 16 |    |  5 | f
+ 336 | 16 |    |  6 | f
+ 337 | 16 |    |  7 | f
+ 338 | 16 |    |  8 | f
+ 339 | 16 | f  |  9 | t
+ 340 | 16 | f  | 10 | t
+ 341 | 16 | f  | 11 | t
+ 342 | 16 | f  | 12 | t
+ 343 | 16 | f  | 13 | t
+ 344 | 16 | f  | 14 | t
+ 345 | 16 |    | 15 | f
+ 346 | 16 |    | 16 | f
+ 347 | 16 |    | 17 | f
+ 348 | 16 |    | 18 | f
+ 349 | 16 | f  | 19 | t
+ 350 | 16 |    | 20 | f
+ 351 | 16 | f  | 21 | t
+ 352 | 16 |    | 22 | 
+ 353 | 17 | f  |  1 | t
+ 354 | 17 | f  |  2 | t
+ 355 | 17 | f  |  3 | t
+ 356 | 17 |    |  4 | f
+ 357 | 17 |    |  5 | f
+ 358 | 17 |    |  6 | f
+ 359 | 17 |    |  7 | f
+ 360 | 17 |    |  8 | f
+ 361 | 17 | f  |  9 | t
+ 362 | 17 | f  | 10 | t
+ 363 | 17 | f  | 11 | t
+ 364 | 17 | f  | 12 | t
+ 365 | 17 | f  | 13 | t
+ 366 | 17 | f  | 14 | t
+ 367 | 17 |    | 15 | f
+ 368 | 17 |    | 16 | f
+ 369 | 17 |    | 17 | f
+ 370 | 17 |    | 18 | f
+ 371 | 17 | f  | 19 | t
+ 372 | 17 |    | 20 | f
+ 373 | 17 | f  | 21 | t
+ 374 | 17 |    | 22 | 
+ 375 | 18 | f  |  1 | t
+ 376 | 18 | f  |  2 | t
+ 377 | 18 | f  |  3 | t
+ 378 | 18 |    |  4 | f
+ 379 | 18 |    |  5 | f
+ 380 | 18 |    |  6 | f
+ 381 | 18 |    |  7 | f
+ 382 | 18 |    |  8 | f
+ 383 | 18 | f  |  9 | t
+ 384 | 18 | f  | 10 | t
+ 385 | 18 | f  | 11 | t
+ 386 | 18 | f  | 12 | t
+ 387 | 18 | f  | 13 | t
+ 388 | 18 | f  | 14 | t
+ 389 | 18 |    | 15 | f
+ 390 | 18 |    | 16 | f
+ 391 | 18 |    | 17 | f
+ 392 | 18 |    | 18 | f
+ 393 | 18 | f  | 19 | t
+ 394 | 18 |    | 20 | f
+ 395 | 18 | f  | 21 | t
+ 396 | 18 |    | 22 | 
+ 397 | 19 | f  |  1 | t
+ 398 | 19 | f  |  2 | t
+ 399 | 19 | f  |  3 | t
+ 400 | 19 | f  |  4 | f
+ 401 | 19 | f  |  5 | f
+ 402 | 19 | f  |  6 | f
+ 403 | 19 | f  |  7 | f
+ 404 | 19 | f  |  8 | f
+ 405 | 19 | f  |  9 | t
+ 406 | 19 | f  | 10 | t
+ 407 | 19 | f  | 11 | t
+ 408 | 19 | f  | 12 | t
+ 409 | 19 | f  | 13 | t
+ 410 | 19 | f  | 14 | t
+ 411 | 19 | f  | 15 | f
+ 412 | 19 | f  | 16 | f
+ 413 | 19 | f  | 17 | f
+ 414 | 19 | f  | 18 | f
+ 415 | 19 | f  | 19 | t
+ 416 | 19 | f  | 20 | f
+ 417 | 19 | f  | 21 | t
+ 418 | 19 | f  | 22 | 
+ 419 | 20 | f  |  1 | t
+ 420 | 20 | f  |  2 | t
+ 421 | 20 | f  |  3 | t
+ 422 | 20 |    |  4 | f
+ 423 | 20 |    |  5 | f
+ 424 | 20 |    |  6 | f
+ 425 | 20 |    |  7 | f
+ 426 | 20 |    |  8 | f
+ 427 | 20 | f  |  9 | t
+ 428 | 20 | f  | 10 | t
+ 429 | 20 | f  | 11 | t
+ 430 | 20 | f  | 12 | t
+ 431 | 20 | f  | 13 | t
+ 432 | 20 | f  | 14 | t
+ 433 | 20 |    | 15 | f
+ 434 | 20 |    | 16 | f
+ 435 | 20 |    | 17 | f
+ 436 | 20 |    | 18 | f
+ 437 | 20 | f  | 19 | t
+ 438 | 20 |    | 20 | f
+ 439 | 20 | f  | 21 | t
+ 440 | 20 |    | 22 | 
+ 441 | 21 | f  |  1 | t
+ 442 | 21 | f  |  2 | t
+ 443 | 21 | f  |  3 | t
+ 444 | 21 | f  |  4 | f
+ 445 | 21 | f  |  5 | f
+ 446 | 21 | f  |  6 | f
+ 447 | 21 | f  |  7 | f
+ 448 | 21 | f  |  8 | f
+ 449 | 21 | f  |  9 | t
+ 450 | 21 | f  | 10 | t
+ 451 | 21 | f  | 11 | t
+ 452 | 21 | f  | 12 | t
+ 453 | 21 | f  | 13 | t
+ 454 | 21 | f  | 14 | t
+ 455 | 21 | f  | 15 | f
+ 456 | 21 | f  | 16 | f
+ 457 | 21 | f  | 17 | f
+ 458 | 21 | f  | 18 | f
+ 459 | 21 | f  | 19 | t
+ 460 | 21 | f  | 20 | f
+ 461 | 21 | f  | 21 | t
+ 462 | 21 | f  | 22 | 
+ 463 | 22 | f  |  1 | t
+ 464 | 22 | f  |  2 | t
+ 465 | 22 | f  |  3 | t
+ 466 | 22 |    |  4 | f
+ 467 | 22 |    |  5 | f
+ 468 | 22 |    |  6 | f
+ 469 | 22 |    |  7 | f
+ 470 | 22 |    |  8 | f
+ 471 | 22 | f  |  9 | t
+ 472 | 22 | f  | 10 | t
+ 473 | 22 | f  | 11 | t
+ 474 | 22 | f  | 12 | t
+ 475 | 22 | f  | 13 | t
+ 476 | 22 | f  | 14 | t
+ 477 | 22 |    | 15 | f
+ 478 | 22 |    | 16 | f
+ 479 | 22 |    | 17 | f
+ 480 | 22 |    | 18 | f
+ 481 | 22 | f  | 19 | t
+ 482 | 22 |    | 20 | f
+ 483 | 22 | f  | 21 | t
+ 484 | 22 |    | 22 | 
+(484 rows)
+
+--Testcase 71:
+EXPLAIN (VERBOSE, COSTS OFF)
+DELETE FROM "type_BOOLEAN_oper" WHERE b1 AND b2;
+                                                      QUERY PLAN                                                      
+----------------------------------------------------------------------------------------------------------------------
+ Delete on public."type_BOOLEAN_oper"
+   ->  Foreign Delete on public."type_BOOLEAN_oper"
+         SQLite query: DELETE FROM main."type_BOOLEAN_oper" WHERE (sqlite_fdw_bool(`b1`)) AND (sqlite_fdw_bool(`b2`))
+(3 rows)
+
+--Testcase 72:
+DELETE FROM "type_BOOLEAN_oper" WHERE b1 AND b2;
+--Testcase 73:
+SELECT * FROM "type_BOOLEAN_oper";
+  i  | i1 | b1 | i2 | b2 
+-----+----+----+----+----
+   1 |  1 | f  |  1 | t
+   2 |  1 | f  |  2 | t
+   3 |  1 | f  |  3 | t
+   4 |  1 | f  |  4 | f
+   5 |  1 | f  |  5 | f
+   6 |  1 | f  |  6 | f
+   7 |  1 | f  |  7 | f
+   8 |  1 | f  |  8 | f
+   9 |  1 | f  |  9 | t
+  10 |  1 | f  | 10 | t
+  11 |  1 | f  | 11 | t
+  12 |  1 | f  | 12 | t
+  13 |  1 | f  | 13 | t
+  14 |  1 | f  | 14 | t
+  15 |  1 | f  | 15 | f
+  16 |  1 | f  | 16 | f
+  17 |  1 | f  | 17 | f
+  18 |  1 | f  | 18 | f
+  19 |  1 | f  | 19 | t
+  20 |  1 | f  | 20 | f
+  21 |  1 | f  | 21 | t
+  22 |  1 | f  | 22 | 
+  23 |  2 | f  |  1 | t
+  24 |  2 | f  |  2 | t
+  25 |  2 | f  |  3 | t
+  26 |  2 | f  |  4 | f
+  27 |  2 | f  |  5 | f
+  28 |  2 | f  |  6 | f
+  29 |  2 | f  |  7 | f
+  30 |  2 | f  |  8 | f
+  31 |  2 | f  |  9 | t
+  32 |  2 | f  | 10 | t
+  33 |  2 | f  | 11 | t
+  34 |  2 | f  | 12 | t
+  35 |  2 | f  | 13 | t
+  36 |  2 | f  | 14 | t
+  37 |  2 | f  | 15 | f
+  38 |  2 | f  | 16 | f
+  39 |  2 | f  | 17 | f
+  40 |  2 | f  | 18 | f
+  41 |  2 | f  | 19 | t
+  42 |  2 | f  | 20 | f
+  43 |  2 | f  | 21 | t
+  44 |  2 | f  | 22 | 
+  45 |  3 | f  |  1 | t
+  46 |  3 | f  |  2 | t
+  47 |  3 | f  |  3 | t
+  48 |  3 | f  |  4 | f
+  49 |  3 | f  |  5 | f
+  50 |  3 | f  |  6 | f
+  51 |  3 | f  |  7 | f
+  52 |  3 | f  |  8 | f
+  53 |  3 | f  |  9 | t
+  54 |  3 | f  | 10 | t
+  55 |  3 | f  | 11 | t
+  56 |  3 | f  | 12 | t
+  57 |  3 | f  | 13 | t
+  58 |  3 | f  | 14 | t
+  59 |  3 | f  | 15 | f
+  60 |  3 | f  | 16 | f
+  61 |  3 | f  | 17 | f
+  62 |  3 | f  | 18 | f
+  63 |  3 | f  | 19 | t
+  64 |  3 | f  | 20 | f
+  65 |  3 | f  | 21 | t
+  66 |  3 | f  | 22 | 
+  67 |  4 | f  |  1 | t
+  68 |  4 | f  |  2 | t
+  69 |  4 | f  |  3 | t
+  70 |  4 |    |  4 | f
+  71 |  4 |    |  5 | f
+  72 |  4 |    |  6 | f
+  73 |  4 |    |  7 | f
+  74 |  4 |    |  8 | f
+  75 |  4 | f  |  9 | t
+  76 |  4 | f  | 10 | t
+  77 |  4 | f  | 11 | t
+  78 |  4 | f  | 12 | t
+  79 |  4 | f  | 13 | t
+  80 |  4 | f  | 14 | t
+  81 |  4 |    | 15 | f
+  82 |  4 |    | 16 | f
+  83 |  4 |    | 17 | f
+  84 |  4 |    | 18 | f
+  85 |  4 | f  | 19 | t
+  86 |  4 |    | 20 | f
+  87 |  4 | f  | 21 | t
+  88 |  4 |    | 22 | 
+  89 |  5 | f  |  1 | t
+  90 |  5 | f  |  2 | t
+  91 |  5 | f  |  3 | t
+  92 |  5 |    |  4 | f
+  93 |  5 |    |  5 | f
+  94 |  5 |    |  6 | f
+  95 |  5 |    |  7 | f
+  96 |  5 |    |  8 | f
+  97 |  5 | f  |  9 | t
+  98 |  5 | f  | 10 | t
+  99 |  5 | f  | 11 | t
+ 100 |  5 | f  | 12 | t
+ 101 |  5 | f  | 13 | t
+ 102 |  5 | f  | 14 | t
+ 103 |  5 |    | 15 | f
+ 104 |  5 |    | 16 | f
+ 105 |  5 |    | 17 | f
+ 106 |  5 |    | 18 | f
+ 107 |  5 | f  | 19 | t
+ 108 |  5 |    | 20 | f
+ 109 |  5 | f  | 21 | t
+ 110 |  5 |    | 22 | 
+ 111 |  6 | f  |  1 | t
+ 112 |  6 | f  |  2 | t
+ 113 |  6 | f  |  3 | t
+ 114 |  6 |    |  4 | f
+ 115 |  6 |    |  5 | f
+ 116 |  6 |    |  6 | f
+ 117 |  6 |    |  7 | f
+ 118 |  6 |    |  8 | f
+ 119 |  6 | f  |  9 | t
+ 120 |  6 | f  | 10 | t
+ 121 |  6 | f  | 11 | t
+ 122 |  6 | f  | 12 | t
+ 123 |  6 | f  | 13 | t
+ 124 |  6 | f  | 14 | t
+ 125 |  6 |    | 15 | f
+ 126 |  6 |    | 16 | f
+ 127 |  6 |    | 17 | f
+ 128 |  6 |    | 18 | f
+ 129 |  6 | f  | 19 | t
+ 130 |  6 |    | 20 | f
+ 131 |  6 | f  | 21 | t
+ 132 |  6 |    | 22 | 
+ 133 |  7 | f  |  1 | t
+ 134 |  7 | f  |  2 | t
+ 135 |  7 | f  |  3 | t
+ 136 |  7 |    |  4 | f
+ 137 |  7 |    |  5 | f
+ 138 |  7 |    |  6 | f
+ 139 |  7 |    |  7 | f
+ 140 |  7 |    |  8 | f
+ 141 |  7 | f  |  9 | t
+ 142 |  7 | f  | 10 | t
+ 143 |  7 | f  | 11 | t
+ 144 |  7 | f  | 12 | t
+ 145 |  7 | f  | 13 | t
+ 146 |  7 | f  | 14 | t
+ 147 |  7 |    | 15 | f
+ 148 |  7 |    | 16 | f
+ 149 |  7 |    | 17 | f
+ 150 |  7 |    | 18 | f
+ 151 |  7 | f  | 19 | t
+ 152 |  7 |    | 20 | f
+ 153 |  7 | f  | 21 | t
+ 154 |  7 |    | 22 | 
+ 155 |  8 | f  |  1 | t
+ 156 |  8 | f  |  2 | t
+ 157 |  8 | f  |  3 | t
+ 158 |  8 |    |  4 | f
+ 159 |  8 |    |  5 | f
+ 160 |  8 |    |  6 | f
+ 161 |  8 |    |  7 | f
+ 162 |  8 |    |  8 | f
+ 163 |  8 | f  |  9 | t
+ 164 |  8 | f  | 10 | t
+ 165 |  8 | f  | 11 | t
+ 166 |  8 | f  | 12 | t
+ 167 |  8 | f  | 13 | t
+ 168 |  8 | f  | 14 | t
+ 169 |  8 |    | 15 | f
+ 170 |  8 |    | 16 | f
+ 171 |  8 |    | 17 | f
+ 172 |  8 |    | 18 | f
+ 173 |  8 | f  | 19 | t
+ 174 |  8 |    | 20 | f
+ 175 |  8 | f  | 21 | t
+ 176 |  8 |    | 22 | 
+ 177 |  9 | f  |  1 | t
+ 178 |  9 | f  |  2 | t
+ 179 |  9 | f  |  3 | t
+ 180 |  9 | f  |  4 | f
+ 181 |  9 | f  |  5 | f
+ 182 |  9 | f  |  6 | f
+ 183 |  9 | f  |  7 | f
+ 184 |  9 | f  |  8 | f
+ 185 |  9 | f  |  9 | t
+ 186 |  9 | f  | 10 | t
+ 187 |  9 | f  | 11 | t
+ 188 |  9 | f  | 12 | t
+ 189 |  9 | f  | 13 | t
+ 190 |  9 | f  | 14 | t
+ 191 |  9 | f  | 15 | f
+ 192 |  9 | f  | 16 | f
+ 193 |  9 | f  | 17 | f
+ 194 |  9 | f  | 18 | f
+ 195 |  9 | f  | 19 | t
+ 196 |  9 | f  | 20 | f
+ 197 |  9 | f  | 21 | t
+ 198 |  9 | f  | 22 | 
+ 199 | 10 | f  |  1 | t
+ 200 | 10 | f  |  2 | t
+ 201 | 10 | f  |  3 | t
+ 202 | 10 | f  |  4 | f
+ 203 | 10 | f  |  5 | f
+ 204 | 10 | f  |  6 | f
+ 205 | 10 | f  |  7 | f
+ 206 | 10 | f  |  8 | f
+ 207 | 10 | f  |  9 | t
+ 208 | 10 | f  | 10 | t
+ 209 | 10 | f  | 11 | t
+ 210 | 10 | f  | 12 | t
+ 211 | 10 | f  | 13 | t
+ 212 | 10 | f  | 14 | t
+ 213 | 10 | f  | 15 | f
+ 214 | 10 | f  | 16 | f
+ 215 | 10 | f  | 17 | f
+ 216 | 10 | f  | 18 | f
+ 217 | 10 | f  | 19 | t
+ 218 | 10 | f  | 20 | f
+ 219 | 10 | f  | 21 | t
+ 220 | 10 | f  | 22 | 
+ 221 | 11 | f  |  1 | t
+ 222 | 11 | f  |  2 | t
+ 223 | 11 | f  |  3 | t
+ 224 | 11 | f  |  4 | f
+ 225 | 11 | f  |  5 | f
+ 226 | 11 | f  |  6 | f
+ 227 | 11 | f  |  7 | f
+ 228 | 11 | f  |  8 | f
+ 229 | 11 | f  |  9 | t
+ 230 | 11 | f  | 10 | t
+ 231 | 11 | f  | 11 | t
+ 232 | 11 | f  | 12 | t
+ 233 | 11 | f  | 13 | t
+ 234 | 11 | f  | 14 | t
+ 235 | 11 | f  | 15 | f
+ 236 | 11 | f  | 16 | f
+ 237 | 11 | f  | 17 | f
+ 238 | 11 | f  | 18 | f
+ 239 | 11 | f  | 19 | t
+ 240 | 11 | f  | 20 | f
+ 241 | 11 | f  | 21 | t
+ 242 | 11 | f  | 22 | 
+ 243 | 12 | f  |  1 | t
+ 244 | 12 | f  |  2 | t
+ 245 | 12 | f  |  3 | t
+ 246 | 12 | f  |  4 | f
+ 247 | 12 | f  |  5 | f
+ 248 | 12 | f  |  6 | f
+ 249 | 12 | f  |  7 | f
+ 250 | 12 | f  |  8 | f
+ 251 | 12 | f  |  9 | t
+ 252 | 12 | f  | 10 | t
+ 253 | 12 | f  | 11 | t
+ 254 | 12 | f  | 12 | t
+ 255 | 12 | f  | 13 | t
+ 256 | 12 | f  | 14 | t
+ 257 | 12 | f  | 15 | f
+ 258 | 12 | f  | 16 | f
+ 259 | 12 | f  | 17 | f
+ 260 | 12 | f  | 18 | f
+ 261 | 12 | f  | 19 | t
+ 262 | 12 | f  | 20 | f
+ 263 | 12 | f  | 21 | t
+ 264 | 12 | f  | 22 | 
+ 265 | 13 | f  |  1 | t
+ 266 | 13 | f  |  2 | t
+ 267 | 13 | f  |  3 | t
+ 268 | 13 | f  |  4 | f
+ 269 | 13 | f  |  5 | f
+ 270 | 13 | f  |  6 | f
+ 271 | 13 | f  |  7 | f
+ 272 | 13 | f  |  8 | f
+ 273 | 13 | f  |  9 | t
+ 274 | 13 | f  | 10 | t
+ 275 | 13 | f  | 11 | t
+ 276 | 13 | f  | 12 | t
+ 277 | 13 | f  | 13 | t
+ 278 | 13 | f  | 14 | t
+ 279 | 13 | f  | 15 | f
+ 280 | 13 | f  | 16 | f
+ 281 | 13 | f  | 17 | f
+ 282 | 13 | f  | 18 | f
+ 283 | 13 | f  | 19 | t
+ 284 | 13 | f  | 20 | f
+ 285 | 13 | f  | 21 | t
+ 286 | 13 | f  | 22 | 
+ 287 | 14 | f  |  1 | t
+ 288 | 14 | f  |  2 | t
+ 289 | 14 | f  |  3 | t
+ 290 | 14 | f  |  4 | f
+ 291 | 14 | f  |  5 | f
+ 292 | 14 | f  |  6 | f
+ 293 | 14 | f  |  7 | f
+ 294 | 14 | f  |  8 | f
+ 295 | 14 | f  |  9 | t
+ 296 | 14 | f  | 10 | t
+ 297 | 14 | f  | 11 | t
+ 298 | 14 | f  | 12 | t
+ 299 | 14 | f  | 13 | t
+ 300 | 14 | f  | 14 | t
+ 301 | 14 | f  | 15 | f
+ 302 | 14 | f  | 16 | f
+ 303 | 14 | f  | 17 | f
+ 304 | 14 | f  | 18 | f
+ 305 | 14 | f  | 19 | t
+ 306 | 14 | f  | 20 | f
+ 307 | 14 | f  | 21 | t
+ 308 | 14 | f  | 22 | 
+ 309 | 15 | f  |  1 | t
+ 310 | 15 | f  |  2 | t
+ 311 | 15 | f  |  3 | t
+ 312 | 15 |    |  4 | f
+ 313 | 15 |    |  5 | f
+ 314 | 15 |    |  6 | f
+ 315 | 15 |    |  7 | f
+ 316 | 15 |    |  8 | f
+ 317 | 15 | f  |  9 | t
+ 318 | 15 | f  | 10 | t
+ 319 | 15 | f  | 11 | t
+ 320 | 15 | f  | 12 | t
+ 321 | 15 | f  | 13 | t
+ 322 | 15 | f  | 14 | t
+ 323 | 15 |    | 15 | f
+ 324 | 15 |    | 16 | f
+ 325 | 15 |    | 17 | f
+ 326 | 15 |    | 18 | f
+ 327 | 15 | f  | 19 | t
+ 328 | 15 |    | 20 | f
+ 329 | 15 | f  | 21 | t
+ 330 | 15 |    | 22 | 
+ 331 | 16 | f  |  1 | t
+ 332 | 16 | f  |  2 | t
+ 333 | 16 | f  |  3 | t
+ 334 | 16 |    |  4 | f
+ 335 | 16 |    |  5 | f
+ 336 | 16 |    |  6 | f
+ 337 | 16 |    |  7 | f
+ 338 | 16 |    |  8 | f
+ 339 | 16 | f  |  9 | t
+ 340 | 16 | f  | 10 | t
+ 341 | 16 | f  | 11 | t
+ 342 | 16 | f  | 12 | t
+ 343 | 16 | f  | 13 | t
+ 344 | 16 | f  | 14 | t
+ 345 | 16 |    | 15 | f
+ 346 | 16 |    | 16 | f
+ 347 | 16 |    | 17 | f
+ 348 | 16 |    | 18 | f
+ 349 | 16 | f  | 19 | t
+ 350 | 16 |    | 20 | f
+ 351 | 16 | f  | 21 | t
+ 352 | 16 |    | 22 | 
+ 353 | 17 | f  |  1 | t
+ 354 | 17 | f  |  2 | t
+ 355 | 17 | f  |  3 | t
+ 356 | 17 |    |  4 | f
+ 357 | 17 |    |  5 | f
+ 358 | 17 |    |  6 | f
+ 359 | 17 |    |  7 | f
+ 360 | 17 |    |  8 | f
+ 361 | 17 | f  |  9 | t
+ 362 | 17 | f  | 10 | t
+ 363 | 17 | f  | 11 | t
+ 364 | 17 | f  | 12 | t
+ 365 | 17 | f  | 13 | t
+ 366 | 17 | f  | 14 | t
+ 367 | 17 |    | 15 | f
+ 368 | 17 |    | 16 | f
+ 369 | 17 |    | 17 | f
+ 370 | 17 |    | 18 | f
+ 371 | 17 | f  | 19 | t
+ 372 | 17 |    | 20 | f
+ 373 | 17 | f  | 21 | t
+ 374 | 17 |    | 22 | 
+ 375 | 18 | f  |  1 | t
+ 376 | 18 | f  |  2 | t
+ 377 | 18 | f  |  3 | t
+ 378 | 18 |    |  4 | f
+ 379 | 18 |    |  5 | f
+ 380 | 18 |    |  6 | f
+ 381 | 18 |    |  7 | f
+ 382 | 18 |    |  8 | f
+ 383 | 18 | f  |  9 | t
+ 384 | 18 | f  | 10 | t
+ 385 | 18 | f  | 11 | t
+ 386 | 18 | f  | 12 | t
+ 387 | 18 | f  | 13 | t
+ 388 | 18 | f  | 14 | t
+ 389 | 18 |    | 15 | f
+ 390 | 18 |    | 16 | f
+ 391 | 18 |    | 17 | f
+ 392 | 18 |    | 18 | f
+ 393 | 18 | f  | 19 | t
+ 394 | 18 |    | 20 | f
+ 395 | 18 | f  | 21 | t
+ 396 | 18 |    | 22 | 
+ 397 | 19 | f  |  1 | t
+ 398 | 19 | f  |  2 | t
+ 399 | 19 | f  |  3 | t
+ 400 | 19 | f  |  4 | f
+ 401 | 19 | f  |  5 | f
+ 402 | 19 | f  |  6 | f
+ 403 | 19 | f  |  7 | f
+ 404 | 19 | f  |  8 | f
+ 405 | 19 | f  |  9 | t
+ 406 | 19 | f  | 10 | t
+ 407 | 19 | f  | 11 | t
+ 408 | 19 | f  | 12 | t
+ 409 | 19 | f  | 13 | t
+ 410 | 19 | f  | 14 | t
+ 411 | 19 | f  | 15 | f
+ 412 | 19 | f  | 16 | f
+ 413 | 19 | f  | 17 | f
+ 414 | 19 | f  | 18 | f
+ 415 | 19 | f  | 19 | t
+ 416 | 19 | f  | 20 | f
+ 417 | 19 | f  | 21 | t
+ 418 | 19 | f  | 22 | 
+ 419 | 20 | f  |  1 | t
+ 420 | 20 | f  |  2 | t
+ 421 | 20 | f  |  3 | t
+ 422 | 20 |    |  4 | f
+ 423 | 20 |    |  5 | f
+ 424 | 20 |    |  6 | f
+ 425 | 20 |    |  7 | f
+ 426 | 20 |    |  8 | f
+ 427 | 20 | f  |  9 | t
+ 428 | 20 | f  | 10 | t
+ 429 | 20 | f  | 11 | t
+ 430 | 20 | f  | 12 | t
+ 431 | 20 | f  | 13 | t
+ 432 | 20 | f  | 14 | t
+ 433 | 20 |    | 15 | f
+ 434 | 20 |    | 16 | f
+ 435 | 20 |    | 17 | f
+ 436 | 20 |    | 18 | f
+ 437 | 20 | f  | 19 | t
+ 438 | 20 |    | 20 | f
+ 439 | 20 | f  | 21 | t
+ 440 | 20 |    | 22 | 
+ 441 | 21 | f  |  1 | t
+ 442 | 21 | f  |  2 | t
+ 443 | 21 | f  |  3 | t
+ 444 | 21 | f  |  4 | f
+ 445 | 21 | f  |  5 | f
+ 446 | 21 | f  |  6 | f
+ 447 | 21 | f  |  7 | f
+ 448 | 21 | f  |  8 | f
+ 449 | 21 | f  |  9 | t
+ 450 | 21 | f  | 10 | t
+ 451 | 21 | f  | 11 | t
+ 452 | 21 | f  | 12 | t
+ 453 | 21 | f  | 13 | t
+ 454 | 21 | f  | 14 | t
+ 455 | 21 | f  | 15 | f
+ 456 | 21 | f  | 16 | f
+ 457 | 21 | f  | 17 | f
+ 458 | 21 | f  | 18 | f
+ 459 | 21 | f  | 19 | t
+ 460 | 21 | f  | 20 | f
+ 461 | 21 | f  | 21 | t
+ 462 | 21 | f  | 22 | 
+ 463 | 22 | f  |  1 | t
+ 464 | 22 | f  |  2 | t
+ 465 | 22 | f  |  3 | t
+ 466 | 22 |    |  4 | f
+ 467 | 22 |    |  5 | f
+ 468 | 22 |    |  6 | f
+ 469 | 22 |    |  7 | f
+ 470 | 22 |    |  8 | f
+ 471 | 22 | f  |  9 | t
+ 472 | 22 | f  | 10 | t
+ 473 | 22 | f  | 11 | t
+ 474 | 22 | f  | 12 | t
+ 475 | 22 | f  | 13 | t
+ 476 | 22 | f  | 14 | t
+ 477 | 22 |    | 15 | f
+ 478 | 22 |    | 16 | f
+ 479 | 22 |    | 17 | f
+ 480 | 22 |    | 18 | f
+ 481 | 22 | f  | 19 | t
+ 482 | 22 |    | 20 | f
+ 483 | 22 | f  | 21 | t
+ 484 | 22 |    | 22 | 
+(484 rows)
+
+--Testcase 74:
+DELETE FROM "type_BOOLEAN_oper" WHERE NOT b2;
+--Testcase 75:
+SELECT * FROM "type_BOOLEAN_oper";
+  i  | i1 | b1 | i2 | b2 
+-----+----+----+----+----
+   1 |  1 | f  |  1 | t
+   2 |  1 | f  |  2 | t
+   3 |  1 | f  |  3 | t
+   9 |  1 | f  |  9 | t
+  10 |  1 | f  | 10 | t
+  11 |  1 | f  | 11 | t
+  12 |  1 | f  | 12 | t
+  13 |  1 | f  | 13 | t
+  14 |  1 | f  | 14 | t
+  19 |  1 | f  | 19 | t
+  21 |  1 | f  | 21 | t
+  22 |  1 | f  | 22 | 
+  23 |  2 | f  |  1 | t
+  24 |  2 | f  |  2 | t
+  25 |  2 | f  |  3 | t
+  31 |  2 | f  |  9 | t
+  32 |  2 | f  | 10 | t
+  33 |  2 | f  | 11 | t
+  34 |  2 | f  | 12 | t
+  35 |  2 | f  | 13 | t
+  36 |  2 | f  | 14 | t
+  41 |  2 | f  | 19 | t
+  43 |  2 | f  | 21 | t
+  44 |  2 | f  | 22 | 
+  45 |  3 | f  |  1 | t
+  46 |  3 | f  |  2 | t
+  47 |  3 | f  |  3 | t
+  53 |  3 | f  |  9 | t
+  54 |  3 | f  | 10 | t
+  55 |  3 | f  | 11 | t
+  56 |  3 | f  | 12 | t
+  57 |  3 | f  | 13 | t
+  58 |  3 | f  | 14 | t
+  63 |  3 | f  | 19 | t
+  65 |  3 | f  | 21 | t
+  66 |  3 | f  | 22 | 
+  67 |  4 | f  |  1 | t
+  68 |  4 | f  |  2 | t
+  69 |  4 | f  |  3 | t
+  75 |  4 | f  |  9 | t
+  76 |  4 | f  | 10 | t
+  77 |  4 | f  | 11 | t
+  78 |  4 | f  | 12 | t
+  79 |  4 | f  | 13 | t
+  80 |  4 | f  | 14 | t
+  85 |  4 | f  | 19 | t
+  87 |  4 | f  | 21 | t
+  88 |  4 |    | 22 | 
+  89 |  5 | f  |  1 | t
+  90 |  5 | f  |  2 | t
+  91 |  5 | f  |  3 | t
+  97 |  5 | f  |  9 | t
+  98 |  5 | f  | 10 | t
+  99 |  5 | f  | 11 | t
+ 100 |  5 | f  | 12 | t
+ 101 |  5 | f  | 13 | t
+ 102 |  5 | f  | 14 | t
+ 107 |  5 | f  | 19 | t
+ 109 |  5 | f  | 21 | t
+ 110 |  5 |    | 22 | 
+ 111 |  6 | f  |  1 | t
+ 112 |  6 | f  |  2 | t
+ 113 |  6 | f  |  3 | t
+ 119 |  6 | f  |  9 | t
+ 120 |  6 | f  | 10 | t
+ 121 |  6 | f  | 11 | t
+ 122 |  6 | f  | 12 | t
+ 123 |  6 | f  | 13 | t
+ 124 |  6 | f  | 14 | t
+ 129 |  6 | f  | 19 | t
+ 131 |  6 | f  | 21 | t
+ 132 |  6 |    | 22 | 
+ 133 |  7 | f  |  1 | t
+ 134 |  7 | f  |  2 | t
+ 135 |  7 | f  |  3 | t
+ 141 |  7 | f  |  9 | t
+ 142 |  7 | f  | 10 | t
+ 143 |  7 | f  | 11 | t
+ 144 |  7 | f  | 12 | t
+ 145 |  7 | f  | 13 | t
+ 146 |  7 | f  | 14 | t
+ 151 |  7 | f  | 19 | t
+ 153 |  7 | f  | 21 | t
+ 154 |  7 |    | 22 | 
+ 155 |  8 | f  |  1 | t
+ 156 |  8 | f  |  2 | t
+ 157 |  8 | f  |  3 | t
+ 163 |  8 | f  |  9 | t
+ 164 |  8 | f  | 10 | t
+ 165 |  8 | f  | 11 | t
+ 166 |  8 | f  | 12 | t
+ 167 |  8 | f  | 13 | t
+ 168 |  8 | f  | 14 | t
+ 173 |  8 | f  | 19 | t
+ 175 |  8 | f  | 21 | t
+ 176 |  8 |    | 22 | 
+ 177 |  9 | f  |  1 | t
+ 178 |  9 | f  |  2 | t
+ 179 |  9 | f  |  3 | t
+ 185 |  9 | f  |  9 | t
+ 186 |  9 | f  | 10 | t
+ 187 |  9 | f  | 11 | t
+ 188 |  9 | f  | 12 | t
+ 189 |  9 | f  | 13 | t
+ 190 |  9 | f  | 14 | t
+ 195 |  9 | f  | 19 | t
+ 197 |  9 | f  | 21 | t
+ 198 |  9 | f  | 22 | 
+ 199 | 10 | f  |  1 | t
+ 200 | 10 | f  |  2 | t
+ 201 | 10 | f  |  3 | t
+ 207 | 10 | f  |  9 | t
+ 208 | 10 | f  | 10 | t
+ 209 | 10 | f  | 11 | t
+ 210 | 10 | f  | 12 | t
+ 211 | 10 | f  | 13 | t
+ 212 | 10 | f  | 14 | t
+ 217 | 10 | f  | 19 | t
+ 219 | 10 | f  | 21 | t
+ 220 | 10 | f  | 22 | 
+ 221 | 11 | f  |  1 | t
+ 222 | 11 | f  |  2 | t
+ 223 | 11 | f  |  3 | t
+ 229 | 11 | f  |  9 | t
+ 230 | 11 | f  | 10 | t
+ 231 | 11 | f  | 11 | t
+ 232 | 11 | f  | 12 | t
+ 233 | 11 | f  | 13 | t
+ 234 | 11 | f  | 14 | t
+ 239 | 11 | f  | 19 | t
+ 241 | 11 | f  | 21 | t
+ 242 | 11 | f  | 22 | 
+ 243 | 12 | f  |  1 | t
+ 244 | 12 | f  |  2 | t
+ 245 | 12 | f  |  3 | t
+ 251 | 12 | f  |  9 | t
+ 252 | 12 | f  | 10 | t
+ 253 | 12 | f  | 11 | t
+ 254 | 12 | f  | 12 | t
+ 255 | 12 | f  | 13 | t
+ 256 | 12 | f  | 14 | t
+ 261 | 12 | f  | 19 | t
+ 263 | 12 | f  | 21 | t
+ 264 | 12 | f  | 22 | 
+ 265 | 13 | f  |  1 | t
+ 266 | 13 | f  |  2 | t
+ 267 | 13 | f  |  3 | t
+ 273 | 13 | f  |  9 | t
+ 274 | 13 | f  | 10 | t
+ 275 | 13 | f  | 11 | t
+ 276 | 13 | f  | 12 | t
+ 277 | 13 | f  | 13 | t
+ 278 | 13 | f  | 14 | t
+ 283 | 13 | f  | 19 | t
+ 285 | 13 | f  | 21 | t
+ 286 | 13 | f  | 22 | 
+ 287 | 14 | f  |  1 | t
+ 288 | 14 | f  |  2 | t
+ 289 | 14 | f  |  3 | t
+ 295 | 14 | f  |  9 | t
+ 296 | 14 | f  | 10 | t
+ 297 | 14 | f  | 11 | t
+ 298 | 14 | f  | 12 | t
+ 299 | 14 | f  | 13 | t
+ 300 | 14 | f  | 14 | t
+ 305 | 14 | f  | 19 | t
+ 307 | 14 | f  | 21 | t
+ 308 | 14 | f  | 22 | 
+ 309 | 15 | f  |  1 | t
+ 310 | 15 | f  |  2 | t
+ 311 | 15 | f  |  3 | t
+ 317 | 15 | f  |  9 | t
+ 318 | 15 | f  | 10 | t
+ 319 | 15 | f  | 11 | t
+ 320 | 15 | f  | 12 | t
+ 321 | 15 | f  | 13 | t
+ 322 | 15 | f  | 14 | t
+ 327 | 15 | f  | 19 | t
+ 329 | 15 | f  | 21 | t
+ 330 | 15 |    | 22 | 
+ 331 | 16 | f  |  1 | t
+ 332 | 16 | f  |  2 | t
+ 333 | 16 | f  |  3 | t
+ 339 | 16 | f  |  9 | t
+ 340 | 16 | f  | 10 | t
+ 341 | 16 | f  | 11 | t
+ 342 | 16 | f  | 12 | t
+ 343 | 16 | f  | 13 | t
+ 344 | 16 | f  | 14 | t
+ 349 | 16 | f  | 19 | t
+ 351 | 16 | f  | 21 | t
+ 352 | 16 |    | 22 | 
+ 353 | 17 | f  |  1 | t
+ 354 | 17 | f  |  2 | t
+ 355 | 17 | f  |  3 | t
+ 361 | 17 | f  |  9 | t
+ 362 | 17 | f  | 10 | t
+ 363 | 17 | f  | 11 | t
+ 364 | 17 | f  | 12 | t
+ 365 | 17 | f  | 13 | t
+ 366 | 17 | f  | 14 | t
+ 371 | 17 | f  | 19 | t
+ 373 | 17 | f  | 21 | t
+ 374 | 17 |    | 22 | 
+ 375 | 18 | f  |  1 | t
+ 376 | 18 | f  |  2 | t
+ 377 | 18 | f  |  3 | t
+ 383 | 18 | f  |  9 | t
+ 384 | 18 | f  | 10 | t
+ 385 | 18 | f  | 11 | t
+ 386 | 18 | f  | 12 | t
+ 387 | 18 | f  | 13 | t
+ 388 | 18 | f  | 14 | t
+ 393 | 18 | f  | 19 | t
+ 395 | 18 | f  | 21 | t
+ 396 | 18 |    | 22 | 
+ 397 | 19 | f  |  1 | t
+ 398 | 19 | f  |  2 | t
+ 399 | 19 | f  |  3 | t
+ 405 | 19 | f  |  9 | t
+ 406 | 19 | f  | 10 | t
+ 407 | 19 | f  | 11 | t
+ 408 | 19 | f  | 12 | t
+ 409 | 19 | f  | 13 | t
+ 410 | 19 | f  | 14 | t
+ 415 | 19 | f  | 19 | t
+ 417 | 19 | f  | 21 | t
+ 418 | 19 | f  | 22 | 
+ 419 | 20 | f  |  1 | t
+ 420 | 20 | f  |  2 | t
+ 421 | 20 | f  |  3 | t
+ 427 | 20 | f  |  9 | t
+ 428 | 20 | f  | 10 | t
+ 429 | 20 | f  | 11 | t
+ 430 | 20 | f  | 12 | t
+ 431 | 20 | f  | 13 | t
+ 432 | 20 | f  | 14 | t
+ 437 | 20 | f  | 19 | t
+ 439 | 20 | f  | 21 | t
+ 440 | 20 |    | 22 | 
+ 441 | 21 | f  |  1 | t
+ 442 | 21 | f  |  2 | t
+ 443 | 21 | f  |  3 | t
+ 449 | 21 | f  |  9 | t
+ 450 | 21 | f  | 10 | t
+ 451 | 21 | f  | 11 | t
+ 452 | 21 | f  | 12 | t
+ 453 | 21 | f  | 13 | t
+ 454 | 21 | f  | 14 | t
+ 459 | 21 | f  | 19 | t
+ 461 | 21 | f  | 21 | t
+ 462 | 21 | f  | 22 | 
+ 463 | 22 | f  |  1 | t
+ 464 | 22 | f  |  2 | t
+ 465 | 22 | f  |  3 | t
+ 471 | 22 | f  |  9 | t
+ 472 | 22 | f  | 10 | t
+ 473 | 22 | f  | 11 | t
+ 474 | 22 | f  | 12 | t
+ 475 | 22 | f  | 13 | t
+ 476 | 22 | f  | 14 | t
+ 481 | 22 | f  | 19 | t
+ 483 | 22 | f  | 21 | t
+ 484 | 22 |    | 22 | 
+(264 rows)
+
 --Testcase 003:
 DROP EXTENSION sqlite_fdw CASCADE;
-NOTICE:  drop cascades to 5 other objects
+NOTICE:  drop cascades to 6 other objects
 DETAIL:  drop cascades to server sqlite_svr
 drop cascades to foreign table "type_BOOLEAN"
 drop cascades to foreign table "type_BOOLEAN+"
 drop cascades to foreign table "type_BOOLEANpk"
+drop cascades to foreign table "type_BOOLEAN_oper"
 drop cascades to server sqlite2

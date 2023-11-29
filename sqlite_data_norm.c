@@ -232,7 +232,18 @@ sqlite_fdw_data_norm_bool(sqlite3_context* context, int argc, sqlite3_value** ar
 		{
 			sqlite3_result_int(context, 0);
 			return;
-		}		
+		}
+		/* rare but possible cases */
+		if (strcasecmp(t, "1") == 0)
+		{
+			sqlite3_result_int(context, 1);
+			return;
+		}
+		if (strcasecmp(t, "0") == 0)
+		{
+			sqlite3_result_int(context, 0);
+			return;
+		}
 	}
 	if ( l == 2 )
 	{			

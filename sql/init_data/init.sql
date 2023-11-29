@@ -94,4 +94,12 @@ INSERT INTO "Unicode data" (i, t) VALUES ('cze', 'Zvlášť zákeřný učeň s 
 INSERT INTO "Unicode data" (i, t) VALUES ('ara', 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ');
 INSERT INTO "Unicode data" (i, t) VALUES ('heb', 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם');
 
+
+CREATE TABLE "type_BOOLEAN_oper" AS
+WITH booldata AS (
+	SELECT row_number() over () i, column1 AS b
+	  FROM (VALUES ('Yes'), ('YeS'), ('yes'), ('no'),('No'), ('nO'), ('off'),('oFf'),('on'),('ON'),('t'),('T'),('Y'),('y'),('F'),('f'),('n'),(0),(1),('0'),('1'), (NULL))
+				 )
+SELECT ROW_NUMBER() OVER () i, t1.i i1, t1.b b1, t2.i i2, t2.b b2 FROM booldata t1 INNER JOIN booldata t2 ON 1;
+
 analyze;

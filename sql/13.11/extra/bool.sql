@@ -102,5 +102,82 @@ INSERT INTO "type_BOOLEANpk" VALUES (TRUE);
 --Testcase 45:
 DELETE FROM "type_BOOLEANpk";
 
+--Testcase 46:
+ALTER FOREIGN TABLE "type_BOOLEAN" ALTER COLUMN "b" TYPE float8;
+--Testcase 47:
+INSERT INTO "type_BOOLEAN"(i, b) VALUES (27, 3.14159265358979);
+--Testcase 48:
+ALTER FOREIGN TABLE "type_BOOLEAN" ALTER COLUMN "b" TYPE bool;
+--Testcase 49: ERR - invalid float for bool column
+SELECT * FROM "type_BOOLEAN+";
+--Testcase 50
+DELETE FROM "type_BOOLEAN" WHERE i = 27;
+--Testcase 51:
+SELECT * FROM "type_BOOLEAN+";
+
+--Testcase 52:
+EXPLAIN (VERBOSE, COSTS OFF)
+UPDATE "type_BOOLEAN" SET b = NULL WHERE b;
+--Testcase 53:
+EXPLAIN (VERBOSE, COSTS OFF)
+UPDATE "type_BOOLEAN" SET b = NULL WHERE NOT b;
+--Testcase 54:
+EXPLAIN (VERBOSE, COSTS OFF)
+DELETE FROM "type_BOOLEAN" WHERE b;
+--Testcase 55:
+EXPLAIN (VERBOSE, COSTS OFF)
+DELETE FROM "type_BOOLEAN" WHERE NOT b;
+
+--Testcase 56:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT *, NOT b nb FROM "type_BOOLEAN+" b;
+--Testcase 57:
+SELECT *, NOT b nb FROM "type_BOOLEAN+" b;
+
+--Testcase 58:
+CREATE FOREIGN TABLE "type_BOOLEAN_oper"( "i" int  OPTIONS (key 'true'), i1 smallint, b1 boolean, i2 smallint, b2 boolean) SERVER sqlite_svr OPTIONS (table 'type_BOOLEAN_oper');
+--Testcase 59: see INIT.SQL with mixed affinity boolean data
+SELECT * FROM "type_BOOLEAN_oper";
+--Testcase 60:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT i, b1, b2, b1 AND b2 a, b1 OR b2 o FROM "type_BOOLEAN_oper";
+--Testcase 61:
+SELECT i, b1, b2, b1 AND b2 a, b1 OR b2 o FROM "type_BOOLEAN_oper";
+
+--Testcase 62:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT i, b1, b2, b1 AND b2 a, b1 OR b2 o FROM "type_BOOLEAN_oper" WHERE b1 AND b2;
+--Testcase 63:
+SELECT i, b1, b2, b1 AND b2 a, b1 OR b2 o FROM "type_BOOLEAN_oper" WHERE b1 AND b2;
+
+--Testcase 64:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT i, b1, b2, b1 AND b2 a, b1 OR b2 o FROM "type_BOOLEAN_oper" WHERE b1 OR b2;
+--Testcase 65:
+SELECT i, b1, b2, b1 AND b2 a, b1 OR b2 o FROM "type_BOOLEAN_oper" WHERE b1 OR b2;
+
+--Testcase 66:
+UPDATE "type_BOOLEAN_oper" SET b1 = NULL WHERE NOT b1;
+--Testcase 67:
+SELECT * FROM "type_BOOLEAN_oper";
+--Testcase 68:
+UPDATE "type_BOOLEAN_oper" SET b1 = false WHERE b1 OR b2;
+--Testcase 69:
+EXPLAIN (VERBOSE, COSTS OFF)
+UPDATE "type_BOOLEAN_oper" SET b1 = false WHERE b1 OR b2;
+--Testcase 70:
+SELECT * FROM "type_BOOLEAN_oper";
+--Testcase 71:
+EXPLAIN (VERBOSE, COSTS OFF)
+DELETE FROM "type_BOOLEAN_oper" WHERE b1 AND b2;
+--Testcase 72:
+DELETE FROM "type_BOOLEAN_oper" WHERE b1 AND b2;
+--Testcase 73:
+SELECT * FROM "type_BOOLEAN_oper";
+--Testcase 74:
+DELETE FROM "type_BOOLEAN_oper" WHERE NOT b2;
+--Testcase 75:
+SELECT * FROM "type_BOOLEAN_oper";
+
 --Testcase 003:
 DROP EXTENSION sqlite_fdw CASCADE;
