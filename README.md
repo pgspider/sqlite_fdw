@@ -636,8 +636,6 @@ Useful links
 
 License
 -------
-This FDW linensed under PostgreSQL-like license.
-
 * Copyright © 2018 - 2024, TOSHIBA CORPORATION
 * Copyright © 2011 - 2016, EnterpriseDB Corporation
 
