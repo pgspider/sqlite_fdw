@@ -21,31 +21,35 @@ echo "$ver";
 
 # Get or pull (update) individual PostgreSQL source trees for different versions.
 echo "$ver" | while read ver_curs; do
-    [ ! -d "REL_$ver_curs" ] && mkdir "REL_$ver_curs";
-    cd "REL_$ver_curs";
-    git clone https://git.postgresql.org/git/postgresql.git -b "REL_$ver_curs" || ( cd postgresql; git pull https://git.postgresql.org/git/postgresql.git "REL_$ver_curs"; cd ..;);
-    cd ..;
+	[ ! -d "REL_$ver_curs" ] && mkdir "REL_$ver_curs";
+	(
+ 		cd "REL_$ver_curs";
+		git clone https://git.postgresql.org/git/postgresql.git -b "REL_$ver_curs" || ( cd postgresql; git pull https://git.postgresql.org/git/postgresql.git "REL_$ver_curs"; cd ..;);
+	)
 done;
 
 # Configure PostgreSQL sources
 echo "$ver" | while read ver_curs; do
-	cd "REL_$ver_curs/postgresql";
-	./configure;
-	cd ../..;
+	(
+		cd "REL_$ver_curs/postgresql";
+		./configure;
+	)
 done;
 
 # Make PostgreSQL sources
 echo "$ver" | while read ver_curs; do
-	cd "REL_$ver_curs/postgresql";
-	make;
-	cd ../..;
+	(
+		cd "REL_$ver_curs/postgresql";
+		make;
+	)
 done;
 
 # Run internal checks for PostgreSQL. 
 echo "$ver" | while read ver_curs; do
-	cd "REL_$ver_curs/postgresql";
-	make check;
-	cd ../..;
+	(
+		cd "REL_$ver_curs/postgresql";
+		make check;
+	)
 done;
 
 echo "Beginned at $d0";
