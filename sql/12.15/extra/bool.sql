@@ -140,44 +140,51 @@ CREATE FOREIGN TABLE "type_BOOLEAN_oper"( "i" int  OPTIONS (key 'true'), i1 smal
 SELECT * FROM "type_BOOLEAN_oper";
 --Testcase 60:
 EXPLAIN (VERBOSE, COSTS OFF)
-SELECT i, b1, b2, b1 AND b2 a, b1 OR b2 o FROM "type_BOOLEAN_oper";
+SELECT DISTINCT b1, b2, b1 AND b2 a, b1 OR b2 o FROM "type_BOOLEAN_oper";
 --Testcase 61:
-SELECT i, b1, b2, b1 AND b2 a, b1 OR b2 o FROM "type_BOOLEAN_oper";
+SELECT DISTINCT b1, b2, b1 AND b2 a, b1 OR b2 o FROM "type_BOOLEAN_oper";
 
 --Testcase 62:
 EXPLAIN (VERBOSE, COSTS OFF)
-SELECT i, b1, b2, b1 AND b2 a, b1 OR b2 o FROM "type_BOOLEAN_oper" WHERE b1 AND b2;
+SELECT DISTINCT b1, b2, b1 AND b2 a, b1 OR b2 o FROM "type_BOOLEAN_oper" WHERE b1 AND b2;
 --Testcase 63:
-SELECT i, b1, b2, b1 AND b2 a, b1 OR b2 o FROM "type_BOOLEAN_oper" WHERE b1 AND b2;
+SELECT DISTINCT b1, b2, b1 AND b2 a, b1 OR b2 o FROM "type_BOOLEAN_oper" WHERE b1 AND b2;
 
 --Testcase 64:
 EXPLAIN (VERBOSE, COSTS OFF)
-SELECT i, b1, b2, b1 AND b2 a, b1 OR b2 o FROM "type_BOOLEAN_oper" WHERE b1 OR b2;
+SELECT DISTINCT b1, b2, b1 AND b2 a, b1 OR b2 o FROM "type_BOOLEAN_oper" WHERE b1 OR b2;
 --Testcase 65:
-SELECT i, b1, b2, b1 AND b2 a, b1 OR b2 o FROM "type_BOOLEAN_oper" WHERE b1 OR b2;
+SELECT DISTINCT b1, b2, b1 AND b2 a, b1 OR b2 o FROM "type_BOOLEAN_oper" WHERE b1 OR b2;
 
 --Testcase 66:
+EXPLAIN (VERBOSE, COSTS OFF)
 UPDATE "type_BOOLEAN_oper" SET b1 = NULL WHERE NOT b1;
 --Testcase 67:
-SELECT * FROM "type_BOOLEAN_oper";
+UPDATE "type_BOOLEAN_oper" SET b1 = NULL WHERE NOT b1;
 --Testcase 68:
-UPDATE "type_BOOLEAN_oper" SET b1 = false WHERE b1 OR b2;
+SELECT DISTINCT b1, b2 FROM "type_BOOLEAN_oper";
 --Testcase 69:
-EXPLAIN (VERBOSE, COSTS OFF)
 UPDATE "type_BOOLEAN_oper" SET b1 = false WHERE b1 OR b2;
 --Testcase 70:
-SELECT * FROM "type_BOOLEAN_oper";
---Testcase 71:
 EXPLAIN (VERBOSE, COSTS OFF)
-DELETE FROM "type_BOOLEAN_oper" WHERE b1 AND b2;
+UPDATE "type_BOOLEAN_oper" SET b1 = false WHERE b1 OR b2;
+--Testcase 71:
+SELECT DISTINCT b1, b2 FROM "type_BOOLEAN_oper";
 --Testcase 72:
-DELETE FROM "type_BOOLEAN_oper" WHERE b1 AND b2;
+EXPLAIN (VERBOSE, COSTS OFF)
+DELETE FROM "type_BOOLEAN_oper" WHERE NOT b1 AND b2;
 --Testcase 73:
-SELECT * FROM "type_BOOLEAN_oper";
+DELETE FROM "type_BOOLEAN_oper" WHERE NOT b1 AND b2;
 --Testcase 74:
-DELETE FROM "type_BOOLEAN_oper" WHERE NOT b2;
+SELECT DISTINCT b1, b2 FROM "type_BOOLEAN_oper";
 --Testcase 75:
-SELECT * FROM "type_BOOLEAN_oper";
+DELETE FROM "type_BOOLEAN_oper" WHERE NOT b2;
+--Testcase 76:
+SELECT DISTINCT b1, b2 FROM "type_BOOLEAN_oper";
+--Testcase 77:
+DELETE FROM "type_BOOLEAN_oper" WHERE b2;
+--Testcase 78:
+SELECT DISTINCT b1, b2 FROM "type_BOOLEAN_oper";
 
 --Testcase 003:
 DROP EXTENSION sqlite_fdw CASCADE;
