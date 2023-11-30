@@ -17,11 +17,10 @@ cd "$pg_multver_src_dir";
 echo "$ver" | while read ver_curs; do
 	[ "$one_ver" != "" ] && [ "$one_ver" != "$ver_curs" ] && continue;
 	basedir="REL_$ver_curs/postgresql/contrib/$fdwname";
-	cd "$basedir";
-	pwd;
-	./test.sh;
-	cd ../../../..;
-	pwd;
+	(
+ 		cd "$basedir";
+		./test.sh;
+	)
 	# "Copy" diff files from regression tests from different PostgreSQL version source code trees.
 	rm "rel_$ver_curs regression.diff" 2> /dev/null;
 	ln -s -r "$basedir/regression.diffs" "$fdwname_${ver_curs}_regr.diff";
