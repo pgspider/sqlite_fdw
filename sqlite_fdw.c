@@ -1114,14 +1114,14 @@ sqliteGetForeignPaths(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntableid
 		ParamPathInfo *param_info = (ParamPathInfo *) lfirst(lc);
 		double		rows;
 		int			width;
-		Cost		startup_cost1;
-		Cost		total_cost1;
+		Cost		param_startup_cost;
+		Cost		param_total_cost;
 
 		/* Get a cost estimate from the remote */
 		sqlite_estimate_path_cost_size(root, baserel,
 									   param_info->ppi_clauses, NIL, NULL,
 									   &rows, &width,
-									   &startup_cost1, &total_cost1);
+									   &param_startup_cost, &param_total_cost);
 
 		/*
 		 * ppi_rows currently won't get looked at by anything, but still we
@@ -1133,8 +1133,8 @@ sqliteGetForeignPaths(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntableid
 		path = create_foreignscan_path(root, baserel,
 									   NULL,	/* default pathtarget */
 									   rows,
-									   startup_cost1,
-									   total_cost1,
+									   param_startup_cost,
+									   param_total_cost,
 									   NIL, /* no pathkeys */
 									   param_info->ppi_req_outer,
 									   NULL,
@@ -3145,14 +3145,14 @@ sqliteImportForeignSchema(ImportForeignSchemaStmt *stmt,
 				bool		not_null;
 				char	   *default_val;
 				int			primary_key;
-				int			rc1 = sqlite3_step(pragma_stmt);
 
-				if (rc1 == SQLITE_DONE)
+				rc = sqlite3_step(pragma_stmt);
+				if (rc == SQLITE_DONE)
 					break;
-				else if (rc1 != SQLITE_ROW)
+				else if (rc != SQLITE_ROW)
 				{
 					/* Not pass sql_stmt because it is finalized in PG_CATCH */
-					sqlitefdw_report_error(ERROR, NULL, db, sqlite3_sql(pragma_stmt), rc1);
+					sqlitefdw_report_error(ERROR, NULL, db, sqlite3_sql(pragma_stmt), rc);
 				}
 				col_name = (char *) sqlite3_column_text(pragma_stmt, 1);
 				type_name = (char *) sqlite3_column_text(pragma_stmt, 2);
@@ -3758,7 +3758,6 @@ sqlite_foreign_grouping_ok(PlannerInfo *root, RelOptInfo *grouped_rel)
 	PathTarget *grouping_target;
 	SqliteFdwRelationInfo *fpinfo = (SqliteFdwRelationInfo *) grouped_rel->fdw_private;
 	SqliteFdwRelationInfo *ofpinfo;
-	List	   *aggvars = NIL;
 	ListCell   *lc;
 	int			i;
 	List	   *tlist = NIL;
@@ -3852,6 +3851,7 @@ sqlite_foreign_grouping_ok(PlannerInfo *root, RelOptInfo *grouped_rel)
 			}
 			else
 			{
+				List	   *aggvars = NIL;
 				/* Not matched exactly, pull the var with aggregates then */
 				aggvars = pull_var_clause((Node *) expr,
 										  PVC_INCLUDE_AGGREGATES);
@@ -3934,18 +3934,17 @@ sqlite_foreign_grouping_ok(PlannerInfo *root, RelOptInfo *grouped_rel)
 	 */
 	if (fpinfo->local_conds)
 	{
-		List	   *aggvars1 = NIL;
-
+		List	   *aggvars = NIL;
 		foreach(lc, fpinfo->local_conds)
 		{
 			RestrictInfo *rinfo = lfirst_node(RestrictInfo, lc);
 
-			aggvars1 = list_concat(aggvars1,
+			aggvars = list_concat(aggvars,
 								  pull_var_clause((Node *) rinfo->clause,
 												  PVC_INCLUDE_AGGREGATES));
 		}
 
-		foreach(lc, aggvars1)
+		foreach(lc, aggvars)
 		{
 			Expr	   *expr = (Expr *) lfirst(lc);
 
