@@ -1179,7 +1179,7 @@ sqliteGetForeignPlan(PlannerInfo *root, RelOptInfo *baserel, Oid foreigntableid,
 #if PG_VERSION_NUM >= 150000
 		has_final_sort = boolVal(list_nth(best_path->fdw_private, FdwPathPrivateHasFinalSort));
 		has_limit = boolVal(list_nth(best_path->fdw_private, FdwPathPrivateHasLimit));
-		
+
 #else
 		has_final_sort = intVal(list_nth(best_path->fdw_private, FdwPathPrivateHasFinalSort));
 		has_limit = intVal(list_nth(best_path->fdw_private, FdwPathPrivateHasLimit));
@@ -1595,16 +1595,16 @@ make_tuple_from_result_row(sqlite3_stmt * stmt,
 
 		if ( sqlite_value_affinity != SQLITE_NULL)
 		{
-			/* TODO: Processing of column options about special convert behaviour 
+			/* TODO: Processing of column options about special convert behaviour
 			 * options = GetForeignColumnOptions(rel, attnum_base); ... foreach(lc_attr, options)
 			 */
-			
+
 			int AffinityBehaviourFlags = 0;
 			/* TODO
 			 * Flags about special convert behaviour from options on database, table or column level
 			 */
 
-			sqlite_coverted = sqlite_convert_to_pg(att, stmt, stmt_colid, 
+			sqlite_coverted = sqlite_convert_to_pg(att, stmt, stmt_colid,
 												   festate->attinmeta,
 												   attnum, sqlite_value_affinity,
 												   AffinityBehaviourFlags);
@@ -2918,7 +2918,7 @@ sqliteExecForeignUpdate(EState *estate,
 		int			attnum = lfirst_int(lc);
 		bool		is_null;
 		Datum		value = 0;
-		Form_pg_attribute bind_att = NULL;		
+		Form_pg_attribute bind_att = NULL;
 #if PG_VERSION_NUM >= 140000
 		TupleDesc	tupdesc = RelationGetDescr(fmstate->rel);
 		Form_pg_attribute attr = TupleDescAttr(tupdesc, attnum - 1);
@@ -4278,7 +4278,7 @@ sqlite_add_foreign_ordered_paths(PlannerInfo *root, RelOptInfo *input_rel,
 	 */
 #if (PG_VERSION_NUM >= 150000)
 	fdw_private = list_make2(makeBoolean(true), makeBoolean(false));
-#else		
+#else
 	fdw_private = list_make2(makeInteger(true), makeInteger(false));
 #endif
 
@@ -5238,13 +5238,13 @@ sqlite_execute_insert(EState *estate,
 	int			nestlevel;
 	int			bindnum = 0;
 	int			i;
-		
+
 #if PG_VERSION_NUM >= 140000
 	Relation	rel = resultRelInfo->ri_RelationDesc;
 	TupleDesc	tupdesc = RelationGetDescr(rel);
 	Oid			foreignTableId = RelationGetRelid(rel);
 	elog(DEBUG1, "sqlite_fdw : %s for RelId %u", __func__, foreignTableId);
-#else	
+#else
 	elog(DEBUG1, "sqlite_fdw : %s", __func__);
 #endif
 
@@ -5296,7 +5296,7 @@ sqlite_execute_insert(EState *estate,
 			sqlite_bind_sql_var(att, bindnum, value, fmstate->stmt, &isnull, foreignTableId);
 #else
 			sqlite_bind_sql_var(att, bindnum, value, fmstate->stmt, &isnull, InvalidOid);
-#endif			
+#endif
 			bindnum++;
 		}
 	}
@@ -5390,7 +5390,7 @@ sqlite_process_query_params(ExprContext *econtext,
 		ExprState  *expr_state = (ExprState *) lfirst(lc);
 		Datum		expr_value;
 		bool		isNull;
-		/* fake structure, bind function usually works with attribute, but just typid in our case */		
+		/* fake structure, bind function usually works with attribute, but just typid in our case */
 		Form_pg_attribute att = NULL;
 
 		/* Evaluate the parameter expression */
@@ -5682,7 +5682,7 @@ sqliteIsForeignRelUpdatable(Relation rel)
 
 		if (strcmp(def->defname, "updatable") == 0)
 			updatable = defGetBoolean(def);
-	}	
+	}
 
 	/*
 	 * Currently "updatable" means support for INSERT, UPDATE and DELETE.

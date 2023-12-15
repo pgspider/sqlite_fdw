@@ -4,7 +4,7 @@
  *
  * SQLite functions for data normalization
  * This function is useful for mixed affinity inputs for PostgreSQL
- * data column. Also some UUID functions are implemented here according 
+ * data column. Also some UUID functions are implemented here according
  * the uuid SQLite exension, Public Domain
  * https://www.sqlite.org/src/file/ext/misc/uuid.c
  *
@@ -165,8 +165,8 @@ static void
 sqlite_fdw_data_norm_uuid(sqlite3_context* context, int argc, sqlite3_value** argv)
 {
 	unsigned char aBlob[16];
-	sqlite3_value* arg = argv[0];		
-	
+	sqlite3_value* arg = argv[0];
+
 	if (sqlite3_value_type(argv[0]) == SQLITE3_TEXT)
 	{
 		const unsigned char* txt = sqlite3_value_text(arg);
@@ -182,7 +182,7 @@ sqlite_fdw_data_norm_uuid(sqlite3_context* context, int argc, sqlite3_value** ar
 /*
  * ISO:SQL valid boolean values with text affinity such as Y, no, f, t, oN etc.
  * will be treated as boolean like in PostgreSQL console input
- */ 
+ */
 static void
 sqlite_fdw_data_norm_bool(sqlite3_context* context, int argc, sqlite3_value** argv)
 {
@@ -303,7 +303,7 @@ error_helper(sqlite3* db, int rc)
 
 void
 sqlite_fdw_data_norm_functs_init(sqlite3* db)
-{	
+{
 	static const int det_flags = SQLITE_UTF8 | SQLITE_INNOCUOUS | SQLITE_DETERMINISTIC;
 
 	int rc = sqlite3_create_function(db, "sqlite_fdw_uuid_blob", 1, det_flags, 0, sqlite_fdw_data_norm_uuid, 0, 0);
@@ -312,9 +312,9 @@ sqlite_fdw_data_norm_functs_init(sqlite3* db)
 	rc = sqlite3_create_function(db, "sqlite_fdw_bool", 1, det_flags, 0, sqlite_fdw_data_norm_bool, 0, 0);
 	if (rc != SQLITE_OK)
 		error_helper(db, rc);
-		
+
 	/* no rc because in future SQLite releases it can be added UUID generation function
-	 * PostgreSQL 13+, no gen_random_uuid() before 
+	 * PostgreSQL 13+, no gen_random_uuid() before
 	 *	static const int flags = SQLITE_UTF8 | SQLITE_INNOCUOUS;
 	 *	sqlite3_create_function(db, "uuid_generate_v4", 0, flags, 0, uuid_generate, 0, 0);
 	 *	sqlite3_create_function(db, "gen_random_uuid", 1, flags, 0, uuid_generate, 0, 0);
