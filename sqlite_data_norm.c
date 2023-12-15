@@ -210,9 +210,9 @@ sqlite_fdw_data_norm_bool(sqlite3_context* context, int argc, sqlite3_value** ar
 		sqlite3_result_value(context, arg);
 		return;
 	}
-	
+
 	t = (const char*)sqlite3_value_text(arg);
-		
+
 	if ( l == 1 )
 	{
 		if (strcasecmp(t, "t") == 0)
@@ -248,7 +248,7 @@ sqlite_fdw_data_norm_bool(sqlite3_context* context, int argc, sqlite3_value** ar
 		}
 	}
 	else if ( l == 2 )
-	{			
+	{
 		if (strcasecmp(t, "on") == 0)
 		{
 			sqlite3_result_int(context, 1);
