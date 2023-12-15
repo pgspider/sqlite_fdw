@@ -68,8 +68,10 @@
 #include <string.h>
 
 #include "sqlite3.h"
+#include "postgres.h"
+#include "sqlite_fdw.h"
 
-int sqlite_fdw_data_norm_functs_init(sqlite3* db);
+void error_helper(sqlite3* db, int rc);
 
 #if !defined(SQLITE_ASCII) && !defined(SQLITE_EBCDIC)
 #define SQLITE_ASCII 1
@@ -245,7 +247,7 @@ sqlite_fdw_data_norm_bool(sqlite3_context* context, int argc, sqlite3_value** ar
 			return;
 		}
 	}
-	if ( l == 2 )
+	else if ( l == 2 )
 	{			
 		if (strcasecmp(t, "on") == 0)
 		{
@@ -258,7 +260,7 @@ sqlite_fdw_data_norm_bool(sqlite3_context* context, int argc, sqlite3_value** ar
 			return;
 		}
 	}
-	if ( l == 3 )
+	else if ( l == 3 )
 	{
 		if (strcasecmp(t, "yes") == 0)
 		{
@@ -271,12 +273,12 @@ sqlite_fdw_data_norm_bool(sqlite3_context* context, int argc, sqlite3_value** ar
 			return;
 		}
 	}
-	if ( l == 4 && strcasecmp(t, "true") == 0)
+	else if ( l == 4 && strcasecmp(t, "true") == 0)
 	{
 		sqlite3_result_int(context, 1);
 		return;
 	}
-	if ( l == 5 && strcasecmp(t, "false") == 0)
+	else if ( l == 5 && strcasecmp(t, "false") == 0)
 	{
 		sqlite3_result_int(context, 0);
 		return;
@@ -284,20 +286,37 @@ sqlite_fdw_data_norm_bool(sqlite3_context* context, int argc, sqlite3_value** ar
 	sqlite3_result_value(context, arg);
 }
 
-int
-sqlite_fdw_data_norm_functs_init(sqlite3* db) {
-	
+/*
+ * Makes pg error from SQLite error.
+ * Interrupts normal executing, no need return after place of calling
+ */
+void
+error_helper(sqlite3* db, int rc)
+{
+	const char * err = sqlite3_errmsg(db);
+	sqlite3_close(db);
+	ereport(ERROR,
+			(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
+			 errmsg("failed to create data unifying functions for SQLite DB"),
+			 errhint("%s \n SQLite code %d", err, rc)));
+}
+
+void
+sqlite_fdw_data_norm_functs_init(sqlite3* db)
+{	
 	static const int det_flags = SQLITE_UTF8 | SQLITE_INNOCUOUS | SQLITE_DETERMINISTIC;
 
-	int rc = sqlite3_create_function(db, "sqlite_fdw_uuid_blob", 1, det_flags, 0, sqlite_fdw_data_norm_uuid, 0, 0);	
-	int rc1 = sqlite3_create_function(db, "sqlite_fdw_bool", 1, det_flags, 0, sqlite_fdw_data_norm_bool, 0, 0);
-	
+	int rc = sqlite3_create_function(db, "sqlite_fdw_uuid_blob", 1, det_flags, 0, sqlite_fdw_data_norm_uuid, 0, 0);
+	if (rc != SQLITE_OK)
+		error_helper(db, rc);
+	rc = sqlite3_create_function(db, "sqlite_fdw_bool", 1, det_flags, 0, sqlite_fdw_data_norm_bool, 0, 0);
+	if (rc != SQLITE_OK)
+		error_helper(db, rc);
+		
 	/* no rc because in future SQLite releases it can be added UUID generation function
 	 * PostgreSQL 13+, no gen_random_uuid() before 
 	 *	static const int flags = SQLITE_UTF8 | SQLITE_INNOCUOUS;
 	 *	sqlite3_create_function(db, "uuid_generate_v4", 0, flags, 0, uuid_generate, 0, 0);
 	 *	sqlite3_create_function(db, "gen_random_uuid", 1, flags, 0, uuid_generate, 0, 0);
 	 */
-	
-	return rc | rc1;
 }
