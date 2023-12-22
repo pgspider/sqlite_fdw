@@ -483,21 +483,25 @@ SELECT b, length(b) FROM numbers WHERE length(b) = 4 AND power(1, a) != 0 AND le
 --Testcase 114:
 EXPLAIN (verbose, costs off) SELECT b, length(b) FROM numbers WHERE length(b) = 4 AND power(1, a) != 0 AND length(reverse(b)) = 4;
 
+-- Aggregates in subquery are pushed down.
+--Testcase 214:
+explain (verbose, costs off)
+select count(x.a), sum(x.a) from (select a a, sum(a) b from numbers group by a, abs(a) order by 1, 2) x;
+--Testcase 215:
+select count(x.a), sum(x.a) from (select a a, sum(a) b from numbers group by a, abs(a) order by 1, 2) x;
+
 --Testcase 115:
 INSERT INTO multiprimary (b,c) VALUES (99, 100);
 --Testcase 116:
 SELECT c FROM multiprimary WHERE COALESCE(a,b,c) = 99;
 
-
 --Testcase 139:
 CREATE FOREIGN TABLE multiprimary2(a int, b int, c int OPTIONS(column_name 'b')) SERVER sqlite_svr OPTIONS (table 'multiprimary');
 --Testcase 117:
 SELECT * FROM multiprimary2;
---Testcase 214:
 ALTER FOREIGN TABLE multiprimary2 ALTER COLUMN a OPTIONS(ADD column_name 'b');
 --Testcase 118:
 SELECT * FROM multiprimary2;
---Testcase 215:
 ALTER FOREIGN TABLE multiprimary2 ALTER COLUMN b OPTIONS (column_name 'nosuch column');
 --Testcase 119:
 SELECT * FROM multiprimary2;
@@ -569,29 +573,6 @@ EXPLAIN VERBOSE
 SELECT * FROM noprimary where b in ('Test''s', 'Test');
 --Testcase 242:
 SELECT * FROM noprimary where b in ('Test''s', 'Test');
-
--- INSERT/UPDATE whole row with generated column
---Testcase 216:
-CREATE FOREIGN TABLE grem1_1 (
-  a int generated always as (0) stored)
-  SERVER sqlite_svr OPTIONS(table 'grem1_1');
-
---Testcase 217:
-INSERT INTO grem1_1 DEFAULT VALUES;
---Testcase 218:
-SELECT * FROM grem1_1;
-
---Testcase 219:
-CREATE FOREIGN TABLE grem1_2 (
-  a int generated always as (0) stored,
-  b int generated always as (1) stored,
-  c int generated always as (2) stored,
-  d int generated always as (3) stored)
-  SERVER sqlite_svr OPTIONS(table 'grem1_2');
---Testcase 220:
-INSERT INTO grem1_2 DEFAULT VALUES;
---Testcase 221:
-SELECT * FROM grem1_2;
 
 -- Executable test case for pushdown CASE expressions (results)
 --Testcase 224:
@@ -780,10 +761,6 @@ DROP FOREIGN TABLE columntest;
 DROP FOREIGN TABLE noprimary;
 --Testcase 161:
 DROP FOREIGN TABLE fts_table;
---Testcase 222:
-DROP FOREIGN TABLE grem1_1;
---Testcase 223:
-DROP FOREIGN TABLE grem1_2;
 --Testcase 235:
 DROP FOREIGN TABLE case_exp;
 

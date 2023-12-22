@@ -160,19 +160,19 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 - **database** as *string*, **required**, no default
 
   SQLite database path.
-
+  
 - **updatable** as *boolean*, optional, default *true*
 
   This option allow or disallow write operations on SQLite database file.
-
+  
 - **truncatable** as *boolean*, optional, default *true*
 
   Allows foreign tables to be truncated using the `TRUNCATE` command.
-
+  
 - **keep_connections** as *boolean*, optional, default *true*
-
+  
   Allows to keep connections to SQLite while there is no SQL operations between PostgreSQL and SQLite.
-
+  
 - **batch_size** as *integer*, optional, default *1*
 
   Specifies the number of rows which should be inserted in a single `INSERT` operation. This setting can be overridden for individual tables.
@@ -196,17 +196,17 @@ In OS `sqlite_fdw` works as executed code with permissions of user of PostgreSQL
   SQLite table name. Use if not equal to name of foreign table in PostgreSQL. Also see about [identifier case handling](#identifier-case-handling).
 
 - **truncatable** as *boolean*, optional, default from the same `CREATE SERVER` option
-
+  
   See `CREATE SERVER` options section for details.
 
 - **batch_size** as *integer*, optional, default from the same `CREATE SERVER` option
 
   See `CREATE SERVER` options section for details.
-
+  
 - **updatable** as *boolean*, optional, default *true*
 
   This option can allow or disallow write operations on a SQLite table independed of the same server option.
-
+  
 `sqlite_fdw` accepts the following column-level options via the
 `CREATE FOREIGN TABLE` command:
 
@@ -533,30 +533,30 @@ Test directory have structure as following:
 
 ```sql
 +---sql
-|   +---12.15
+|   +---12.16
 |   |       filename1.sql
 |   |       filename2.sql
 |   |
-|   +---13.11
+|   +---13.12
 |   |       filename1.sql
 |   |       filename2.sql
 |   |
 .................
-|   \---15.3
+|   \---15.4
 |          filename1.sql
 |          filename2.sql
 |
 \---expected
-|   +---12.15
+|   +---12.16
 |   |       filename1.out
 |   |       filename2.out
 |   |
-|   +---13.11
+|   +---13.12
 |   |       filename1.out
 |   |       filename2.out
 |   |
 .................
-|   \---15.3
+|   \---15.4
             filename1.out
             filename2.out
 ```
