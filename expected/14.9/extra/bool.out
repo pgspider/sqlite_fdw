@@ -1,0 +1,1271 @@
+--SET log_min_messages  TO DEBUG1;
+--SET client_min_messages  TO DEBUG1;
+--Testcase 000:
+CREATE EXTENSION sqlite_fdw;
+--Testcase 001:
+CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
+OPTIONS (database '/tmp/sqlitefdw_test.db');
+--Testcase 002:
+CREATE SERVER sqlite2 FOREIGN DATA WRAPPER sqlite_fdw;
+--Testcase 01:
+CREATE FOREIGN TABLE "type_BOOLEAN" (i int OPTIONS (key 'true'), b bool) SERVER sqlite_svr;
+--Testcase 02:
+INSERT INTO "type_BOOLEAN"(i, b) VALUES (1, TRUE);
+--Testcase 03:
+INSERT INTO "type_BOOLEAN"(i, b) VALUES (2, FALSE);
+--Testcase 04:
+CREATE FOREIGN TABLE "type_BOOLEAN+"( "i" int, "b" bool, "t" text, "l" smallint) SERVER sqlite_svr OPTIONS (table 'type_BOOLEAN+');
+--Testcase 05:
+ALTER FOREIGN TABLE "type_BOOLEAN" ALTER COLUMN "b" TYPE text;
+--Testcase 06:
+INSERT INTO "type_BOOLEAN"(i, b) VALUES (3, TRUE);
+--Testcase 07:
+INSERT INTO "type_BOOLEAN"(i, b) VALUES (4, FALSE);
+--Testcase 08:
+INSERT INTO "type_BOOLEAN"(i, b) VALUES (5, true);
+--Testcase 09:
+INSERT INTO "type_BOOLEAN"(i, b) VALUES (6, false);
+--Testcase 10:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (7, 'Yes');
+--Testcase 11:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (8, 'YeS');
+--Testcase 12:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (9, 'yes');
+--Testcase 13:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (10, 'no');
+--Testcase 14:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (11, 'No');
+--Testcase 15:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (12, 'nO');
+--Testcase 16:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (13, 'off');
+--Testcase 17:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (14, 'oFf');
+--Testcase 18:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (15, 'on');
+--Testcase 19:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (16, 'ON');
+--Testcase 20:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (17, 't');
+--Testcase 21:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (18, 'T');
+--Testcase 22:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (19, 'Y');
+--Testcase 23:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (20, 'y');
+--Testcase 24:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (21, 'F');
+--Testcase 25:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (22, 'f');
+--Testcase 26:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (23, 'x');
+--Testcase 27:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (24, '0');
+--Testcase 28:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (25, '1');
+--Testcase 29:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (26, NULL);
+--Testcase 30:
+SELECT * FROM "type_BOOLEAN";
+ i  |   b   
+----+-------
+  1 | 1
+  2 | 0
+  3 | true
+  4 | false
+  5 | true
+  6 | false
+  7 | Yes
+  8 | YeS
+  9 | yes
+ 10 | no
+ 11 | No
+ 12 | nO
+ 13 | off
+ 14 | oFf
+ 15 | on
+ 16 | ON
+ 17 | t
+ 18 | T
+ 19 | Y
+ 20 | y
+ 21 | F
+ 22 | f
+ 23 | x
+ 24 | 0
+ 25 | 1
+ 26 | 
+(26 rows)
+
+--Testcase 31:
+ALTER FOREIGN TABLE "type_BOOLEAN" ALTER COLUMN "b" TYPE bool;
+--Testcase 32:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_BOOLEAN";
+                                QUERY PLAN                                 
+---------------------------------------------------------------------------
+ Foreign Scan on public."type_BOOLEAN"
+   Output: i, b
+   SQLite query: SELECT `i`, sqlite_fdw_bool(`b`) FROM main."type_BOOLEAN"
+(3 rows)
+
+--Testcase 33:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_BOOLEAN+";
+                                      QUERY PLAN                                      
+--------------------------------------------------------------------------------------
+ Foreign Scan on public."type_BOOLEAN+"
+   Output: i, b, t, l
+   SQLite query: SELECT `i`, sqlite_fdw_bool(`b`), `t`, `l` FROM main."type_BOOLEAN+"
+(3 rows)
+
+--Testcase 34: ERR - invalid text affinity because not ISO:SQL text input
+SELECT * FROM "type_BOOLEAN+";
+ERROR:  SQLite data affinity "text" disallowed for PostgreSQL data type "boolean"
+HINT:  In column "b" expected SQLite affinity "integer", incorrect value = 'x'
+--Testcase 35
+DELETE FROM "type_BOOLEAN" WHERE i = 23;
+--Testcase 36:
+SELECT * FROM "type_BOOLEAN+";
+ i  | b |    t    | l 
+----+---+---------+---
+  1 | t | integer | 1
+  2 | f | integer | 1
+  3 | t | text    | 4
+  4 | f | text    | 5
+  5 | t | text    | 4
+  6 | f | text    | 5
+  7 | t | text    | 3
+  8 | t | text    | 3
+  9 | t | text    | 3
+ 10 | f | text    | 2
+ 11 | f | text    | 2
+ 12 | f | text    | 2
+ 13 | f | text    | 3
+ 14 | f | text    | 3
+ 15 | t | text    | 2
+ 16 | t | text    | 2
+ 17 | t | text    | 1
+ 18 | t | text    | 1
+ 19 | t | text    | 1
+ 20 | t | text    | 1
+ 21 | f | text    | 1
+ 22 | f | text    | 1
+ 24 | f | integer | 1
+ 25 | t | integer | 1
+ 26 |   | null    |  
+(25 rows)
+
+--Testcase 37:
+SELECT * FROM "type_BOOLEAN+" WHERE b IS NULL;
+ i  | b |  t   | l 
+----+---+------+---
+ 26 |   | null |  
+(1 row)
+
+--Testcase 38:
+SELECT * FROM "type_BOOLEAN+" WHERE b IS NOT NULL;
+ i  | b |    t    | l 
+----+---+---------+---
+  1 | t | integer | 1
+  2 | f | integer | 1
+  3 | t | text    | 4
+  4 | f | text    | 5
+  5 | t | text    | 4
+  6 | f | text    | 5
+  7 | t | text    | 3
+  8 | t | text    | 3
+  9 | t | text    | 3
+ 10 | f | text    | 2
+ 11 | f | text    | 2
+ 12 | f | text    | 2
+ 13 | f | text    | 3
+ 14 | f | text    | 3
+ 15 | t | text    | 2
+ 16 | t | text    | 2
+ 17 | t | text    | 1
+ 18 | t | text    | 1
+ 19 | t | text    | 1
+ 20 | t | text    | 1
+ 21 | f | text    | 1
+ 22 | f | text    | 1
+ 24 | f | integer | 1
+ 25 | t | integer | 1
+(24 rows)
+
+--Testcase 39:
+SELECT * FROM "type_BOOLEAN+" WHERE b;
+ i  | b |    t    | l 
+----+---+---------+---
+  1 | t | integer | 1
+  3 | t | text    | 4
+  5 | t | text    | 4
+  7 | t | text    | 3
+  8 | t | text    | 3
+  9 | t | text    | 3
+ 15 | t | text    | 2
+ 16 | t | text    | 2
+ 17 | t | text    | 1
+ 18 | t | text    | 1
+ 19 | t | text    | 1
+ 20 | t | text    | 1
+ 25 | t | integer | 1
+(13 rows)
+
+--Testcase 40:
+SELECT * FROM "type_BOOLEAN+" WHERE NOT b;
+ i  | b |    t    | l 
+----+---+---------+---
+  2 | f | integer | 1
+  4 | f | text    | 5
+  6 | f | text    | 5
+ 10 | f | text    | 2
+ 11 | f | text    | 2
+ 12 | f | text    | 2
+ 13 | f | text    | 3
+ 14 | f | text    | 3
+ 21 | f | text    | 1
+ 22 | f | text    | 1
+ 24 | f | integer | 1
+(11 rows)
+
+--Testcase 41:
+CREATE FOREIGN TABLE "type_BOOLEANpk" (col bool OPTIONS (key 'true')) SERVER sqlite_svr;
+--Testcase 42:
+INSERT INTO "type_BOOLEANpk" VALUES (TRUE);
+--Testcase 43:
+INSERT INTO "type_BOOLEANpk" VALUES (FALSE);
+--Testcase 44: ERR - primary key
+INSERT INTO "type_BOOLEANpk" VALUES (TRUE);
+ERROR:  failed to execute remote SQL: rc=19 UNIQUE constraint failed: type_BOOLEANpk.col 
+   sql=INSERT INTO main."type_BOOLEANpk"(`col`) VALUES (?)
+--Testcase 45:
+DELETE FROM "type_BOOLEANpk";
+--Testcase 46:
+ALTER FOREIGN TABLE "type_BOOLEAN" ALTER COLUMN "b" TYPE float8;
+--Testcase 47:
+INSERT INTO "type_BOOLEAN"(i, b) VALUES (27, 3.14159265358979);
+--Testcase 48:
+ALTER FOREIGN TABLE "type_BOOLEAN" ALTER COLUMN "b" TYPE bool;
+--Testcase 49: ERR - invalid float for bool column
+SELECT * FROM "type_BOOLEAN+";
+ERROR:  SQLite data affinity "real" disallowed for PostgreSQL data type "boolean"
+HINT:  In column "b" expected SQLite affinity "integer", incorrect value = '3.14159265358979'
+--Testcase 50
+DELETE FROM "type_BOOLEAN" WHERE i = 27;
+--Testcase 51:
+SELECT * FROM "type_BOOLEAN+";
+ i  | b |    t    | l 
+----+---+---------+---
+  1 | t | integer | 1
+  2 | f | integer | 1
+  3 | t | text    | 4
+  4 | f | text    | 5
+  5 | t | text    | 4
+  6 | f | text    | 5
+  7 | t | text    | 3
+  8 | t | text    | 3
+  9 | t | text    | 3
+ 10 | f | text    | 2
+ 11 | f | text    | 2
+ 12 | f | text    | 2
+ 13 | f | text    | 3
+ 14 | f | text    | 3
+ 15 | t | text    | 2
+ 16 | t | text    | 2
+ 17 | t | text    | 1
+ 18 | t | text    | 1
+ 19 | t | text    | 1
+ 20 | t | text    | 1
+ 21 | f | text    | 1
+ 22 | f | text    | 1
+ 24 | f | integer | 1
+ 25 | t | integer | 1
+ 26 |   | null    |  
+(25 rows)
+
+--Testcase 52:
+EXPLAIN (VERBOSE, COSTS OFF)
+UPDATE "type_BOOLEAN" SET b = NULL WHERE b;
+                                          QUERY PLAN                                          
+----------------------------------------------------------------------------------------------
+ Update on public."type_BOOLEAN"
+   ->  Foreign Update on public."type_BOOLEAN"
+         SQLite query: UPDATE main."type_BOOLEAN" SET `b` = NULL WHERE (sqlite_fdw_bool(`b`))
+(3 rows)
+
+--Testcase 53:
+EXPLAIN (VERBOSE, COSTS OFF)
+UPDATE "type_BOOLEAN" SET b = NULL WHERE NOT b;
+                                             QUERY PLAN                                             
+----------------------------------------------------------------------------------------------------
+ Update on public."type_BOOLEAN"
+   ->  Foreign Update on public."type_BOOLEAN"
+         SQLite query: UPDATE main."type_BOOLEAN" SET `b` = NULL WHERE ((NOT sqlite_fdw_bool(`b`)))
+(3 rows)
+
+--Testcase 54:
+EXPLAIN (VERBOSE, COSTS OFF)
+DELETE FROM "type_BOOLEAN" WHERE b;
+                                     QUERY PLAN                                     
+------------------------------------------------------------------------------------
+ Delete on public."type_BOOLEAN"
+   ->  Foreign Delete on public."type_BOOLEAN"
+         SQLite query: DELETE FROM main."type_BOOLEAN" WHERE (sqlite_fdw_bool(`b`))
+(3 rows)
+
+--Testcase 55:
+EXPLAIN (VERBOSE, COSTS OFF)
+DELETE FROM "type_BOOLEAN" WHERE NOT b;
+                                        QUERY PLAN                                        
+------------------------------------------------------------------------------------------
+ Delete on public."type_BOOLEAN"
+   ->  Foreign Delete on public."type_BOOLEAN"
+         SQLite query: DELETE FROM main."type_BOOLEAN" WHERE ((NOT sqlite_fdw_bool(`b`)))
+(3 rows)
+
+--Testcase 56:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT *, NOT b nb FROM "type_BOOLEAN+" b;
+                                      QUERY PLAN                                      
+--------------------------------------------------------------------------------------
+ Foreign Scan on public."type_BOOLEAN+" b
+   Output: i, b, t, l, (NOT b)
+   SQLite query: SELECT `i`, sqlite_fdw_bool(`b`), `t`, `l` FROM main."type_BOOLEAN+"
+(3 rows)
+
+--Testcase 57:
+SELECT *, NOT b nb FROM "type_BOOLEAN+" b;
+ i  | b |    t    | l | nb 
+----+---+---------+---+----
+  1 | t | integer | 1 | f
+  2 | f | integer | 1 | t
+  3 | t | text    | 4 | f
+  4 | f | text    | 5 | t
+  5 | t | text    | 4 | f
+  6 | f | text    | 5 | t
+  7 | t | text    | 3 | f
+  8 | t | text    | 3 | f
+  9 | t | text    | 3 | f
+ 10 | f | text    | 2 | t
+ 11 | f | text    | 2 | t
+ 12 | f | text    | 2 | t
+ 13 | f | text    | 3 | t
+ 14 | f | text    | 3 | t
+ 15 | t | text    | 2 | f
+ 16 | t | text    | 2 | f
+ 17 | t | text    | 1 | f
+ 18 | t | text    | 1 | f
+ 19 | t | text    | 1 | f
+ 20 | t | text    | 1 | f
+ 21 | f | text    | 1 | t
+ 22 | f | text    | 1 | t
+ 24 | f | integer | 1 | t
+ 25 | t | integer | 1 | f
+ 26 |   | null    |   | 
+(25 rows)
+
+--Testcase 58:
+CREATE FOREIGN TABLE "type_BOOLEAN_oper"( "i" int  OPTIONS (key 'true'), i1 smallint, b1 boolean, i2 smallint, b2 boolean) SERVER sqlite_svr OPTIONS (table 'type_BOOLEAN_oper');
+--Testcase 59: see INIT.SQL with mixed affinity boolean data
+SELECT * FROM "type_BOOLEAN_oper";
+  i  | i1 | b1 | i2 | b2 
+-----+----+----+----+----
+   1 |  1 | t  |  1 | t
+   2 |  1 | t  |  2 | t
+   3 |  1 | t  |  3 | t
+   4 |  1 | t  |  4 | t
+   5 |  1 | t  |  5 | t
+   6 |  1 | t  |  6 | t
+   7 |  1 | t  |  7 | t
+   8 |  1 | t  |  8 | t
+   9 |  1 | t  |  9 | t
+  10 |  1 | t  | 10 | t
+  11 |  1 | t  | 11 | t
+  12 |  1 | t  | 12 | t
+  13 |  1 | t  | 13 | t
+  14 |  1 | t  | 14 | f
+  15 |  1 | t  | 15 | f
+  16 |  1 | t  | 16 | f
+  17 |  1 | t  | 17 | f
+  18 |  1 | t  | 18 | f
+  19 |  1 | t  | 19 | f
+  20 |  1 | t  | 20 | f
+  21 |  1 | t  | 21 | f
+  22 |  1 | t  | 22 | f
+  23 |  1 | t  | 23 | f
+  24 |  1 | t  | 24 | f
+  25 |  1 | t  | 25 | f
+  26 |  1 | t  | 26 | f
+  27 |  1 | t  | 27 | 
+  28 |  2 | t  |  1 | t
+  29 |  2 | t  |  2 | t
+  30 |  2 | t  |  3 | t
+  31 |  2 | t  |  4 | t
+  32 |  2 | t  |  5 | t
+  33 |  2 | t  |  6 | t
+  34 |  2 | t  |  7 | t
+  35 |  2 | t  |  8 | t
+  36 |  2 | t  |  9 | t
+  37 |  2 | t  | 10 | t
+  38 |  2 | t  | 11 | t
+  39 |  2 | t  | 12 | t
+  40 |  2 | t  | 13 | t
+  41 |  2 | t  | 14 | f
+  42 |  2 | t  | 15 | f
+  43 |  2 | t  | 16 | f
+  44 |  2 | t  | 17 | f
+  45 |  2 | t  | 18 | f
+  46 |  2 | t  | 19 | f
+  47 |  2 | t  | 20 | f
+  48 |  2 | t  | 21 | f
+  49 |  2 | t  | 22 | f
+  50 |  2 | t  | 23 | f
+  51 |  2 | t  | 24 | f
+  52 |  2 | t  | 25 | f
+  53 |  2 | t  | 26 | f
+  54 |  2 | t  | 27 | 
+  55 |  3 | t  |  1 | t
+  56 |  3 | t  |  2 | t
+  57 |  3 | t  |  3 | t
+  58 |  3 | t  |  4 | t
+  59 |  3 | t  |  5 | t
+  60 |  3 | t  |  6 | t
+  61 |  3 | t  |  7 | t
+  62 |  3 | t  |  8 | t
+  63 |  3 | t  |  9 | t
+  64 |  3 | t  | 10 | t
+  65 |  3 | t  | 11 | t
+  66 |  3 | t  | 12 | t
+  67 |  3 | t  | 13 | t
+  68 |  3 | t  | 14 | f
+  69 |  3 | t  | 15 | f
+  70 |  3 | t  | 16 | f
+  71 |  3 | t  | 17 | f
+  72 |  3 | t  | 18 | f
+  73 |  3 | t  | 19 | f
+  74 |  3 | t  | 20 | f
+  75 |  3 | t  | 21 | f
+  76 |  3 | t  | 22 | f
+  77 |  3 | t  | 23 | f
+  78 |  3 | t  | 24 | f
+  79 |  3 | t  | 25 | f
+  80 |  3 | t  | 26 | f
+  81 |  3 | t  | 27 | 
+  82 |  4 | t  |  1 | t
+  83 |  4 | t  |  2 | t
+  84 |  4 | t  |  3 | t
+  85 |  4 | t  |  4 | t
+  86 |  4 | t  |  5 | t
+  87 |  4 | t  |  6 | t
+  88 |  4 | t  |  7 | t
+  89 |  4 | t  |  8 | t
+  90 |  4 | t  |  9 | t
+  91 |  4 | t  | 10 | t
+  92 |  4 | t  | 11 | t
+  93 |  4 | t  | 12 | t
+  94 |  4 | t  | 13 | t
+  95 |  4 | t  | 14 | f
+  96 |  4 | t  | 15 | f
+  97 |  4 | t  | 16 | f
+  98 |  4 | t  | 17 | f
+  99 |  4 | t  | 18 | f
+ 100 |  4 | t  | 19 | f
+ 101 |  4 | t  | 20 | f
+ 102 |  4 | t  | 21 | f
+ 103 |  4 | t  | 22 | f
+ 104 |  4 | t  | 23 | f
+ 105 |  4 | t  | 24 | f
+ 106 |  4 | t  | 25 | f
+ 107 |  4 | t  | 26 | f
+ 108 |  4 | t  | 27 | 
+ 109 |  5 | t  |  1 | t
+ 110 |  5 | t  |  2 | t
+ 111 |  5 | t  |  3 | t
+ 112 |  5 | t  |  4 | t
+ 113 |  5 | t  |  5 | t
+ 114 |  5 | t  |  6 | t
+ 115 |  5 | t  |  7 | t
+ 116 |  5 | t  |  8 | t
+ 117 |  5 | t  |  9 | t
+ 118 |  5 | t  | 10 | t
+ 119 |  5 | t  | 11 | t
+ 120 |  5 | t  | 12 | t
+ 121 |  5 | t  | 13 | t
+ 122 |  5 | t  | 14 | f
+ 123 |  5 | t  | 15 | f
+ 124 |  5 | t  | 16 | f
+ 125 |  5 | t  | 17 | f
+ 126 |  5 | t  | 18 | f
+ 127 |  5 | t  | 19 | f
+ 128 |  5 | t  | 20 | f
+ 129 |  5 | t  | 21 | f
+ 130 |  5 | t  | 22 | f
+ 131 |  5 | t  | 23 | f
+ 132 |  5 | t  | 24 | f
+ 133 |  5 | t  | 25 | f
+ 134 |  5 | t  | 26 | f
+ 135 |  5 | t  | 27 | 
+ 136 |  6 | t  |  1 | t
+ 137 |  6 | t  |  2 | t
+ 138 |  6 | t  |  3 | t
+ 139 |  6 | t  |  4 | t
+ 140 |  6 | t  |  5 | t
+ 141 |  6 | t  |  6 | t
+ 142 |  6 | t  |  7 | t
+ 143 |  6 | t  |  8 | t
+ 144 |  6 | t  |  9 | t
+ 145 |  6 | t  | 10 | t
+ 146 |  6 | t  | 11 | t
+ 147 |  6 | t  | 12 | t
+ 148 |  6 | t  | 13 | t
+ 149 |  6 | t  | 14 | f
+ 150 |  6 | t  | 15 | f
+ 151 |  6 | t  | 16 | f
+ 152 |  6 | t  | 17 | f
+ 153 |  6 | t  | 18 | f
+ 154 |  6 | t  | 19 | f
+ 155 |  6 | t  | 20 | f
+ 156 |  6 | t  | 21 | f
+ 157 |  6 | t  | 22 | f
+ 158 |  6 | t  | 23 | f
+ 159 |  6 | t  | 24 | f
+ 160 |  6 | t  | 25 | f
+ 161 |  6 | t  | 26 | f
+ 162 |  6 | t  | 27 | 
+ 163 |  7 | t  |  1 | t
+ 164 |  7 | t  |  2 | t
+ 165 |  7 | t  |  3 | t
+ 166 |  7 | t  |  4 | t
+ 167 |  7 | t  |  5 | t
+ 168 |  7 | t  |  6 | t
+ 169 |  7 | t  |  7 | t
+ 170 |  7 | t  |  8 | t
+ 171 |  7 | t  |  9 | t
+ 172 |  7 | t  | 10 | t
+ 173 |  7 | t  | 11 | t
+ 174 |  7 | t  | 12 | t
+ 175 |  7 | t  | 13 | t
+ 176 |  7 | t  | 14 | f
+ 177 |  7 | t  | 15 | f
+ 178 |  7 | t  | 16 | f
+ 179 |  7 | t  | 17 | f
+ 180 |  7 | t  | 18 | f
+ 181 |  7 | t  | 19 | f
+ 182 |  7 | t  | 20 | f
+ 183 |  7 | t  | 21 | f
+ 184 |  7 | t  | 22 | f
+ 185 |  7 | t  | 23 | f
+ 186 |  7 | t  | 24 | f
+ 187 |  7 | t  | 25 | f
+ 188 |  7 | t  | 26 | f
+ 189 |  7 | t  | 27 | 
+ 190 |  8 | t  |  1 | t
+ 191 |  8 | t  |  2 | t
+ 192 |  8 | t  |  3 | t
+ 193 |  8 | t  |  4 | t
+ 194 |  8 | t  |  5 | t
+ 195 |  8 | t  |  6 | t
+ 196 |  8 | t  |  7 | t
+ 197 |  8 | t  |  8 | t
+ 198 |  8 | t  |  9 | t
+ 199 |  8 | t  | 10 | t
+ 200 |  8 | t  | 11 | t
+ 201 |  8 | t  | 12 | t
+ 202 |  8 | t  | 13 | t
+ 203 |  8 | t  | 14 | f
+ 204 |  8 | t  | 15 | f
+ 205 |  8 | t  | 16 | f
+ 206 |  8 | t  | 17 | f
+ 207 |  8 | t  | 18 | f
+ 208 |  8 | t  | 19 | f
+ 209 |  8 | t  | 20 | f
+ 210 |  8 | t  | 21 | f
+ 211 |  8 | t  | 22 | f
+ 212 |  8 | t  | 23 | f
+ 213 |  8 | t  | 24 | f
+ 214 |  8 | t  | 25 | f
+ 215 |  8 | t  | 26 | f
+ 216 |  8 | t  | 27 | 
+ 217 |  9 | t  |  1 | t
+ 218 |  9 | t  |  2 | t
+ 219 |  9 | t  |  3 | t
+ 220 |  9 | t  |  4 | t
+ 221 |  9 | t  |  5 | t
+ 222 |  9 | t  |  6 | t
+ 223 |  9 | t  |  7 | t
+ 224 |  9 | t  |  8 | t
+ 225 |  9 | t  |  9 | t
+ 226 |  9 | t  | 10 | t
+ 227 |  9 | t  | 11 | t
+ 228 |  9 | t  | 12 | t
+ 229 |  9 | t  | 13 | t
+ 230 |  9 | t  | 14 | f
+ 231 |  9 | t  | 15 | f
+ 232 |  9 | t  | 16 | f
+ 233 |  9 | t  | 17 | f
+ 234 |  9 | t  | 18 | f
+ 235 |  9 | t  | 19 | f
+ 236 |  9 | t  | 20 | f
+ 237 |  9 | t  | 21 | f
+ 238 |  9 | t  | 22 | f
+ 239 |  9 | t  | 23 | f
+ 240 |  9 | t  | 24 | f
+ 241 |  9 | t  | 25 | f
+ 242 |  9 | t  | 26 | f
+ 243 |  9 | t  | 27 | 
+ 244 | 10 | t  |  1 | t
+ 245 | 10 | t  |  2 | t
+ 246 | 10 | t  |  3 | t
+ 247 | 10 | t  |  4 | t
+ 248 | 10 | t  |  5 | t
+ 249 | 10 | t  |  6 | t
+ 250 | 10 | t  |  7 | t
+ 251 | 10 | t  |  8 | t
+ 252 | 10 | t  |  9 | t
+ 253 | 10 | t  | 10 | t
+ 254 | 10 | t  | 11 | t
+ 255 | 10 | t  | 12 | t
+ 256 | 10 | t  | 13 | t
+ 257 | 10 | t  | 14 | f
+ 258 | 10 | t  | 15 | f
+ 259 | 10 | t  | 16 | f
+ 260 | 10 | t  | 17 | f
+ 261 | 10 | t  | 18 | f
+ 262 | 10 | t  | 19 | f
+ 263 | 10 | t  | 20 | f
+ 264 | 10 | t  | 21 | f
+ 265 | 10 | t  | 22 | f
+ 266 | 10 | t  | 23 | f
+ 267 | 10 | t  | 24 | f
+ 268 | 10 | t  | 25 | f
+ 269 | 10 | t  | 26 | f
+ 270 | 10 | t  | 27 | 
+ 271 | 11 | t  |  1 | t
+ 272 | 11 | t  |  2 | t
+ 273 | 11 | t  |  3 | t
+ 274 | 11 | t  |  4 | t
+ 275 | 11 | t  |  5 | t
+ 276 | 11 | t  |  6 | t
+ 277 | 11 | t  |  7 | t
+ 278 | 11 | t  |  8 | t
+ 279 | 11 | t  |  9 | t
+ 280 | 11 | t  | 10 | t
+ 281 | 11 | t  | 11 | t
+ 282 | 11 | t  | 12 | t
+ 283 | 11 | t  | 13 | t
+ 284 | 11 | t  | 14 | f
+ 285 | 11 | t  | 15 | f
+ 286 | 11 | t  | 16 | f
+ 287 | 11 | t  | 17 | f
+ 288 | 11 | t  | 18 | f
+ 289 | 11 | t  | 19 | f
+ 290 | 11 | t  | 20 | f
+ 291 | 11 | t  | 21 | f
+ 292 | 11 | t  | 22 | f
+ 293 | 11 | t  | 23 | f
+ 294 | 11 | t  | 24 | f
+ 295 | 11 | t  | 25 | f
+ 296 | 11 | t  | 26 | f
+ 297 | 11 | t  | 27 | 
+ 298 | 12 | t  |  1 | t
+ 299 | 12 | t  |  2 | t
+ 300 | 12 | t  |  3 | t
+ 301 | 12 | t  |  4 | t
+ 302 | 12 | t  |  5 | t
+ 303 | 12 | t  |  6 | t
+ 304 | 12 | t  |  7 | t
+ 305 | 12 | t  |  8 | t
+ 306 | 12 | t  |  9 | t
+ 307 | 12 | t  | 10 | t
+ 308 | 12 | t  | 11 | t
+ 309 | 12 | t  | 12 | t
+ 310 | 12 | t  | 13 | t
+ 311 | 12 | t  | 14 | f
+ 312 | 12 | t  | 15 | f
+ 313 | 12 | t  | 16 | f
+ 314 | 12 | t  | 17 | f
+ 315 | 12 | t  | 18 | f
+ 316 | 12 | t  | 19 | f
+ 317 | 12 | t  | 20 | f
+ 318 | 12 | t  | 21 | f
+ 319 | 12 | t  | 22 | f
+ 320 | 12 | t  | 23 | f
+ 321 | 12 | t  | 24 | f
+ 322 | 12 | t  | 25 | f
+ 323 | 12 | t  | 26 | f
+ 324 | 12 | t  | 27 | 
+ 325 | 13 | t  |  1 | t
+ 326 | 13 | t  |  2 | t
+ 327 | 13 | t  |  3 | t
+ 328 | 13 | t  |  4 | t
+ 329 | 13 | t  |  5 | t
+ 330 | 13 | t  |  6 | t
+ 331 | 13 | t  |  7 | t
+ 332 | 13 | t  |  8 | t
+ 333 | 13 | t  |  9 | t
+ 334 | 13 | t  | 10 | t
+ 335 | 13 | t  | 11 | t
+ 336 | 13 | t  | 12 | t
+ 337 | 13 | t  | 13 | t
+ 338 | 13 | t  | 14 | f
+ 339 | 13 | t  | 15 | f
+ 340 | 13 | t  | 16 | f
+ 341 | 13 | t  | 17 | f
+ 342 | 13 | t  | 18 | f
+ 343 | 13 | t  | 19 | f
+ 344 | 13 | t  | 20 | f
+ 345 | 13 | t  | 21 | f
+ 346 | 13 | t  | 22 | f
+ 347 | 13 | t  | 23 | f
+ 348 | 13 | t  | 24 | f
+ 349 | 13 | t  | 25 | f
+ 350 | 13 | t  | 26 | f
+ 351 | 13 | t  | 27 | 
+ 352 | 14 | f  |  1 | t
+ 353 | 14 | f  |  2 | t
+ 354 | 14 | f  |  3 | t
+ 355 | 14 | f  |  4 | t
+ 356 | 14 | f  |  5 | t
+ 357 | 14 | f  |  6 | t
+ 358 | 14 | f  |  7 | t
+ 359 | 14 | f  |  8 | t
+ 360 | 14 | f  |  9 | t
+ 361 | 14 | f  | 10 | t
+ 362 | 14 | f  | 11 | t
+ 363 | 14 | f  | 12 | t
+ 364 | 14 | f  | 13 | t
+ 365 | 14 | f  | 14 | f
+ 366 | 14 | f  | 15 | f
+ 367 | 14 | f  | 16 | f
+ 368 | 14 | f  | 17 | f
+ 369 | 14 | f  | 18 | f
+ 370 | 14 | f  | 19 | f
+ 371 | 14 | f  | 20 | f
+ 372 | 14 | f  | 21 | f
+ 373 | 14 | f  | 22 | f
+ 374 | 14 | f  | 23 | f
+ 375 | 14 | f  | 24 | f
+ 376 | 14 | f  | 25 | f
+ 377 | 14 | f  | 26 | f
+ 378 | 14 | f  | 27 | 
+ 379 | 15 | f  |  1 | t
+ 380 | 15 | f  |  2 | t
+ 381 | 15 | f  |  3 | t
+ 382 | 15 | f  |  4 | t
+ 383 | 15 | f  |  5 | t
+ 384 | 15 | f  |  6 | t
+ 385 | 15 | f  |  7 | t
+ 386 | 15 | f  |  8 | t
+ 387 | 15 | f  |  9 | t
+ 388 | 15 | f  | 10 | t
+ 389 | 15 | f  | 11 | t
+ 390 | 15 | f  | 12 | t
+ 391 | 15 | f  | 13 | t
+ 392 | 15 | f  | 14 | f
+ 393 | 15 | f  | 15 | f
+ 394 | 15 | f  | 16 | f
+ 395 | 15 | f  | 17 | f
+ 396 | 15 | f  | 18 | f
+ 397 | 15 | f  | 19 | f
+ 398 | 15 | f  | 20 | f
+ 399 | 15 | f  | 21 | f
+ 400 | 15 | f  | 22 | f
+ 401 | 15 | f  | 23 | f
+ 402 | 15 | f  | 24 | f
+ 403 | 15 | f  | 25 | f
+ 404 | 15 | f  | 26 | f
+ 405 | 15 | f  | 27 | 
+ 406 | 16 | f  |  1 | t
+ 407 | 16 | f  |  2 | t
+ 408 | 16 | f  |  3 | t
+ 409 | 16 | f  |  4 | t
+ 410 | 16 | f  |  5 | t
+ 411 | 16 | f  |  6 | t
+ 412 | 16 | f  |  7 | t
+ 413 | 16 | f  |  8 | t
+ 414 | 16 | f  |  9 | t
+ 415 | 16 | f  | 10 | t
+ 416 | 16 | f  | 11 | t
+ 417 | 16 | f  | 12 | t
+ 418 | 16 | f  | 13 | t
+ 419 | 16 | f  | 14 | f
+ 420 | 16 | f  | 15 | f
+ 421 | 16 | f  | 16 | f
+ 422 | 16 | f  | 17 | f
+ 423 | 16 | f  | 18 | f
+ 424 | 16 | f  | 19 | f
+ 425 | 16 | f  | 20 | f
+ 426 | 16 | f  | 21 | f
+ 427 | 16 | f  | 22 | f
+ 428 | 16 | f  | 23 | f
+ 429 | 16 | f  | 24 | f
+ 430 | 16 | f  | 25 | f
+ 431 | 16 | f  | 26 | f
+ 432 | 16 | f  | 27 | 
+ 433 | 17 | f  |  1 | t
+ 434 | 17 | f  |  2 | t
+ 435 | 17 | f  |  3 | t
+ 436 | 17 | f  |  4 | t
+ 437 | 17 | f  |  5 | t
+ 438 | 17 | f  |  6 | t
+ 439 | 17 | f  |  7 | t
+ 440 | 17 | f  |  8 | t
+ 441 | 17 | f  |  9 | t
+ 442 | 17 | f  | 10 | t
+ 443 | 17 | f  | 11 | t
+ 444 | 17 | f  | 12 | t
+ 445 | 17 | f  | 13 | t
+ 446 | 17 | f  | 14 | f
+ 447 | 17 | f  | 15 | f
+ 448 | 17 | f  | 16 | f
+ 449 | 17 | f  | 17 | f
+ 450 | 17 | f  | 18 | f
+ 451 | 17 | f  | 19 | f
+ 452 | 17 | f  | 20 | f
+ 453 | 17 | f  | 21 | f
+ 454 | 17 | f  | 22 | f
+ 455 | 17 | f  | 23 | f
+ 456 | 17 | f  | 24 | f
+ 457 | 17 | f  | 25 | f
+ 458 | 17 | f  | 26 | f
+ 459 | 17 | f  | 27 | 
+ 460 | 18 | f  |  1 | t
+ 461 | 18 | f  |  2 | t
+ 462 | 18 | f  |  3 | t
+ 463 | 18 | f  |  4 | t
+ 464 | 18 | f  |  5 | t
+ 465 | 18 | f  |  6 | t
+ 466 | 18 | f  |  7 | t
+ 467 | 18 | f  |  8 | t
+ 468 | 18 | f  |  9 | t
+ 469 | 18 | f  | 10 | t
+ 470 | 18 | f  | 11 | t
+ 471 | 18 | f  | 12 | t
+ 472 | 18 | f  | 13 | t
+ 473 | 18 | f  | 14 | f
+ 474 | 18 | f  | 15 | f
+ 475 | 18 | f  | 16 | f
+ 476 | 18 | f  | 17 | f
+ 477 | 18 | f  | 18 | f
+ 478 | 18 | f  | 19 | f
+ 479 | 18 | f  | 20 | f
+ 480 | 18 | f  | 21 | f
+ 481 | 18 | f  | 22 | f
+ 482 | 18 | f  | 23 | f
+ 483 | 18 | f  | 24 | f
+ 484 | 18 | f  | 25 | f
+ 485 | 18 | f  | 26 | f
+ 486 | 18 | f  | 27 | 
+ 487 | 19 | f  |  1 | t
+ 488 | 19 | f  |  2 | t
+ 489 | 19 | f  |  3 | t
+ 490 | 19 | f  |  4 | t
+ 491 | 19 | f  |  5 | t
+ 492 | 19 | f  |  6 | t
+ 493 | 19 | f  |  7 | t
+ 494 | 19 | f  |  8 | t
+ 495 | 19 | f  |  9 | t
+ 496 | 19 | f  | 10 | t
+ 497 | 19 | f  | 11 | t
+ 498 | 19 | f  | 12 | t
+ 499 | 19 | f  | 13 | t
+ 500 | 19 | f  | 14 | f
+ 501 | 19 | f  | 15 | f
+ 502 | 19 | f  | 16 | f
+ 503 | 19 | f  | 17 | f
+ 504 | 19 | f  | 18 | f
+ 505 | 19 | f  | 19 | f
+ 506 | 19 | f  | 20 | f
+ 507 | 19 | f  | 21 | f
+ 508 | 19 | f  | 22 | f
+ 509 | 19 | f  | 23 | f
+ 510 | 19 | f  | 24 | f
+ 511 | 19 | f  | 25 | f
+ 512 | 19 | f  | 26 | f
+ 513 | 19 | f  | 27 | 
+ 514 | 20 | f  |  1 | t
+ 515 | 20 | f  |  2 | t
+ 516 | 20 | f  |  3 | t
+ 517 | 20 | f  |  4 | t
+ 518 | 20 | f  |  5 | t
+ 519 | 20 | f  |  6 | t
+ 520 | 20 | f  |  7 | t
+ 521 | 20 | f  |  8 | t
+ 522 | 20 | f  |  9 | t
+ 523 | 20 | f  | 10 | t
+ 524 | 20 | f  | 11 | t
+ 525 | 20 | f  | 12 | t
+ 526 | 20 | f  | 13 | t
+ 527 | 20 | f  | 14 | f
+ 528 | 20 | f  | 15 | f
+ 529 | 20 | f  | 16 | f
+ 530 | 20 | f  | 17 | f
+ 531 | 20 | f  | 18 | f
+ 532 | 20 | f  | 19 | f
+ 533 | 20 | f  | 20 | f
+ 534 | 20 | f  | 21 | f
+ 535 | 20 | f  | 22 | f
+ 536 | 20 | f  | 23 | f
+ 537 | 20 | f  | 24 | f
+ 538 | 20 | f  | 25 | f
+ 539 | 20 | f  | 26 | f
+ 540 | 20 | f  | 27 | 
+ 541 | 21 | f  |  1 | t
+ 542 | 21 | f  |  2 | t
+ 543 | 21 | f  |  3 | t
+ 544 | 21 | f  |  4 | t
+ 545 | 21 | f  |  5 | t
+ 546 | 21 | f  |  6 | t
+ 547 | 21 | f  |  7 | t
+ 548 | 21 | f  |  8 | t
+ 549 | 21 | f  |  9 | t
+ 550 | 21 | f  | 10 | t
+ 551 | 21 | f  | 11 | t
+ 552 | 21 | f  | 12 | t
+ 553 | 21 | f  | 13 | t
+ 554 | 21 | f  | 14 | f
+ 555 | 21 | f  | 15 | f
+ 556 | 21 | f  | 16 | f
+ 557 | 21 | f  | 17 | f
+ 558 | 21 | f  | 18 | f
+ 559 | 21 | f  | 19 | f
+ 560 | 21 | f  | 20 | f
+ 561 | 21 | f  | 21 | f
+ 562 | 21 | f  | 22 | f
+ 563 | 21 | f  | 23 | f
+ 564 | 21 | f  | 24 | f
+ 565 | 21 | f  | 25 | f
+ 566 | 21 | f  | 26 | f
+ 567 | 21 | f  | 27 | 
+ 568 | 22 | f  |  1 | t
+ 569 | 22 | f  |  2 | t
+ 570 | 22 | f  |  3 | t
+ 571 | 22 | f  |  4 | t
+ 572 | 22 | f  |  5 | t
+ 573 | 22 | f  |  6 | t
+ 574 | 22 | f  |  7 | t
+ 575 | 22 | f  |  8 | t
+ 576 | 22 | f  |  9 | t
+ 577 | 22 | f  | 10 | t
+ 578 | 22 | f  | 11 | t
+ 579 | 22 | f  | 12 | t
+ 580 | 22 | f  | 13 | t
+ 581 | 22 | f  | 14 | f
+ 582 | 22 | f  | 15 | f
+ 583 | 22 | f  | 16 | f
+ 584 | 22 | f  | 17 | f
+ 585 | 22 | f  | 18 | f
+ 586 | 22 | f  | 19 | f
+ 587 | 22 | f  | 20 | f
+ 588 | 22 | f  | 21 | f
+ 589 | 22 | f  | 22 | f
+ 590 | 22 | f  | 23 | f
+ 591 | 22 | f  | 24 | f
+ 592 | 22 | f  | 25 | f
+ 593 | 22 | f  | 26 | f
+ 594 | 22 | f  | 27 | 
+ 595 | 23 | f  |  1 | t
+ 596 | 23 | f  |  2 | t
+ 597 | 23 | f  |  3 | t
+ 598 | 23 | f  |  4 | t
+ 599 | 23 | f  |  5 | t
+ 600 | 23 | f  |  6 | t
+ 601 | 23 | f  |  7 | t
+ 602 | 23 | f  |  8 | t
+ 603 | 23 | f  |  9 | t
+ 604 | 23 | f  | 10 | t
+ 605 | 23 | f  | 11 | t
+ 606 | 23 | f  | 12 | t
+ 607 | 23 | f  | 13 | t
+ 608 | 23 | f  | 14 | f
+ 609 | 23 | f  | 15 | f
+ 610 | 23 | f  | 16 | f
+ 611 | 23 | f  | 17 | f
+ 612 | 23 | f  | 18 | f
+ 613 | 23 | f  | 19 | f
+ 614 | 23 | f  | 20 | f
+ 615 | 23 | f  | 21 | f
+ 616 | 23 | f  | 22 | f
+ 617 | 23 | f  | 23 | f
+ 618 | 23 | f  | 24 | f
+ 619 | 23 | f  | 25 | f
+ 620 | 23 | f  | 26 | f
+ 621 | 23 | f  | 27 | 
+ 622 | 24 | f  |  1 | t
+ 623 | 24 | f  |  2 | t
+ 624 | 24 | f  |  3 | t
+ 625 | 24 | f  |  4 | t
+ 626 | 24 | f  |  5 | t
+ 627 | 24 | f  |  6 | t
+ 628 | 24 | f  |  7 | t
+ 629 | 24 | f  |  8 | t
+ 630 | 24 | f  |  9 | t
+ 631 | 24 | f  | 10 | t
+ 632 | 24 | f  | 11 | t
+ 633 | 24 | f  | 12 | t
+ 634 | 24 | f  | 13 | t
+ 635 | 24 | f  | 14 | f
+ 636 | 24 | f  | 15 | f
+ 637 | 24 | f  | 16 | f
+ 638 | 24 | f  | 17 | f
+ 639 | 24 | f  | 18 | f
+ 640 | 24 | f  | 19 | f
+ 641 | 24 | f  | 20 | f
+ 642 | 24 | f  | 21 | f
+ 643 | 24 | f  | 22 | f
+ 644 | 24 | f  | 23 | f
+ 645 | 24 | f  | 24 | f
+ 646 | 24 | f  | 25 | f
+ 647 | 24 | f  | 26 | f
+ 648 | 24 | f  | 27 | 
+ 649 | 25 | f  |  1 | t
+ 650 | 25 | f  |  2 | t
+ 651 | 25 | f  |  3 | t
+ 652 | 25 | f  |  4 | t
+ 653 | 25 | f  |  5 | t
+ 654 | 25 | f  |  6 | t
+ 655 | 25 | f  |  7 | t
+ 656 | 25 | f  |  8 | t
+ 657 | 25 | f  |  9 | t
+ 658 | 25 | f  | 10 | t
+ 659 | 25 | f  | 11 | t
+ 660 | 25 | f  | 12 | t
+ 661 | 25 | f  | 13 | t
+ 662 | 25 | f  | 14 | f
+ 663 | 25 | f  | 15 | f
+ 664 | 25 | f  | 16 | f
+ 665 | 25 | f  | 17 | f
+ 666 | 25 | f  | 18 | f
+ 667 | 25 | f  | 19 | f
+ 668 | 25 | f  | 20 | f
+ 669 | 25 | f  | 21 | f
+ 670 | 25 | f  | 22 | f
+ 671 | 25 | f  | 23 | f
+ 672 | 25 | f  | 24 | f
+ 673 | 25 | f  | 25 | f
+ 674 | 25 | f  | 26 | f
+ 675 | 25 | f  | 27 | 
+ 676 | 26 | f  |  1 | t
+ 677 | 26 | f  |  2 | t
+ 678 | 26 | f  |  3 | t
+ 679 | 26 | f  |  4 | t
+ 680 | 26 | f  |  5 | t
+ 681 | 26 | f  |  6 | t
+ 682 | 26 | f  |  7 | t
+ 683 | 26 | f  |  8 | t
+ 684 | 26 | f  |  9 | t
+ 685 | 26 | f  | 10 | t
+ 686 | 26 | f  | 11 | t
+ 687 | 26 | f  | 12 | t
+ 688 | 26 | f  | 13 | t
+ 689 | 26 | f  | 14 | f
+ 690 | 26 | f  | 15 | f
+ 691 | 26 | f  | 16 | f
+ 692 | 26 | f  | 17 | f
+ 693 | 26 | f  | 18 | f
+ 694 | 26 | f  | 19 | f
+ 695 | 26 | f  | 20 | f
+ 696 | 26 | f  | 21 | f
+ 697 | 26 | f  | 22 | f
+ 698 | 26 | f  | 23 | f
+ 699 | 26 | f  | 24 | f
+ 700 | 26 | f  | 25 | f
+ 701 | 26 | f  | 26 | f
+ 702 | 26 | f  | 27 | 
+ 703 | 27 |    |  1 | t
+ 704 | 27 |    |  2 | t
+ 705 | 27 |    |  3 | t
+ 706 | 27 |    |  4 | t
+ 707 | 27 |    |  5 | t
+ 708 | 27 |    |  6 | t
+ 709 | 27 |    |  7 | t
+ 710 | 27 |    |  8 | t
+ 711 | 27 |    |  9 | t
+ 712 | 27 |    | 10 | t
+ 713 | 27 |    | 11 | t
+ 714 | 27 |    | 12 | t
+ 715 | 27 |    | 13 | t
+ 716 | 27 |    | 14 | f
+ 717 | 27 |    | 15 | f
+ 718 | 27 |    | 16 | f
+ 719 | 27 |    | 17 | f
+ 720 | 27 |    | 18 | f
+ 721 | 27 |    | 19 | f
+ 722 | 27 |    | 20 | f
+ 723 | 27 |    | 21 | f
+ 724 | 27 |    | 22 | f
+ 725 | 27 |    | 23 | f
+ 726 | 27 |    | 24 | f
+ 727 | 27 |    | 25 | f
+ 728 | 27 |    | 26 | f
+ 729 | 27 |    | 27 | 
+(729 rows)
+
+--Testcase 60:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT DISTINCT b1, b2, b1 AND b2 a, b1 OR b2 o FROM "type_BOOLEAN_oper";
+                                                                                                                                                           QUERY PLAN                                                                                                                                                           
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Unique
+   Output: b1, b2, ((b1 AND b2)), ((b1 OR b2))
+   ->  Foreign Scan on public."type_BOOLEAN_oper"
+         Output: b1, b2, (b1 AND b2), (b1 OR b2)
+         SQLite query: SELECT sqlite_fdw_bool(`b1`), sqlite_fdw_bool(`b2`) FROM main."type_BOOLEAN_oper" ORDER BY sqlite_fdw_bool(`b1`) ASC NULLS LAST, sqlite_fdw_bool(`b2`) ASC NULLS LAST, (sqlite_fdw_bool(`b1`) AND sqlite_fdw_bool(`b2`)) ASC NULLS LAST, (sqlite_fdw_bool(`b1`) OR sqlite_fdw_bool(`b2`)) ASC NULLS LAST
+(5 rows)
+
+--Testcase 61:
+SELECT DISTINCT b1, b2, b1 AND b2 a, b1 OR b2 o FROM "type_BOOLEAN_oper";
+ b1 | b2 | a | o 
+----+----+---+---
+ f  | f  | f | f
+ f  | t  | f | t
+ f  |    | f | 
+ t  | f  | f | t
+ t  | t  | t | t
+ t  |    |   | t
+    | f  | f | 
+    | t  |   | t
+    |    |   | 
+(9 rows)
+
+--Testcase 62:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT DISTINCT b1, b2, b1 AND b2 a, b1 OR b2 o FROM "type_BOOLEAN_oper" WHERE b1 AND b2;
+                                                                                                                                                                                        QUERY PLAN                                                                                                                                                                                        
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Unique
+   Output: b1, b2, ((b1 AND b2)), ((b1 OR b2))
+   ->  Foreign Scan on public."type_BOOLEAN_oper"
+         Output: b1, b2, (b1 AND b2), (b1 OR b2)
+         SQLite query: SELECT sqlite_fdw_bool(`b1`), sqlite_fdw_bool(`b2`) FROM main."type_BOOLEAN_oper" WHERE (sqlite_fdw_bool(`b1`)) AND (sqlite_fdw_bool(`b2`)) ORDER BY sqlite_fdw_bool(`b1`) ASC NULLS LAST, sqlite_fdw_bool(`b2`) ASC NULLS LAST, (sqlite_fdw_bool(`b1`) AND sqlite_fdw_bool(`b2`)) ASC NULLS LAST, (sqlite_fdw_bool(`b1`) OR sqlite_fdw_bool(`b2`)) ASC NULLS LAST
+(5 rows)
+
+--Testcase 63:
+SELECT DISTINCT b1, b2, b1 AND b2 a, b1 OR b2 o FROM "type_BOOLEAN_oper" WHERE b1 AND b2;
+ b1 | b2 | a | o 
+----+----+---+---
+ t  | t  | t | t
+(1 row)
+
+--Testcase 64:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT DISTINCT b1, b2, b1 AND b2 a, b1 OR b2 o FROM "type_BOOLEAN_oper" WHERE b1 OR b2;
+                                                                                                                                                                                       QUERY PLAN                                                                                                                                                                                        
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Unique
+   Output: b1, b2, ((b1 AND b2)), ((b1 OR b2))
+   ->  Foreign Scan on public."type_BOOLEAN_oper"
+         Output: b1, b2, (b1 AND b2), (b1 OR b2)
+         SQLite query: SELECT sqlite_fdw_bool(`b1`), sqlite_fdw_bool(`b2`) FROM main."type_BOOLEAN_oper" WHERE ((sqlite_fdw_bool(`b1`) OR sqlite_fdw_bool(`b2`))) ORDER BY sqlite_fdw_bool(`b1`) ASC NULLS LAST, sqlite_fdw_bool(`b2`) ASC NULLS LAST, (sqlite_fdw_bool(`b1`) AND sqlite_fdw_bool(`b2`)) ASC NULLS LAST, (sqlite_fdw_bool(`b1`) OR sqlite_fdw_bool(`b2`)) ASC NULLS LAST
+(5 rows)
+
+--Testcase 65:
+SELECT DISTINCT b1, b2, b1 AND b2 a, b1 OR b2 o FROM "type_BOOLEAN_oper" WHERE b1 OR b2;
+ b1 | b2 | a | o 
+----+----+---+---
+ f  | t  | f | t
+ t  | f  | f | t
+ t  | t  | t | t
+ t  |    |   | t
+    | t  |   | t
+(5 rows)
+
+--Testcase 66:
+EXPLAIN (VERBOSE, COSTS OFF)
+UPDATE "type_BOOLEAN_oper" SET b1 = NULL WHERE NOT b1;
+                                                QUERY PLAN                                                 
+-----------------------------------------------------------------------------------------------------------
+ Update on public."type_BOOLEAN_oper"
+   ->  Foreign Update on public."type_BOOLEAN_oper"
+         SQLite query: UPDATE main."type_BOOLEAN_oper" SET `b1` = NULL WHERE ((NOT sqlite_fdw_bool(`b1`)))
+(3 rows)
+
+--Testcase 67:
+UPDATE "type_BOOLEAN_oper" SET b1 = NULL WHERE NOT b1;
+--Testcase 68:
+SELECT DISTINCT b1, b2 FROM "type_BOOLEAN_oper";
+ b1 | b2 
+----+----
+ t  | f
+ t  | t
+ t  | 
+    | f
+    | t
+    | 
+(6 rows)
+
+--Testcase 69:
+UPDATE "type_BOOLEAN_oper" SET b1 = false WHERE b1 OR b2;
+--Testcase 70:
+EXPLAIN (VERBOSE, COSTS OFF)
+UPDATE "type_BOOLEAN_oper" SET b1 = false WHERE b1 OR b2;
+                                                         QUERY PLAN                                                          
+-----------------------------------------------------------------------------------------------------------------------------
+ Update on public."type_BOOLEAN_oper"
+   ->  Foreign Update on public."type_BOOLEAN_oper"
+         SQLite query: UPDATE main."type_BOOLEAN_oper" SET `b1` = 0 WHERE ((sqlite_fdw_bool(`b1`) OR sqlite_fdw_bool(`b2`)))
+(3 rows)
+
+--Testcase 71:
+SELECT DISTINCT b1, b2 FROM "type_BOOLEAN_oper";
+ b1 | b2 
+----+----
+ f  | f
+ f  | t
+ f  | 
+    | f
+    | 
+(5 rows)
+
+--Testcase 72:
+EXPLAIN (VERBOSE, COSTS OFF)
+DELETE FROM "type_BOOLEAN_oper" WHERE NOT b1 AND b2;
+                                                         QUERY PLAN                                                         
+----------------------------------------------------------------------------------------------------------------------------
+ Delete on public."type_BOOLEAN_oper"
+   ->  Foreign Delete on public."type_BOOLEAN_oper"
+         SQLite query: DELETE FROM main."type_BOOLEAN_oper" WHERE ((NOT sqlite_fdw_bool(`b1`))) AND (sqlite_fdw_bool(`b2`))
+(3 rows)
+
+--Testcase 73:
+DELETE FROM "type_BOOLEAN_oper" WHERE NOT b1 AND b2;
+--Testcase 74:
+SELECT DISTINCT b1, b2 FROM "type_BOOLEAN_oper";
+ b1 | b2 
+----+----
+ f  | f
+ f  | 
+    | f
+    | 
+(4 rows)
+
+--Testcase 75:
+DELETE FROM "type_BOOLEAN_oper" WHERE NOT b2;
+--Testcase 76:
+SELECT DISTINCT b1, b2 FROM "type_BOOLEAN_oper";
+ b1 | b2 
+----+----
+ f  | 
+    | 
+(2 rows)
+
+--Testcase 77:
+DELETE FROM "type_BOOLEAN_oper" WHERE b2;
+--Testcase 78:
+SELECT DISTINCT b1, b2 FROM "type_BOOLEAN_oper";
+ b1 | b2 
+----+----
+ f  | 
+    | 
+(2 rows)
+
+--Testcase 003:
+DROP EXTENSION sqlite_fdw CASCADE;
+NOTICE:  drop cascades to 6 other objects
+DETAIL:  drop cascades to server sqlite_svr
+drop cascades to foreign table "type_BOOLEAN"
+drop cascades to foreign table "type_BOOLEAN+"
+drop cascades to foreign table "type_BOOLEANpk"
+drop cascades to foreign table "type_BOOLEAN_oper"
+drop cascades to server sqlite2

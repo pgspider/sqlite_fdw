@@ -35,7 +35,14 @@ Features
 - Support discard cached connections to foreign servers by using function `sqlite_fdw_disconnect()`, `sqlite_fdw_disconnect_all()`.
 - Support Bulk `INSERT` by using `batch_size` option
 - Support `INSERT`/`UPDATE` with generated column
-- Support `ON CONFLICT DO NOTHING`.
+- Support `ON CONFLICT DO NOTHING`
+- Support mixed SQLite [data affinity](https://www.sqlite.org/datatype3.html) input and filtering (`SELECT`/`WHERE` usage) for such dataypes as
+	- `timestamp`: `text` and `int`,
+	- `uuid`: `text`(32..39) and `blob`(16),
+ 	- `bool`: `text`(1..5) and `int`.
+- Support mixed SQLite [data affinity](https://www.sqlite.org/datatype3.html) output (`INSERT`/`UPDATE`) for such dataypes as
+	- `timestamp`: `text`(default) or `int`,
+ 	- `uuid`: `text`(36) or `blob`(16)(default).
 
 ### Pushdowning
 - `WHERE` clauses are pushdowned
@@ -62,6 +69,7 @@ Features
 - For `numeric` data type, `sqlite_fdw` use `sqlite3_column_double` to get value, while SQLite shell uses `sqlite3_column_text` to get value. Those 2 APIs may return different numeric value. Therefore, for `numeric` data type, the value returned from `sqlite_fdw` may different from the value returned from SQLite shell.
 - `sqlite_fdw` can return implementation-dependent order for column if the column is not specified in `ORDER BY` clause.
 - When the column type is `varchar array`, if the string is shorter than the declared length, values of type character will be space-padded; values of type `character varying` will simply store the shorter string.
+- [String literals for `boolean`](https://www.postgresql.org/docs/current/datatype-boolean.html) (`t`, `f`, `y`, `n`, `yes`, `no`, `on`, `off` etc. case insensetive) can be readed and filtred but cannot writed, because SQLite documentation recommends only `int` affinity values (`0` or `1`)  for boolean data and usually text boolean data belongs to legacy datasets.
 
 Also see [Limitations](#limitations)
 
@@ -122,7 +130,6 @@ This table represents `sqlite_fdw` behaviour if in PostgreSQL foreign table colu
 
 * **∅** - no support (runtime error)
 * **V** - transparent transformation
-* **b** - show per-bit form
 * **T** - cast to text in SQLite utf-8 encoding, then to **PostgreSQL text with current encoding of database** and then transparent transformation if applicable
 * **✔** - transparent transformation where PostgreSQL datatype is equal to SQLite affinity
 * **V+** - transparent transformation if appliacable
@@ -133,14 +140,14 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 
 | PostgreSQL   | SQLite <br> INT  | SQLite <br> REAL | SQLite <br> BLOB | SQLite <br> TEXT | SQLite <br> TEXT but <br>empty|SQLite<br>nearest<br>affinity|
 |-------------:|:------------:|:------------:|:------------:|:------------:|:------------:|-------------:|
-|         bool |      V       |       ?      |      T       |      -       |      ∅       | INT          |
-|       bit(n) |    V n<=64   |       ∅      |      V       |      ?       |      ∅       | INT          |
-|        bytea |      b       |       b      |      ✔       |      -       |      ?       | BLOB         |
+|         bool |      V       |       ∅      |      T       |      V+      |      ∅       | INT          |
+|       bit(n) |    V n<=64   |       ∅      |      ∅       |      ∅       |      ∅       | INT          |
+|        bytea |      ∅       |       ∅      |      ✔       |      -       |      ?       | BLOB         |
 |         date |      V       |       V      |      T       |      V+      |    `NULL`    | ?            |
 |       float4 |      V+      |       ✔      |      T       |      -       |    `NULL`    | REAL         |
 |       float8 |      V+      |       ✔      |      T       |      -       |    `NULL`    | REAL         |
-|         int2 |      ✔       |       ?      |      T       |      -       |    `NULL`    | INT          |
-|         int4 |      ✔       |       ?      |      T       |      -       |    `NULL`    | INT          |
+|         int2 |      V+      |       ?      |      T       |      -       |    `NULL`    | INT          |
+|         int4 |      V+      |       ?      |      T       |      -       |    `NULL`    | INT          |
 |         int8 |      ✔       |       ?      |      T       |      -       |    `NULL`    | INT          |
 |         json |      ?       |       ?      |      T       |      V+      |      ?       | TEXT         |
 |         name |      ?       |       ?      |      T       |      V       |    `NULL`    | TEXT         |
@@ -151,7 +158,7 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 |timestamp + tz|      V       |       V      |      T       |      V+      |    `NULL`    | ?            |
 |         uuid |      ∅       |       ∅      |V+<br>(only<br>16 bytes)| V+ |      ∅       | TEXT, BLOB   |
 |      varchar |      ?       |       ?      |      T       |      ✔       |      V       | TEXT         |
-|    varbit(n) |    V n<=64   |       ∅      |      V       |      ?       |      ∅       | INT          |
+|    varbit(n) |    V n<=64   |       ∅      |      V       |      ∅       |      ∅       | INT          |
 
 ### CREATE SERVER options
 
@@ -216,10 +223,11 @@ In OS `sqlite_fdw` works as executed code with permissions of user of PostgreSQL
 
 - **column_type** as *string*, optional, no default
 
-	Gives preferred SQLite affinity for some PostgreSQL data types can be stored in different ways in SQLite. Default preferred SQLite affinity for this types is `text`.
+	Set preferred SQLite affinity for some PostgreSQL data types can be stored in different ways
+in SQLite (mixed affinity case). Updated and inserted values will have this affinity. Default preferred SQLite affinity for `timestamp` and `uuid` PostgreSQL data types is `text`.
 	
   - Use `INT` value for SQLite column (epoch Unix Time) to be treated/visualized as `timestamp` in PostgreSQL.
-  - Use `BLOB` value for SQLite column to be treated/visualized as `uuid` in PostgreSQL.
+  - Use `BLOB` value for SQLite column to be treated/visualized as `uuid` in PostgreSQL 14+.
 
 - **key** as *boolean*, optional, default *false*
 
@@ -305,7 +313,7 @@ Following SQL isn't correct for SQLite: `Error: duplicate column name: a`, but i
 	);
 ```
 Following SQLs is correct for both SQLite and PostgreSQL because there is no column
-names with ASCII base latin letters *only*.
+with names composed from ASCII base latin letters *only*.
 
 ```sql
 	CREATE TABLE T_кир (
@@ -331,6 +339,19 @@ For SQLite there is no difference between
 	SELECT * FROM "T"; -- №4
 ```
 For PostgreSQL the query with comment `№4` is independend query to table `T`, not to table `t` as other queries.
+Please note this table name composed from ASCII base latin letters *only*. This is not applicable for other
+alphabet systems or mixed names. This is because `toLower` operation in PostgreSQL is Unicode opration but 
+ASCII only operation in SQLite, hence other characters will not be changed.
+
+```sql
+	SELECT * FROM т;   -- №5
+	SELECT * FROM Т;   -- №6
+	SELECT * FROM "т"; -- №7
+	SELECT * FROM "Т"; -- №8
+```
+In this case for PostgreSQL the query with comment `№8` is independend query to table `Т`, not to table `т`
+as other queries. But for SQLite the queries with comments `№6` and `№8` belongs to table `Т`, and the queries with
+comments `№5` and `№7` belongs to table `т`.
 
 If there is
 
@@ -521,7 +542,7 @@ Limitations
 ### UUID values
 - `sqlite_fdw` UUID values support exists only for `uuid` columns in foreign table. SQLite documentation recommends to store UUID as value with both `blob` and `text` [affinity](https://www.sqlite.org/datatype3.html). `sqlite_fdw` can pushdown both reading and filtering both `text` and `blob` values.
 - Expected affinity of UUID value in SQLite table determined by `column_type` option of the column
-for `INSERT` and `UPDATE` commands.
+for `INSERT` and `UPDATE` commands. In PostgreSQL 14- only `text` data affinity is availlable, PostgreSQL 14+ supports also `blob` data affinity.
 
 ### bit and varbit support
 - `sqlite_fdw` PostgreSQL `bit`/`varbit` values support based on `int` SQLite data affinity, because there is no per bit operations for SQLite `blob` affinity data. Maximum SQLite `int` affinity value is 8 bytes length, hence maximum `bit`/`varbit` values length is 64 bits.
@@ -615,9 +636,8 @@ Useful links
 
 License
 -------
-
-Copyright (c) 2018, TOSHIBA CORPORATION
-Copyright (c) 2011 - 2016, EnterpriseDB Corporation
+* Copyright © 2018, TOSHIBA CORPORATION
+* Copyright © 2011 - 2016, EnterpriseDB Corporation
 
 Permission to use, copy, modify, and distribute this software and its documentation for any purpose, without fee, and without a written agreement is hereby granted, provided that the above copyright notice and this paragraph and the following two paragraphs appear in all copies.
 

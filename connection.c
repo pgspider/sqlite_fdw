@@ -220,17 +220,7 @@ sqlite_open_db(const char *dbpath)
 	/* add included inner SQLite functions from separate c file
 	 * for using in data unifying during deparsing
 	 */
-	rc = sqlite_fdw_data_norm_functs_init(conn);
-	if (rc != SQLITE_OK)
-	{
-		char	   *perr = pstrdup(err);
-
-		sqlite3_free(err);
-		sqlite3_close(conn);
-		ereport(ERROR,
-				(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
-				 errmsg("failed to create UUID support function for SQLite DB. rc=%d err=%s", rc, perr)));
-	}
+	sqlite_fdw_data_norm_functs_init(conn);
 	return conn;
 }
 

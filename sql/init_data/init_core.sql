@@ -4,6 +4,8 @@ DROP TABLE IF EXISTS FLOAT4_TBL;
 DROP TABLE IF EXISTS FLOAT4_TMP;
 DROP TABLE IF EXISTS FLOAT8_TBL;
 DROP TABLE IF EXISTS FLOAT8_TMP;
+DROP TABLE IF EXISTS "type_FLOAT_INF";
+DROP VIEW  IF EXISTS "type_FLOAT_INF+";
 DROP TABLE IF EXISTS INT4_TBL;
 DROP TABLE IF EXISTS INT4_TMP;
 DROP TABLE IF EXISTS INT8_TBL;
@@ -429,3 +431,7 @@ create table upsert_test (a int primary key, b text);
 
 create table t (a int unique);
 
+CREATE TABLE "type_FLOAT_INF" (i int primary key, f float);
+CREATE VIEW  "type_FLOAT_INF+" AS SELECT *, typeof("f") t, length("f") l FROM "type_FLOAT_INF";
+-- In PostgreSQL some of this valus causes error but is infinity representation in SQLite
+INSERT INTO  "type_FLOAT_INF" VALUES (1, -1e999),(2, 1e999),(3, -9e999),(4, 9e999),(5,-1e308),(6, 0),(7, 1e308);

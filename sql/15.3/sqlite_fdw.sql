@@ -749,13 +749,9 @@ ALTER FOREIGN TABLE RO_RW_test OPTIONS (DROP updatable);
 --Testcase 276:
 SELECT * FROM RO_RW_test ORDER BY i;
 
---Bind error message test for some unsupported data type
---Testcase 277:
-ALTER FOREIGN TABLE numbers ALTER COLUMN b TYPE tsquery;
---Testcase 278:
-INSERT INTO numbers VALUES(8,'fat & (rat | cat)');
---Testcase 279:
-ALTER FOREIGN TABLE numbers ALTER COLUMN b TYPE varchar(255);
+-- test for PR #76 github
+CREATE FOREIGN TABLE "Unicode data" (i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
+SELECT * FROM "Unicode data";
 
 -- updatable option test (github pull 59)
 DROP FOREIGN TABLE RO_RW_test;
@@ -786,6 +782,8 @@ DROP FOREIGN TABLE grem1_1;
 DROP FOREIGN TABLE grem1_2;
 --Testcase 235:
 DROP FOREIGN TABLE case_exp;
+--test for PR #76 github
+DROP FOREIGN TABLE "Unicode data";
 
 --Testcase 151:
 DROP SERVER sqlite_svr;

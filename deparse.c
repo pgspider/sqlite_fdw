@@ -613,7 +613,7 @@ sqlite_foreign_expr_walker(Node *node,
 					  || strcmp(opername, "round") == 0
 					  || strcmp(opername, "rtrim") == 0
 					  || strcmp(opername, "substr") == 0
-					  || strcmp(opername, "mod") == 0))
+					  || strcmp(opername, "mod") == 0 ))
 				{
 					return false;
 				}
@@ -621,7 +621,6 @@ sqlite_foreign_expr_walker(Node *node,
 				if (!sqlite_foreign_expr_walker((Node *) func->args,
 												glob_cxt, &inner_cxt, case_arg_cxt))
 					return false;
-
 
 				/*
 				 * If function's input collation is not derived from a foreign
@@ -675,7 +674,7 @@ sqlite_foreign_expr_walker(Node *node,
 				ReleaseSysCache(tuple);
 
 				/*
-				 * Factorial (!) and Bitwise XOR (^), (#) 
+				 * Factorial (!) and Bitwise XOR (^), (#)
 				 * cannot be pushed down to SQLite
 				 * Full list see in https://www.postgresql.org/docs/current/functions-bitstring.html
 				 * ILIKE cannot be pushed down to SQLite
@@ -2082,29 +2081,33 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 			colname = get_attname(rte->relid, varattno);
 #endif
 		pg_atttyp = get_atttype(rte->relid, varattno);
-		
+
 		/* PostgreSQL data types with possible mixed affinity SQLite base we should
 		 * normalize to preferred form in SQLite before transfer to PostgreSQL.
 		 * Recommended form for normalisation is someone from 1<->1 with PostgreSQL
 		 * internal storage, hence usually this will not original text data.
 		 */
-		if (pg_atttyp == UUIDOID && !dml_context )
+		if (!dml_context && pg_atttyp == BOOLOID)
 		{
-			elog(DEBUG2, "UUID unification for \"%s\"", colname);
-			/* Please remove to UNHEX and deattach uuid_extension.c after SQLite 3.41+ support */
-			appendStringInfoString(buf, "coalesce(sqlite_fdw_uuid_blob(");
-			if (qualify_col)
-				ADD_REL_QUALIFIER(buf, varno);
-			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
-			appendStringInfoString(buf, "),");
+			elog(DEBUG2, "boolean unification for \"%s\"", colname);
+			appendStringInfoString(buf, "sqlite_fdw_bool(");
 			if (qualify_col)
 				ADD_REL_QUALIFIER(buf, varno);
 			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
 			appendStringInfoString(buf, ")");
 		}
-		else 
+		else if (!dml_context && pg_atttyp == UUIDOID)
 		{
-			elog(DEBUG3, "column name without data unification = \"%s\"", colname);
+			elog(DEBUG2, "UUID unification for \"%s\"", colname);
+			appendStringInfoString(buf, "sqlite_fdw_uuid_blob(");
+			if (qualify_col)
+				ADD_REL_QUALIFIER(buf, varno);
+			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+			appendStringInfoString(buf, ")");
+		}
+		else
+		{
+			elog(DEBUG4, "column name without data unification = \"%s\"", colname);
 			if (qualify_col)
 				ADD_REL_QUALIFIER(buf, varno);
 			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
@@ -2443,7 +2446,7 @@ sqlite_deparse_direct_delete_sql(StringInfo buf, PlannerInfo *root,
 								 List **retrieved_attrs)
 {
 	deparse_expr_cxt context;
-	
+
 	elog(DEBUG1, "sqlite_fdw : %s", __func__);
 
 	/* Set up context struct for recursion */
@@ -2653,7 +2656,7 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 			appendStringInfo(buf, "X\'%s\'", extval + 2);
 			break;
 		case TIMESTAMPOID:
-			{		
+			{
 				convert_timestamp_tounixepoch = false;
 				extval = OidOutputFunctionCall(typoutput, node->constvalue);
 
@@ -2675,8 +2678,8 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 					sqlite_deparse_string_literal(buf, extval);
 			}
 			break;
-		case UUIDOID: 
-			/* always deparse to BLOB because this is internal PostgreSQL storage 
+		case UUIDOID:
+			/* always deparse to BLOB because this is internal PostgreSQL storage
 			 * the string for BYTEA always seems to be in the format "\\x##"
 			 * where # is a hex digit, Even if the value passed in is
 			 * 'hi'::bytea we will receive "\x6869". Making this assumption
