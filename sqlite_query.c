@@ -39,6 +39,8 @@ int
 			sqlite_bind_blob_algo (int attnum, Datum value, sqlite3_stmt * stmt);
 static char *
 			sqlite_text_value_to_pg_db_encoding(sqlite3_stmt * stmt, int stmt_colid);
+static void
+			pg_column_void_text_error (Form_pg_attribute att);
 static char *
 			int642binstr(sqlite3_int64 num, char *s, size_t len);
 
@@ -77,7 +79,7 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 						if (value_byte_size_blob_or_utf8)
 							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
 						else
-							elog(ERROR, "Void text disallowed for PostgreSQL bool column");
+							pg_column_void_text_error(att);
 						break;
 					}
 					default:
@@ -131,7 +133,7 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 						if (value_byte_size_blob_or_utf8)
 							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
 						else
-							elog(ERROR, "Void text disallowed for PostgreSQL smallint column");
+							pg_column_void_text_error(att);
 						break;
 					}
 				}
@@ -164,7 +166,7 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 						if (value_byte_size_blob_or_utf8)
 							sqlite_value_to_pg_error (att, stmt, stmt_colid, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
 						else
-							elog(ERROR, "Void text disallowed for PostgreSQL int column");
+							pg_column_void_text_error(att);
 						break;
 					}
 				}
@@ -197,7 +199,7 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 						if (value_byte_size_blob_or_utf8)
 							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
 						else
-							elog(ERROR, "Void text disallowed for PostgreSQL bigint column");
+							pg_column_void_text_error(att);
 						break;
 					}
 				}
@@ -224,7 +226,7 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 						if (value_byte_size_blob_or_utf8)
 							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
 						else
-							elog(ERROR, "Void text disallowed for PostgreSQL float4 column");
+							pg_column_void_text_error(att);
 						break;
 					}
 				}
@@ -251,7 +253,7 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 						if (value_byte_size_blob_or_utf8)
 							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
 						else
-							elog(ERROR, "Void text disallowed for PostgreSQL float8 column");
+							pg_column_void_text_error(att);
 						break;
 					}
 				}
@@ -294,7 +296,7 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 						if (value_byte_size_blob_or_utf8)
 							valstr = sqlite_text_value_to_pg_db_encoding(stmt, stmt_colid);
 						else
-							elog(ERROR, "Void text disallowed for PostgreSQL float4 column");
+							pg_column_void_text_error(att);
 						break;
 					}
 				}
@@ -323,7 +325,7 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 						if (value_byte_size_blob_or_utf8)
 							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
 						else
-							elog(ERROR, "Void text disallowed for PostgreSQL numeric column");
+							pg_column_void_text_error(att);
 						break;
 					}
 				}
@@ -362,9 +364,12 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 					case SQLITE3_TEXT: /* <-- second proper and recommended SQLite affinity of value for pgtyp */
 					{
 						if (value_byte_size_blob_or_utf8)
-							valstr = sqlite_text_value_to_pg_db_encoding(stmt, stmt_colid);
+							/* SQLite UUID normalization added C function always get blob
+							 * form, of UUID, hence this case should cause error
+							 */
+							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
 						else
-							elog(ERROR, "Void text disallowed for PostgreSQL uuid column");
+							pg_column_void_text_error(att);
 						break;
 					}
 					default:
@@ -652,6 +657,7 @@ sqlite_affinity_eqv_to_pgtype(Oid type)
 		case NUMERICOID:
 			return SQLITE_FLOAT;
 		case BYTEAOID:
+		case UUIDOID:
 			return SQLITE_BLOB;
 		default:
 			return SQLITE3_TEXT;
@@ -715,6 +721,23 @@ sqlite_value_to_pg_error (Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_c
 						errmsg("SQLite data affinity \"%s\" disallowed for PostgreSQL data type \"%s\"", sqlite_affinity, pg_dataTypeName),
 						errhint("In column \"%.*s\" expected SQLite affinity \"%s\", a long incorrect value (%d bytes)", (int)sizeof(pgColND.data), pgColND.data, pg_eqv_affinity, value_byte_size_blob_or_utf8)));
 	}
+}
+
+/*
+ * Human readable message about disallowed void text for the PostgreSQL columnn
+ */
+static void
+pg_column_void_text_error (Form_pg_attribute att)
+{
+       Oid                     pgtyp = att->atttypid;
+       int32           pgtypmod = att->atttypmod;
+       NameData        pgColND = att->attname;
+       const char *pg_dataTypeName = 0;
+
+       pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(pgtyp, pgtypmod));
+       ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+                                       errmsg("Void text disallowed for PostgreSQL \"%s\" column", pg_dataTypeName),
+                                       errhint("Column name \"%.*s\"", (int)sizeof(pgColND.data), pgColND.data)));
 }
 
 static char *

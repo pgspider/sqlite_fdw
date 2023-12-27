@@ -13,10 +13,6 @@ IMPORT FOREIGN SCHEMA public FROM SERVER sqlite_svr INTO public;
 
 --Testcase 1:
 INSERT INTO "type_STRING"(col) VALUES ('string');
---Testcase 2:
-INSERT INTO "type_BOOLEAN"(col) VALUES (TRUE);
---Testcase 3:
-INSERT INTO "type_BOOLEAN"(col) VALUES (FALSE);
 --Testcase 4:
 INSERT INTO "type_BYTE"(col) VALUES ('c');
 --Testcase 5:
@@ -45,8 +41,6 @@ INSERT INTO typetest VALUES(1,'a', 'b', 'c','2017.11.06 12:34:56.789', '2017.11.
 
 --Testcase 16:
 SELECT * FROM "type_STRING";
---Testcase 17:
-SELECT * FROM "type_BOOLEAN";
 --Testcase 18:
 SELECT * FROM "type_BYTE";
 --Testcase 19:
@@ -148,9 +142,9 @@ DELETE FROM type_JSON;
 --Testcase 62:
 DROP FOREIGN TABLE IF EXISTS "type_BOOLEAN";
 --Testcase 63:
-CREATE FOREIGN TABLE "type_BOOLEAN" (colx int, col boolean) SERVER sqlite_svr;
+CREATE FOREIGN TABLE "type_BOOLEAN" (i int, b boolean) SERVER sqlite_svr;
 --Testcase 64:
-ALTER FOREIGN TABLE "type_BOOLEAN" DROP COLUMN colx;
+ALTER FOREIGN TABLE "type_BOOLEAN" DROP COLUMN i;
 --Testcase 65:
 SELECT * FROM "type_BOOLEAN"; -- OK
 
