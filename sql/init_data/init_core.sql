@@ -12,6 +12,7 @@ DROP TABLE IF EXISTS onek;
 DROP TABLE IF EXISTS tenk1;
 DROP TABLE IF EXISTS btg;
 DROP TABLE IF EXISTS num_typemod_test;
+DROP TABLE IF EXISTS t;
 DROP TABLE IF EXISTS RO_RW_test;
 
 CREATE TABLE FLOAT4_TBL (f1  REAL);
@@ -425,3 +426,6 @@ CREATE TABLE update_test (
 );
 
 create table upsert_test (a int primary key, b text);
+
+create table t (a int unique);
+

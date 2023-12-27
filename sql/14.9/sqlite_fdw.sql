@@ -791,4 +791,3 @@ DROP FOREIGN TABLE case_exp;
 DROP SERVER sqlite_svr;
 --Testcase 152:
 DROP EXTENSION sqlite_fdw CASCADE;
-

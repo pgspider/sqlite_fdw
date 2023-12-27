@@ -1353,6 +1353,26 @@ EXPLAIN (verbose, costs off) SELECT b, length(b) FROM numbers WHERE length(b) = 
    SQLite query: SELECT `a`, `b` FROM main."numbers" WHERE ((length(`b`) = 4))
 (4 rows)
 
+-- Aggregates in subquery are pushed down.
+--Testcase 214:
+explain (verbose, costs off)
+select count(x.a), sum(x.a) from (select a a, sum(a) b from numbers group by a, abs(a) order by 1, 2) x;
+                                                                 QUERY PLAN                                                                  
+---------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate
+   Output: count(numbers.a), sum(numbers.a)
+   ->  Foreign Scan
+         Output: numbers.a, (sum(numbers.a)), (abs(numbers.a))
+         SQLite query: SELECT `a`, sum(`a`), abs(`a`) FROM main."numbers" GROUP BY 1, 3 ORDER BY `a` ASC NULLS LAST, sum(`a`) ASC NULLS LAST
+(5 rows)
+
+--Testcase 215:
+select count(x.a), sum(x.a) from (select a a, sum(a) b from numbers group by a, abs(a) order by 1, 2) x;
+ count | sum 
+-------+-----
+     3 |   7
+(1 row)
+
 --Testcase 115:
 INSERT INTO multiprimary (b,c) VALUES (99, 100);
 --Testcase 116:
@@ -1375,7 +1395,6 @@ SELECT * FROM multiprimary2;
    | 99 | 99
 (5 rows)
 
---Testcase 214:
 ALTER FOREIGN TABLE multiprimary2 ALTER COLUMN a OPTIONS(ADD column_name 'b');
 --Testcase 118:
 SELECT * FROM multiprimary2;
@@ -1388,7 +1407,6 @@ SELECT * FROM multiprimary2;
  99 | 99 | 99
 (5 rows)
 
---Testcase 215:
 ALTER FOREIGN TABLE multiprimary2 ALTER COLUMN b OPTIONS (column_name 'nosuch column');
 --Testcase 119:
 SELECT * FROM multiprimary2;
@@ -1534,36 +1552,6 @@ SELECT * FROM noprimary where b in ('Test''s', 'Test');
  4 | Test's
  5 | Test
 (2 rows)
-
--- INSERT/UPDATE whole row with generated column
---Testcase 216:
-CREATE FOREIGN TABLE grem1_1 (
-  a int generated always as (0) stored)
-  SERVER sqlite_svr OPTIONS(table 'grem1_1');
---Testcase 217:
-INSERT INTO grem1_1 DEFAULT VALUES;
---Testcase 218:
-SELECT * FROM grem1_1;
- a 
----
-  
-(1 row)
-
---Testcase 219:
-CREATE FOREIGN TABLE grem1_2 (
-  a int generated always as (0) stored,
-  b int generated always as (1) stored,
-  c int generated always as (2) stored,
-  d int generated always as (3) stored)
-  SERVER sqlite_svr OPTIONS(table 'grem1_2');
---Testcase 220:
-INSERT INTO grem1_2 DEFAULT VALUES;
---Testcase 221:
-SELECT * FROM grem1_2;
- a | b | c | d 
----+---+---+---
-   |   |   |  
-(1 row)
 
 -- Executable test case for pushdown CASE expressions (results)
 --Testcase 224:
@@ -1837,10 +1825,6 @@ DROP FOREIGN TABLE columntest;
 DROP FOREIGN TABLE noprimary;
 --Testcase 161:
 DROP FOREIGN TABLE fts_table;
---Testcase 222:
-DROP FOREIGN TABLE grem1_1;
---Testcase 223:
-DROP FOREIGN TABLE grem1_2;
 --Testcase 235:
 DROP FOREIGN TABLE case_exp;
 --Testcase 151:

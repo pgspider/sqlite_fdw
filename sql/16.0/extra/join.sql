@@ -2212,6 +2212,30 @@ select 1 from
   lateral (select i4.f1, ss1.n from int8_tbl as i8 limit 1) as ss3;
 
 --
+-- check a case where we formerly generated invalid parameterized paths
+--
+
+begin;
+
+--Testcase 630:
+CREATE FOREIGN TABLE t (a int options (key 'true')) SERVER sqlite_svr;
+
+--Testcase 631:
+explain (costs off)
+select 1 from t t1
+  join lateral (select t1.a from (select 1) foo offset 0) as s1 on true
+  join
+    (select 1 from t t2
+       inner join (t t3
+                   left join (t t4 left join t t5 on t4.a = 1)
+                   on t3.a = t4.a)
+       on false
+     where t3.a = coalesce(t5.a,1)) as s2
+  on true;
+
+rollback;
+
+--
 -- check a case in which a PlaceHolderVar forces join order
 --
 
