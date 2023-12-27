@@ -294,7 +294,6 @@ static void
 error_helper(sqlite3* db, int rc)
 {
 	const char * err = sqlite3_errmsg(db);
-	sqlite3_close(db);
 	ereport(ERROR,
 			(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
 			 errmsg("failed to create data unifying functions for SQLite DB"),
