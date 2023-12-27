@@ -290,7 +290,7 @@ sqlite_fdw_data_norm_bool(sqlite3_context* context, int argc, sqlite3_value** ar
  * Makes pg error from SQLite error.
  * Interrupts normal executing, no need return after place of calling
  */
-void
+static void
 error_helper(sqlite3* db, int rc)
 {
 	const char * err = sqlite3_errmsg(db);
