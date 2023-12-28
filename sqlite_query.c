@@ -26,6 +26,7 @@
 #include "parser/parse_type.h"
 #include "mb/pg_wchar.h"
 #include "commands/defrem.h"
+#include "c.h"
 
 static int32
 			sqlite_affinity_eqv_to_pgtype(Oid pgtyp);
@@ -39,6 +40,8 @@ int
 			sqlite_bind_blob_algo (int attnum, Datum value, sqlite3_stmt * stmt);
 static char *
 			sqlite_text_value_to_pg_db_encoding(sqlite3_stmt * stmt, int stmt_colid);
+static void
+			sqlite_numeric_overflow (Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid);
 static void
 			pg_column_void_text_error (Form_pg_attribute att);
 static char *
@@ -118,8 +121,12 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 				{
 					case SQLITE_INTEGER: /* <-- proper and recommended SQLite affinity of value for pgtyp */
 						{
-							int			value = sqlite3_column_int(stmt, stmt_colid);
-							return (struct NullableDatum) {Int16GetDatum(value), false};
+							sqlite_int64 i64v = sqlite3_column_int64(stmt, stmt_colid);
+							if (i64v > PG_INT16_MAX || i64v < PG_INT16_MIN)
+							{
+								sqlite_numeric_overflow (att, stmt, attnum);
+							}
+							return (struct NullableDatum) {Int16GetDatum((int)i64v), false};
 						}
 					case SQLITE_FLOAT:
 					case SQLITE_BLOB:
@@ -145,8 +152,12 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 				{
 					case SQLITE_INTEGER: /* <-- proper and recommended SQLite affinity of value for pgtyp */
 					{
-						int			value = sqlite3_column_int(stmt, stmt_colid);
-						return (struct NullableDatum) {Int32GetDatum(value), false};
+						sqlite_int64 i64v = sqlite3_column_int64(stmt, stmt_colid);
+						if (i64v > PG_INT32_MAX || i64v < PG_INT32_MIN)
+						{
+							sqlite_numeric_overflow (att, stmt, attnum);
+						}
+						return (struct NullableDatum) {Int32GetDatum((int)i64v), false};
 					}
 					case SQLITE_FLOAT: /* TODO: This code is untill mod() pushdowning fix here*/
 					{
@@ -448,7 +459,6 @@ get_column_option_string(Oid relid, int varattno, char *optionname)
 	foreach(lc, options)
 	{
 		DefElem	*def = (DefElem *) lfirst(lc);
-
 		if (strcmp(def->defname, optionname) == 0)
 		{
 			coloptionvalue = defGetString(def);
@@ -569,7 +579,6 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 		case UUIDOID:
 			{
 				bool		uuid_as_blob = false;
-
 				if (relid)
 				{
 					char * optv = get_column_option_string (relid, attnum, "column_type");
@@ -754,6 +763,24 @@ sqlite_text_value_to_pg_db_encoding(sqlite3_stmt * stmt, int stmt_colid)
 	else
 		/* There is no UTF16 in PostgreSQL for fast sqlite3_column_text16, hence always convert */
 		return (char *) pg_do_encoding_conversion((unsigned char *) utf8_text_value, strlen(utf8_text_value), PG_UTF8, pg_database_encoding);
+}
+
+/*
+ * Human readable message about numeric overflow
+ */
+static void
+sqlite_numeric_overflow (Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid)
+{
+	Oid			pgtyp = att->atttypid;
+	int32		pgtypmod = att->atttypmod;
+	NameData	pgColND = att->attname;
+	const char *pg_dataTypeName = 0;
+	const unsigned char	*text_value = sqlite3_column_text(stmt, stmt_colid);
+
+	pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(pgtyp, pgtypmod));
+	ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+					errmsg("Out of range for data type \"%s\"", pg_dataTypeName),
+					errhint("Value %s in column \"%.*s\"", text_value, (int)sizeof(pgColND.data), pgColND.data)));
 }
 
 /*
