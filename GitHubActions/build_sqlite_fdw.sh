@@ -14,8 +14,11 @@
 ################################################################################
 
 VERSION=$1
-mkdir -p ./workdir/postgresql-${VERSION}/contrib/sqlite_fdw
-tar zxvf ./sqlite_fdw.tar.gz -C ./workdir/postgresql-${VERSION}/contrib/sqlite_fdw/
-cd ./workdir/postgresql-${VERSION}/contrib/sqlite_fdw
+FDWdir=./workdir/postgresql-${VERSION}/contrib/sqlite_fdw
+mkdir -v -p $FDWdir
+tar zxvf ./sqlite_fdw.tar.gz -C $FDWdir/
+(
+cd $FDWdir
 export LD_LIBRARY_PATH=/usr/local/lib/:$LD_LIBRARY_PATH
 make
+)

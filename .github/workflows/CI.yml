@@ -26,6 +26,7 @@ jobs:
     env:
       SQLITE_VERSION : "3420000"
       SQLITE_YEAR: "2023"
+      POSTGIS_VERSION : "3.4.2"
       HTTP_PROXY: ""
       HTTPS_PROXY: ""
     strategy:
@@ -38,21 +39,36 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: tar
+      - name: FDW tar
         run: tar zcvf sqlite_fdw.tar.gz ./*
       
-      - name: set_proxy
+      - name: set proxy, versions and environment
         run: bash GitHubActions/env.sh
 
-      - name: install locales
+      - name: install locales for tests
         run: bash GitHubActions/install_locales.sh
-            
+
+      - name: install PostGIS libs for compilation
+        run: bash GitHubActions/install_postgis_lib.sh
+
+      - name: unpack PostgreSQL ${{ matrix.pg }} source codes
+        run: bash GitHubActions/unpack_postgres.sh ${{ matrix.pg }}
+
+      - name: unpack PostGIS for PostgreSQL ${{ matrix.pg }}
+        run: bash GitHubActions/unpack_postgis.sh ${{ matrix.pg }}
+
       - name: build PostgreSQL ${{ matrix.pg }}
         run: bash GitHubActions/build_postgres.sh ${{ matrix.pg }}
 
+      - name: build PostGIS ${{ env.POSTGIS_VERSION }} for PostgreSQL ${{ matrix.pg }}
+        run: bash GitHubActions/build_postgis.sh ${{ matrix.pg }}
+
       - name: install SQLite
         run: bash GitHubActions/install_sqlite.sh ${{ env.SQLITE_VERSION }} ${{ env.SQLITE_YEAR }}
-      
+
+      - name: install SpatiaLite
+        run: bash GitHubActions/install_spatialite.sh        
+
       - name: build sqlite_fdw
         run: bash GitHubActions/build_sqlite_fdw.sh ${{ matrix.pg }}
       
