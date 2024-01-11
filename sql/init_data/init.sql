@@ -41,6 +41,7 @@ CREATE TABLE "type_VARBIT" (i int, b bit);
 CREATE VIEW  "type_VARBIT+" AS SELECT *, typeof(b) t, length(b) l FROM "type_VARBIT";
 CREATE TABLE "type_UUIDpk" (col uuid primary key);
 CREATE TABLE "type_UUID" (i int, u uuid);
+CREATE TABLE "types_PostGIS" (i int, gm geometry, gg geography, r raster, t text);
 CREATE VIEW  "type_UUID+" AS SELECT *, typeof("u") t, length("u") l FROM "type_UUID";
 CREATE TABLE BitT (p integer primary key, a BIT(3), b BIT VARYING(5));
 CREATE TABLE notype (a);
@@ -104,5 +105,26 @@ WITH booldata AS (
 	(NULL) )
 				 )
 SELECT ROW_NUMBER() OVER () i, t1.i i1, t1.b b1, t2.i i2, t2.b b2 FROM booldata t1 INNER JOIN booldata t2 ON 1;
+
+-- SpatiaLite/PostGIS test
+CREATE TABLE "♁" (
+	geom geometry NOT NULL,
+	osm_type varchar(16) NOT NULL,
+	osm_id int NOT NULL,
+	ver int NOT NULL,
+	arr text,
+	t jsonb
+);
+
+-- SpatiaLite/PostGIS test
+CREATE TABLE "♂" (
+	id int4,
+	"UAI" varchar(254),
+	"⌖" geometry,
+	geom geometry,
+	"t₀" date,
+	"class" text,
+	"URL" varchar(80)
+);
 
 analyze;

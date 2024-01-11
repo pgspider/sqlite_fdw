@@ -7,7 +7,7 @@ CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 --Testcase 46:
 CREATE SERVER sqlite2 FOREIGN DATA WRAPPER sqlite_fdw;
-IMPORT FOREIGN SCHEMA public FROM SERVER sqlite_svr INTO public;
+IMPORT FOREIGN SCHEMA main FROM SERVER sqlite_svr INTO public;
 --Testcase 1:
 INSERT INTO "type_STRING"(col) VALUES ('string');
 --Testcase 4:
@@ -552,7 +552,7 @@ SELECT * FROM "type_DOUBLE"; -- OK, +- Inf
 
 --Testcase 47:
 DROP EXTENSION sqlite_fdw CASCADE;
-NOTICE:  drop cascades to 48 other objects
+NOTICE:  drop cascades to 51 other objects
 DETAIL:  drop cascades to server sqlite_svr
 drop cascades to foreign table department
 drop cascades to foreign table employee
@@ -582,6 +582,7 @@ drop cascades to foreign table "type_BIT"
 drop cascades to foreign table "type_VARBIT"
 drop cascades to foreign table "type_UUIDpk"
 drop cascades to foreign table "type_UUID"
+drop cascades to foreign table "types_PostGIS"
 drop cascades to foreign table "BitT"
 drop cascades to foreign table notype
 drop cascades to foreign table typetest
@@ -598,6 +599,8 @@ drop cascades to foreign table fts_table_config
 drop cascades to foreign table "RO_RW_test"
 drop cascades to foreign table "Unicode data"
 drop cascades to foreign table "type_BOOLEAN_oper"
+drop cascades to foreign table "♁"
+drop cascades to foreign table "♂"
 drop cascades to foreign table type_json
 drop cascades to foreign table "type_BOOLEAN"
 drop cascades to server sqlite2

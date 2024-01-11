@@ -6,6 +6,12 @@ to [SQLite](https://sqlite.org/) database file. This FDW works with PostgreSQL 1
 
 <img src="https://upload.wikimedia.org/wikipedia/commons/2/29/Postgresql_elephant.svg" align="center" height="100" alt="PostgreSQL"/>	+	<img src="https://upload.wikimedia.org/wikipedia/commons/3/38/SQLite370.svg" align="center" height="100" alt="SQLite"/>
 
+Also this foreign data wrapper (FDW) can connect PostgreSQL with [PostGIS](https://www.postgis.net/)
+to [SpatiaLite](https://www.gaia-gis.it/fossil/libspatialite/index) SQLite database file. This FDW works with PostGIS 2+ and confirmed with SpatiaLite 5.1. See [GIS support description](GIS.md).
+
+<img src="https://www.tmapy.cz/wp-content/uploads/2021/02/postgis-logo.png" align="center" height="80" alt="PostGIS"/>	+ <img src="https://www.gaia-gis.it/fossil/libspatialite/logo" align="center" height="80" alt="SpatiaLite"/>
+
+
 Contents
 --------
 
@@ -45,6 +51,7 @@ Features
 	- `timestamp`: `text`(default) or `int`,
  	- `uuid`: `text`(36) or `blob`(16)(default).
 - Full support for `+Infinity` (means ∞) and `-Infinity` (means -∞) special values for IEEE 754-2008 numbers in `double precision`, `float` and `numeric` columns including such conditions as ` n < '+Infinity'` or ` m > '-Infinity'`.
+- Bidirectional data transformation for `geometry` and `geography` data types for SpatiaLite ↔ PostGIS. [EWKB](https://libgeos.org/specifications/wkb/#extended-wkb) data transport is used. See [GIS support description](GIS.md).
 
 ### Pushdowning
 - `WHERE` clauses are pushdowned
@@ -55,9 +62,11 @@ Features
 - `LIMIT` and `OFFSET` are pushdowned when all tables in the query are foreign tables belongs to the same PostgreSQL `FOREIGN SERVER` object.
 - Support `GROUP BY`, `HAVING` push-down.
 - `mod()` is pushdowned. In PostgreSQL this function gives [argument-dependend data type](https://www.postgresql.org/docs/current/functions-math.html), but result from SQLite always [have `real` affinity](https://www.sqlite.org/lang_mathfunc.html#mod).
+- `=` operator for GIS data objects are pushdowned.
 - `upper`, `lower` and other character case functions are **not** pushed down because they does not work with UNICODE character in SQLite.
 - `WITH TIES` option is **not** pushed down.
 - Bit string `#` (XOR) operator is **not** pushed down because there is no equal SQLite operator.
+- operators for GIS data objects are **not** pushdowned except to `=`.
 
 ### Notes about pushdowning
 
@@ -94,26 +103,40 @@ For some Linux distributives internal packages with `sqlite_fdw` are avalilable.
 ### Source installation
 
 Prerequisites:
-* `libsqlite3-dev`, especially `sqlite.h`
-* `postgresql-server-dev`, especially `postgres.h`
 * `gcc`
 * `make`
+* `postgresql-server-dev`, especially `postgres.h`
+* `libsqlite3-dev`, especially `sqlite.h`
+* `libspatialite-dev` only for geoinformational data types support (SpatiaLite ↔ PostGIS) or full tests
 
 #### 1. Install SQLite & Postgres Development Libraries
 
 For Debian or Ubuntu:
+
 `apt-get install libsqlite3-dev`
+
 `apt-get install postgresql-server-dev-XX`, where XX matches your postgres version, i.e. `apt-get install postgresql-server-dev-15`
 
-You can also [download SQLite source code][1] and [build SQLite][2] with FTS5 for full-text search.
+`apt-get install libspatialite-dev` - for SpatiaLite ↔ PostGIS transformations
+
+Instead of `libsqlite3-dev` you can also [download SQLite source code][1] and [build SQLite][2] with FTS5 for full-text search.
 
 #### 2. Build and install sqlite_fdw
 
-Add a directory of `pg_config` to PATH and build and install `sqlite_fdw`.
+You can compile without `libspatialite-dev` and GIS support. This library is necessary only for full tests. PostGIS is not necessary for `sqlite_fdw` compilation anyway and also used only for full tests.
 
+Before building please add a directory of `pg_config` to PATH or ensure `pg_config` program is accessable from command line only by the name.
+
+Build and install without GIS support
 ```sh
 make USE_PGXS=1
 make install USE_PGXS=1
+```
+
+Build and install with GIS support
+```sh
+make USE_PGXS=1 ENABLE_GIS=1
+make install USE_PGXS=1 ENABLE_GIS=1
 ```
 
 If you want to build `sqlite_fdw` in a source tree of PostgreSQL, use
@@ -121,6 +144,8 @@ If you want to build `sqlite_fdw` in a source tree of PostgreSQL, use
 make
 make install
 ```
+You also can add `ENABLE_GIS=1` for GIS support or for testing if you have got
+compiled PostGIS in `contrib/postgis` directory. Please refer [PostGIS installation script](GitHubActions/build_postgres.sh) for Debian/Ubuntu configuration details.
 
 Usage
 -----
@@ -222,6 +247,8 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 |         date |      V       |       V      |      T       |      V+      |    `NULL`    | ?            |
 |       float4 |      V+      |       ✔      |      T       |      -       |    `NULL`    | REAL         |
 |       float8 |      V+      |       ✔      |      T       |      -       |    `NULL`    | REAL         |
+|[geometry](GIS.md)| ∅       |       ∅      |      V+      |      ∅       |      ∅       | BLOB         |
+|[geography](GIS.md)|∅       |       ∅      |      V+      |      ∅       |      ∅       | BLOB         |
 |         int2 |      V+      |       ?      |      T       |      -       |    `NULL`    | INT          |
 |         int4 |      V+      |       ?      |      T       |      -       |    `NULL`    | INT          |
 |         int8 |      ✔       |       ?      |      T       |      -       |    `NULL`    | INT          |
@@ -235,6 +262,7 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 |         uuid |      ∅       |       ∅      |V+<br>(only<br>16 bytes)| V+ |      ∅       | TEXT, BLOB   |
 |      varchar |      ?       |       ?      |      T       |      ✔       |      V       | TEXT         |
 |    varbit(n) |    V n<=64   |       ∅      |      V       |      ∅       |      ∅       | INT          |
+
 
 ### IMPORT FOREIGN SCHEMA options
 
@@ -265,6 +293,11 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 | time         | time             |
 | date         | date             |
 | uuid         | uuid             |
+| [geometry](GIS.md)     | geometry         |
+| [geography](GIS.md)    | geography        |
+
+**Note:** in case of `sqlite_fdw` compiling without GIS support,
+GIS data types will be converted to `bytea`.
 
 ### TRUNCATE support
 
@@ -433,7 +466,7 @@ There is [no character set metadata](https://www.sqlite.org/search?s=d&q=charact
 stored in SQLite, only [`PRAGMA encoding;`](https://www.sqlite.org/pragma.html#pragma_encoding) with UTF-only values (`UTF-8`, `UTF-16`, `UTF-16le`, `UTF-16be`). [SQLite text output function](https://www.sqlite.org/c3ref/column_blob.html) guarantees UTF-8 encoding.
 
 When `sqlite_fdw` connects to a SQLite, all strings are interpreted acording the PostgreSQL database's server encoding.
-It's not a problem if your PostgreSQL database encoding belongs to Unicode family. Otherewise interpretation transformation problems can occur. Some unproper for PostgreSQL database encoding characters will be replaced to default 'no such character' character or there will error like `character with byte sequence 0x** in encoding "UTF8" has no equivalent in encoding "**"`.
+It's not a problem if your PostgreSQL database encoding belongs to Unicode family. Otherewise interpretation transformation problems can occur. Some unproper for PostgreSQL database encoding characters will cause error like `character with byte sequence 0x** in encoding "UTF8" has no equivalent in encoding "**"`.
 
 Character case functions such as `upper`, `lower` and other are not pushed down because they does not work with Unicode character in SQLite.
 
@@ -563,6 +596,7 @@ Limitations
 SQLite `text` affinity values which is different for SQLite unique checks can be equal for PostgreSQL because `sqlite_fdw` unifyes semantics of values, not storage form. For example `1`(integer), `Y`(text) and `tRuE`(text) SQLite values is different in SQLite but equal in PostgreSQL as `true` values of `boolean` column. This is also applicable for a data with `text` affinity in `uuid`, `timestamp`, `double precision`, `float` and `numeric` columns of foreign tables. **Please be carefully if you want to use mixed affinity column as PostgreSQL foreign table primary key**.
 
 ### Arrays
+Array support is experimental. Please be careful.
 - `sqlite_fdw` only supports `ARRAY` const, for example, `ANY (ARRAY[1, 2, 3])` or `ANY ('{1, 2 ,3}')`.
 - `sqlite_fdw` does not support `ARRAY` expression, for example, `ANY (ARRAY[c1, 1, c1+0])`.
 - For `ANY(ARRAY)` clause, `sqlite_fdw` deparses it using `IN` operator.

@@ -1830,7 +1830,7 @@ SELECT * FROM RO_RW_test ORDER BY i;
 ALTER FOREIGN TABLE numbers ALTER COLUMN b TYPE tsquery;
 --Testcase 278:
 INSERT INTO numbers VALUES(8,'fat & (rat | cat)');
-ERROR:  cannot convert constant value to Sqlite value
+ERROR:  cannot convert constant value to SQLite value
 HINT:  Constant value data type: "tsquery" in column "b"
 --Testcase 279:
 ALTER FOREIGN TABLE numbers ALTER COLUMN b TYPE varchar(255);
@@ -2089,7 +2089,7 @@ DROP FOREIGN TABLE RO_RW_test;
 ALTER FOREIGN TABLE numbers ALTER COLUMN b TYPE tsquery;
 --Testcase 367:
 INSERT INTO numbers VALUES(8,'fat & (rat | cat)');
-ERROR:  cannot convert constant value to Sqlite value
+ERROR:  cannot convert constant value to SQLite value
 HINT:  Constant value data type: "tsquery" in column "b"
 --Testcase 368:
 ALTER FOREIGN TABLE numbers ALTER COLUMN b TYPE varchar(255);

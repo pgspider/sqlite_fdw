@@ -27,9 +27,11 @@
 #endif
 #include "commands/defrem.h"
 #include "mb/pg_wchar.h"
+#include "nodes/makefuncs.h"
 #include "nodes/nodeFuncs.h"
 #include "optimizer/tlist.h"
 #include "parser/parsetree.h"
+#include "parser/parse_type.h"
 #include "utils/builtins.h"
 #include "utils/lsyscache.h"
 #include "utils/syscache.h"
@@ -163,7 +165,7 @@ static void sqlite_get_relation_column_alias_ids(Var *node, RelOptInfo *foreignr
 												 int *relno, int *colno);
 static char *sqlite_quote_identifier(const char *s, char q);
 static bool sqlite_contain_immutable_functions_walker(Node *node, void *context);
-static bool sqlite_is_valid_type(Oid type);
+static bool sqlite_deparsable_data_type(Param *p);
 static int preferred_sqlite_affinity (Oid relid, int varattno);
 
 /*
@@ -321,9 +323,18 @@ sqlite_is_foreign_param(PlannerInfo *root,
 	return false;
 }
 
+/*
+ * sqlite_deparsable_data_type:
+ *
+ * Checks if values of the data type with given Oid can be deparsed to SQLite
+ */
 static bool
-sqlite_is_valid_type(Oid type)
+sqlite_deparsable_data_type(Param *p)
 {
+	Oid type = p->paramtype;
+#ifdef SQLITE_FDW_GIS_ENABLE
+	const char *pg_dataTypeName = NULL;
+#endif
 	switch (type)
 	{
 		case INT2OID:
@@ -341,6 +352,16 @@ sqlite_is_valid_type(Oid type)
 		case UUIDOID:
 			return true;
 	}
+#ifdef SQLITE_FDW_GIS_ENABLE
+	/* PostGIS data types can be supported only by name */
+	pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(type, p->paramtypmod));
+	elog(DEBUG3, "sqlite_fdw : %s, unusual %s column", __func__, pg_dataTypeName);
+	if (listed_datatype(pg_dataTypeName, postGisSQLiteCompatibleTypes))
+	{
+		elog(DEBUG3, "sqlite_fdw : PostGIS listed column %s", pg_dataTypeName);
+		return true;
+	}
+#endif
 	return false;
 }
 
@@ -364,7 +385,7 @@ sqlite_is_foreign_pathkey(PlannerInfo *root,
 		return false;
 
 	/* can't push down the sort if the pathkey's opfamily is not built-in */
-	if (!sqlite_is_builtin(pathkey->pk_opfamily))
+	if (!is_pg_builtin_Oid(pathkey->pk_opfamily))
 		return false;
 
 	/* Find a suitable EC member */
@@ -420,7 +441,6 @@ sqlite_foreign_expr_walker(Node *node,
 	Oid			collation = InvalidOid;
 	FDWCollateState state = FDW_COLLATE_NONE;
 	HeapTuple	tuple;
-	Form_pg_operator form;
 
 	/* Need do nothing for empty subexpressions */
 	if (node == NULL)
@@ -435,6 +455,7 @@ sqlite_foreign_expr_walker(Node *node,
 			{
 				Var		   *var = (Var *) node;
 
+				elog(DEBUG2, "sqlite_fdw : %s T_Var", __func__);
 				/*
 				 * If the Var is from the foreign table, we consider its
 				 * collation (if any) safe to use.  If it is from another
@@ -488,6 +509,7 @@ sqlite_foreign_expr_walker(Node *node,
 			{
 				Const	   *c = (Const *) node;
 
+				elog(DEBUG2, "sqlite_fdw : %s T_Const", __func__);
 				/* SQLite cannot handle interval type */
 				if (c->consttype == INTERVALOID)
 					return false;
@@ -510,6 +532,7 @@ sqlite_foreign_expr_walker(Node *node,
 			{
 				CaseTestExpr *c = (CaseTestExpr *) node;
 
+				elog(DEBUG2, "sqlite_fdw : %s T_CaseTestExpr", __func__);
 				/* Punt if we seem not to be inside a CASE arg WHEN. */
 				if (!case_arg_cxt)
 					return false;
@@ -535,6 +558,7 @@ sqlite_foreign_expr_walker(Node *node,
 			{
 				Param	   *p = (Param *) node;
 
+				elog(DEBUG2, "sqlite_fdw : %s T_Param", __func__);
 				/*
 				 * If it's a MULTIEXPR Param, punt.  We can't tell from here
 				 * whether the referenced sublink/subplan contains any remote
@@ -551,7 +575,7 @@ sqlite_foreign_expr_walker(Node *node,
 				if (p->paramkind == PARAM_MULTIEXPR)
 					return false;
 
-				if (!sqlite_is_valid_type(p->paramtype))
+				if (!sqlite_deparsable_data_type(p))
 					return false;
 
 				/*
@@ -571,6 +595,7 @@ sqlite_foreign_expr_walker(Node *node,
 				char	   *opername = NULL;
 				Oid			schema;
 
+				elog(DEBUG2, "sqlite_fdw : %s T_FuncExpr", __func__);
 				/* get function name and schema */
 				tuple = SearchSysCache1(PROCOID, ObjectIdGetDatum(func->funcid));
 				if (!HeapTupleIsValid(tuple))
@@ -646,16 +671,14 @@ sqlite_foreign_expr_walker(Node *node,
 		case T_OpExpr:
 		case T_NullIfExpr:
 			{
-				char	   *cur_opname = NULL;
-				OpExpr	   *oe = (OpExpr *) node;
+				char			   *cur_opname = NULL;
+				OpExpr			   *oe = (OpExpr *) node;
+				Form_pg_operator	form;
+				Oid					oprleft = InvalidOid;
+				Oid					oprright = InvalidOid;
+				const char		   *pg_dataTypeName = NULL;
 
-				/*
-				 * Similarly, only built-in operators can be sent to remote.
-				 * (If the operator is, surely its underlying function is
-				 * too.)
-				 */
-				if (!sqlite_is_builtin(oe->opno))
-					return false;
+				elog(DEBUG2, "sqlite_fdw : %s T_OpExpr|T_NullIfExpr", __func__);
 
 				tuple = SearchSysCache1(OPEROID, ObjectIdGetDatum(oe->opno));
 				if (!HeapTupleIsValid(tuple))
@@ -664,7 +687,17 @@ sqlite_foreign_expr_walker(Node *node,
 
 				/* opname is not a SQL identifier, so we should not quote it. */
 				cur_opname = pstrdup(NameStr(form->oprname));
+				oprleft = form->oprleft;
+				oprright = form->oprright;
 				ReleaseSysCache(tuple);
+
+				/*
+				 * Similarly, only built-in, PostGIS = operators can be sent to remote.
+				 * (If the operator is, surely its underlying function is
+				 * too.)
+				 */
+				if (!is_pg_builtin_Oid(oe->opno) && (strcmp(cur_opname, "=") != 0))
+					return false;
 
 				/*
 				 * Factorial (!) and Bitwise XOR (^), (#)
@@ -682,6 +715,16 @@ sqlite_foreign_expr_walker(Node *node,
 					return false;
 				}
 
+				if (oprleft != InvalidOid && oprright != InvalidOid)
+				{
+					pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(oprleft, -1));
+					if(!is_pg_builtin_Oid(oe->opno) && (
+						!listed_datatype(pg_dataTypeName, postGisSQLiteCompatibleTypes) ||
+						oprleft != oprright))
+						return false;
+					elog(DEBUG2, "sqlite_fdw : %s operator %s for %s", __func__, cur_opname, pg_dataTypeName);
+				}
+
 				/*
 				 * Recurse to input subexpressions.
 				 */
@@ -697,7 +740,10 @@ sqlite_foreign_expr_walker(Node *node,
 					 /* OK, inputs are all noncollatable */ ;
 				else if (inner_cxt.state != FDW_COLLATE_SAFE ||
 						 oe->inputcollid != inner_cxt.collation)
+				{
+					elog(DEBUG2, "sqlite_fdw : %s collante problems, do not push", __func__);
 					return false;
+				}
 
 				/* Result-collation handling is same as for functions */
 				collation = oe->opcollid;
@@ -714,10 +760,11 @@ sqlite_foreign_expr_walker(Node *node,
 			{
 				ScalarArrayOpExpr *oe = (ScalarArrayOpExpr *) node;
 
+				elog(DEBUG2, "sqlite_fdw : %s T_ScalarArrayOpExpr", __func__);
 				/*
 				 * Again, only built-in operators can be sent to remote.
 				 */
-				if (!sqlite_is_builtin(oe->opno))
+				if (!is_pg_builtin_Oid(oe->opno))
 					return false;
 
 				/*
@@ -746,6 +793,7 @@ sqlite_foreign_expr_walker(Node *node,
 			{
 				RelabelType *r = (RelabelType *) node;
 
+				elog(DEBUG2, "sqlite_fdw : %s T_RelabelType", __func__);
 				/*
 				 * Recurse to input subexpression.
 				 */
@@ -771,6 +819,7 @@ sqlite_foreign_expr_walker(Node *node,
 			{
 				BoolExpr   *b = (BoolExpr *) node;
 
+				elog(DEBUG2, "sqlite_fdw : %s T_BoolExpr", __func__);
 				/*
 				 * Recurse to input subexpressions.
 				 */
@@ -787,6 +836,7 @@ sqlite_foreign_expr_walker(Node *node,
 			{
 				NullTest   *nt = (NullTest *) node;
 
+				elog(DEBUG2, "sqlite_fdw : %s T_NullTest", __func__);
 				/*
 				 * Recurse to input subexpressions.
 				 */
@@ -804,6 +854,7 @@ sqlite_foreign_expr_walker(Node *node,
 				List	   *l = (List *) node;
 				ListCell   *lc;
 
+				elog(DEBUG2, "sqlite_fdw : %s T_List", __func__);
 				/*
 				 * Recurse to component subexpressions.
 				 */
@@ -830,6 +881,7 @@ sqlite_foreign_expr_walker(Node *node,
 				CoalesceExpr *coalesce = (CoalesceExpr *) node;
 				ListCell   *lc;
 
+				elog(DEBUG2, "sqlite_fdw : %s T_CoalesceExpr", __func__);
 				if (list_length(coalesce->args) < 2)
 					return false;
 
@@ -849,6 +901,7 @@ sqlite_foreign_expr_walker(Node *node,
 				foreign_loc_cxt tmp_cxt;
 				ListCell   *lc;
 
+				elog(DEBUG2, "sqlite_fdw : %s T_CaseExpr", __func__);
 				/*
 				 * Recurse to CASE's arg expression, if any.  Its collation
 				 * has to be saved aside for use while examining CaseTestExprs
@@ -943,6 +996,7 @@ sqlite_foreign_expr_walker(Node *node,
 				char	   *opername = NULL;
 				Oid			schema;
 
+				elog(DEBUG2, "sqlite_fdw : %s T_Aggref", __func__);
 				/* get function name and schema */
 				tuple = SearchSysCache1(PROCOID, ObjectIdGetDatum(agg->aggfnoid));
 				if (!HeapTupleIsValid(tuple))
@@ -1034,6 +1088,7 @@ sqlite_foreign_expr_walker(Node *node,
 			{
 				ArrayExpr  *a = (ArrayExpr *) node;
 
+				elog(DEBUG2, "sqlite_fdw : %s T_ArrayExpr", __func__);
 				/*
 				 * Recurse to input subexpressions.
 				 */
@@ -1058,23 +1113,37 @@ sqlite_foreign_expr_walker(Node *node,
 			}
 			break;
 		case T_DistinctExpr:
-			/* IS DISTINCT FROM */
-			return false;
+			{
+				/* IS DISTINCT FROM */
+				elog(DEBUG2, "sqlite_fdw : %s T_DistinctExpr", __func__);
+				return false;
+			}
 		default:
+			{
 
-			/*
-			 * If it's anything else, assume it's unsafe.  This list can be
-			 * expanded later, but don't forget to add deparse support below.
-			 */
-			return false;
+				elog(DEBUG1, "sqlite_fdw : %s other", __func__);
+				/*
+				 * If it's anything else, assume it's unsafe.  This list can be
+				 * expanded later, but don't forget to add deparse support below.
+				 */
+				return false;
+			}
 	}
 
 	/*
-	 * If result type of given expression is not built-in, it can't be sent to
+	 * If result type of given expression is not built-in or PostGIS, it can't be sent to
 	 * remote because it might have incompatible semantics on remote side.
 	 */
-	if (check_type && !sqlite_is_builtin(exprType(node)))
-		return false;
+	if (check_type)
+	{
+		Oid typeOid = exprType(node);
+		if (!is_pg_builtin_Oid(typeOid))
+		{
+			const char * resTypeName = TypeNameToString(makeTypeNameFromOid(typeOid, -1));
+			if (!listed_datatype(resTypeName, postGisSQLiteCompatibleTypes))
+				return false;
+		}
+	}
 
 	/*
 	 * Now, merge my collation information into my parent's state.
@@ -1121,6 +1190,7 @@ sqlite_foreign_expr_walker(Node *node,
 		}
 	}
 	/* It looks OK */
+	elog(DEBUG2, "sqlite_fdw : %s, pushed down", __func__);
 	return true;
 }
 
@@ -2041,7 +2111,6 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 		ListCell   *lc;
 		Oid			pg_atttyp = 0;
 
-		elog(DEBUG3, "sqlite_fdw : %s , varattrno != 0", __func__);
 		/* varno must not be any of OUTER_VAR, INNER_VAR and INDEX_VAR. */
 		Assert(!IS_SPECIAL_VARNO(varno));
 
@@ -2057,10 +2126,9 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 			if (strcmp(def->defname, "column_name") == 0)
 			{
 				colname = defGetString(def);
-				elog(DEBUG3, "opt = %s\n", def->defname);
+				elog(DEBUG3, "sqlite_fdw : %s, column_name opt = %s\n", __func__, colname);
 				break;
 			}
-			elog(DEBUG1, "column name = %s\n", colname);
 		}
 
 		/*
@@ -2082,7 +2150,7 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 		 */
 		if (!dml_context && ( pg_atttyp == FLOAT8OID || pg_atttyp == FLOAT4OID || pg_atttyp == NUMERICOID) )
 		{
-			elog(DEBUG2, "floatN unification for \"%s\"", colname);
+			elog(DEBUG2, "sqlite_fdw : %s, varattrno != 0, floatN unification for \"%s\"", __func__, colname);
 			appendStringInfoString(buf, "sqlite_fdw_float(");
 			if (qualify_col)
 				ADD_REL_QUALIFIER(buf, varno);
@@ -2091,7 +2159,7 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 		}
 		else if (!dml_context && pg_atttyp == BOOLOID)
 		{
-			elog(DEBUG2, "boolean unification for \"%s\"", colname);
+			elog(DEBUG2, "sqlite_fdw : %s, varattrno != 0, boolean unification for \"%s\"", __func__, colname);
 			appendStringInfoString(buf, "sqlite_fdw_bool(");
 			if (qualify_col)
 				ADD_REL_QUALIFIER(buf, varno);
@@ -2100,7 +2168,7 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 		}
 		else if (!dml_context && pg_atttyp == UUIDOID)
 		{
-			elog(DEBUG2, "UUID unification for \"%s\"", colname);
+			elog(DEBUG2, "sqlite_fdw : %s, varattrno != 0, UUID unification for \"%s\"", __func__, colname);
 			appendStringInfoString(buf, "sqlite_fdw_uuid_blob(");
 			if (qualify_col)
 				ADD_REL_QUALIFIER(buf, varno);
@@ -2109,7 +2177,7 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 		}
 		else
 		{
-			elog(DEBUG4, "column name without data unification = \"%s\"", colname);
+			elog(DEBUG3, "sqlite_fdw : %s, varattrno != 0, not unificated column \"%s\"", __func__, colname);
 			if (qualify_col)
 				ADD_REL_QUALIFIER(buf, varno);
 			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
@@ -2739,7 +2807,7 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 			 * the string for BYTEA always seems to be in the format "\\x##"
 			 * where # is a hex digit, Even if the value passed in is
 			 * 'hi'::bytea we will receive "\x6869". Making this assumption
-			 * allows us to quickly convert postgres escaped strings to sqlite
+			 * allows us to quickly convert Postgres escaped strings to SQLite
 			 * ones for comparison
 			 */
 			extval = OidOutputFunctionCall(typoutput, node->constvalue);
@@ -2786,8 +2854,33 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 			}
 			break;
 		default:
-			extval = OidOutputFunctionCall(typoutput, node->constvalue);
-			sqlite_deparse_string_literal(buf, extval);
+			{
+#ifdef SQLITE_FDW_GIS_ENABLE
+				/* PostGIS data types can be supported only by name
+				 * This is very rare and not fast algorythm branch
+				 */
+				const char *pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(node->consttype, node->consttypmod));
+
+				if (listed_datatype(pg_dataTypeName, postGisSpecificTypes))
+				{
+					elog(DEBUG4, "sqlite_fdw : deparse is postGisSpecificType %s", pg_dataTypeName);
+					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+									errmsg("This data type is PostGIS specific and is not supported by SpatiaLite"),
+									errhint("Data type: \"%s\" ", pg_dataTypeName)));
+					break;
+				}
+
+				if (listed_datatype(pg_dataTypeName, postGisSQLiteCompatibleTypes))
+				{
+					extval = OidOutputFunctionCall(typoutput, node->constvalue);
+					sqlite_deparse_PostGIS_value(extval, context->buf);
+					break;
+				}
+#endif
+				/* common branch of unknown data type */
+				extval = OidOutputFunctionCall(typoutput, node->constvalue);
+				sqlite_deparse_string_literal(buf, extval);
+			}
 			break;
 	}
 }
@@ -2955,15 +3048,14 @@ sqlite_deparse_operator_name(StringInfo buf, Form_pg_operator opform)
 	/* opname is not a SQL identifier, so we should not quote it. */
 	cur_opname = NameStr(opform->oprname);
 
-	/* Print schema name only if it's not pg_catalog */
+	/* Non built-in operators, for example PostGIS
+	 * This operators doesn't belong to pg_catalog
+	 */
 	if (opform->oprnamespace != PG_CATALOG_NAMESPACE)
 	{
-		const char *opnspname;
+		/* Don't use fully qualified operator name for SQLite, only name. */
+		appendStringInfoString(buf, cur_opname);
 
-		opnspname = get_namespace_name(opform->oprnamespace);
-		/* Print fully qualified operator name. */
-		appendStringInfo(buf, "OPERATOR(%s.%s)",
-						 sqlite_quote_identifier(opnspname, QUOTE), cur_opname);
 	}
 	else
 	{
@@ -3421,7 +3513,7 @@ sqlite_print_remote_placeholder(Oid paramtype, int32 paramtypmod,
  * track of that would be a huge exercise.
  */
 bool
-sqlite_is_builtin(Oid oid)
+is_pg_builtin_Oid(Oid oid)
 {
 #if PG_VERSION_NUM >= 120000
 	return (oid < FirstGenbkiObjectId);
