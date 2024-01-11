@@ -6,6 +6,12 @@ to [SQLite](https://sqlite.org/) database file. This FDW works with PostgreSQL 1
 
 <img src="https://upload.wikimedia.org/wikipedia/commons/2/29/Postgresql_elephant.svg" align="center" height="100" alt="PostgreSQL"/>	+	<img src="https://upload.wikimedia.org/wikipedia/commons/3/38/SQLite370.svg" align="center" height="100" alt="SQLite"/>
 
+Also this foreign data wrapper (FDW) can connect PostgreSQL with [PostGIS](https://www.postgis.net/)
+to [SpatiaLite](https://www.gaia-gis.it/fossil/libspatialite/index) SQLite database file. This FDW works with PostGIS 2+ and confirmed with SpatiaLite 5.1.
+
+<img src="https://www.tmapy.cz/wp-content/uploads/2021/02/postgis-logo.png" align="center" height="80" alt="PostGIS"/>	+ <img src="https://www.gaia-gis.it/fossil/libspatialite/logo" align="center" height="80" alt="SpatiaLite"/>
+
+
 Contents
 --------
 
@@ -43,6 +49,7 @@ Features
 - Support mixed SQLite [data affinity](https://www.sqlite.org/datatype3.html) output (`INSERT`/`UPDATE`) for such dataypes as
 	- `timestamp`: `text`(default) or `int`,
  	- `uuid`: `text`(36) or `blob`(16)(default).
+- Bidirectional data transformation for `geometry` and `geography` data types for SpatiaLite ↔ PostGIS. [EWKB](https://libgeos.org/specifications/wkb/#extended-wkb) data transport is used.
 
 ### Pushdowning
 - `WHERE` clauses are pushdowned
@@ -92,20 +99,27 @@ For some Linux distributives internal packages with `sqlite_fdw` are avalilable.
 ### Source installation
 
 Prerequisites:
-* `libsqlite3-dev`, especially `sqlite.h`
-* `postgresql-server-dev`, especially `postgres.h`
 * `gcc`
 * `make`
+* `postgresql-server-dev`, especially `postgres.h`
+* `libsqlite3-dev`, especially `sqlite.h`
+* `libspatialite-dev` only for geoinformational data types support (SpatiaLite ↔ PostGIS) or full tests
 
 #### 1. Install SQLite & Postgres Development Libraries
 
 For Debian or Ubuntu:
+
 `apt-get install libsqlite3-dev`
+
 `apt-get install postgresql-server-dev-XX`, where XX matches your postgres version, i.e. `apt-get install postgresql-server-dev-15`
 
-You can also [download SQLite source code][1] and [build SQLite][2] with FTS5 for full-text search.
+`apt-get install libspatialite-dev` - for SpatiaLite ↔ PostGIS transformations
+
+Instead of `libsqlite3-dev` you can also [download SQLite source code][1] and [build SQLite][2] with FTS5 for full-text search.
 
 #### 2. Build and install sqlite_fdw
+
+You can comment `#define GIS_SUPPORT` in [sqlite_query.c](sqlite_query.c) and compile without `libspatialite-dev` and GIS support, but this library is necessary for full tests.
 
 Add a directory of `pg_config` to PATH and build and install `sqlite_fdw`.
 
@@ -146,6 +160,8 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 |         date |      V       |       V      |      T       |      V+      |    `NULL`    | ?            |
 |       float4 |      V+      |       ✔      |      T       |      -       |    `NULL`    | REAL         |
 |       float8 |      V+      |       ✔      |      T       |      -       |    `NULL`    | REAL         |
+|     geometry |      ∅       |       ∅      |      V+      |      ∅       |      ∅       | BLOB         |
+|    geography |      ∅       |       ∅      |      V+      |      ∅       |      ∅       | BLOB         |
 |         int2 |      V+      |       ?      |      T       |      -       |    `NULL`    | INT          |
 |         int4 |      V+      |       ?      |      T       |      -       |    `NULL`    | INT          |
 |         int8 |      ✔       |       ?      |      T       |      -       |    `NULL`    | INT          |
@@ -167,19 +183,19 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 - **database** as *string*, **required**, no default
 
   SQLite database path.
-  
+
 - **updatable** as *boolean*, optional, default *true*
 
   This option allow or disallow write operations on SQLite database file.
-  
+
 - **truncatable** as *boolean*, optional, default *true*
 
   Allows foreign tables to be truncated using the `TRUNCATE` command.
-  
+
 - **keep_connections** as *boolean*, optional, default *true*
-  
+
   Allows to keep connections to SQLite while there is no SQL operations between PostgreSQL and SQLite.
-  
+
 - **batch_size** as *integer*, optional, default *1*
 
   Specifies the number of rows which should be inserted in a single `INSERT` operation. This setting can be overridden for individual tables.
@@ -203,17 +219,17 @@ In OS `sqlite_fdw` works as executed code with permissions of user of PostgreSQL
   SQLite table name. Use if not equal to name of foreign table in PostgreSQL. Also see about [identifier case handling](#identifier-case-handling).
 
 - **truncatable** as *boolean*, optional, default from the same `CREATE SERVER` option
-  
+
   See `CREATE SERVER` options section for details.
 
 - **batch_size** as *integer*, optional, default from the same `CREATE SERVER` option
 
   See `CREATE SERVER` options section for details.
-  
+
 - **updatable** as *boolean*, optional, default *true*
 
   This option can allow or disallow write operations on a SQLite table independed of the same server option.
-  
+
 `sqlite_fdw` accepts the following column-level options via the
 `CREATE FOREIGN TABLE` command:
 
@@ -225,7 +241,7 @@ In OS `sqlite_fdw` works as executed code with permissions of user of PostgreSQL
 
 	Set preferred SQLite affinity for some PostgreSQL data types can be stored in different ways
 in SQLite (mixed affinity case). Updated and inserted values will have this affinity. Default preferred SQLite affinity for `timestamp` and `uuid` PostgreSQL data types is `text`.
-	
+
   - Use `INT` value for SQLite column (epoch Unix Time) to be treated/visualized as `timestamp` in PostgreSQL.
   - Use `BLOB` value for SQLite column to be treated/visualized as `uuid` in PostgreSQL 14+.
 
@@ -261,6 +277,8 @@ in SQLite (mixed affinity case). Updated and inserted values will have this affi
 | datetime     | timestamp        |
 | time         | time             |
 | date         | date             |
+| geometry     | geometry         |
+| geography    | geography        |
 
 ### TRUNCATE support
 
@@ -327,7 +345,7 @@ with names composed from ASCII base latin letters *only*.
 	CREATE TABLE T_dia (
 	  "Ä" INTEGER,
 	  "ä" NUMERIC
-	);		
+	);
 ```
 
 For SQLite there is no difference between
@@ -340,7 +358,7 @@ For SQLite there is no difference between
 ```
 For PostgreSQL the query with comment `№4` is independend query to table `T`, not to table `t` as other queries.
 Please note this table name composed from ASCII base latin letters *only*. This is not applicable for other
-alphabet systems or mixed names. This is because `toLower` operation in PostgreSQL is Unicode opration but 
+alphabet systems or mixed names. This is because `toLower` operation in PostgreSQL is Unicode opration but
 ASCII only operation in SQLite, hence other characters will not be changed.
 
 ```sql
@@ -398,7 +416,7 @@ There is [no character set metadata](https://www.sqlite.org/search?s=d&q=charact
 stored in SQLite, only [`PRAGMA encoding;`](https://www.sqlite.org/pragma.html#pragma_encoding) with UTF-only values (`UTF-8`, `UTF-16`, `UTF-16le`, `UTF-16be`). [SQLite text output function](https://www.sqlite.org/c3ref/column_blob.html) guarantees UTF-8 encoding.
 
 When `sqlite_fdw` connects to a SQLite, all strings are interpreted acording the PostgreSQL database's server encoding.
-It's not a problem if your PostgreSQL database encoding belongs to Unicode family. Otherewise interpretation transformation problems can occur. Some unproper for PostgreSQL database encoding characters will be replaced to default 'no such character' character or there will error like `character with byte sequence 0x** in encoding "UTF8" has no equivalent in encoding "**"`.
+It's not a problem if your PostgreSQL database encoding belongs to Unicode family. Otherewise interpretation transformation problems can occur. Some unproper for PostgreSQL database encoding characters will cause error like `character with byte sequence 0x** in encoding "UTF8" has no equivalent in encoding "**"`.
 
 Character case functions such as `upper`, `lower` and other are not pushed down because they does not work with UNICODE character in SQLite.
 
@@ -525,6 +543,7 @@ Limitations
 - `RETURNING` is not supported.
 
 ### Arrays
+Array support is experimental. Please be careful.
 - `sqlite_fdw` only supports `ARRAY` const, for example, `ANY (ARRAY[1, 2, 3])` or `ANY ('{1, 2 ,3}')`.
 - `sqlite_fdw` does not support `ARRAY` expression, for example, `ANY (ARRAY[c1, 1, c1+0])`.
 - For `ANY(ARRAY)` clause, `sqlite_fdw` deparses it using `IN` operator.

@@ -15,7 +15,7 @@ OBJS = connection.o option.o deparse.o sqlite_query.o sqlite_fdw.o sqlite_data_n
 EXTENSION = sqlite_fdw
 DATA = sqlite_fdw--1.0.sql sqlite_fdw--1.0--1.1.sql
 
-REGRESS = extra/sqlite_fdw_post extra/float4 extra/float8 extra/int4 extra/int8 extra/numeric extra/join extra/limit extra/aggregates extra/prepare extra/select_having extra/select extra/insert extra/update extra/timestamp extra/encodings extra/bool extra/uuid sqlite_fdw type aggregate selectfunc 
+REGRESS = extra/sqlite_fdw_post extra/float4 extra/float8 extra/int4 extra/int8 extra/numeric extra/postgis extra/join extra/limit extra/aggregates extra/prepare extra/select_having extra/select extra/insert extra/update extra/timestamp extra/encodings extra/bool extra/uuid sqlite_fdw type aggregate selectfunc 
 REGRESS_OPTS = --encoding=utf8
 
 SQLITE_LIB = sqlite3
@@ -28,7 +28,7 @@ else
 DLSUFFIX = .so
 endif
 
-SHLIB_LINK := -lsqlite3
+SHLIB_LINK := -lsqlite3 -lspatialite
 
 ifdef USE_PGXS
 PG_CONFIG = pg_config
