@@ -1501,8 +1501,13 @@ SELECT * FROM fts_table; -- should work
 ALTER TABLE fts_table ALTER COLUMN name TYPE int;
 --Testcase 160:
 SELECT * FROM fts_table; -- should fail
-ERROR:  SQLite data affinity "text" disallowed for PostgreSQL data type "integer"
-HINT:  In column "name" expected SQLite affinity "integer", incorrect value = 'this is name'
+ERROR:  SQLite value is not compatible with PostgreSQL column data type
+CONTEXT:  foreign table "fts_table"
+foreign column "name" have data type "integer"
+usual affinity "integer"
+SQLite affinity "text", length 12 bytes
+SQLite value 'this is name'
+In query there is whole-row reference to foreign table
 -- issue #62 github
 --Testcase 236:
 INSERT INTO noprimary VALUES (4, 'Test''s');

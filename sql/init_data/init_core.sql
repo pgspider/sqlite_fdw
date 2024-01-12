@@ -6,6 +6,8 @@ DROP TABLE IF EXISTS FLOAT8_TBL;
 DROP TABLE IF EXISTS FLOAT8_TMP;
 DROP TABLE IF EXISTS "type_FLOAT_INF";
 DROP VIEW  IF EXISTS "type_FLOAT_INF+";
+DROP TABLE IF EXISTS INT2_TBL;
+DROP TABLE IF EXISTS INT2_TMP;
 DROP TABLE IF EXISTS INT4_TBL;
 DROP TABLE IF EXISTS INT4_TMP;
 DROP TABLE IF EXISTS INT8_TBL;
@@ -21,8 +23,10 @@ CREATE TABLE FLOAT4_TBL (f1  REAL);
 CREATE TABLE FLOAT4_TMP (f1  REAL, id integer primary key autoincrement);
 CREATE TABLE FLOAT8_TBL(f1 DOUBLE PRECISION);
 CREATE TABLE FLOAT8_TMP (f1 DOUBLE PRECISION, f2 DOUBLE PRECISION, id integer primary key autoincrement);
+CREATE TABLE INT2_TBL(f1 int2);
+CREATE TABLE INT2_TMP (f1 int2, f2 smallint, id integer primary key autoincrement);
 CREATE TABLE INT4_TBL(f1 int4);
-CREATE TABLE INT4_TMP (f1 int4, f2 int,  id integer primary key autoincrement);
+CREATE TABLE INT4_TMP (f1 int4, f2 int, id integer primary key autoincrement);
 CREATE TABLE INT8_TBL(
 	q1 int8,
 	q2 int8,
@@ -37,7 +41,6 @@ CREATE TABLE INT8_TMP(
 	id integer primary key autoincrement
 );
 
-CREATE TABLE INT2_TBL(f1 int2);
 --Testcase 1:
 INSERT INTO INT2_TBL(f1) VALUES ('0   ');
 --Testcase 2:

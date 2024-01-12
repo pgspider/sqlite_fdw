@@ -121,8 +121,13 @@ SELECT * FROM "type_BOOLEAN+";
 
 --Testcase 34: ERR - invalid text affinity because not ISO:SQL text input
 SELECT * FROM "type_BOOLEAN+";
-ERROR:  SQLite data affinity "text" disallowed for PostgreSQL data type "boolean"
-HINT:  In column "b" expected SQLite affinity "integer", incorrect value = 'x'
+ERROR:  SQLite value is not compatible with PostgreSQL column data type
+CONTEXT:  foreign table "type_BOOLEAN+"
+foreign column "b" have data type "boolean"
+usual affinity "integer"
+SQLite affinity "text", length 1 bytes
+SQLite value 'x'
+In query there is reference to foreign column
 --Testcase 35
 DELETE FROM "type_BOOLEAN" WHERE i = 23;
 --Testcase 36:
@@ -249,8 +254,13 @@ INSERT INTO "type_BOOLEAN"(i, b) VALUES (27, 3.14159265358979);
 ALTER FOREIGN TABLE "type_BOOLEAN" ALTER COLUMN "b" TYPE bool;
 --Testcase 49: ERR - invalid float for bool column
 SELECT * FROM "type_BOOLEAN+";
-ERROR:  SQLite data affinity "real" disallowed for PostgreSQL data type "boolean"
-HINT:  In column "b" expected SQLite affinity "integer", incorrect value = '3.14159265358979'
+ERROR:  SQLite value is not compatible with PostgreSQL column data type
+CONTEXT:  foreign table "type_BOOLEAN+"
+foreign column "b" have data type "boolean"
+usual affinity "integer"
+SQLite affinity "real"
+SQLite value '3.14159265358979'
+In query there is reference to foreign column
 --Testcase 50
 DELETE FROM "type_BOOLEAN" WHERE i = 27;
 --Testcase 51:

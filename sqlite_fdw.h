@@ -170,7 +170,6 @@ typedef struct SQLiteFdwExecState
 	AttrNumber *junk_idx;
 }			SqliteFdwExecState;
 
-
 typedef struct SqliteFdwRelationInfo
 {
 	/*
@@ -375,7 +374,7 @@ void		sqlite_rel_connection(sqlite3 * conn);
 void		sqlitefdw_report_error(int elevel, sqlite3_stmt * stmt, sqlite3 * conn, const char *sql, int rc);
 void		sqlite_cache_stmt(ForeignServer *server, sqlite3_stmt * *stmt);
 
-NullableDatum sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid, AttInMetadata *attinmeta, AttrNumber attnum, int sqlite_value_affinity, int AffinityBehaviourFlags);
+NullableDatum sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *attinmeta, AttrNumber attnum, int sqlite_value_affinity, int AffinityBehaviourFlags);
 
 void		sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt * stmt, bool *isnull, Oid relid);
 extern void sqlite_do_sql_command(sqlite3 * conn, const char *sql, int level, List **busy_connection);
@@ -383,6 +382,7 @@ extern void sqlite_do_sql_command(sqlite3 * conn, const char *sql, int level, Li
 void sqlite_fdw_data_norm_functs_init(sqlite3* db);
 
 /* sqlite_query.c haders */
-sqlite3_int64 binstr2int64(const char *s);
+sqlite3_int64
+			binstr2int64(const char *s);
 
 #endif							/* SQLITE_FDW_H */

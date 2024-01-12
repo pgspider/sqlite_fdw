@@ -442,11 +442,21 @@ ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" TYPE uuid;
 --Testcase 189:
 SELECT * FROM "type_UUID+" WHERE "i" = 42;
 ERROR:  PostgreSQL uuid data type allows only 16 bytes SQLite blob value
-HINT:  incorrect value is 17 bytes length
+CONTEXT:  foreign table "type_UUID+"
+foreign column "u" have data type "uuid"
+usual affinity "blob"
+SQLite affinity "blob", length 17 bytes
+SQLite hex value a0eebc999c0b4ef8bb6d6bb9bd380a11f1
+In query there is reference to foreign column
 --Testcase 190:
 SELECT * FROM "type_UUID+" WHERE "i" = 43;
 ERROR:  PostgreSQL uuid data type allows only 16 bytes SQLite blob value
-HINT:  incorrect value is 15 bytes length
+CONTEXT:  foreign table "type_UUID+"
+foreign column "u" have data type "uuid"
+usual affinity "blob"
+SQLite affinity "blob", length 15 bytes
+SQLite hex value b0eebc999c0b4ef8bb6d6bb9bd380a
+In query there is reference to foreign column
 --Testcase 191:
 EXPLAIN VERBOSE
 DELETE FROM "type_UUID" WHERE "i" IN (42, 43);

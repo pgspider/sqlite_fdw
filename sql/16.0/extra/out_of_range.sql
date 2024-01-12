@@ -22,44 +22,52 @@ INSERT INTO INT4_TMP VALUES (x'7FFFFFFF'::int8 + 1, 0);
 ALTER FOREIGN TABLE INT4_TMP ALTER COLUMN f1 TYPE int4;
 --Testcase 07:
 SELECT * FROM INT4_TMP; -- overflow
-
 --Testcase 08:
-DELETE FROM INT4_TMP;
---Testcase 09:
-ALTER FOREIGN TABLE INT4_TMP ALTER COLUMN f1 TYPE int8;
---Testcase 10:
-INSERT INTO INT4_TMP VALUES (-(x'7FFFFFFF'::int8) - 2, 0);
---Testcase 11:
-ALTER FOREIGN TABLE INT4_TMP ALTER COLUMN f1 TYPE int4;
---Testcase 12:
-SELECT * FROM INT4_TMP; -- overflow
+SELECT f1 FROM INT4_TMP; -- overflow
 
+--Testcase 09:
+DELETE FROM INT4_TMP;
+--Testcase 10:
+ALTER FOREIGN TABLE INT4_TMP ALTER COLUMN f1 TYPE int8;
+--Testcase 11:
+INSERT INTO INT4_TMP VALUES (-(x'7FFFFFFF'::int8) - 2, 0);
+--Testcase 12:
+ALTER FOREIGN TABLE INT4_TMP ALTER COLUMN f1 TYPE int4;
 --Testcase 13:
-CREATE FOREIGN TABLE INT2_TBL(f1 int2 OPTIONS (key 'true')) SERVER sqlite_svr;
+SELECT * FROM INT4_TMP; -- overflow
 --Testcase 14:
-CREATE FOREIGN TABLE INT2_TMP(f1 int2, f2 int2, id int OPTIONS (key 'true')) SERVER sqlite_svr; 
+SELECT f1 FROM INT4_TMP; -- overflow
 
 --Testcase 15:
-DELETE FROM INT2_TMP;
+CREATE FOREIGN TABLE INT2_TBL(f1 int2 OPTIONS (key 'true')) SERVER sqlite_svr;
 --Testcase 16:
-ALTER FOREIGN TABLE INT2_TMP ALTER COLUMN f1 TYPE int4;
---Testcase 17:
-INSERT INTO INT2_TMP VALUES (x'7FFF'::int8 + 1, 0);
---Testcase 18:
-ALTER FOREIGN TABLE INT2_TMP ALTER COLUMN f1 TYPE int2;
---Testcase 19:
-SELECT * FROM INT2_TMP; -- overflow
+CREATE FOREIGN TABLE INT2_TMP(f1 int2, f2 int2, id int OPTIONS (key 'true')) SERVER sqlite_svr; 
 
---Testcase 20:
+--Testcase 17:
 DELETE FROM INT2_TMP;
---Testcase 21:
+--Testcase 18:
 ALTER FOREIGN TABLE INT2_TMP ALTER COLUMN f1 TYPE int4;
---Testcase 22:
-INSERT INTO INT2_TMP VALUES (-(x'7FFF'::int8) - 2, 0);
---Testcase 23:
+--Testcase 19:
+INSERT INTO INT2_TMP VALUES (x'7FFF'::int8 + 1, 0);
+--Testcase 20:
 ALTER FOREIGN TABLE INT2_TMP ALTER COLUMN f1 TYPE int2;
---Testcase 24:
+--Testcase 21:
 SELECT * FROM INT2_TMP; -- overflow
+--Testcase 22:
+SELECT f1 FROM INT2_TMP; -- overflow
+
+--Testcase 23:
+DELETE FROM INT2_TMP;
+--Testcase 24:
+ALTER FOREIGN TABLE INT2_TMP ALTER COLUMN f1 TYPE int4;
+--Testcase 25:
+INSERT INTO INT2_TMP VALUES (-(x'7FFF'::int8) - 2, 0);
+--Testcase 26:
+ALTER FOREIGN TABLE INT2_TMP ALTER COLUMN f1 TYPE int2;
+--Testcase 27:
+SELECT * FROM INT2_TMP; -- overflow
+--Testcase 28:
+SELECT f1 FROM INT2_TMP; -- overflow
 
 --Testcase 003:
 DROP SERVER sqlite_svr CASCADE;
