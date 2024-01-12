@@ -227,7 +227,8 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 					case SQLITE_FLOAT: /* <-- proper and recommended SQLite affinity of value for pgtyp */
 						{
 							double		value = sqlite3_value_double(val);
-							return (struct NullableDatum) {Float4GetDatum((float4) value), false};
+							Datum		d = DirectFunctionCall1(dtof, Float8GetDatum((float8)value));
+							return (struct NullableDatum) {d, false};
 						}
 					case SQLITE_INTEGER:
 					case SQLITE_BLOB:
@@ -357,7 +358,7 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 							sqlite_value_to_pg_error();
 							break;
 						}
-					case SQLITE_BLOB: /* <-- first proper and recommended SQLite affinity of value for pgtyp */
+					case SQLITE_BLOB: /* <-- proper and recommended SQLite affinity of value for pgtyp */
 						{
 							if (value_byte_size_blob_or_utf8 != UUID_LEN)
 							{
@@ -376,12 +377,12 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 								break;
 							}
 						}
-					case SQLITE3_TEXT: /* <-- second proper and recommended SQLite affinity of value for pgtyp */
+					/* SQLite UUID output always normalized to blob.
+					 * In sqlite_data_norm.c there is special additional C function.
+					 */
+					case SQLITE3_TEXT:
 						{
 							if (value_byte_size_blob_or_utf8)
-								/* SQLite UUID normalization added C function always get blob
-								 * form, of UUID, hence this case should cause error
-								 */
 								sqlite_value_to_pg_error();
 							else
 								pg_column_void_text_error();
