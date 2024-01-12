@@ -1,5 +1,5 @@
 --
--- INT4
+-- INT4 Based on PostgreSQL tests, please don't add additional tests here, use other test files
 --
 --Testcase 61:
 CREATE EXTENSION sqlite_fdw;
@@ -471,28 +471,6 @@ SELECT f1 FROM special_case_int4;
 DELETE FROM special_case_int4;
 INSERT INTO special_case_int4 VALUES ('100__000'::int4);
 SELECT f1 FROM special_case_int4;
-
---Testcase 135:
-DELETE FROM INT4_TMP;
---Testcase 136:
-ALTER FOREIGN TABLE INT4_TMP ALTER COLUMN f1 TYPE int8;
---Testcase 137:
-INSERT INTO INT4_TMP VALUES (x'7FFFFFFF'::int8 + 1, 0);
---Testcase 138:
-ALTER FOREIGN TABLE INT4_TMP ALTER COLUMN f1 TYPE int4;
---Testcase 139:
-SELECT * FROM INT4_TMP; -- overflow
-
---Testcase 140:
-DELETE FROM INT4_TMP;
---Testcase 141:
-ALTER FOREIGN TABLE INT4_TMP ALTER COLUMN f1 TYPE int8;
---Testcase 142:
-INSERT INTO INT4_TMP VALUES (-(x'7FFFFFFF'::int8) - 2, 0);
---Testcase 143:
-ALTER FOREIGN TABLE INT4_TMP ALTER COLUMN f1 TYPE int4;
---Testcase 144:
-SELECT * FROM INT4_TMP; -- overflow
 
 -- Clean up
 DO $d$
