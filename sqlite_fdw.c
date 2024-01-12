@@ -5942,6 +5942,8 @@ sqlite_affinity_eqv_to_pgtype(Oid type)
 		case INT4OID:
 		case INT8OID:
 		case BOOLOID:
+		case BITOID:
+		case VARBITOID:
 			return SQLITE_INTEGER;
 		case FLOAT4OID:
 		case FLOAT8OID:

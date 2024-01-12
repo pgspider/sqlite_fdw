@@ -310,6 +310,7 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 					{
 						if (value_byte_size_blob_or_utf8)
 							valstr = sqlite_text_value_to_pg_db_encoding(val);
+							/* !!! use valstr later! */
 						else
 							pg_column_void_text_error();
 						break;
@@ -346,8 +347,8 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 				}
 				break;
 			}
-			case UUIDOID:
-				{
+		case UUIDOID:
+			{
 				switch (sqlite_value_affinity)
 				{
 					case SQLITE_INTEGER:
@@ -376,35 +377,61 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 							}
 						}
 					case SQLITE3_TEXT: /* <-- second proper and recommended SQLite affinity of value for pgtyp */
-					{
-						if (value_byte_size_blob_or_utf8)
-							/* SQLite UUID normalization added C function always get blob
-							 * form, of UUID, hence this case should cause error
-							 */
-							sqlite_value_to_pg_error();
-						else
-							pg_column_void_text_error();
-						break;
-					}
+						{
+							if (value_byte_size_blob_or_utf8)
+								/* SQLite UUID normalization added C function always get blob
+								 * form, of UUID, hence this case should cause error
+								 */
+								sqlite_value_to_pg_error();
+							else
+								pg_column_void_text_error();
+							break;
+						}
 					default:
-					{
-						sqlite_value_to_pg_error();
-						break;
-					}
+						{
+							sqlite_value_to_pg_error();
+							break;
+						}
 				}
 				break;
 			}
 		case VARBITOID:
 		case BITOID:
 			{
-				char * buffer = (char *) palloc0(SQLITE_FDW_BIT_DATATYPE_BUF_SIZE);
-				sqlite3_int64 sqlti = sqlite3_value_int64(val);
+				switch (sqlite_value_affinity)
+				{
+					case SQLITE_INTEGER: /* <-- proper and recommended SQLite affinity of value for pgtyp */
+						{
+							char * buffer = (char *) palloc0(SQLITE_FDW_BIT_DATATYPE_BUF_SIZE);
+							sqlite3_int64 sqlti = sqlite3_value_int64(val);
 
-				buffer = int642binstr(sqlti, buffer, SQLITE_FDW_BIT_DATATYPE_BUF_SIZE);
-				valstr = buffer;
-				elog(DEBUG4, "sqlite_fdw : BIT buf l=%ld v = %s", SQLITE_FDW_BIT_DATATYPE_BUF_SIZE, buffer);
-				break;
-			}
+							buffer = int642binstr(sqlti, buffer, SQLITE_FDW_BIT_DATATYPE_BUF_SIZE);
+							elog(DEBUG4, "sqlite_fdw : BIT buf l=%ld v = %s", SQLITE_FDW_BIT_DATATYPE_BUF_SIZE, buffer);
+							valstr = buffer;
+							break; /* !!! use valstr later! */
+						}
+					case SQLITE_FLOAT:
+					case SQLITE_BLOB:
+						{
+							sqlite_value_to_pg_error();
+							break;
+						}
+					case SQLITE3_TEXT:
+						{
+							if (value_byte_size_blob_or_utf8)
+								sqlite_value_to_pg_error();
+							else
+								pg_column_void_text_error();
+							break;
+						}
+					default:
+						{
+							sqlite_value_to_pg_error();
+							break;
+						}
+					}
+					break;
+				}
 		/* some popular datatypes for default algorythm branch
 		 * case BPCHAROID:
 		 * case VARCHAROID:
