@@ -14,17 +14,23 @@
 #include "sqlite_fdw.h"
 
 #include <sqlite3.h>
-#include <stdio.h>
 
-#include "access/reloptions.h"
-#include "access/htup_details.h"
-#include "access/sysattr.h"
+#include "catalog/pg_collation.h"
+#include "catalog/pg_type.h"
+#include "commands/defrem.h"
+#include "commands/explain.h"
 #include "foreign/fdwapi.h"
-#include "foreign/foreign.h"
+#include "funcapi.h"
 #include "mb/pg_wchar.h"
+#include "miscadmin.h"
+#include "nodes/makefuncs.h"
+#include "nodes/nodeFuncs.h"
+#if (PG_VERSION_NUM < 140000)
+	#include "optimizer/clauses.h"
+#endif
 #include "optimizer/pathnode.h"
 #if PG_VERSION_NUM >= 120000
-#include "optimizer/appendinfo.h"
+	#include "optimizer/appendinfo.h"
 #endif
 #include "optimizer/planmain.h"
 #include "optimizer/planner.h"
@@ -32,42 +38,20 @@
 #if (PG_VERSION_NUM >= 130010 && PG_VERSION_NUM < 140000) || \
 	(PG_VERSION_NUM >= 140007 && PG_VERSION_NUM < 150000) || \
 	(PG_VERSION_NUM >= 150002)
-#include "optimizer/inherit.h"
+	#include "optimizer/inherit.h"
 #endif
-#include "optimizer/clauses.h"
-#include "optimizer/restrictinfo.h"
 #include "optimizer/paths.h"
 #include "optimizer/prep.h"
 #include "optimizer/restrictinfo.h"
 #include "optimizer/tlist.h"
-#include "funcapi.h"
-#include "utils/builtins.h"
-#include "utils/formatting.h"
-#include "utils/rel.h"
-#include "utils/lsyscache.h"
-#include "utils/array.h"
-#include "utils/date.h"
-#include "utils/hsearch.h"
-#include "utils/timestamp.h"
-#include "utils/guc.h"
-#include "utils/memutils.h"
-#include "catalog/pg_collation.h"
-#include "catalog/pg_foreign_server.h"
-#include "catalog/pg_foreign_table.h"
-#include "catalog/pg_user_mapping.h"
-#include "catalog/pg_aggregate.h"
-#include "catalog/pg_type.h"
-#include "commands/defrem.h"
-#include "commands/explain.h"
-#include "commands/vacuum.h"
-#include "storage/ipc.h"
-#include "miscadmin.h"
-#include "nodes/makefuncs.h"
-#include "nodes/nodeFuncs.h"
 #include "parser/parsetree.h"
 #include "parser/parse_type.h"
-#include "utils/typcache.h"
+#include "utils/builtins.h"
+#include "utils/formatting.h"
+#include "utils/lsyscache.h"
+#include "utils/guc.h"
 #include "utils/selfuncs.h"
+#include "storage/ipc.h"
 
 extern PGDLLEXPORT void _PG_init(void);
 

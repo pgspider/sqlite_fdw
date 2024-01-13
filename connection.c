@@ -11,23 +11,18 @@
  */
 
 #include "postgres.h"
-
 #include "sqlite_fdw.h"
 
 #include "access/xact.h"
-#include "mb/pg_wchar.h"
-#include "funcapi.h"
-#include "miscadmin.h"
-#include "utils/hsearch.h"
-#include "utils/inval.h"
-#include "utils/memutils.h"
-#include "utils/resowner.h"
-#include "utils/syscache.h"
-#include "utils/builtins.h"
 #include "commands/defrem.h"
+#include "utils/builtins.h"
+#include "utils/inval.h"
+#include "utils/syscache.h"
+#include "optimizer/cost.h"
+#if (PG_VERSION_NUM >= 140010 && PG_VERSION_NUM < 150000)
+	#include "utils/tuplestore.h"
+#endif
 
-/* Length of host */
-#define HOST_LEN 256
 
 /*
  * Connection cache hash table entry

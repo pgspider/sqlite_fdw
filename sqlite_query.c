@@ -12,8 +12,6 @@
 
 #include "postgres.h"
 #include "sqlite_fdw.h"
-
-#include <stdio.h>
 #include <sqlite3.h>
 
 #include "catalog/pg_type_d.h"
@@ -22,11 +20,9 @@
 #include "utils/uuid.h"
 #include "utils/timestamp.h"
 #include "nodes/makefuncs.h"
-#include "catalog/pg_type.h"
 #include "parser/parse_type.h"
 #include "mb/pg_wchar.h"
 #include "commands/defrem.h"
-#include "c.h"
 
 static char *
 			get_column_option_string(Oid relid, int varattno, char *optionname);

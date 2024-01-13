@@ -11,37 +11,30 @@
  */
 
 #include "postgres.h"
-
 #include "sqlite_fdw.h"
 
-#include "pgtime.h"
-#include "access/heapam.h"
-#include "access/htup_details.h"
-#include "access/sysattr.h"
 #include "catalog/pg_aggregate.h"
 #include "catalog/pg_collation.h"
 #include "catalog/pg_namespace.h"
 #include "catalog/pg_operator.h"
-#include "catalog/pg_opfamily.h"
 #include "catalog/pg_proc.h"
 #if PG_VERSION_NUM >= 160000
-#include "catalog/pg_ts_config.h"
+	#include "catalog/pg_ts_config.h"
 #endif
 #include "catalog/pg_ts_dict.h"
-#include "catalog/pg_type.h"
+#if (PG_VERSION_NUM < 130000)
+	#include "catalog/pg_type.h"
+#endif
 #include "commands/defrem.h"
+#include "mb/pg_wchar.h"
 #include "nodes/nodeFuncs.h"
-#include "nodes/plannodes.h"
-#include "optimizer/clauses.h"
+//#include "optimizer/clauses.h"
 #include "optimizer/tlist.h"
 #include "parser/parsetree.h"
 #include "utils/builtins.h"
 #include "utils/lsyscache.h"
 #include "utils/syscache.h"
-#include "utils/timestamp.h"
 #include "utils/typcache.h"
-#include "commands/tablecmds.h"
-#include "mb/pg_wchar.h"
 
 /*
  * Global context for sqlite_foreign_expr_walker's search of an expression tree.
