@@ -40,7 +40,7 @@
 -- ================
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr;
 SELECT * FROM "Unicode data";
 DROP FOREIGN TABLE "Unicode data";
@@ -52,7 +52,7 @@ CREATE DATABASE "contrib_regression_EUC_JP" ENCODING EUC_JP LC_CTYPE='ja_JP.eucj
 \connect "contrib_regression_EUC_JP"
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
@@ -189,7 +189,7 @@ CREATE DATABASE "contrib_regression_EUC_KR" ENCODING EUC_KR LC_CTYPE='ko_KR.euck
 \connect "contrib_regression_EUC_KR"
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
@@ -326,7 +326,7 @@ CREATE DATABASE "contrib_regression_ISO_8859_5" ENCODING ISO_8859_5 LC_CTYPE='PO
 \connect "contrib_regression_ISO_8859_5"
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
@@ -463,7 +463,7 @@ CREATE DATABASE "contrib_regression_ISO_8859_6" ENCODING ISO_8859_6 LC_CTYPE='PO
 \connect "contrib_regression_ISO_8859_6"
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
@@ -600,7 +600,7 @@ CREATE DATABASE "contrib_regression_ISO_8859_7" ENCODING ISO_8859_7 LC_CTYPE='PO
 \connect "contrib_regression_ISO_8859_7"
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
@@ -737,7 +737,7 @@ CREATE DATABASE "contrib_regression_ISO_8859_8" ENCODING ISO_8859_8 LC_CTYPE='PO
 \connect "contrib_regression_ISO_8859_8"
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
@@ -874,7 +874,7 @@ CREATE DATABASE "contrib_regression_ISO_8859_9" ENCODING ISO_8859_9 LC_CTYPE='PO
 \connect "contrib_regression_ISO_8859_9"
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
@@ -1011,7 +1011,7 @@ CREATE DATABASE "contrib_regression_LATIN1" ENCODING LATIN1 LC_CTYPE='POSIX' LC_
 \connect "contrib_regression_LATIN1"
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
@@ -1148,7 +1148,7 @@ CREATE DATABASE "contrib_regression_LATIN2" ENCODING LATIN2 LC_CTYPE='POSIX' LC_
 \connect "contrib_regression_LATIN2"
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
@@ -1285,7 +1285,7 @@ CREATE DATABASE "contrib_regression_LATIN3" ENCODING LATIN3 LC_CTYPE='POSIX' LC_
 \connect "contrib_regression_LATIN3"
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
@@ -1422,7 +1422,7 @@ CREATE DATABASE "contrib_regression_LATIN4" ENCODING LATIN4 LC_CTYPE='POSIX' LC_
 \connect "contrib_regression_LATIN4"
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
@@ -1559,7 +1559,7 @@ CREATE DATABASE "contrib_regression_LATIN5" ENCODING LATIN5 LC_CTYPE='POSIX' LC_
 \connect "contrib_regression_LATIN5"
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
@@ -1696,7 +1696,7 @@ CREATE DATABASE "contrib_regression_LATIN6" ENCODING LATIN6 LC_CTYPE='POSIX' LC_
 \connect "contrib_regression_LATIN6"
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
@@ -1833,7 +1833,7 @@ CREATE DATABASE "contrib_regression_LATIN7" ENCODING LATIN7 LC_CTYPE='POSIX' LC_
 \connect "contrib_regression_LATIN7"
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
@@ -1970,7 +1970,7 @@ CREATE DATABASE "contrib_regression_LATIN8" ENCODING LATIN8 LC_CTYPE='POSIX' LC_
 \connect "contrib_regression_LATIN8"
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
@@ -2107,7 +2107,7 @@ CREATE DATABASE "contrib_regression_LATIN9" ENCODING LATIN9 LC_CTYPE='POSIX' LC_
 \connect "contrib_regression_LATIN9"
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
@@ -2244,7 +2244,7 @@ CREATE DATABASE "contrib_regression_LATIN10" ENCODING LATIN10 LC_CTYPE='POSIX' L
 \connect "contrib_regression_LATIN10"
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
@@ -2381,7 +2381,7 @@ CREATE DATABASE "contrib_regression_WIN1250" ENCODING WIN1250 LC_CTYPE='POSIX' L
 \connect "contrib_regression_WIN1250"
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
@@ -2518,7 +2518,7 @@ CREATE DATABASE "contrib_regression_WIN1251" ENCODING WIN1251 LC_CTYPE='bg_BG' L
 \connect "contrib_regression_WIN1251"
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
@@ -2655,7 +2655,7 @@ CREATE DATABASE "contrib_regression_WIN1252" ENCODING WIN1252 LC_CTYPE='POSIX' L
 \connect "contrib_regression_WIN1252"
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
@@ -2792,7 +2792,7 @@ CREATE DATABASE "contrib_regression_WIN1253" ENCODING WIN1253 LC_CTYPE='POSIX' L
 \connect "contrib_regression_WIN1253"
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
@@ -2929,7 +2929,7 @@ CREATE DATABASE "contrib_regression_WIN1254" ENCODING WIN1254 LC_CTYPE='POSIX' L
 \connect "contrib_regression_WIN1254"
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
@@ -3066,7 +3066,7 @@ CREATE DATABASE "contrib_regression_WIN1255" ENCODING WIN1255 LC_CTYPE='POSIX' L
 \connect "contrib_regression_WIN1255"
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
@@ -3203,7 +3203,7 @@ CREATE DATABASE "contrib_regression_WIN1256" ENCODING WIN1256 LC_CTYPE='POSIX' L
 \connect "contrib_regression_WIN1256"
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
@@ -3341,7 +3341,7 @@ CREATE DATABASE "contrib_regression_WIN1257" ENCODING WIN1257 LC_CTYPE='POSIX' L
 \connect "contrib_regression_WIN1257"
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';
@@ -3478,7 +3478,7 @@ CREATE DATABASE "contrib_regression_SQL_ASCII" ENCODING SQL_ASCII LC_CTYPE='POSI
 \connect "contrib_regression_SQL_ASCII"
 CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 CREATE FOREIGN TABLE "Unicode data"(i text OPTIONS (key 'true'), t text) SERVER sqlite_svr; 
 -- EUC_JP
 SELECT * FROM "Unicode data" WHERE i = 'jap';

@@ -166,14 +166,14 @@ CREATE TABLE dates (
 CREATE TABLE btg(id int primary key, p int, v text, c float, d float, e int);
 
 .separator "\t"
-.import /tmp/onek.data onek
-.import /tmp/onek.data onek2
-.import /tmp/tenk.data tenk1
-.import /tmp/agg.data aggtest
-.import /tmp/student.data student
-.import /tmp/person.data person
-.import /tmp/streets.data road
-.import /tmp/datetimes.data dates
+.import /tmp/sqlite_fdw_test/onek.data onek
+.import /tmp/sqlite_fdw_test/onek.data onek2
+.import /tmp/sqlite_fdw_test/tenk.data tenk1
+.import /tmp/sqlite_fdw_test/agg.data aggtest
+.import /tmp/sqlite_fdw_test/student.data student
+.import /tmp/sqlite_fdw_test/person.data person
+.import /tmp/sqlite_fdw_test/streets.data road
+.import /tmp/sqlite_fdw_test/datetimes.data dates
 
 --Testcase 7:
 INSERT INTO tenk2 SELECT * FROM tenk1;
