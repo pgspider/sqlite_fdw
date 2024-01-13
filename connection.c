@@ -15,13 +15,13 @@
 
 #include "access/xact.h"
 #include "commands/defrem.h"
+#if (PG_VERSION_NUM >= 140000 && PG_VERSION_NUM < 150000)
+	#include "miscadmin.h"
+#endif
+#include "optimizer/cost.h"
 #include "utils/builtins.h"
 #include "utils/inval.h"
 #include "utils/syscache.h"
-#include "optimizer/cost.h"
-#if (PG_VERSION_NUM >= 140010 && PG_VERSION_NUM < 150000)
-	#include "utils/tuplestore.h"
-#endif
 
 
 /*
