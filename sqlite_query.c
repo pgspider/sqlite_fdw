@@ -12,17 +12,19 @@
 
 #include "postgres.h"
 #include "sqlite_fdw.h"
+
 #include <sqlite3.h>
 
 #include "catalog/pg_type_d.h"
-#include "utils/builtins.h"
-#include "utils/lsyscache.h"
-#include "utils/uuid.h"
-#include "utils/timestamp.h"
+#include "commands/defrem.h"
+#include "mb/pg_wchar.h"
 #include "nodes/makefuncs.h"
 #include "parser/parse_type.h"
-#include "mb/pg_wchar.h"
-#include "commands/defrem.h"
+#include "utils/builtins.h"
+#include "utils/lsyscache.h"
+#include "utils/timestamp.h"
+#include "utils/uuid.h"
+
 
 static char *
 			get_column_option_string(Oid relid, int varattno, char *optionname);
