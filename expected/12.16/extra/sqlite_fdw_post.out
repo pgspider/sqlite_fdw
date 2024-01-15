@@ -4623,30 +4623,30 @@ ALTER FOREIGN TABLE ft1 ALTER COLUMN c8 TYPE int;
 --Testcase 273:
 SELECT * FROM ft1 WHERE c1 = 1;
 ERROR:  SQLite value is not compatible with PostgreSQL column data type
-HINT:  SQLite value 'foo'(
-affinity "text", length 3 bytes)
-CONTEXT:  foreign table "ft1"foreign column "c8" have data type "integer" (usual affinity "integer")
+HINT:  SQLite value 'foo'
+(affinity "text", length 3 bytes)
+CONTEXT:  foreign table "ft1" foreign column "c8" have data type "integer" (usual affinity "integer")
 In query there is reference to foreign column
 --Testcase 274:
 SELECT  ft1.c1,  ft2.c2, ft1.c8 FROM ft1, ft2 WHERE ft1.c1 = ft2.c1 AND ft1.c1 = 1;
 ERROR:  SQLite value is not compatible with PostgreSQL column data type
-HINT:  SQLite value 'foo'(
-affinity "text", length 3 bytes)
-CONTEXT:  foreign table "ft1"foreign column "c8" have data type "integer" (usual affinity "integer")
+HINT:  SQLite value 'foo'
+(affinity "text", length 3 bytes)
+CONTEXT:  foreign table "ft1" foreign column "c8" have data type "integer" (usual affinity "integer")
 In query there is reference to foreign column
 --Testcase 275:
 SELECT  ft1.c1,  ft2.c2, ft1 FROM ft1, ft2 WHERE ft1.c1 = ft2.c1 AND ft1.c1 = 1;
 ERROR:  SQLite value is not compatible with PostgreSQL column data type
-HINT:  SQLite value 'foo'(
-affinity "text", length 3 bytes)
-CONTEXT:  foreign table "ft1"foreign column "c8" have data type "integer" (usual affinity "integer")
+HINT:  SQLite value 'foo'
+(affinity "text", length 3 bytes)
+CONTEXT:  foreign table "ft1" foreign column "c8" have data type "integer" (usual affinity "integer")
 In query there is reference to foreign column
 --Testcase 276:
 SELECT sum(c2), array_agg(c8) FROM ft1 GROUP BY c8;
 ERROR:  SQLite value is not compatible with PostgreSQL column data type
-HINT:  SQLite value 'foo'(
-affinity "text", length 3 bytes)
-CONTEXT:  foreign table "ft1"foreign column "c8" have data type "integer" (usual affinity "integer")
+HINT:  SQLite value 'foo'
+(affinity "text", length 3 bytes)
+CONTEXT:  foreign table "ft1" foreign column "c8" have data type "integer" (usual affinity "integer")
 In query there is reference to foreign column
 ALTER FOREIGN TABLE ft1 ALTER COLUMN c8 TYPE text;
 -- ===================================================================

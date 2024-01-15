@@ -5927,12 +5927,12 @@ conversion_error_callback(void *arg)
 						value_text );
 		err_hint_mess += sprintf(
 			err_hint_mess,
-			"("
+			"\n("
 			);
 		}
 		err_hint_mess += sprintf(
 			err_hint_mess,
-			"\naffinity \"%s\"",
+			"affinity \"%s\"",
 			sqlite_affinity
 			);
 		if (value_aff == SQLITE3_TEXT || value_aff == SQLITE_BLOB )
@@ -5960,7 +5960,7 @@ conversion_error_callback(void *arg)
 		err_cont_mess = err_cont_mess0;
 		err_cont_mess = err_cont_mess + sprintf(
 			err_cont_mess,
-			"foreign table \"%s\"foreign column \"%.*s\" have data type \"%s\" (usual affinity \"%s\")\n",
+			"foreign table \"%s\" foreign column \"%.*s\" have data type \"%s\" (usual affinity \"%s\")\n",
 			relname,
 			(int)sizeof(pgColND.data),
 			pgColND.data,
