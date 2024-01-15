@@ -5887,9 +5887,10 @@ conversion_error_callback(void *arg)
 		char	   *value_text = NULL;
 		bool		sqlite_value_as_hex_code = value_byte_size_blob_or_utf8 < max_logged_byte_length && ((GetDatabaseEncoding() != PG_UTF8 && value_aff == SQLITE3_TEXT) || (value_aff == SQLITE_BLOB));
 
-		/* Print problem SQLite values only for
+		/* Print problem SQLite value only for
 		 * - integer,
 		 * - float,
+		 * - short BLOBs,
 		 * - short text if database encoding is UTF-8
 		 *   incorrect output otherwise possible: UTF-8 in SQLite, but not supported charcters in PostgreSQL
 		 */
@@ -5912,17 +5913,17 @@ conversion_error_callback(void *arg)
 			if (sqlite_value_as_hex_code)
 				err_hint_mess += sprintf(
 						err_hint_mess,
-						"SQLite hex value %s\n",
+						"SQLite hex value %s",
 						value_text );
 			else if (value_aff != SQLITE_INTEGER && value_aff != SQLITE_FLOAT)
 				err_hint_mess += sprintf(
 						err_hint_mess,
-						"SQLite value '%s'\n",
+						"SQLite value '%s'",
 						value_text );
 			else
 				err_hint_mess += sprintf(
 						err_hint_mess,
-						"SQLite value %s\n",
+						"SQLite value %s",
 						value_text );
 		err_hint_mess += sprintf(
 			err_hint_mess,
@@ -5931,7 +5932,7 @@ conversion_error_callback(void *arg)
 		}
 		err_hint_mess += sprintf(
 			err_hint_mess,
-			"affinity \"%s\"",
+			"\naffinity \"%s\"",
 			sqlite_affinity
 			);
 		if (value_aff == SQLITE3_TEXT || value_aff == SQLITE_BLOB )
@@ -5959,7 +5960,7 @@ conversion_error_callback(void *arg)
 		err_cont_mess = err_cont_mess0;
 		err_cont_mess = err_cont_mess + sprintf(
 			err_cont_mess,
-			"foreign table \"%s\"\nforeign column \"%.*s\" have data type \"%s\" (usual affinity \"%s\")\n",
+			"foreign table \"%s\"foreign column \"%.*s\" have data type \"%s\" (usual affinity \"%s\")\n",
 			relname,
 			(int)sizeof(pgColND.data),
 			pgColND.data,
