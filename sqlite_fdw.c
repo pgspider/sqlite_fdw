@@ -53,9 +53,9 @@
 #include "utils/selfuncs.h"
 #include "storage/ipc.h"
 
+
 extern PGDLLEXPORT void _PG_init(void);
 
-bool		sqlite_load_library(void);
 static void sqlite_fdw_exit(int code, Datum arg);
 
 PG_MODULE_MAGIC;
