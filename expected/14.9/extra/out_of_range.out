@@ -21,17 +21,13 @@ ALTER FOREIGN TABLE INT4_TMP ALTER COLUMN f1 TYPE int4;
 --Testcase 07:
 SELECT * FROM INT4_TMP; -- overflow
 ERROR:  integer out of range
-HINT:  SQLite value 2147483648
-(affinity "integer")
-CONTEXT:  foreign table "int4_tmp" foreign column "f1" have data type "integer" (usual affinity "integer")
-In query there is whole-row reference to foreign table
+HINT:  SQLite value with "integer" affinity : 2147483648
+CONTEXT:  foreign table "int4_tmp" foreign column "f1" have data type "integer" (usual affinity "integer"), in query there is whole-row reference to foreign table
 --Testcase 08:
 SELECT f1 FROM INT4_TMP; -- overflow
 ERROR:  integer out of range
-HINT:  SQLite value 2147483648
-(affinity "integer")
-CONTEXT:  foreign table "int4_tmp" foreign column "f1" have data type "integer" (usual affinity "integer")
-In query there is whole-row reference to foreign table
+HINT:  SQLite value with "integer" affinity : 2147483648
+CONTEXT:  foreign table "int4_tmp" foreign column "f1" have data type "integer" (usual affinity "integer"), in query there is whole-row reference to foreign table
 --Testcase 09:
 DELETE FROM INT4_TMP;
 --Testcase 10:
@@ -43,17 +39,13 @@ ALTER FOREIGN TABLE INT4_TMP ALTER COLUMN f1 TYPE int4;
 --Testcase 13:
 SELECT * FROM INT4_TMP; -- overflow
 ERROR:  integer out of range
-HINT:  SQLite value -2147483649
-(affinity "integer")
-CONTEXT:  foreign table "int4_tmp" foreign column "f1" have data type "integer" (usual affinity "integer")
-In query there is whole-row reference to foreign table
+HINT:  SQLite value with "integer" affinity : -2147483649
+CONTEXT:  foreign table "int4_tmp" foreign column "f1" have data type "integer" (usual affinity "integer"), in query there is whole-row reference to foreign table
 --Testcase 14:
 SELECT f1 FROM INT4_TMP; -- overflow
 ERROR:  integer out of range
-HINT:  SQLite value -2147483649
-(affinity "integer")
-CONTEXT:  foreign table "int4_tmp" foreign column "f1" have data type "integer" (usual affinity "integer")
-In query there is whole-row reference to foreign table
+HINT:  SQLite value with "integer" affinity : -2147483649
+CONTEXT:  foreign table "int4_tmp" foreign column "f1" have data type "integer" (usual affinity "integer"), in query there is whole-row reference to foreign table
 --Testcase 15:
 CREATE FOREIGN TABLE INT2_TBL(f1 int2 OPTIONS (key 'true')) SERVER sqlite_svr;
 --Testcase 16:
@@ -69,17 +61,13 @@ ALTER FOREIGN TABLE INT2_TMP ALTER COLUMN f1 TYPE int2;
 --Testcase 21:
 SELECT * FROM INT2_TMP; -- overflow
 ERROR:  smallint out of range
-HINT:  SQLite value 32768
-(affinity "integer")
-CONTEXT:  foreign table "int2_tmp" foreign column "f1" have data type "smallint" (usual affinity "integer")
-In query there is whole-row reference to foreign table
+HINT:  SQLite value with "integer" affinity : 32768
+CONTEXT:  foreign table "int2_tmp" foreign column "f1" have data type "smallint" (usual affinity "integer"), in query there is whole-row reference to foreign table
 --Testcase 22:
 SELECT f1 FROM INT2_TMP; -- overflow
 ERROR:  smallint out of range
-HINT:  SQLite value 32768
-(affinity "integer")
-CONTEXT:  foreign table "int2_tmp" foreign column "f1" have data type "smallint" (usual affinity "integer")
-In query there is whole-row reference to foreign table
+HINT:  SQLite value with "integer" affinity : 32768
+CONTEXT:  foreign table "int2_tmp" foreign column "f1" have data type "smallint" (usual affinity "integer"), in query there is whole-row reference to foreign table
 --Testcase 23:
 DELETE FROM INT2_TMP;
 --Testcase 24:
@@ -91,17 +79,13 @@ ALTER FOREIGN TABLE INT2_TMP ALTER COLUMN f1 TYPE int2;
 --Testcase 27:
 SELECT * FROM INT2_TMP; -- overflow
 ERROR:  smallint out of range
-HINT:  SQLite value -32769
-(affinity "integer")
-CONTEXT:  foreign table "int2_tmp" foreign column "f1" have data type "smallint" (usual affinity "integer")
-In query there is whole-row reference to foreign table
+HINT:  SQLite value with "integer" affinity : -32769
+CONTEXT:  foreign table "int2_tmp" foreign column "f1" have data type "smallint" (usual affinity "integer"), in query there is whole-row reference to foreign table
 --Testcase 28:
 SELECT f1 FROM INT2_TMP; -- overflow
 ERROR:  smallint out of range
-HINT:  SQLite value -32769
-(affinity "integer")
-CONTEXT:  foreign table "int2_tmp" foreign column "f1" have data type "smallint" (usual affinity "integer")
-In query there is whole-row reference to foreign table
+HINT:  SQLite value with "integer" affinity : -32769
+CONTEXT:  foreign table "int2_tmp" foreign column "f1" have data type "smallint" (usual affinity "integer"), in query there is whole-row reference to foreign table
 --Testcase 29:
 CREATE FOREIGN TABLE INT8_TBL(q1 int8 OPTIONS (key 'true'), q2 int8 OPTIONS (key 'true')) SERVER sqlite_svr;
 --Testcase 31:
@@ -145,17 +129,13 @@ ALTER FOREIGN TABLE INT8_TBL ALTER COLUMN q1 TYPE int8;
 --Testcase 40:
 SELECT * FROM INT8_TBL; -- overflow
 ERROR:  bigint out of range
-HINT:  SQLite value 9.22337203685478e+18
-(affinity "real")
-CONTEXT:  foreign table "int8_tbl" foreign column "q1" have data type "bigint" (usual affinity "integer")
-In query there is whole-row reference to foreign table
+HINT:  SQLite value with "real" affinity : 9.22337203685478e+18
+CONTEXT:  foreign table "int8_tbl" foreign column "q1" have data type "bigint" (usual affinity "integer"), in query there is whole-row reference to foreign table
 --Testcase 41:
 SELECT q1 FROM INT8_TBL; -- overflow
 ERROR:  bigint out of range
-HINT:  SQLite value 9.22337203685478e+18
-(affinity "real")
-CONTEXT:  foreign table "int8_tbl" foreign column "q1" have data type "bigint" (usual affinity "integer")
-In query there is whole-row reference to foreign table
+HINT:  SQLite value with "real" affinity : 9.22337203685478e+18
+CONTEXT:  foreign table "int8_tbl" foreign column "q1" have data type "bigint" (usual affinity "integer"), in query there is whole-row reference to foreign table
 --Testcase 42:
 ALTER FOREIGN TABLE INT8_TBL ALTER COLUMN q1 TYPE double precision;
 --Testcase 43:
@@ -167,17 +147,13 @@ ALTER FOREIGN TABLE INT8_TBL ALTER COLUMN q1 TYPE int8;
 --Testcase 46:
 SELECT * FROM INT8_TBL; -- overflow
 ERROR:  bigint out of range
-HINT:  SQLite value -9.22337203685478e+19
-(affinity "real")
-CONTEXT:  foreign table "int8_tbl" foreign column "q1" have data type "bigint" (usual affinity "integer")
-In query there is whole-row reference to foreign table
+HINT:  SQLite value with "real" affinity : -9.22337203685478e+19
+CONTEXT:  foreign table "int8_tbl" foreign column "q1" have data type "bigint" (usual affinity "integer"), in query there is whole-row reference to foreign table
 --Testcase 47:
 SELECT q1 FROM INT8_TBL; -- overflow
 ERROR:  bigint out of range
-HINT:  SQLite value -9.22337203685478e+19
-(affinity "real")
-CONTEXT:  foreign table "int8_tbl" foreign column "q1" have data type "bigint" (usual affinity "integer")
-In query there is whole-row reference to foreign table
+HINT:  SQLite value with "real" affinity : -9.22337203685478e+19
+CONTEXT:  foreign table "int8_tbl" foreign column "q1" have data type "bigint" (usual affinity "integer"), in query there is whole-row reference to foreign table
 --Testcase 48:
 ALTER FOREIGN TABLE INT8_TBL ALTER COLUMN q1 TYPE double precision;
 --Testcase 49:

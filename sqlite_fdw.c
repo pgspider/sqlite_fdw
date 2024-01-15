@@ -5908,40 +5908,34 @@ conversion_error_callback(void *arg)
 	    }
 
 		err_hint_mess = err_hint_mess0;
-		if (value_text != NULL)
-		{
-			if (sqlite_value_as_hex_code)
-				err_hint_mess += sprintf(
-						err_hint_mess,
-						"SQLite hex value %s",
-						value_text );
-			else if (value_aff != SQLITE_INTEGER && value_aff != SQLITE_FLOAT)
-				err_hint_mess += sprintf(
-						err_hint_mess,
-						"SQLite value '%s'",
-						value_text );
-			else
-				err_hint_mess += sprintf(
-						err_hint_mess,
-						"SQLite value %s",
-						value_text );
 		err_hint_mess += sprintf(
 			err_hint_mess,
-			"\n("
-			);
-		}
-		err_hint_mess += sprintf(
-			err_hint_mess,
-			"affinity \"%s\"",
+			"SQLite value with \"%s\" affinity ",
 			sqlite_affinity
 			);
 		if (value_aff == SQLITE3_TEXT || value_aff == SQLITE_BLOB )
 			err_hint_mess += sprintf(
 					err_hint_mess,
-					", length %d bytes",
+					"(%d bytes) ",
 					value_byte_size_blob_or_utf8 );
 		if (value_text != NULL)
-			err_hint_mess += sprintf(err_hint_mess, ")");
+		{
+			if (sqlite_value_as_hex_code)
+				err_hint_mess += sprintf(
+						err_hint_mess,
+						"in hex : %s",
+						value_text );
+			else if (value_aff != SQLITE_INTEGER && value_aff != SQLITE_FLOAT)
+				err_hint_mess += sprintf(
+						err_hint_mess,
+						": '%s'",
+						value_text );
+			else
+				err_hint_mess += sprintf(
+						err_hint_mess,
+						": %s",
+						value_text );
+		}
 
 		err_hint_mess[1] = '\0';
 		errhint("%s", err_hint_mess0);
@@ -5960,7 +5954,7 @@ conversion_error_callback(void *arg)
 		err_cont_mess = err_cont_mess0;
 		err_cont_mess = err_cont_mess + sprintf(
 			err_cont_mess,
-			"foreign table \"%s\" foreign column \"%.*s\" have data type \"%s\" (usual affinity \"%s\")\n",
+			"foreign table \"%s\" foreign column \"%.*s\" have data type \"%s\" (usual affinity \"%s\"), ",
 			relname,
 			(int)sizeof(pgColND.data),
 			pgColND.data,
@@ -5971,21 +5965,21 @@ conversion_error_callback(void *arg)
 		{
 			err_cont_mess = err_cont_mess + sprintf(
 					err_cont_mess,
-					"In query there is whole-row reference to foreign table"
+					"in query there is whole-row reference to foreign table"
 					);
 		}
 		else if (relname && attname)
 		{
 			err_cont_mess = err_cont_mess + sprintf(
 					err_cont_mess,
-					"In query there is reference to foreign column"
+					"in query there is reference to foreign column"
 					);
 		}
 		else
 		{
 			err_cont_mess = err_cont_mess + sprintf(
 					err_cont_mess,
-					"Processing expression at position %d in select list",
+					"processing expression at position %d in select list",
 					errpos->cur_attno
 					);
 		}
