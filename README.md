@@ -586,6 +586,8 @@ You can execute test by test.sh directly.
 The version of PostgreSQL is detected automatically by $(VERSION) variable in Makefile.
 The corresponding sql and expected directory will be used to compare the result. For example, for Postgres 15.0, you can execute "test.sh" directly, and the sql/15.0 and expected/15.0 will be used to compare automatically.
 
+Test data directory is `/tmp/sqlite_fdw_test`. If you have `/tmp` mounted as `tmpfs` the tests will be up to 800% faster.
+
 Contributing
 ------------
 

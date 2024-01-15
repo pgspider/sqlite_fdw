@@ -5428,11 +5428,11 @@ sqlite_process_query_params(ExprContext *econtext,
 		expr_value = ExecEvalExpr(expr_state, econtext, &isNull, NULL);
 #endif
 		/* Bind parameters */
-		att = malloc(sizeof(FormData_pg_attribute));
+		att = palloc(sizeof(FormData_pg_attribute));
 		att->atttypid = param_types[i];
 		att->atttypmod = -1;
 		sqlite_bind_sql_var(att, i, expr_value, *stmt, &isNull, foreignTableId);
-		free(att);
+		pfree(att);
 		/*
 		 * Get string sentation of each parameter value by invoking
 		 * type-specific output function, unless the value is null.
@@ -5747,7 +5747,7 @@ conversion_error_callback(void *arg)
 	int 		value_byte_size_blob_or_utf8 = sqlite3_value_bytes (errpos->val);
 	int			value_aff = sqlite3_value_type(errpos->val);
 	char	   *value_text = NULL;
-	char	   *err_cont_mess0 = malloc(4 * NAMEDATALEN + max_logged_byte_length * 2 + 1024); /* The longest context message */
+	char	   *err_cont_mess0 = palloc(4 * NAMEDATALEN + max_logged_byte_length * 2 + 1024); /* The longest context message */
 	char 	   *err_cont_mess;
 	int			affinity_for_pg_column = sqlite_affinity_eqv_to_pgtype(pgtyp);
 	bool		sqlite_value_as_hex_code = value_byte_size_blob_or_utf8 < max_logged_byte_length && ((GetDatabaseEncoding() != PG_UTF8 && value_aff == SQLITE3_TEXT) || (value_aff == SQLITE_BLOB));
@@ -5770,7 +5770,7 @@ conversion_error_callback(void *arg)
 	if (sqlite_value_as_hex_code)
 	{
 		const unsigned char *vt = sqlite3_value_text(errpos->val);
-		value_text = malloc (max_logged_byte_length * 2 + 1);
+		value_text = palloc (max_logged_byte_length * 2 + 1);
 		for (size_t i = 0; i < value_byte_size_blob_or_utf8; ++i)
 			sprintf(value_text + i * 2, "%02x", vt[i]);
     }
@@ -5908,9 +5908,9 @@ conversion_error_callback(void *arg)
 	err_cont_mess[1] = '\0';
 	errcontext("%s", err_cont_mess0);
 
-	free(err_cont_mess0);
+	pfree(err_cont_mess0);
 	if (sqlite_value_as_hex_code)
-		free((char *)value_text);
+		pfree((char *)value_text);
 }
 
 /*
