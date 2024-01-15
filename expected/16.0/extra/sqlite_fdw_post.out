@@ -5051,38 +5051,34 @@ ALTER FOREIGN TABLE ft1 ALTER COLUMN c8 TYPE int;
 --Testcase 273:
 SELECT * FROM ft1 ftx(x1,x2,x3,x4,x5,x6,x7,x8) WHERE x1 = 1;
 ERROR:  SQLite value is not compatible with PostgreSQL column data type
+HINT:  SQLite value 'foo'
+(affinity "text", length 3 bytes)
 CONTEXT:  foreign table "ftx"
-foreign column "c8" have data type "integer"
-usual affinity "integer"
-SQLite affinity "text", length 3 bytes
-SQLite value 'foo'
+foreign column "c8" have data type "integer" (usual affinity "integer")
 In query there is reference to foreign column
 --Testcase 274:
 SELECT  ftx.x1,  ft2.c2, ftx.x8 FROM ft1 ftx(x1,x2,x3,x4,x5,x6,x7,x8), ft2 WHERE ftx.x1 = ft2.c1 AND ftx.x1 = 1;
 ERROR:  SQLite value is not compatible with PostgreSQL column data type
+HINT:  SQLite value 'foo'
+(affinity "text", length 3 bytes)
 CONTEXT:  foreign table "ftx"
-foreign column "c8" have data type "integer"
-usual affinity "integer"
-SQLite affinity "text", length 3 bytes
-SQLite value 'foo'
+foreign column "c8" have data type "integer" (usual affinity "integer")
 In query there is reference to foreign column
 --Testcase 275:
 SELECT  ftx.x1,  ft2.c2, ftx FROM ft1 ftx(x1,x2,x3,x4,x5,x6,x7,x8), ft2 WHERE ftx.x1 = ft2.c1 AND ftx.x1 = 1;
 ERROR:  SQLite value is not compatible with PostgreSQL column data type
+HINT:  SQLite value 'foo'
+(affinity "text", length 3 bytes)
 CONTEXT:  foreign table "ftx"
-foreign column "c8" have data type "integer"
-usual affinity "integer"
-SQLite affinity "text", length 3 bytes
-SQLite value 'foo'
+foreign column "c8" have data type "integer" (usual affinity "integer")
 In query there is reference to foreign column
 --Testcase 276:
 SELECT sum(c2), array_agg(c8) FROM ft1 GROUP BY c8;
 ERROR:  SQLite value is not compatible with PostgreSQL column data type
+HINT:  SQLite value 'foo'
+(affinity "text", length 3 bytes)
 CONTEXT:  foreign table "ft1"
-foreign column "c8" have data type "integer"
-usual affinity "integer"
-SQLite affinity "text", length 3 bytes
-SQLite value 'foo'
+foreign column "c8" have data type "integer" (usual affinity "integer")
 In query there is reference to foreign column
 -- ANALYZE ft1; -- ERROR
 -- ===================================================================

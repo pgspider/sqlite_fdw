@@ -5720,8 +5720,62 @@ sqliteIsForeignRelUpdatable(Relation rel)
 }
 
 /*
+ * sqlite_affinity_eqv_to_pgtype:
+ * Give nearest SQLite data affinity for PostgreSQL data type
+ */
+static int32
+sqlite_affinity_eqv_to_pgtype(Oid type)
+{
+	switch (type)
+	{
+		case INT2OID:
+		case INT4OID:
+		case INT8OID:
+		case BOOLOID:
+		case BITOID:
+		case VARBITOID:
+			return SQLITE_INTEGER;
+		case FLOAT4OID:
+		case FLOAT8OID:
+		case NUMERICOID:
+			return SQLITE_FLOAT;
+		case BYTEAOID:
+		case UUIDOID:
+			return SQLITE_BLOB;
+		default:
+			return SQLITE3_TEXT;
+	}
+}
+
+/*
+ * sqlite_datatype
+ * Give equivalent string for SQLite data affinity by int from enum
+ * SQLITE_INTEGER etc.
+ */
+const char*
+sqlite_datatype(int t)
+{
+	static const char *azType[] = { "?", "integer", "real", "text", "blob", "null" };
+	switch (t)
+	{
+		case SQLITE_INTEGER:
+			return azType[1];
+		case SQLITE_FLOAT:
+			return azType[2];
+		case SQLITE3_TEXT:
+			return azType[3];
+		case SQLITE_BLOB:
+			return azType[4];
+		case SQLITE_NULL:
+			return azType[5];
+		default:
+			return azType[0];
+	}
+}
+
+/*
  * Callback function which is called when error occurs during column value
- * conversion.  Print names of column and relation.
+ * conversion.  Print names of column and relation, SQLite value details.
  *
  * Note that this function mustn't do any catalog lookups, since we are in
  * an already-failed transaction.  Fortunately, we can get the needed info
@@ -5746,34 +5800,11 @@ conversion_error_callback(void *arg)
 	const int	max_logged_byte_length = NAMEDATALEN * 2;
 	int 		value_byte_size_blob_or_utf8 = sqlite3_value_bytes (errpos->val);
 	int			value_aff = sqlite3_value_type(errpos->val);
-	char	   *value_text = NULL;
-	char	   *err_cont_mess0 = palloc(4 * NAMEDATALEN + max_logged_byte_length * 2 + 1024); /* The longest context message */
-	char 	   *err_cont_mess;
 	int			affinity_for_pg_column = sqlite_affinity_eqv_to_pgtype(pgtyp);
-	bool		sqlite_value_as_hex_code = value_byte_size_blob_or_utf8 < max_logged_byte_length && ((GetDatabaseEncoding() != PG_UTF8 && value_aff == SQLITE3_TEXT) || (value_aff == SQLITE_BLOB));
 
 	pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(pgtyp, pgtypmod));
 	sqlite_affinity = sqlite_datatype(value_aff);
 	pg_good_affinity = sqlite_datatype(affinity_for_pg_column);
-
-	/* Print problem SQLite values only for
-	 * - integer,
-	 * - float,
-	 * - short text if database encoding is UTF-8
-	 *   incorrect output otherwise possible: UTF-8 in SQLite, but not supported charcters in PostgreSQL
-	 */
-	if ((value_byte_size_blob_or_utf8 < max_logged_byte_length && GetDatabaseEncoding() == PG_UTF8 && value_aff == SQLITE3_TEXT)
-		|| value_aff == SQLITE_INTEGER
-		|| value_aff == SQLITE_FLOAT)
-		value_text = (char *)sqlite3_value_text(errpos->val);
-
-	if (sqlite_value_as_hex_code)
-	{
-		const unsigned char *vt = sqlite3_value_text(errpos->val);
-		value_text = palloc (max_logged_byte_length * 2 + 1);
-		for (size_t i = 0; i < value_byte_size_blob_or_utf8; ++i)
-			sprintf(value_text + i * 2, "%02x", vt[i]);
-    }
 
 	/*
 	 * If we're in a scan node, always use aliases from the rangetable, for
@@ -5847,122 +5878,119 @@ conversion_error_callback(void *arg)
 			attname = "ctid";
 	}
 
-	err_cont_mess = err_cont_mess0;
-	err_cont_mess = err_cont_mess + sprintf(
-		err_cont_mess,
-		"foreign table \"%s\"\nforeign column \"%.*s\" have data type \"%s\"\nusual affinity \"%s\"\nSQLite affinity \"%s\"",
-		relname,
-		(int)sizeof(pgColND.data),
-		pgColND.data,
-		pg_dataTypeName,
-		pg_good_affinity,
-		sqlite_affinity	);
-
-	if (value_aff == SQLITE3_TEXT || value_aff == SQLITE_BLOB )
-		err_cont_mess = err_cont_mess + sprintf(
-				err_cont_mess,
-				", length %d bytes\n",
-				value_byte_size_blob_or_utf8 );
-	else
-		err_cont_mess = err_cont_mess + sprintf(
-				err_cont_mess,
-				"\n" );
-
-	if (value_text != NULL)
 	{
+		/*
+		 * Error HINT block
+		 */
+		char	   *err_hint_mess0 = palloc(max_logged_byte_length * 2 + 1024); /* The longest hint message */
+		char 	   *err_hint_mess;
+		char	   *value_text = NULL;
+		bool		sqlite_value_as_hex_code = value_byte_size_blob_or_utf8 < max_logged_byte_length && ((GetDatabaseEncoding() != PG_UTF8 && value_aff == SQLITE3_TEXT) || (value_aff == SQLITE_BLOB));
+
+		/* Print problem SQLite values only for
+		 * - integer,
+		 * - float,
+		 * - short text if database encoding is UTF-8
+		 *   incorrect output otherwise possible: UTF-8 in SQLite, but not supported charcters in PostgreSQL
+		 */
+		if ((value_byte_size_blob_or_utf8 < max_logged_byte_length && GetDatabaseEncoding() == PG_UTF8 && value_aff == SQLITE3_TEXT)
+			|| value_aff == SQLITE_INTEGER
+			|| value_aff == SQLITE_FLOAT)
+			value_text = (char *)sqlite3_value_text(errpos->val);
+
 		if (sqlite_value_as_hex_code)
+		{
+			const unsigned char *vt = sqlite3_value_text(errpos->val);
+			value_text = palloc (max_logged_byte_length * 2 + 1);
+			for (size_t i = 0; i < value_byte_size_blob_or_utf8; ++i)
+				sprintf(value_text + i * 2, "%02x", vt[i]);
+	    }
+
+		err_hint_mess = err_hint_mess0;
+		if (value_text != NULL)
+		{
+			if (sqlite_value_as_hex_code)
+				err_hint_mess += sprintf(
+						err_hint_mess,
+						"SQLite hex value %s\n",
+						value_text );
+			else if (value_aff != SQLITE_INTEGER && value_aff != SQLITE_FLOAT)
+				err_hint_mess += sprintf(
+						err_hint_mess,
+						"SQLite value '%s'\n",
+						value_text );
+			else
+				err_hint_mess += sprintf(
+						err_hint_mess,
+						"SQLite value %s\n",
+						value_text );
+		err_hint_mess += sprintf(
+			err_hint_mess,
+			"("
+			);
+		}
+		err_hint_mess += sprintf(
+			err_hint_mess,
+			"affinity \"%s\"",
+			sqlite_affinity
+			);
+		if (value_aff == SQLITE3_TEXT || value_aff == SQLITE_BLOB )
+			err_hint_mess += sprintf(
+					err_hint_mess,
+					", length %d bytes",
+					value_byte_size_blob_or_utf8 );
+		if (value_text != NULL)
+			err_hint_mess += sprintf(err_hint_mess, ")");
+
+		err_hint_mess[1] = '\0';
+		errhint("%s", err_hint_mess0);
+		pfree(err_hint_mess0);
+		if (sqlite_value_as_hex_code)
+			pfree((char *)value_text);
+	}
+
+	{
+		/*
+		 * Error CONTEXT block
+		 */
+		char	   *err_cont_mess0 = palloc(4 * NAMEDATALEN + 64); /* The longest context message */
+		char 	   *err_cont_mess;
+
+		err_cont_mess = err_cont_mess0;
+		err_cont_mess = err_cont_mess + sprintf(
+			err_cont_mess,
+			"foreign table \"%s\"\nforeign column \"%.*s\" have data type \"%s\" (usual affinity \"%s\")\n",
+			relname,
+			(int)sizeof(pgColND.data),
+			pgColND.data,
+			pg_dataTypeName,
+			pg_good_affinity
+			);
+		if (relname && is_wholerow)
+		{
 			err_cont_mess = err_cont_mess + sprintf(
 					err_cont_mess,
-					"SQLite hex value %s\n",
-					value_text );
+					"In query there is whole-row reference to foreign table"
+					);
+		}
+		else if (relname && attname)
+		{
+			err_cont_mess = err_cont_mess + sprintf(
+					err_cont_mess,
+					"In query there is reference to foreign column"
+					);
+		}
 		else
+		{
 			err_cont_mess = err_cont_mess + sprintf(
 					err_cont_mess,
-					"SQLite value '%s'\n",
-					value_text );
-	}
+					"Processing expression at position %d in select list",
+					errpos->cur_attno
+					);
+		}
 
-	if (relname && is_wholerow)
-	{
-		err_cont_mess = err_cont_mess + sprintf(
-				err_cont_mess,
-				"In query there is whole-row reference to foreign table"
-				);
-	}
-	else if (relname && attname)
-	{
-		err_cont_mess = err_cont_mess + sprintf(
-				err_cont_mess,
-				"In query there is reference to foreign column"
-				);
-	}
-	else
-	{
-		err_cont_mess = err_cont_mess + sprintf(
-				err_cont_mess,
-				"processing expression at position %d in select list",
-				errpos->cur_attno
-				);
-	}
-
-	err_cont_mess[1] = '\0';
-	errcontext("%s", err_cont_mess0);
-
-	pfree(err_cont_mess0);
-	if (sqlite_value_as_hex_code)
-		pfree((char *)value_text);
-}
-
-/*
- * sqlite_affinity_eqv_to_pgtype:
- * Give nearest SQLite data affinity for PostgreSQL data type
- */
-static int32
-sqlite_affinity_eqv_to_pgtype(Oid type)
-{
-	switch (type)
-	{
-		case INT2OID:
-		case INT4OID:
-		case INT8OID:
-		case BOOLOID:
-		case BITOID:
-		case VARBITOID:
-			return SQLITE_INTEGER;
-		case FLOAT4OID:
-		case FLOAT8OID:
-		case NUMERICOID:
-			return SQLITE_FLOAT;
-		case BYTEAOID:
-		case UUIDOID:
-			return SQLITE_BLOB;
-		default:
-			return SQLITE3_TEXT;
-	}
-}
-
-/*
- * sqlite_datatype
- * Give equivalent string for SQLite data affinity by int from enum
- * SQLITE_INTEGER etc.
- */
-const char*
-sqlite_datatype(int t)
-{
-	static const char *azType[] = { "?", "integer", "real", "text", "blob", "null" };
-	switch (t)
-	{
-		case SQLITE_INTEGER:
-			return azType[1];
-		case SQLITE_FLOAT:
-			return azType[2];
-		case SQLITE3_TEXT:
-			return azType[3];
-		case SQLITE_BLOB:
-			return azType[4];
-		case SQLITE_NULL:
-			return azType[5];
-		default:
-			return azType[0];
+		err_cont_mess[1] = '\0';
+		errcontext("%s", err_cont_mess0);
+		pfree(err_cont_mess0);
 	}
 }

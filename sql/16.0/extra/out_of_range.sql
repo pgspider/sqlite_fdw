@@ -41,7 +41,7 @@ SELECT f1 FROM INT4_TMP; -- overflow
 --Testcase 15:
 CREATE FOREIGN TABLE INT2_TBL(f1 int2 OPTIONS (key 'true')) SERVER sqlite_svr;
 --Testcase 16:
-CREATE FOREIGN TABLE INT2_TMP(f1 int2, f2 int2, id int OPTIONS (key 'true')) SERVER sqlite_svr; 
+CREATE FOREIGN TABLE INT2_TMP(f1 int2, f2 int2, id int OPTIONS (key 'true')) SERVER sqlite_svr;
 
 --Testcase 17:
 DELETE FROM INT2_TMP;

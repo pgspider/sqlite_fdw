@@ -1484,11 +1484,10 @@ ALTER TABLE fts_table ALTER COLUMN name TYPE int;
 --Testcase 160:
 SELECT * FROM fts_table; -- should fail
 ERROR:  SQLite value is not compatible with PostgreSQL column data type
+HINT:  SQLite value 'this is name'
+(affinity "text", length 12 bytes)
 CONTEXT:  foreign table "fts_table"
-foreign column "name" have data type "integer"
-usual affinity "integer"
-SQLite affinity "text", length 12 bytes
-SQLite value 'this is name'
+foreign column "name" have data type "integer" (usual affinity "integer")
 In query there is whole-row reference to foreign table
 -- issue #62 github
 --Testcase 236:
