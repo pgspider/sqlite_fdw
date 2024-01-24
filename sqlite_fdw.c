@@ -46,12 +46,12 @@
 #include "optimizer/tlist.h"
 #include "parser/parsetree.h"
 #include "parser/parse_type.h"
+#include "storage/ipc.h"
 #include "utils/builtins.h"
 #include "utils/formatting.h"
 #include "utils/lsyscache.h"
 #include "utils/guc.h"
 #include "utils/selfuncs.h"
-#include "storage/ipc.h"
 
 
 extern PGDLLEXPORT void _PG_init(void);
