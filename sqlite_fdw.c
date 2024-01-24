@@ -1470,8 +1470,6 @@ sqliteBeginForeignScan(ForeignScanState *node, int eflags)
 	EState			   *estate = node->ss.ps.state;
 	ForeignScan 	   *fsplan = (ForeignScan *) node->ss.ps.plan;
 	int					numParams;
-	ForeignTable	   *table;
-	ForeignServer	   *server;
 	RangeTblEntry	   *rte;
 	int					rtindex;
 
@@ -1517,14 +1515,14 @@ sqliteBeginForeignScan(ForeignScanState *node, int eflags)
 
 	/* Get info about foreign table. */
 	festate->rel = node->ss.ss_currentRelation;
-	table = GetForeignTable(rte->relid);
-	server = GetForeignServer(table->serverid);
+	festate->table = GetForeignTable(rte->relid);
+	festate->server = GetForeignServer(festate->table->serverid);
 
 	/*
 	 * Get the already connected connection, otherwise connect and get the
 	 * connection handle.
 	 */
-	conn = sqlite_get_connection(server, false);
+	conn = sqlite_get_connection(festate->server, false);
 
 	/* Stash away the state info we have already */
 	festate->query = strVal(list_nth(fsplan->fdw_private, FdwScanPrivateSelectSql));
@@ -1558,7 +1556,7 @@ sqliteBeginForeignScan(ForeignScanState *node, int eflags)
 	festate->stmt = NULL;
 
 	/* Prepare Sqlite statement */
-	sqlite_prepare_wrapper(server, festate->conn, festate->query, &festate->stmt, NULL, true);
+	sqlite_prepare_wrapper(festate->server, festate->conn, festate->query, &festate->stmt, NULL, true);
 
 	/* Prepare for output conversion of parameters used in remote query. */
 	numParams = list_length(fsplan->fdw_exprs);
@@ -2038,8 +2036,6 @@ sqliteBeginForeignModify(ModifyTableState *mtstate,
 	bool		isvarlena = false;
 	ListCell   *lc = NULL;
 	Oid			foreignTableId = InvalidOid;
-	ForeignTable *table;
-	ForeignServer *server;
 	Plan	   *subplan;
 	int			i;
 
@@ -2052,9 +2048,6 @@ sqliteBeginForeignModify(ModifyTableState *mtstate,
 	subplan = mtstate->mt_plans[subplan_index]->plan;
 #endif
 
-	table = GetForeignTable(foreignTableId);
-	server = GetForeignServer(table->serverid);
-
 	/*
 	 * Do nothing in EXPLAIN (no ANALYZE) case. resultRelInfon->ri_FdwState
 	 * stays NULL.
@@ -2064,8 +2057,10 @@ sqliteBeginForeignModify(ModifyTableState *mtstate,
 
 	fmstate = (SqliteFdwExecState *) palloc0(sizeof(SqliteFdwExecState));
 	fmstate->rel = rel;
+	fmstate->table = GetForeignTable(foreignTableId);
+	fmstate->server = GetForeignServer(fmstate->table->serverid);
 
-	fmstate->conn = sqlite_get_connection(server, false);
+	fmstate->conn = sqlite_get_connection(fmstate->server, false);
 	fmstate->query = strVal(list_nth(fdw_private, FdwModifyPrivateUpdateSql));
 	fmstate->target_attrs = (List *) list_nth(fdw_private, FdwModifyPrivateTargetAttnums);
 	fmstate->retrieved_attrs = (List *) list_nth(fdw_private, FdwModifyPrivateTargetAttnums);
@@ -2114,7 +2109,7 @@ sqliteBeginForeignModify(ModifyTableState *mtstate,
 
 	fmstate->num_slots = 1;
 	/* Prepare sqlite statment */
-	sqlite_prepare_wrapper(server, fmstate->conn, fmstate->query, &fmstate->stmt, NULL, true);
+	sqlite_prepare_wrapper(fmstate->server, fmstate->conn, fmstate->query, &fmstate->stmt, NULL, true);
 
 	resultRelInfo->ri_FdwState = fmstate;
 
@@ -2600,8 +2595,6 @@ sqliteBeginDirectModify(ForeignScanState *node, int eflags)
 	EState			   *estate = node->ss.ps.state;
 	SqliteFdwDirectModifyState *dmstate;
 	Index				rtindex;
-	ForeignTable	   *table;
-	ForeignServer	   *server;
 	int					numParams;
 
 	elog(DEBUG1, "sqlite_fdw : %s", __func__);
@@ -2636,14 +2629,14 @@ sqliteBeginDirectModify(ForeignScanState *node, int eflags)
 		dmstate->rel = ExecOpenScanRelation(estate, rtindex, eflags);
 	else
 		dmstate->rel = node->ss.ss_currentRelation;
-	table = GetForeignTable(RelationGetRelid(dmstate->rel));
-	server = GetForeignServer(table->serverid);
+	dmstate->table = GetForeignTable(RelationGetRelid(dmstate->rel));
+	dmstate->server = GetForeignServer(dmstate->table->serverid);
 
 	/*
 	 * Get connection to the foreign server.  Connection manager will
 	 * establish new connection if necessary.
 	 */
-	dmstate->conn = sqlite_get_connection(server, false);
+	dmstate->conn = sqlite_get_connection(dmstate->server, false);
 
 	/* Update the foreign-join-related fields. */
 	if (fsplan->scan.scanrelid == 0)
@@ -2685,11 +2678,11 @@ sqliteBeginDirectModify(ForeignScanState *node, int eflags)
 											  "sqlite_fdw temporary data",
 											  ALLOCSET_SMALL_SIZES);
 
-	/* Initialize the Sqlite statement */
+	/* Initialize the SQLite statement */
 	dmstate->stmt = NULL;
 
-	/* Prepare Sqlite statement */
-	sqlite_prepare_wrapper(server, dmstate->conn, dmstate->query, &dmstate->stmt, NULL, true);
+	/* Prepare SQLite statement */
+	sqlite_prepare_wrapper(dmstate->server, dmstate->conn, dmstate->query, &dmstate->stmt, NULL, true);
 
 	/*
 	 * Prepare for processing of parameters used in remote query, if any.
@@ -5286,11 +5279,9 @@ sqlite_execute_insert(EState *estate,
 	if (fmstate->num_slots != *numSlots)
 	{
 		StringInfoData sql;
-		ForeignTable *table;
-		ForeignServer *server;
 
-		table = GetForeignTable(RelationGetRelid(fmstate->rel));
-		server = GetForeignServer(table->serverid);
+		fmstate->table = GetForeignTable(RelationGetRelid(fmstate->rel));
+		fmstate->server = GetForeignServer(fmstate->table->serverid);
 		fmstate->stmt = NULL;
 
 		initStringInfo(&sql);
@@ -5300,7 +5291,7 @@ sqlite_execute_insert(EState *estate,
 		fmstate->query = sql.data;
 		fmstate->num_slots = *numSlots;
 
-		sqlite_prepare_wrapper(server, fmstate->conn, fmstate->query, &fmstate->stmt, NULL, true);
+		sqlite_prepare_wrapper(fmstate->server, fmstate->conn, fmstate->query, &fmstate->stmt, NULL, true);
 	}
 #endif
 

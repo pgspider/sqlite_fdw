@@ -128,6 +128,8 @@ typedef struct SqliteFdwPathExtraData
  */
 typedef struct SQLiteFdwExecState
 {
+	ForeignServer *server;		/* Foreign server handle */
+	ForeignTable  *table;		/* Foreign scan deal with this foreign table */
 	sqlite3    *conn;			/* SQLite connection handle */
 	sqlite3_stmt *stmt;			/* SQLite prepared stament handle */
 	char	   *query;			/* Query string */
@@ -168,6 +170,7 @@ typedef struct SQLiteFdwExecState
 	/* working memory context */
 	MemoryContext temp_cxt;		/* context for per-tuple temporary data */
 	AttrNumber *junk_idx;
+
 }			SqliteFdwExecState;
 
 typedef struct SqliteFdwRelationInfo
@@ -264,6 +267,9 @@ typedef struct SqliteFdwRelationInfo
  */
 typedef struct SqliteFdwDirectModifyState
 {
+	ForeignServer *server;		/* Foreign server handle */
+	ForeignTable  *table;		/* Foreign scan deal with this foreign table */
+
 	Relation	rel;			/* relcache entry for the foreign table */
 	AttInMetadata *attinmeta;	/* attribute datatype conversion metadata */
 
