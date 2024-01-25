@@ -46,6 +46,7 @@ typedef struct ConnCacheEntry
 	bool		keep_connections;	/* setting value of keep_connections
 									 * server option */
 	bool		truncatable;	/* check table can truncate or not */
+	bool		readonly;		/* option force_readonly, readonly SQLite file mode */
 	bool		invalidated;	/* true if reconnect is pending */
 	Oid			serverid;		/* foreign server OID used to get server name */
 	List	   *stmtList;		/* list stmt associated with conn */
@@ -65,7 +66,6 @@ PG_FUNCTION_INFO_V1(sqlite_fdw_get_connections);
 PG_FUNCTION_INFO_V1(sqlite_fdw_disconnect);
 PG_FUNCTION_INFO_V1(sqlite_fdw_disconnect_all);
 
-static sqlite3 *sqlite_open_db(const char *dbpath);
 static void sqlite_make_new_connection(ConnCacheEntry *entry, ForeignServer *server);
 void		sqlite_do_sql_command(sqlite3 * conn, const char *sql, int level, List **busy_connection);
 static void sqlite_begin_remote_xact(ConnCacheEntry *entry);
@@ -160,11 +160,6 @@ sqlite_get_connection(ForeignServer *server, bool truncatable)
 		entry->conn = NULL;
 	}
 
-	/*
-	 * If cache entry doesn't have a connection, we have to establish a new
-	 * connection.  (If sqlite_open_db has an error, the cache entry will
-	 * remain in a valid empty state, ie conn == NULL.)
-	 */
 	if (entry->conn == NULL)
 		sqlite_make_new_connection(entry, server);
 
@@ -189,42 +184,6 @@ sqlite_get_connection(ForeignServer *server, bool truncatable)
 }
 
 /*
- * Open remote sqlite database using specified database path.
- */
-static sqlite3 *
-sqlite_open_db(const char *dbpath)
-{
-	sqlite3	   *conn = NULL;
-	int			rc;
-	char	   *err;
-
-	rc = sqlite3_open(dbpath, &conn);
-	if (rc != SQLITE_OK)
-		ereport(ERROR,
-				(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
-				 errmsg("failed to open SQLite DB. rc=%d path=%s", rc, dbpath)));
-
-	/* make 'LIKE' of SQLite case sensitive like PostgreSQL */
-	rc = sqlite3_exec(conn, "pragma case_sensitive_like=1",
-					  NULL, NULL, &err);
-	if (rc != SQLITE_OK)
-	{
-		char	   *perr = pstrdup(err);
-
-		sqlite3_free(err);
-		sqlite3_close(conn);
-		ereport(ERROR,
-				(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
-				 errmsg("failed to open SQLite DB. rc=%d err=%s", rc, perr)));
-	}
-	/* add included inner SQLite functions from separate c file
-	 * for using in data unifying during deparsing
-	 */
-	sqlite_fdw_data_norm_functs_init(conn);
-	return conn;
-}
-
-/*
  * Reset all transient state fields in the cached connection entry and
  * establish new connection to the remote server.
  */
@@ -232,7 +191,11 @@ static void
 sqlite_make_new_connection(ConnCacheEntry *entry, ForeignServer *server)
 {
 	const char *dbpath = NULL;
+	int			rc;
+	char	   *err;
 	ListCell   *lc;
+	int flags = 0;
+	const char *zVfs = NULL;
 
 	Assert(entry->conn == NULL);
 
@@ -241,6 +204,7 @@ sqlite_make_new_connection(ConnCacheEntry *entry, ForeignServer *server)
 	entry->invalidated = false;
 	entry->stmtList = NULL;
 	entry->keep_connections = true;
+	entry->readonly = false;
 	entry->server_hashvalue =
 		GetSysCacheHashValue1(FOREIGNSERVEROID,
 							  ObjectIdGetDatum(server->serverid));
@@ -252,10 +216,34 @@ sqlite_make_new_connection(ConnCacheEntry *entry, ForeignServer *server)
 			dbpath = defGetString(def);
 		else if (strcmp(def->defname, "keep_connections") == 0)
 			entry->keep_connections = defGetBoolean(def);
+		else if (strcmp(def->defname, "force_readonly") == 0)
+			entry->readonly = defGetBoolean(def);
 	}
 
-	/* Try to make the connection */
-	entry->conn = sqlite_open_db(dbpath);
+	flags = flags | (entry->readonly ? SQLITE_OPEN_READONLY : SQLITE_OPEN_READWRITE);
+	rc = sqlite3_open_v2(dbpath, &entry->conn, flags, zVfs);
+	if (rc != SQLITE_OK)
+		ereport(ERROR,
+				(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
+				 errmsg("failed to open SQLite DB. rc=%d path=%s", rc, dbpath)));
+	/* make 'LIKE' of SQLite case sensitive like PostgreSQL */
+	rc = sqlite3_exec(entry->conn, "pragma case_sensitive_like=1",
+					  NULL, NULL, &err);
+	if (rc != SQLITE_OK)
+	{
+		char	   *perr = pstrdup(err);
+
+		sqlite3_free(err);
+		sqlite3_close(entry->conn);
+		entry->conn = NULL;
+		ereport(ERROR,
+				(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
+				 errmsg("failed to open SQLite DB. err=%s rc=%d", perr, rc)));
+	}
+	/* add included inner SQLite functions from separate c file
+	 * for using in data unifying during deparsing
+	 */
+	sqlite_fdw_data_norm_functs_init(entry->conn);
 }
 
 /*

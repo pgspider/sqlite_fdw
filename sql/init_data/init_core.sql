@@ -428,7 +428,6 @@ CREATE TABLE update_test (
 );
 
 create table upsert_test (a int primary key, b text);
-
 create table t (a int unique);
 
 CREATE TABLE "type_FLOAT_INF" (i int primary key, f float);
