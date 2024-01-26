@@ -28,14 +28,14 @@ Features
 
 ### Common features
 - Transactions
-- Support `INSERT`/`UPDATE`/`DELETE` (both Direct modification and Foreign modification).
-- Support `TRUNCATE` by deparsing into `DELETE` statement without `WHERE` clause
-- Allow control over whether foreign servers keep connections open after transaction completion. This is controlled by `keep_connections` and defaults to on
+- Support `INSERT`/`UPDATE`/`DELETE` (both Direct modification and Foreign modification), see [data modification access](#data-modification-access) about conditions of succesfully data modification.
+- Support `TRUNCATE` by deparsing into `DELETE` statement without `WHERE` clause.
+- Allow control over whether foreign servers keep connections open after transaction completion. This is controlled by `keep_connections` and defaults to on.
 - Support list cached connections to foreign servers by using function `sqlite_fdw_get_connections()`
 - Support discard cached connections to foreign servers by using function `sqlite_fdw_disconnect()`, `sqlite_fdw_disconnect_all()`.
-- Support Bulk `INSERT` by using `batch_size` option
-- Support `INSERT`/`UPDATE` with generated column
-- Support `ON CONFLICT DO NOTHING`
+- Support Bulk `INSERT` by using `batch_size` option.
+- Support `INSERT`/`UPDATE` with generated column, see [data modification access](#data-modification-access) about conditions of succesfully data modification.
+- Support `ON CONFLICT DO NOTHING`.
 - Support mixed SQLite [data affinity](https://www.sqlite.org/datatype3.html) input and filtering (`SELECT`/`WHERE` usage) for such dataypes as
 	- `timestamp`: `text` and `int`,
 	- `uuid`: `text`(32..39) and `blob`(16),
@@ -65,7 +65,7 @@ Features
 - SQLite evaluates division by zero as `NULL`. It is different from PostgreSQL, which will display `Division by zero` error.
 - The data type of column of foreign table should match with data type of column in SQLite to avoid wrong result. For example, if the column of SQLite is `float` (which will be stored as `float8`), the column of foreign table should be `float8`, too. If the column of foreign table is `float4`, it may cause wrong result when `SELECT`.
 - For `key` option, user needs to specify the primary key column of SQLite table corresponding with the `key` option. If not, wrong result may occur when `UPDATE` or `DELETE`.
-- When `Sum` of data in table is out of range, `sqlite_fdw` will display `Infinity` value. It is different from PostgreSQL FDW, which will display `ERROR: value out of range: overflow` error.
+- When `sum` of data in table is out of range, `sqlite_fdw` will display `Infinity` value. It is different from PostgreSQL FDW, which will display `ERROR: value out of range: overflow` error.
 - For `numeric` data type, `sqlite_fdw` use `sqlite3_column_double` to get value, while SQLite shell uses `sqlite3_column_text` to get value. Those 2 APIs may return different numeric value. Therefore, for `numeric` data type, the value returned from `sqlite_fdw` may different from the value returned from SQLite shell.
 - `sqlite_fdw` can return implementation-dependent order for column if the column is not specified in `ORDER BY` clause.
 - When the column type is `varchar array`, if the string is shorter than the declared length, values of type character will be space-padded; values of type `character varying` will simply store the shorter string.
@@ -170,11 +170,11 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 
 - **updatable** as *boolean*, optional, default *true*
 
-  This option allow or disallow write operations on foreing server. Can be overwritten by corresponding table option or OS file permissions or OS file mode for PostgreSQL server user.
+  This option can allow or disallow data modification on foreign server for all foreign objects by default. Please note, this option can be overwritten on table level or have no effect because of some filesystem restrictions, see [data modification access](#data-modification-access) about conditions of succesfully data modification. This is only recommentadion of PostgreSQL foreign server owner user not to modify data in foreign server tables. For strong restriction see the next option `force_readonly`.
 
 - **force_readonly** as *boolean*, optional, default *false*
 
-  This option disallow or allow write operations on foreign server througth SQLite file access . Can NOT be overwritten by any updatable option.
+  This option can disallow any write operations on foreign server user data througth SQLite file readonly access mode. This option driven only by foreign server owner role can not be overwritten by any `updatable` option value. This is a strong restiction by PostgreSQL foreign server owner user not to modify data in any foreign server tables. Also see [data modification access](#data-modification-access) about conditions of succesfully data modification.
 
 - **truncatable** as *boolean*, optional, default *false*
 
@@ -192,10 +192,7 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 
 There is no user or password conceptions in SQLite, hence `sqlite_fdw` no need any `CREATE USER MAPPING` command.
 
-In OS `sqlite_fdw` works as executed code with permissions of user of PostgreSQL server. Usually it is `postgres` OS user. For interacting with SQLite database without access errors ensure this user have follow permissions:
-- read permission on all directories by path to the SQLite database file;
-- read permission on SQLite database file;
-- write permissions both on SQLite database file and *directory it contains* if you need a modification. During `INSERT`, `UPDATE` or `DELETE` in SQLite database, SQLite engine functions makes temporary files with transaction data in the directory near SQLite database file. Hence without write permissions you'll have a message `failed to execute remote SQL: rc=8 attempt to write a readonly database`.
+About access model and possible data modifications problems see [data modification access](#data-modification-access).
 
 ### CREATE FOREIGN TABLE options
 
@@ -216,7 +213,7 @@ In OS `sqlite_fdw` works as executed code with permissions of user of PostgreSQL
 
 - **updatable** as *boolean*, optional, default *true*
 
-  This option can allow or disallow write operations on a SQLite table independed of the same server option. Can be overwritten by `force_readonly` server option or OS file permissions or OS file mode for PostgreSQL server user.
+  This option can allow or disallow data modification on foreing table. Please note, this option can have no effect if foreign server option `force_readonly` = `true` or depends on filesystem context, see [data modification access](#data-modification-access).
 
 `sqlite_fdw` accepts the following column-level options via the
 `CREATE FOREIGN TABLE` command:
@@ -279,6 +276,24 @@ Actually, `TRUNCATE ... CASCADE` can be simulated if we create child table of SQ
 Following restrictions apply:
  - `TRUNCATE ... RESTART IDENTITY` is not supported
  - SQLite tables with foreign key references can cause errors during truncating
+
+### Data modification access
+
+Data modification access in `sqlite_fdw` drived by both operating system and PostgreSQL. OS restrictions can disallow any SQLite data modifications and any PostgreSQL options context about data modification will have absolutely no effect. SQLite data modification will be succesfully only if there is all necessary conditions on both operating system and PostgreSQL levels.
+
+#### OS permissions
+In OS `sqlite_fdw` works as executed code with permissions of user of PostgreSQL server. Usually it is `postgres` OS user. For **any** access to SQLite database such filesystem permissions for PostgreSQL server OS user are absolutely necessary:
+- read permission on all directories by path to the SQLite database file,
+- read permission on SQLite database file.
+
+For SQLite data **modification** such _additional_ filesystem permissions for PostgreSQL server OS user are absolutely necessary:
+- write permission on a directory of SQLite database file (because SQLite creates some temporary transaction files),
+- write permission on SQLite database file.
+
+Otherwise there will be shown error message from SQLite like `failed to execute remote SQL: rc=8 attempt to write a readonly database`.
+
+#### PostgreSQL options/permissions
+On PostgreSQL level for data modification you should first ensure foreign server have no `force_readonly` = `true` option value. Second you should ensure there is no `updatable` = `false` option value on table level or, if there is no `updatable` option on table level you should ensure there is no `updatable` = `false` option value on foreign server level.
 
 Functions
 ---------
