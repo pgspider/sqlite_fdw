@@ -6,9 +6,9 @@ CREATE EXTENSION sqlite_fdw;
 DO $d$
     BEGIN
         EXECUTE $$CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-            OPTIONS (database '/tmp/sqlitefdw_test_post.db')$$;
+            OPTIONS (database '/tmp/sqlite_fdw_test/post.db')$$;
         EXECUTE $$CREATE SERVER sqlite_svr2 FOREIGN DATA WRAPPER sqlite_fdw
-            OPTIONS (database '/tmp/sqlitefdw_test_post.db')$$;
+            OPTIONS (database '/tmp/sqlite_fdw_test/post.db')$$;
     END;
 $d$;
 --Testcase 484:
@@ -137,7 +137,7 @@ ERROR:  SQL error during prepare: no such table: main.T 1 SELECT `C 1`, `c3`, `c
 DO $d$
     BEGIN
         EXECUTE $$ALTER SERVER sqlite_svr
-            OPTIONS (SET database '/tmp/sqlitefdw_test_post.db')$$;
+            OPTIONS (SET database '/tmp/sqlite_fdw_test/post.db')$$;
     END;
 $d$;
 --Testcase 8:
@@ -4622,20 +4622,24 @@ DROP FUNCTION f_test(int);
 ALTER FOREIGN TABLE ft1 ALTER COLUMN c8 TYPE int;
 --Testcase 273:
 SELECT * FROM ft1 WHERE c1 = 1;
-ERROR:  SQLite data affinity "text" disallowed for PostgreSQL data type "integer"
-HINT:  In column "c8" expected SQLite affinity "integer", incorrect value = 'foo'
+ERROR:  SQLite value is not compatible with PostgreSQL column data type
+HINT:  SQLite value with "text" affinity (3 bytes) : 'foo'
+CONTEXT:  foreign table "ft1" foreign column "c8" have data type "integer" (usual affinity "integer"), in query there is reference to foreign column
 --Testcase 274:
 SELECT  ft1.c1,  ft2.c2, ft1.c8 FROM ft1, ft2 WHERE ft1.c1 = ft2.c1 AND ft1.c1 = 1;
-ERROR:  SQLite data affinity "text" disallowed for PostgreSQL data type "integer"
-HINT:  In column "c8" expected SQLite affinity "integer", incorrect value = 'foo'
+ERROR:  SQLite value is not compatible with PostgreSQL column data type
+HINT:  SQLite value with "text" affinity (3 bytes) : 'foo'
+CONTEXT:  foreign table "ft1" foreign column "c8" have data type "integer" (usual affinity "integer"), in query there is reference to foreign column
 --Testcase 275:
 SELECT  ft1.c1,  ft2.c2, ft1 FROM ft1, ft2 WHERE ft1.c1 = ft2.c1 AND ft1.c1 = 1;
-ERROR:  SQLite data affinity "text" disallowed for PostgreSQL data type "integer"
-HINT:  In column "c8" expected SQLite affinity "integer", incorrect value = 'foo'
+ERROR:  SQLite value is not compatible with PostgreSQL column data type
+HINT:  SQLite value with "text" affinity (3 bytes) : 'foo'
+CONTEXT:  foreign table "ft1" foreign column "c8" have data type "integer" (usual affinity "integer"), in query there is reference to foreign column
 --Testcase 276:
 SELECT sum(c2), array_agg(c8) FROM ft1 GROUP BY c8;
-ERROR:  SQLite data affinity "text" disallowed for PostgreSQL data type "integer"
-HINT:  In column "c8" expected SQLite affinity "integer", incorrect value = 'foo'
+ERROR:  SQLite value is not compatible with PostgreSQL column data type
+HINT:  SQLite value with "text" affinity (3 bytes) : 'foo'
+CONTEXT:  foreign table "ft1" foreign column "c8" have data type "integer" (usual affinity "integer"), in query there is reference to foreign column
 ALTER FOREIGN TABLE ft1 ALTER COLUMN c8 TYPE text;
 -- ===================================================================
 -- subtransaction
@@ -9746,7 +9750,7 @@ SHOW is_superuser;
 DO $d$
     BEGIN
         EXECUTE $$CREATE SERVER sqlite_nopw FOREIGN DATA WRAPPER sqlite_fdw
-            OPTIONS (database '/tmp/sqlitefdw_test_post.db')$$;
+            OPTIONS (database '/tmp/sqlite_fdw_test/post.db')$$;
     END;
 $d$;
 

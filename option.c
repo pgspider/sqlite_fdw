@@ -11,38 +11,20 @@
  */
 
 #include "postgres.h"
-
 #include "sqlite_fdw.h"
-
-#include <stdio.h>
-#include <sys/stat.h>
-#include <unistd.h>
 
 #include "funcapi.h"
 #include "access/reloptions.h"
 #include "catalog/pg_foreign_server.h"
 #include "catalog/pg_foreign_table.h"
-#include "catalog/pg_user_mapping.h"
 #include "catalog/pg_type.h"
 #include "commands/defrem.h"
-#include "commands/explain.h"
-#include "foreign/fdwapi.h"
-#include "foreign/foreign.h"
-#include "miscadmin.h"
-#include "mb/pg_wchar.h"
-#include "storage/fd.h"
-#include "utils/array.h"
-#include "utils/builtins.h"
 #include "utils/guc.h"
-#include "utils/rel.h"
 #include "utils/lsyscache.h"
 #if PG_VERSION_NUM >= 160000
-#include "utils/varlena.h"
+	#include "utils/varlena.h"
 #endif
-#include "optimizer/cost.h"
-#include "optimizer/pathnode.h"
-#include "optimizer/restrictinfo.h"
-#include "optimizer/planmain.h"
+
 /*
  * Describes the valid options for objects that use this wrapper.
  */

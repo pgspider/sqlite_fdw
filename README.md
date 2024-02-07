@@ -167,19 +167,19 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 - **database** as *string*, **required**, no default
 
   SQLite database path.
-  
+
 - **updatable** as *boolean*, optional, default *true*
 
   This option allow or disallow write operations on SQLite database file.
-  
+
 - **truncatable** as *boolean*, optional, default *true*
 
   Allows foreign tables to be truncated using the `TRUNCATE` command.
-  
+
 - **keep_connections** as *boolean*, optional, default *true*
-  
+
   Allows to keep connections to SQLite while there is no SQL operations between PostgreSQL and SQLite.
-  
+
 - **batch_size** as *integer*, optional, default *1*
 
   Specifies the number of rows which should be inserted in a single `INSERT` operation. This setting can be overridden for individual tables.
@@ -203,17 +203,17 @@ In OS `sqlite_fdw` works as executed code with permissions of user of PostgreSQL
   SQLite table name. Use if not equal to name of foreign table in PostgreSQL. Also see about [identifier case handling](#identifier-case-handling).
 
 - **truncatable** as *boolean*, optional, default from the same `CREATE SERVER` option
-  
+
   See `CREATE SERVER` options section for details.
 
 - **batch_size** as *integer*, optional, default from the same `CREATE SERVER` option
 
   See `CREATE SERVER` options section for details.
-  
+
 - **updatable** as *boolean*, optional, default *true*
 
   This option can allow or disallow write operations on a SQLite table independed of the same server option.
-  
+
 `sqlite_fdw` accepts the following column-level options via the
 `CREATE FOREIGN TABLE` command:
 
@@ -225,7 +225,7 @@ In OS `sqlite_fdw` works as executed code with permissions of user of PostgreSQL
 
 	Set preferred SQLite affinity for some PostgreSQL data types can be stored in different ways
 in SQLite (mixed affinity case). Updated and inserted values will have this affinity. Default preferred SQLite affinity for `timestamp` and `uuid` PostgreSQL data types is `text`.
-	
+
   - Use `INT` value for SQLite column (epoch Unix Time) to be treated/visualized as `timestamp` in PostgreSQL.
   - Use `BLOB` value for SQLite column to be treated/visualized as `uuid` in PostgreSQL 14+.
 
@@ -327,7 +327,7 @@ with names composed from ASCII base latin letters *only*.
 	CREATE TABLE T_dia (
 	  "Ä" INTEGER,
 	  "ä" NUMERIC
-	);		
+	);
 ```
 
 For SQLite there is no difference between
@@ -340,7 +340,7 @@ For SQLite there is no difference between
 ```
 For PostgreSQL the query with comment `№4` is independend query to table `T`, not to table `t` as other queries.
 Please note this table name composed from ASCII base latin letters *only*. This is not applicable for other
-alphabet systems or mixed names. This is because `toLower` operation in PostgreSQL is Unicode opration but 
+alphabet systems or mixed names. This is because `toLower` operation in PostgreSQL is Unicode opration but
 ASCII only operation in SQLite, hence other characters will not be changed.
 
 ```sql
@@ -585,6 +585,8 @@ The test cases for each version are based on the test of corresponding version o
 You can execute test by test.sh directly.
 The version of PostgreSQL is detected automatically by $(VERSION) variable in Makefile.
 The corresponding sql and expected directory will be used to compare the result. For example, for Postgres 15.0, you can execute "test.sh" directly, and the sql/15.0 and expected/15.0 will be used to compare automatically.
+
+Test data directory is `/tmp/sqlite_fdw_test`. If you have `/tmp` mounted as `tmpfs` the tests will be up to 800% faster.
 
 Contributing
 ------------
