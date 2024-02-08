@@ -95,27 +95,6 @@ pg_column_void_text_error()
 }
 
 /*
- * Human readable message about disallowed combination of PostgreSQL columnn
- * data type and SQLite data value affinity
- */
-static void
-sqlite_value_to_pg_error()
-{
-	ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-					errmsg("SQLite value is not compatible with PostgreSQL column data type")));
-}
-
-/*
- * Human readable message about disallowed void text for the PostgreSQL columnn
- */
-static void
-pg_column_void_text_error()
-{
-	ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-					errmsg("Void text disallowed this column")));
-}
-
-/*
  * convert_sqlite_to_pg: Convert Sqlite data into PostgreSQL's compatible data types
  */
 NullableDatum
