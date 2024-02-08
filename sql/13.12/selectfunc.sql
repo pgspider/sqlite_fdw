@@ -5,7 +5,7 @@ SET timezone='Japan';
 CREATE EXTENSION sqlite_fdw;
 --Testcase 2:
 CREATE SERVER server1 FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test_selectfunc.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/selectfunc.db');
 --CREATE USER MAPPING FOR CURRENT_USER SERVER server1 OPTIONS(user 'user', password 'pass');
 
 --IMPORT FOREIGN SCHEMA public FROM SERVER server1 INTO public OPTIONS(import_time_text 'false');

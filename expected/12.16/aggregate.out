@@ -4,7 +4,7 @@
 CREATE EXTENSION sqlite_fdw;
 --Testcase 17:
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 --Testcase 18:
 CREATE FOREIGN TABLE multiprimary(a int, b int OPTIONS (key 'true'), c int OPTIONS(key 'true')) SERVER sqlite_svr;
 -- test for aggregate pushdown
@@ -17,7 +17,7 @@ DROP EXTENSION IF EXISTS sqlite_fdw CASCADE;
 CREATE EXTENSION sqlite_fdw;
 --Testcase 11:
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 --Testcase 12:
 CREATE FOREIGN TABLE multiprimary(a int, b int OPTIONS (key 'true'), c int OPTIONS(key 'true')) SERVER sqlite_svr;
 --Testcase 1:

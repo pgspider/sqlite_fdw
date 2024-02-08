@@ -8,9 +8,9 @@ CREATE EXTENSION sqlite_fdw;
 DO $d$
     BEGIN
         EXECUTE $$CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-            OPTIONS (database '/tmp/sqlitefdw_test_post.db')$$;
+            OPTIONS (database '/tmp/sqlite_fdw_test/post.db')$$;
         EXECUTE $$CREATE SERVER sqlite_svr2 FOREIGN DATA WRAPPER sqlite_fdw
-            OPTIONS (database '/tmp/sqlitefdw_test_post.db')$$;
+            OPTIONS (database '/tmp/sqlite_fdw_test/post.db')$$;
     END;
 $d$;
 
@@ -134,7 +134,7 @@ SELECT c3, c4 FROM ft1 ORDER BY c3, c1 LIMIT 1;  -- should fail
 DO $d$
     BEGIN
         EXECUTE $$ALTER SERVER sqlite_svr
-            OPTIONS (SET database '/tmp/sqlitefdw_test_post.db')$$;
+            OPTIONS (SET database '/tmp/sqlite_fdw_test/post.db')$$;
     END;
 $d$;
 --Testcase 8:
@@ -3159,7 +3159,7 @@ SHOW is_superuser;
 DO $d$
     BEGIN
         EXECUTE $$CREATE SERVER sqlite_nopw FOREIGN DATA WRAPPER sqlite_fdw
-            OPTIONS (database '/tmp/sqlitefdw_test_post.db')$$;
+            OPTIONS (database '/tmp/sqlite_fdw_test/post.db')$$;
     END;
 $d$;
 

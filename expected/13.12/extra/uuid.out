@@ -4,7 +4,7 @@
 CREATE EXTENSION sqlite_fdw;
 --Testcase 45:
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 --Testcase 46:
 CREATE SERVER sqlite2 FOREIGN DATA WRAPPER sqlite_fdw;
 --Testcase 109:
@@ -440,11 +440,13 @@ ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" TYPE uuid;
 --Testcase 189:
 SELECT * FROM "type_UUID+" WHERE "i" = 42;
 ERROR:  PostgreSQL uuid data type allows only 16 bytes SQLite blob value
-HINT:  incorrect value is 17 bytes length
+HINT:  SQLite value with "blob" affinity (17 bytes) in hex : a0eebc999c0b4ef8bb6d6bb9bd380a11f1
+CONTEXT:  foreign table "type_UUID+" foreign column "u" have data type "uuid" (usual affinity "blob"), in query there is reference to foreign column
 --Testcase 190:
 SELECT * FROM "type_UUID+" WHERE "i" = 43;
 ERROR:  PostgreSQL uuid data type allows only 16 bytes SQLite blob value
-HINT:  incorrect value is 15 bytes length
+HINT:  SQLite value with "blob" affinity (15 bytes) in hex : b0eebc999c0b4ef8bb6d6bb9bd380a
+CONTEXT:  foreign table "type_UUID+" foreign column "u" have data type "uuid" (usual affinity "blob"), in query there is reference to foreign column
 --Testcase 191:
 EXPLAIN VERBOSE
 DELETE FROM "type_UUID" WHERE "i" IN (42, 43);

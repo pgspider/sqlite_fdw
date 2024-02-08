@@ -1,11 +1,11 @@
 --
--- INT4
+-- INT4 Based on PostgreSQL tests, please don't add additional tests here, use other test files
 --
 --Testcase 61:
 CREATE EXTENSION sqlite_fdw;
 --Testcase 62:
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test_core.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/core.db');
 --Testcase 63:
 CREATE FOREIGN TABLE INT4_TBL(f1 int4 OPTIONS (key 'true')) SERVER sqlite_svr;
 --Testcase 64:

@@ -15,19 +15,18 @@
 #include "postgres.h"
 #include "sqlite_fdw.h"
 
-#include <stdio.h>
 #include <sqlite3.h>
 
 #include "catalog/pg_type_d.h"
+#include "commands/defrem.h"
+#include "mb/pg_wchar.h"
+#include "nodes/makefuncs.h"
+#include "parser/parse_type.h"
 #include "utils/builtins.h"
 #include "utils/lsyscache.h"
-#include "utils/uuid.h"
 #include "utils/timestamp.h"
-#include "nodes/makefuncs.h"
-#include "catalog/pg_type.h"
-#include "parser/parse_type.h"
-#include "mb/pg_wchar.h"
-#include "commands/defrem.h"
+#include "utils/uuid.h"
+
 #ifdef GIS_SUPPORT
 #include <spatialite.h>
 #endif
@@ -38,20 +37,12 @@ typedef struct blobOutput
 	int			len;
 } blobOutput;
 
-static int32
-			sqlite_affinity_eqv_to_pgtype(Oid pgtyp);
-static const char*
-			sqlite_datatype(int t);
-static void
-			sqlite_value_to_pg_error (Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid, int sqlite_value_affinity, int affinity_for_pg_column, int value_byte_size_blob_or_utf8);
 static char *
 			get_column_option_string(Oid relid, int varattno, char *optionname);
 blobOutput
 			sqlite_bind_blob_algo (Datum value);
 static char *
-			sqlite_text_value_to_pg_db_encoding(sqlite3_stmt * stmt, int stmt_colid);
-static void
-			pg_column_void_text_error (Form_pg_attribute att);
+			sqlite_text_value_to_pg_db_encoding(sqlite3_value *val);
 static char *
 			int642binstr(sqlite3_int64 num, char *s, size_t len);
 static bool
@@ -83,17 +74,37 @@ static const char *postGisSpecificTypes[] =
 static const char *postGisSQLiteCompatibleTypes[] = { "geometry", "geography", NULL };
 
 /*
+ * Human readable message about disallowed combination of PostgreSQL columnn
+ * data type and SQLite data value affinity
+ */
+static void
+sqlite_value_to_pg_error()
+{
+	ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+					errmsg("SQLite value is not compatible with PostgreSQL column data type")));
+}
+
+/*
+ * Human readable message about disallowed void text for the PostgreSQL columnn
+ */
+static void
+pg_column_void_text_error()
+{
+	ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+					errmsg("Void text disallowed this column")));
+}
+
+/*
  * convert_sqlite_to_pg: Convert Sqlite data into PostgreSQL's compatible data types
  */
 NullableDatum
-sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid, AttInMetadata *attinmeta, AttrNumber attnum, int sqlite_value_affinity, int AffinityBehaviourFlags)
+sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *attinmeta, AttrNumber attnum, int sqlite_value_affinity, int AffinityBehaviourFlags)
 {
 	Oid			pgtyp = att->atttypid;
 	Datum		value_datum = 0;
 	char	   *valstr = NULL;
-	int			affinity_for_pg_column = sqlite_affinity_eqv_to_pgtype(pgtyp);
 				/* Compute always, void text and void BLOB will be special cases */
-	int		 	value_byte_size_blob_or_utf8 = sqlite3_column_bytes(stmt, stmt_colid);
+	int		 	value_byte_size_blob_or_utf8 = sqlite3_value_bytes(val);
 
 	switch (pgtyp)
 	{
@@ -103,26 +114,26 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 				{
 					case SQLITE_INTEGER: /* <-- proper and recommended SQLite affinity of value for pgtyp */
 						{
-							int			value = sqlite3_column_int(stmt, stmt_colid);
+							int			value = sqlite3_value_int(val);
 							return (struct NullableDatum){BoolGetDatum(value), false};
 						}
 					case SQLITE_FLOAT:
 					case SQLITE_BLOB:
 						{
-							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error();
 							break;
 						}
 					case SQLITE3_TEXT:
 					{
 						if (value_byte_size_blob_or_utf8)
-							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error();
 						else
-							pg_column_void_text_error(att);
+							pg_column_void_text_error();
 						break;
 					}
 					default:
 					{
-						sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+						sqlite_value_to_pg_error();
 						break;
 					}
 				}
@@ -136,14 +147,14 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 					case SQLITE_FLOAT:
 					default:
 						{
-							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error();
 							break;
 						}
 					case SQLITE_BLOB: /* <-- proper and recommended SQLite affinity of value for pgtyp */
 					case SQLITE3_TEXT: /* threated as UTF-8 text BLOB */
 					{
 						value_datum = (Datum) palloc0(value_byte_size_blob_or_utf8 + VARHDRSZ);
-						memcpy(VARDATA(value_datum), sqlite3_column_blob(stmt, stmt_colid), value_byte_size_blob_or_utf8);
+						memcpy(VARDATA(value_datum), sqlite3_value_blob(val), value_byte_size_blob_or_utf8);
 						SET_VARSIZE(value_datum, value_byte_size_blob_or_utf8 + VARHDRSZ);
 						return (struct NullableDatum) {PointerGetDatum((const void *)value_datum), false};
 						break;
@@ -157,22 +168,23 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 				{
 					case SQLITE_INTEGER: /* <-- proper and recommended SQLite affinity of value for pgtyp */
 						{
-							int			value = sqlite3_column_int(stmt, stmt_colid);
-							return (struct NullableDatum) {Int16GetDatum(value), false};
+							sqlite_int64 i64v = sqlite3_value_int64(val);
+							Datum d = DirectFunctionCall1(int82, Int64GetDatum((int64) i64v));
+							return (struct NullableDatum) {d, false};
 						}
 					case SQLITE_FLOAT:
 					case SQLITE_BLOB:
 					default:
 						{
-							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error();
 							break;
 						}
 					case SQLITE3_TEXT:
 					{
 						if (value_byte_size_blob_or_utf8)
-							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error();
 						else
-							pg_column_void_text_error(att);
+							pg_column_void_text_error();
 						break;
 					}
 				}
@@ -184,12 +196,13 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 				{
 					case SQLITE_INTEGER: /* <-- proper and recommended SQLite affinity of value for pgtyp */
 					{
-						int			value = sqlite3_column_int(stmt, stmt_colid);
-						return (struct NullableDatum) {Int32GetDatum(value), false};
+						sqlite_int64 i64v = sqlite3_value_int64(val);
+						Datum d = DirectFunctionCall1(int84, Int64GetDatum((int64) i64v));
+						return (struct NullableDatum) {d, false};
 					}
 					case SQLITE_FLOAT: /* TODO: This code is untill mod() pushdowning fix here*/
 					{
-						int			value = sqlite3_column_int(stmt, stmt_colid);
+						int			value = sqlite3_value_int(val);
 
 						elog(DEBUG2, "sqlite_fdw : real aff. was readed for pg int32");
 						return (struct NullableDatum) {Int32GetDatum(value), false};
@@ -197,15 +210,15 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 					case SQLITE_BLOB:
 					default:
 						{
-							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error();
 							break;
 						}
 					case SQLITE3_TEXT:
 					{
 						if (value_byte_size_blob_or_utf8)
-							sqlite_value_to_pg_error (att, stmt, stmt_colid, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error();
 						else
-							pg_column_void_text_error(att);
+							pg_column_void_text_error();
 						break;
 					}
 				}
@@ -217,28 +230,28 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 				{
 					case SQLITE_INTEGER: /* <-- proper and recommended SQLite affinity of value for pgtyp */
 						{
-							sqlite3_int64 value = sqlite3_column_int64(stmt, stmt_colid);
+							sqlite3_int64 value = sqlite3_value_int64(val);
 							return (struct NullableDatum) {Int64GetDatum(value), false};
 						}
 					case SQLITE_FLOAT: /* TODO: This code is untill mod() pushdowning fix here*/
 					{
-						int			value = sqlite3_column_int(stmt, stmt_colid);
-
+						double		value = sqlite3_value_double(val);
+						Datum	 	d = DirectFunctionCall1(dtoi8, Float8GetDatum((float8) value));
 						elog(DEBUG2, "sqlite_fdw : real aff. was readed for pg int64");
-						return (struct NullableDatum) {Int32GetDatum(value), false};
+						return (struct NullableDatum) {d, false};
 					}
 					case SQLITE_BLOB:
 					default:
 						{
-							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error();
 							break;
 						}
 					case SQLITE3_TEXT:
 					{
 						if (value_byte_size_blob_or_utf8)
-							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error();
 						else
-							pg_column_void_text_error(att);
+							pg_column_void_text_error();
 						break;
 					}
 				}
@@ -250,22 +263,23 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 				{
 					case SQLITE_FLOAT: /* <-- proper and recommended SQLite affinity of value for pgtyp */
 						{
-							double		value = sqlite3_column_double(stmt, stmt_colid);
-							return (struct NullableDatum) {Float4GetDatum((float4) value), false};
+							double		value = sqlite3_value_double(val);
+							Datum		d = DirectFunctionCall1(dtof, Float8GetDatum((float8)value));
+							return (struct NullableDatum) {d, false};
 						}
 					case SQLITE_INTEGER:
 					case SQLITE_BLOB:
 					default:
 						{
-							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error();
 							break;
 						}
 					case SQLITE3_TEXT:
 					{
 						if (value_byte_size_blob_or_utf8)
-							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error();
 						else
-							pg_column_void_text_error(att);
+							pg_column_void_text_error();
 						break;
 					}
 				}
@@ -277,22 +291,22 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 				{
 					case SQLITE_FLOAT: /* <-- proper and recommended SQLite affinity of value for pgtyp */
 						{
-							double		value = sqlite3_column_double(stmt, stmt_colid);
+							double		value = sqlite3_value_double(val);
 							return (struct NullableDatum) {Float8GetDatum((float8) value), false};
 						}
 					case SQLITE_INTEGER:
 					case SQLITE_BLOB:
 					default:
 						{
-							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error();
 							break;
 						}
 					case SQLITE3_TEXT:
 					{
 						if (value_byte_size_blob_or_utf8)
-							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error();
 						else
-							pg_column_void_text_error(att);
+							pg_column_void_text_error();
 						break;
 					}
 				}
@@ -315,27 +329,28 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 				{
 					case SQLITE_INTEGER:
 						{
-							Timestamp value = (Timestamp)sqlite3_column_int64(stmt, stmt_colid);
+							Timestamp value = (Timestamp)sqlite3_value_int64(val);
 							return (struct NullableDatum) {TimestampGetDatum(value), false};
 						}
 					case SQLITE_FLOAT:
 						{
-							double		value = sqlite3_column_double(stmt, stmt_colid);
+							double		value = sqlite3_value_double(val);
 							Datum		d = DirectFunctionCall1(float8_timestamptz, Float8GetDatum((float8) value));
 							return (struct NullableDatum) {d, false};
 						}
 					case SQLITE_BLOB:
 					default:
 						{
-							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error();
 							break;
 						}
 					case SQLITE3_TEXT:
 					{
 						if (value_byte_size_blob_or_utf8)
-							valstr = sqlite_text_value_to_pg_db_encoding(stmt, stmt_colid);
+							valstr = sqlite_text_value_to_pg_db_encoding(val);
+							/* !!! use valstr later! */
 						else
-							pg_column_void_text_error(att);
+							pg_column_void_text_error();
 						break;
 					}
 				}
@@ -348,7 +363,7 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 					case SQLITE_INTEGER:
 					case SQLITE_FLOAT: /* <-- proper and recommended SQLite affinity of value for pgtyp */
 						{
-							double		value = sqlite3_column_double(stmt, stmt_colid);
+							double		value = sqlite3_value_double(val);
 
 							valstr = DatumGetCString(DirectFunctionCall1(float8out, Float8GetDatum((float8) value)));
 							break; /* !!! use valstr later! */
@@ -356,37 +371,36 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 					case SQLITE_BLOB:
 					default:
 						{
-							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error();
 							break;
 						}
 					case SQLITE3_TEXT:
 					{
 						if (value_byte_size_blob_or_utf8)
-							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error();
 						else
-							pg_column_void_text_error(att);
+							pg_column_void_text_error();
 						break;
 					}
 				}
 				break;
 			}
-			case UUIDOID:
-				{
+		case UUIDOID:
+			{
 				switch (sqlite_value_affinity)
 				{
 					case SQLITE_INTEGER:
 					case SQLITE_FLOAT:
 						{
-							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error();
 							break;
 						}
-					case SQLITE_BLOB: /* <-- first proper and recommended SQLite affinity of value for pgtyp */
+					case SQLITE_BLOB: /* <-- proper and recommended SQLite affinity of value for pgtyp */
 						{
 							if (value_byte_size_blob_or_utf8 != UUID_LEN)
 							{
 								ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-												errmsg("PostgreSQL uuid data type allows only %d bytes SQLite blob value", UUID_LEN),
-												errhint("incorrect value is %d bytes length", value_byte_size_blob_or_utf8)));
+												errmsg("PostgreSQL uuid data type allows only %d bytes SQLite blob value", UUID_LEN)));
 								break;
 							}
 						else
@@ -394,28 +408,28 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 								const unsigned char * sqlite_blob = 0;
 								pg_uuid_t  *retval = (pg_uuid_t *) palloc0(sizeof(pg_uuid_t));
 
-								sqlite_blob = sqlite3_column_blob(stmt, stmt_colid);
+								sqlite_blob = sqlite3_value_blob(val);
 								memcpy(retval->data, sqlite_blob, UUID_LEN);
 								return (struct NullableDatum){UUIDPGetDatum(retval), false};
 								break;
 							}
 						}
-					case SQLITE3_TEXT: /* <-- second proper and recommended SQLite affinity of value for pgtyp */
-					{
-						if (value_byte_size_blob_or_utf8)
-							/* SQLite UUID normalization added C function always get blob
-							 * form, of UUID, hence this case should cause error
-							 */
-							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
-						else
-							pg_column_void_text_error(att);
-						break;
-					}
+					/* SQLite UUID output always normalized to blob.
+					 * In sqlite_data_norm.c there is special additional C function.
+					 */
+					case SQLITE3_TEXT:
+						{
+							if (value_byte_size_blob_or_utf8)
+								sqlite_value_to_pg_error();
+							else
+								pg_column_void_text_error();
+							break;
+						}
 					default:
-					{
-						sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
-						break;
-					}
+						{
+							sqlite_value_to_pg_error();
+							break;
+						}
 				}
 				break;
 			}
@@ -427,7 +441,7 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 					case SQLITE_INTEGER: /* <-- proper and recommended SQLite affinity of value for pgtyp */
 						{
 							char * buffer = (char *) palloc0(SQLITE_FDW_BIT_DATATYPE_BUF_SIZE);
-							sqlite3_int64 sqlti = sqlite3_column_int64(stmt, stmt_colid);
+							sqlite3_int64 sqlti = sqlite3_value_int64(val);
 
 							buffer = int642binstr(sqlti, buffer, SQLITE_FDW_BIT_DATATYPE_BUF_SIZE);
 							valstr = buffer;
@@ -438,15 +452,15 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 					case SQLITE_BLOB:
 					default:
 						{
-							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error();
 							break;
 						}
 					case SQLITE3_TEXT:
 					{
 						if (value_byte_size_blob_or_utf8)
-							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error();
 						else
-							pg_column_void_text_error(att);
+							pg_column_void_text_error();
 						break;
 					}
 				}
@@ -462,7 +476,7 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 		case DATEOID:
 		case TIMEOID:
 			{
-				valstr = sqlite_text_value_to_pg_db_encoding(stmt, stmt_colid);
+				valstr = sqlite_text_value_to_pg_db_encoding(val);
 				break;
 			}
 		default:
@@ -490,13 +504,13 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 						case SQLITE_FLOAT:
 						default:
 							{
-								sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+								sqlite_value_to_pg_error();
 								break;
 							}
 						case SQLITE_BLOB: /* <-- proper and recommended SQLite affinity of value for pgtyp */
 						{
 							#ifdef GIS_SUPPORT
-							unsigned const char * p_blob = sqlite3_column_blob(stmt, stmt_colid);
+							unsigned const char * p_blob = sqlite3_value_blob(val);
 							value_datum = SpatiaLiteAsPostGISgeom (p_blob, att, value_byte_size_blob_or_utf8);
 							return (struct NullableDatum) {PointerGetDatum((const void *)value_datum), false};
 							#else
@@ -509,12 +523,12 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid,
 						case SQLITE3_TEXT:
 						{
 							/* Text data transport between PostGIS and SpatiaLite ? */
-							sqlite_value_to_pg_error (att, stmt, attnum, sqlite_value_affinity, affinity_for_pg_column, value_byte_size_blob_or_utf8);
+							sqlite_value_to_pg_error();
 							break;
 						}
 					}
 				}
-				valstr = sqlite_text_value_to_pg_db_encoding(stmt, stmt_colid);
+				valstr = sqlite_text_value_to_pg_db_encoding(val);
 				break;
 			}
 		break;
@@ -563,7 +577,6 @@ get_column_option_string(Oid relid, int varattno, char *optionname)
 	foreach(lc, options)
 	{
 		DefElem	*def = (DefElem *) lfirst(lc);
-
 		if (strcmp(def->defname, optionname) == 0)
 		{
 			coloptionvalue = defGetString(def);
@@ -685,7 +698,6 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 		case UUIDOID:
 			{
 				bool		uuid_as_blob = false;
-
 				if (relid)
 				{
 					char * optv = get_column_option_string (relid, attnum, "column_type");
@@ -778,127 +790,22 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 }
 
 /*
- * sqlite_affinity_eqv_to_pgtype:
- * Give nearest SQLite data affinity for PostgreSQL data type
- */
-static int32
-sqlite_affinity_eqv_to_pgtype(Oid type)
-{
-	switch (type)
-	{
-		case INT2OID:
-		case INT4OID:
-		case INT8OID:
-		case BOOLOID:
-			return SQLITE_INTEGER;
-		case FLOAT4OID:
-		case FLOAT8OID:
-		case NUMERICOID:
-			return SQLITE_FLOAT;
-		case BYTEAOID:
-		case UUIDOID:
-			return SQLITE_BLOB;
-		default:
-			return SQLITE3_TEXT;
-	}
-}
-
-/*
- * sqlite_datatype:
- * Give equivalent string for SQLite data affinity by int from enum
- * SQLITE_INTEGER etc.
- */
-static const char*
-sqlite_datatype(int t)
-{
-	static const char *azType[] = { "?", "integer", "real", "text", "blob", "null" };
-	switch (t)
-	{
-		case SQLITE_INTEGER:
-			return azType[1];
-		case SQLITE_FLOAT:
-			return azType[2];
-		case SQLITE3_TEXT:
-			return azType[3];
-		case SQLITE_BLOB:
-			return azType[4];
-		case SQLITE_NULL:
-			return azType[5];
-		default:
-			return azType[0];
-	}
-}
-
-/*
- * sqlite_value_to_pg_error:
- * Human readable message about disallowed combination of PostgreSQL columnn
- * data type and SQLite data value affinity
- */
-static void
-sqlite_value_to_pg_error (Form_pg_attribute att, sqlite3_stmt * stmt, int stmt_colid, int sqlite_value_affinity, int affinity_for_pg_column, int value_byte_size_blob_or_utf8)
-{
-	Oid			pgtyp = att->atttypid;
-	int32		pgtypmod = att->atttypmod;
-	NameData	pgColND = att->attname;
-	const char *sqlite_affinity = 0;
-	const char *pg_eqv_affinity = 0;
-	const char *pg_dataTypeName = 0;
-	const int	max_logged_byte_length = NAMEDATALEN;
-
-	pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(pgtyp, pgtypmod));
-	sqlite_affinity = sqlite_datatype(sqlite_value_affinity);
-	pg_eqv_affinity = sqlite_datatype(affinity_for_pg_column);
-
-	if (value_byte_size_blob_or_utf8 < max_logged_byte_length)
-	{
-		const unsigned char	*text_value = sqlite3_column_text(stmt, stmt_colid);
-		ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-						errmsg("SQLite data affinity \"%s\" disallowed for PostgreSQL data type \"%s\"", sqlite_affinity, pg_dataTypeName),
-						errhint("In column \"%.*s\" expected SQLite affinity \"%s\", incorrect value = '%s'", (int)sizeof(pgColND.data), pgColND.data, pg_eqv_affinity, text_value)));
-	}
-	else
-	{
-		ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-						errmsg("SQLite data affinity \"%s\" disallowed for PostgreSQL data type \"%s\"", sqlite_affinity, pg_dataTypeName),
-						errhint("In column \"%.*s\" expected SQLite affinity \"%s\", a long incorrect value (%d bytes)", (int)sizeof(pgColND.data), pgColND.data, pg_eqv_affinity, value_byte_size_blob_or_utf8)));
-	}
-}
-
-/*
- * pg_column_void_text_error:
- * Human readable message about disallowed void text for the PostgreSQL columnn
- */
-static void
-pg_column_void_text_error (Form_pg_attribute att)
-{
-	Oid			pgtyp = att->atttypid;
-	int32		pgtypmod = att->atttypmod;
-	NameData		pgColND = att->attname;
-	const char *pg_dataTypeName = 0;
-
-	pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(pgtyp, pgtypmod));
-	ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-					errmsg("Void text disallowed for PostgreSQL \"%s\" column", pg_dataTypeName),
-					errhint("Column name \"%.*s\"", (int)sizeof(pgColND.data), pgColND.data)));
-}
-
-/*
  * sqlite_text_value_to_pg_db_encoding:
  * Gives text from SQLite in PostgreSQL database encoding
  */
 static char *
-sqlite_text_value_to_pg_db_encoding(sqlite3_stmt * stmt, int stmt_colid)
+sqlite_text_value_to_pg_db_encoding(sqlite3_value *val)
 {
 	int pg_database_encoding = GetDatabaseEncoding(); /* very fast call, see PostgreSQL mbutils.c */
 	char *utf8_text_value;
 	/* Text from this SQLite function is always UTF-8,
 	 * see  https://www.sqlite.org/c3ref/column_blob.html
 	 */
-	utf8_text_value = (char *) sqlite3_column_text(stmt, stmt_colid);
+	utf8_text_value = (char *) sqlite3_value_text(val);
 	if (pg_database_encoding == PG_UTF8)
 		return utf8_text_value;
 	else
-		/* There is no UTF16 in PostgreSQL for fast sqlite3_column_text16, hence always convert */
+		/* There is no UTF16 in PostgreSQL for fast sqlite3_value_text16, hence always convert */
 		return (char *) pg_do_encoding_conversion((unsigned char *) utf8_text_value, strlen(utf8_text_value), PG_UTF8, pg_database_encoding);
 }
 

@@ -4,7 +4,7 @@
 CREATE EXTENSION sqlite_fdw;
 --Testcase 130:
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 --Testcase 131:
 CREATE FOREIGN TABLE department(department_id int OPTIONS (key 'true'), department_name text) SERVER sqlite_svr; 
 --Testcase 132:
@@ -1483,8 +1483,9 @@ SELECT * FROM fts_table; -- should work
 ALTER TABLE fts_table ALTER COLUMN name TYPE int;
 --Testcase 160:
 SELECT * FROM fts_table; -- should fail
-ERROR:  SQLite data affinity "text" disallowed for PostgreSQL data type "integer"
-HINT:  In column "name" expected SQLite affinity "integer", incorrect value = 'this is name'
+ERROR:  SQLite value is not compatible with PostgreSQL column data type
+HINT:  SQLite value with "text" affinity (12 bytes) : 'this is name'
+CONTEXT:  foreign table "fts_table" foreign column "name" have data type "integer" (usual affinity "integer"), in query there is whole-row reference to foreign table
 -- issue #62 github
 --Testcase 236:
 INSERT INTO noprimary VALUES (4, 'Test''s');
