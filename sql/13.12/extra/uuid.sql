@@ -4,7 +4,7 @@
 CREATE EXTENSION sqlite_fdw;
 --Testcase 45:
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
-OPTIONS (database '/tmp/sqlitefdw_test.db');
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 
 --Testcase 46:
 CREATE SERVER sqlite2 FOREIGN DATA WRAPPER sqlite_fdw;
