@@ -387,7 +387,7 @@ extern void sqlite_do_sql_command(sqlite3 * conn, const char *sql, int level, Li
 
 void sqlite_fdw_data_norm_functs_init(sqlite3* db);
 
-/* sqlite_query.c haders */
+/* sqlite_query.c headers */
 sqlite3_int64
 			binstr2int64(const char *s);
 

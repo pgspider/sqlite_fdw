@@ -133,7 +133,7 @@ SELECT c3, c4 FROM ft1 ORDER BY c3, c1 LIMIT 1;  -- should work
 ALTER SERVER sqlite_svr OPTIONS (SET database 'no such database');
 --Testcase 7:
 SELECT c3, c4 FROM ft1 ORDER BY c3, c1 LIMIT 1;  -- should fail
-ERROR:  SQL error during prepare: no such table: main.T 1 SELECT `C 1`, `c3`, `c4` FROM main."T 1" ORDER BY `c3` ASC NULLS LAST, `C 1` ASC NULLS LAST LIMIT 1
+ERROR:  failed to open SQLite DB. rc=14 path=no such database
 DO $d$
     BEGIN
         EXECUTE $$ALTER SERVER sqlite_svr
