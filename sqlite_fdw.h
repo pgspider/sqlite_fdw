@@ -325,6 +325,7 @@ extern EquivalenceMember *sqlite_find_em_for_rel_target(PlannerInfo *root,
 /* in sqlite_fdw.c */
 extern int	sqlite_set_transmission_modes(void);
 extern void sqlite_reset_transmission_modes(int nestlevel);
+extern const int sqlite_affinity_code(char* t);
 
 /* option.c headers */
 extern sqlite_opt * sqlite_get_options(Oid foreigntableid);
@@ -387,7 +388,7 @@ extern void sqlite_do_sql_command(sqlite3 * conn, const char *sql, int level, Li
 
 void sqlite_fdw_data_norm_functs_init(sqlite3* db);
 
-/* sqlite_query.c haders */
+/* sqlite_query.c headers */
 sqlite3_int64
 			binstr2int64(const char *s);
 

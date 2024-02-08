@@ -227,7 +227,7 @@ In OS `sqlite_fdw` works as executed code with permissions of user of PostgreSQL
 in SQLite (mixed affinity case). Updated and inserted values will have this affinity. Default preferred SQLite affinity for `timestamp` and `uuid` PostgreSQL data types is `text`.
 
   - Use `INT` value for SQLite column (epoch Unix Time) to be treated/visualized as `timestamp` in PostgreSQL.
-  - Use `BLOB` value for SQLite column to be treated/visualized as `uuid` in PostgreSQL 14+.
+  - Use `BLOB` value for SQLite column to be treated/visualized as `uuid`.
 
 - **key** as *boolean*, optional, default *false*
 
@@ -542,7 +542,7 @@ Limitations
 ### UUID values
 - `sqlite_fdw` UUID values support exists only for `uuid` columns in foreign table. SQLite documentation recommends to store UUID as value with both `blob` and `text` [affinity](https://www.sqlite.org/datatype3.html). `sqlite_fdw` can pushdown both reading and filtering both `text` and `blob` values.
 - Expected affinity of UUID value in SQLite table determined by `column_type` option of the column
-for `INSERT` and `UPDATE` commands. In PostgreSQL 14- only `text` data affinity is availlable, PostgreSQL 14+ supports also `blob` data affinity.
+for `INSERT` and `UPDATE` commands. PostgreSQL supports both `blob` and `text` [affinity](https://www.sqlite.org/datatype3.html).
 
 ### bit and varbit support
 - `sqlite_fdw` PostgreSQL `bit`/`varbit` values support based on `int` SQLite data affinity, because there is no per bit operations for SQLite `blob` affinity data. Maximum SQLite `int` affinity value is 8 bytes length, hence maximum `bit`/`varbit` values length is 64 bits.
@@ -552,7 +552,7 @@ Tests
 -----
 Test directory have structure as following:
 
-```sql
+```
 +---sql
 |   +---12.16
 |   |       filename1.sql

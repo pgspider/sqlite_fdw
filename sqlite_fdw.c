@@ -5738,6 +5738,8 @@ sqlite_affinity_eqv_to_pgtype(Oid type)
 	}
 }
 
+static const char *azType[] = { "?", "integer", "real", "text", "blob", "null" };
+
 /*
  * sqlite_datatype
  * Give equivalent string for SQLite data affinity by int from enum
@@ -5746,7 +5748,6 @@ sqlite_affinity_eqv_to_pgtype(Oid type)
 const char*
 sqlite_datatype(int t)
 {
-	static const char *azType[] = { "?", "integer", "real", "text", "blob", "null" };
 	switch (t)
 	{
 		case SQLITE_INTEGER:
@@ -5762,6 +5763,28 @@ sqlite_datatype(int t)
 		default:
 			return azType[0];
 	}
+}
+
+/*
+ * Give SQLite affinity enum int for SQLite data affinity string
+ */
+const int
+sqlite_affinity_code(char* t)
+{
+	if ( t == NULL )
+	    return SQLITE_NULL;
+    if (strcasecmp(t, azType[1]) == 0 || strcasecmp(t, "int") == 0)
+        return SQLITE_INTEGER;
+    if (strcasecmp(t, azType[2]) == 0)
+        return SQLITE_FLOAT;
+    if (strcasecmp(t, azType[3]) == 0)
+        return SQLITE_TEXT;
+    if (strcasecmp(t, azType[4]) == 0)
+        return SQLITE_BLOB;
+    /* if (strcasecmp(t, azType[5]) == 0)
+     * error value
+     */
+    return SQLITE_NULL;
 }
 
 /*

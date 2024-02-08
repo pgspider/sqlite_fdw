@@ -164,6 +164,7 @@ static void sqlite_get_relation_column_alias_ids(Var *node, RelOptInfo *foreignr
 static char *sqlite_quote_identifier(const char *s, char q);
 static bool sqlite_contain_immutable_functions_walker(Node *node, void *context);
 static bool sqlite_is_valid_type(Oid type);
+int preferred_sqlite_affinity (Oid relid, int varattno);
 
 /*
  * Append remote name of specified foreign table to buf.
@@ -2107,6 +2108,9 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 	}
 }
 
+/*
+ * Get column option with optionname for a variable attribute in deparsing context
+ */
 static char *
 sqlite_deparse_column_option(int varno, int varattno, PlannerInfo *root, char *optionname)
 {
@@ -2296,6 +2300,35 @@ sqlite_deparse_update(StringInfo buf, PlannerInfo *root,
 	}
 }
 
+/* Preferred SQLite affinity from "column_type" foreign column option
+ * SQLITE_NULL if no value or no normal value
+ */
+int
+preferred_sqlite_affinity (Oid relid, int varattno)
+{
+	char	   *coltype = NULL;
+	List	   *options;
+	ListCell   *lc;
+
+	elog(DEBUG4, "sqlite_fdw : %s ", __func__);
+	if (varattno == 0)
+		return SQLITE_NULL;
+
+	options = GetForeignColumnOptions(relid, varattno);
+	foreach(lc, options)
+	{
+		DefElem	*def = (DefElem *) lfirst(lc);
+
+		if (strcmp(def->defname, "column_type") == 0)
+		{
+			coltype = defGetString(def);
+			break;
+		}
+		elog(DEBUG4, "column type = %s", coltype);
+	}
+	return sqlite_affinity_code(coltype);
+}
+
 /*
  * deparse remote UPDATE statement
  *
@@ -2346,7 +2379,11 @@ sqlite_deparse_direct_update_sql(StringInfo buf, PlannerInfo *root,
 	forboth(lc, targetlist, lc2, targetAttrs)
 	{
 		int			attnum = lfirst_int(lc2);
+		int			preferred_affinity = SQLITE_NULL;
 		TargetEntry *tle;
+		RangeTblEntry *rte;
+		bool		special_affinity = false;
+		Oid			pg_attyp;
 #if (PG_VERSION_NUM >= 140000)
 		tle = lfirst_node(TargetEntry, lc);
 
@@ -2366,8 +2403,27 @@ sqlite_deparse_direct_update_sql(StringInfo buf, PlannerInfo *root,
 		first = false;
 
 		sqlite_deparse_column_ref(buf, rtindex, attnum, root, false, true);
+
+		/* Get RangeTblEntry from array in PlannerInfo. */
+		rte = planner_rt_fetch(rtindex, root);
+		pg_attyp = get_atttype(rte->relid, attnum);
+		preferred_affinity = preferred_sqlite_affinity(rte->relid, attnum);
+
 		appendStringInfoString(buf, " = ");
+
+		special_affinity = (pg_attyp == UUIDOID && preferred_affinity == SQLITE3_TEXT) ||
+						   (pg_attyp == TIMESTAMPOID && preferred_affinity == SQLITE_INTEGER);
+		if (special_affinity)
+		{
+			elog(DEBUG3, "sqlite_fdw : aff %d\n", preferred_affinity);
+			if (pg_attyp == UUIDOID && preferred_affinity == SQLITE3_TEXT)
+				appendStringInfo(buf, "sqlite_fdw_uuid_str(");
+			if (pg_attyp == TIMESTAMPOID && preferred_affinity == SQLITE_INTEGER)
+				appendStringInfo(buf, "strftime(");
+		}
 		sqlite_deparse_expr((Expr *) tle->expr, &context);
+    	if (special_affinity)
+			appendStringInfoString(buf, ")");
 	}
 
 	sqlite_reset_transmission_modes(nestlevel);

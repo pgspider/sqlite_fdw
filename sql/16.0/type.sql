@@ -138,7 +138,6 @@ SELECT * FROM type_JSON;
 --Testcase 57
 DELETE FROM type_JSON;
 
--- drop column
 --Testcase 62:
 DROP FOREIGN TABLE IF EXISTS "type_BOOLEAN";
 --Testcase 63:
@@ -259,6 +258,23 @@ SELECT * FROM "type_DOUBLE"; -- OK
 
 --Testcase 107:
 ALTER FOREIGN TABLE "type_DOUBLE" ALTER COLUMN col TYPE float8;
+
+--Testcase 108:
+INSERT INTO "type_DOUBLE" VALUES (PI());
+--Testcase 109: ERR primary key
+INSERT INTO "type_DOUBLE" VALUES (PI());
+--Testcase 110:
+INSERT INTO "type_DOUBLE" VALUES ('Infinity');
+--Testcase 111:
+INSERT INTO "type_DOUBLE" VALUES ('-Infinity');
+--Testcase 113:
+SELECT * FROM "type_DOUBLE"; -- OK, +- Inf
+--Testcase 114: ERR primary key
+INSERT INTO "type_DOUBLE" VALUES ('Infinity');
+--Testcase 115: ERR primary key
+INSERT INTO "type_DOUBLE" VALUES ('-Infinity');
+--Testcase 116:
+SELECT * FROM "type_DOUBLE"; -- OK, +- Inf
 
 --Testcase 47:
 DROP EXTENSION sqlite_fdw CASCADE;
