@@ -5140,6 +5140,8 @@ sqlite_to_pg_type(StringInfo str, char *type)
 		{"boolean"},
 		{"varchar"},
 		{"char"},
+		{"geometry"},
+		{"geography"},
 		{NULL}
 	};
 
