@@ -2411,20 +2411,22 @@ sqlite_deparse_direct_update_sql(StringInfo buf, PlannerInfo *root,
 		preferred_affinity = preferred_sqlite_affinity(rte->relid, attnum);
 
 		appendStringInfoString(buf, " = ");
-
-		special_affinity = (pg_attyp == UUIDOID && preferred_affinity == SQLITE3_TEXT) ||
-						   (pg_attyp == TIMESTAMPOID && preferred_affinity == SQLITE_INTEGER);
-		if (special_affinity)
+		if (pg_attyp == UUIDOID && preferred_affinity == SQLITE3_TEXT)
 		{
-			elog(DEBUG3, "sqlite_fdw : aff %d\n", preferred_affinity);
-			if (pg_attyp == UUIDOID && preferred_affinity == SQLITE3_TEXT)
-				appendStringInfo(buf, "sqlite_fdw_uuid_str(");
-			if (pg_attyp == TIMESTAMPOID && preferred_affinity == SQLITE_INTEGER)
-				appendStringInfo(buf, "strftime(");
+			appendStringInfo(buf, "sqlite_fdw_uuid_str(");
+			special_affinity = true;
+		} else if (pg_attyp == TIMESTAMPOID && preferred_affinity == SQLITE_INTEGER)
+		{
+			appendStringInfo(buf, "strftime(");
+			special_affinity = true;
 		}
 		sqlite_deparse_expr((Expr *) tle->expr, &context);
+
 		if (special_affinity)
+		{
+			elog(DEBUG4, "sqlite_fdw : aff %d\n", preferred_affinity);
 			appendStringInfoString(buf, ")");
+		}
 	}
 
 	sqlite_reset_transmission_modes(nestlevel);
