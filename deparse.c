@@ -164,7 +164,7 @@ static void sqlite_get_relation_column_alias_ids(Var *node, RelOptInfo *foreignr
 static char *sqlite_quote_identifier(const char *s, char q);
 static bool sqlite_contain_immutable_functions_walker(Node *node, void *context);
 static bool sqlite_is_valid_type(Oid type);
-int preferred_sqlite_affinity (Oid relid, int varattno);
+static int preferred_sqlite_affinity (Oid relid, int varattno);
 
 /*
  * Append remote name of specified foreign table to buf.
@@ -2300,7 +2300,8 @@ sqlite_deparse_update(StringInfo buf, PlannerInfo *root,
 	}
 }
 
-/* Preferred SQLite affinity from "column_type" foreign column option
+/*
+ * Preferred SQLite affinity from "column_type" foreign column option
  * SQLITE_NULL if no value or no normal value
  */
 int
@@ -2322,9 +2323,9 @@ preferred_sqlite_affinity (Oid relid, int varattno)
 		if (strcmp(def->defname, "column_type") == 0)
 		{
 			coltype = defGetString(def);
+			elog(DEBUG4, "column type = %s", coltype);
 			break;
 		}
-		elog(DEBUG4, "column type = %s", coltype);
 	}
 	return sqlite_affinity_code(coltype);
 }
@@ -2422,7 +2423,7 @@ sqlite_deparse_direct_update_sql(StringInfo buf, PlannerInfo *root,
 				appendStringInfo(buf, "strftime(");
 		}
 		sqlite_deparse_expr((Expr *) tle->expr, &context);
-    	if (special_affinity)
+		if (special_affinity)
 			appendStringInfoString(buf, ")");
 	}
 

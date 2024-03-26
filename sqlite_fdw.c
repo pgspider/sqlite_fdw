@@ -390,6 +390,8 @@ static void conversion_error_callback(void *arg);
 static int32 sqlite_affinity_eqv_to_pgtype(Oid type);
 const char* sqlite_datatype(int t);
 
+static const char *azType[] = { "?", "integer", "real", "text", "blob", "null" };
+
 /* Callback argument for sqlite_ec_member_matches_foreign */
 typedef struct
 {
@@ -5739,8 +5741,6 @@ sqlite_affinity_eqv_to_pgtype(Oid type)
 	}
 }
 
-static const char *azType[] = { "?", "integer", "real", "text", "blob", "null" };
-
 /*
  * sqlite_datatype
  * Give equivalent string for SQLite data affinity by int from enum
@@ -5773,19 +5773,16 @@ const int
 sqlite_affinity_code(char* t)
 {
 	if ( t == NULL )
-	    return SQLITE_NULL;
-    if (strcasecmp(t, azType[1]) == 0 || strcasecmp(t, "int") == 0)
-        return SQLITE_INTEGER;
-    if (strcasecmp(t, azType[2]) == 0)
-        return SQLITE_FLOAT;
-    if (strcasecmp(t, azType[3]) == 0)
-        return SQLITE_TEXT;
-    if (strcasecmp(t, azType[4]) == 0)
-        return SQLITE_BLOB;
-    /* if (strcasecmp(t, azType[5]) == 0)
-     * error value
-     */
-    return SQLITE_NULL;
+		return SQLITE_NULL;
+	if (strcasecmp(t, azType[1]) == 0 || strcasecmp(t, "int") == 0)
+		return SQLITE_INTEGER;
+	if (strcasecmp(t, azType[2]) == 0)
+		return SQLITE_FLOAT;
+	if (strcasecmp(t, azType[3]) == 0)
+		return SQLITE_TEXT;
+	if (strcasecmp(t, azType[4]) == 0)
+		return SQLITE_BLOB;
+	return SQLITE_NULL;
 }
 
 /*
@@ -5920,7 +5917,7 @@ conversion_error_callback(void *arg)
 			value_text = palloc (max_logged_byte_length * 2 + 1);
 			for (size_t i = 0; i < value_byte_size_blob_or_utf8; ++i)
 				sprintf(value_text + i * 2, "%02x", vt[i]);
-	    }
+		}
 
 		err_hint_mess = err_hint_mess0;
 		err_hint_mess += sprintf(
