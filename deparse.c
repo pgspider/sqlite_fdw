@@ -2415,11 +2415,15 @@ sqlite_deparse_direct_update_sql(StringInfo buf, PlannerInfo *root,
 		{
 			appendStringInfo(buf, "sqlite_fdw_uuid_str(");
 			special_affinity = true;
-		} else if (pg_attyp == TIMESTAMPOID && preferred_affinity == SQLITE_INTEGER)
-		{
-			appendStringInfo(buf, "strftime(");
-			special_affinity = true;
 		}
+		/* TODO: add TCs in future PR about mixed affinity
+		 * timestamp about fixing the same error
+		 *  else if (pg_attyp == TIMESTAMPOID && preferred_affinity == SQLITE_INTEGER)
+		 * {
+		 *	appendStringInfo(buf, "strftime(");
+		 *	special_affinity = true;
+		 * }
+		 */
 		sqlite_deparse_expr((Expr *) tle->expr, &context);
 
 		if (special_affinity)

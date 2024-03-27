@@ -150,9 +150,8 @@ static void
 sqlite3UuidBlobToStr( const unsigned char *aBlob, unsigned char *zs)
 {
 	static const char hex_dig[] = "0123456789abcdef";
-	int i = 0, k;
 	unsigned char x;
-	k = 0x550;
+	int i = 0, k=0x550;
 	for(; i < UUID_LEN; i++, k = k >> 1)
 	{
 		if( k&1 )
