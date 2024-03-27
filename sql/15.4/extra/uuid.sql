@@ -212,16 +212,22 @@ SELECT * FROM "type_UUID+" WHERE "u" IS NOT NULL;
 --Testcase 100:
 CREATE FOREIGN TABLE "type_UUIDpk" (col uuid OPTIONS (key 'true')) SERVER sqlite_svr;
 --Testcase 101:
-INSERT INTO "type_UUIDpk" VALUES ('{a0eebc99-9c0b4ef8-bb6d6bb9-bd380a11}');
+ALTER FOREIGN TABLE "type_UUIDpk" ALTER COLUMN col OPTIONS (ADD column_type 'TEXT');
 --Testcase 102:
-INSERT INTO "type_UUIDpk" VALUES ('{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a12}');
---Testcase 103: ERR - primary key
+INSERT INTO "type_UUIDpk" VALUES ('{a0eebc99-9c0b4ef8-bb6d6bb9-bd380a11}');
+--Testcase 103:
 INSERT INTO "type_UUIDpk" VALUES ('{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a12}');
 --Testcase 104:
-ALTER FOREIGN TABLE "type_UUIDpk" ALTER COLUMN col OPTIONS (ADD column_type 'BLOB');
---Testcase 105: NO ERR, but the same semantics!
+SELECT * FROM "type_UUIDpk";
+--Testcase 105: ERR - primary key
 INSERT INTO "type_UUIDpk" VALUES ('{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a12}');
 --Testcase 106:
+ALTER FOREIGN TABLE "type_UUIDpk" ALTER COLUMN col OPTIONS (SET column_type 'BLOB');
+--Testcase 107: NO ERR, but the same semantics!
+INSERT INTO "type_UUIDpk" VALUES ('{b0eebc99-9c0b4ef8-bb6d6bb9-bd380a12}');
+--Testcase 108:
+SELECT * FROM "type_UUIDpk";
+--Testcase 109:
 DELETE FROM "type_UUIDpk";
 
 --Testcase 200:

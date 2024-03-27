@@ -5262,15 +5262,13 @@ sqlite_execute_insert(EState *estate,
 	int			nestlevel;
 	int			bindnum = 0;
 	int			i;
+	Relation	rel = resultRelInfo->ri_RelationDesc;
+	Oid			foreignTableId = RelationGetRelid(rel);
 
 #if PG_VERSION_NUM >= 140000
-	Relation	rel = resultRelInfo->ri_RelationDesc;
 	TupleDesc	tupdesc = RelationGetDescr(rel);
-	Oid			foreignTableId = RelationGetRelid(rel);
-	elog(DEBUG1, "sqlite_fdw : %s for RelId %u", __func__, foreignTableId);
-#else
-	elog(DEBUG1, "sqlite_fdw : %s", __func__);
 #endif
+	elog(DEBUG1, "sqlite_fdw : %s for RelId %u", __func__, foreignTableId);
 
 	oldcontext = MemoryContextSwitchTo(fmstate->temp_cxt);
 
@@ -5314,11 +5312,7 @@ sqlite_execute_insert(EState *estate,
 #endif
 
 			value = slot_getattr(slots[i], attnum + 1, &isnull);
-#if PG_VERSION_NUM >= 140000
 			sqlite_bind_sql_var(att, bindnum, value, fmstate->stmt, &isnull, foreignTableId);
-#else
-			sqlite_bind_sql_var(att, bindnum, value, fmstate->stmt, &isnull, InvalidOid);
-#endif
 			bindnum++;
 		}
 	}
