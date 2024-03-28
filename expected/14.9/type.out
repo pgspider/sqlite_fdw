@@ -295,7 +295,6 @@ SELECT * FROM type_JSON;
 
 --Testcase 57
 DELETE FROM type_JSON;
--- drop column
 --Testcase 62:
 DROP FOREIGN TABLE IF EXISTS "type_BOOLEAN";
 --Testcase 63:
@@ -510,6 +509,44 @@ SELECT * FROM "type_DOUBLE"; -- OK
 
 --Testcase 107:
 ALTER FOREIGN TABLE "type_DOUBLE" ALTER COLUMN col TYPE float8;
+--Testcase 108:
+INSERT INTO "type_DOUBLE" VALUES (PI());
+--Testcase 109: ERR primary key
+INSERT INTO "type_DOUBLE" VALUES (PI());
+ERROR:  failed to execute remote SQL: rc=19 UNIQUE constraint failed: type_DOUBLE.col 
+   sql=INSERT INTO main."type_DOUBLE"(`col`) VALUES (?)
+--Testcase 110:
+INSERT INTO "type_DOUBLE" VALUES ('Infinity');
+--Testcase 111:
+INSERT INTO "type_DOUBLE" VALUES ('-Infinity');
+--Testcase 113:
+SELECT * FROM "type_DOUBLE"; -- OK, +- Inf
+        col        
+-------------------
+          1999.012
+ 3.141592653589793
+          Infinity
+         -Infinity
+(4 rows)
+
+--Testcase 114: ERR primary key
+INSERT INTO "type_DOUBLE" VALUES ('Infinity');
+ERROR:  failed to execute remote SQL: rc=19 UNIQUE constraint failed: type_DOUBLE.col 
+   sql=INSERT INTO main."type_DOUBLE"(`col`) VALUES (?)
+--Testcase 115: ERR primary key
+INSERT INTO "type_DOUBLE" VALUES ('-Infinity');
+ERROR:  failed to execute remote SQL: rc=19 UNIQUE constraint failed: type_DOUBLE.col 
+   sql=INSERT INTO main."type_DOUBLE"(`col`) VALUES (?)
+--Testcase 116:
+SELECT * FROM "type_DOUBLE"; -- OK, +- Inf
+        col        
+-------------------
+          1999.012
+ 3.141592653589793
+          Infinity
+         -Infinity
+(4 rows)
+
 --Testcase 47:
 DROP EXTENSION sqlite_fdw CASCADE;
 NOTICE:  drop cascades to 48 other objects

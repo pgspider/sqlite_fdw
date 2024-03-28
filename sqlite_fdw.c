@@ -390,6 +390,8 @@ static void conversion_error_callback(void *arg);
 static int32 sqlite_affinity_eqv_to_pgtype(Oid type);
 const char* sqlite_datatype(int t);
 
+static const char *azType[] = { "?", "integer", "real", "text", "blob", "null" };
+
 /* Callback argument for sqlite_ec_member_matches_foreign */
 typedef struct
 {
@@ -5140,6 +5142,7 @@ sqlite_to_pg_type(StringInfo str, char *type)
 		{"boolean"},
 		{"varchar"},
 		{"char"},
+		{"uuid"},
 		{NULL}
 	};
 
@@ -5259,15 +5262,13 @@ sqlite_execute_insert(EState *estate,
 	int			nestlevel;
 	int			bindnum = 0;
 	int			i;
+	Relation	rel = resultRelInfo->ri_RelationDesc;
+	Oid			foreignTableId = RelationGetRelid(rel);
 
 #if PG_VERSION_NUM >= 140000
-	Relation	rel = resultRelInfo->ri_RelationDesc;
 	TupleDesc	tupdesc = RelationGetDescr(rel);
-	Oid			foreignTableId = RelationGetRelid(rel);
-	elog(DEBUG1, "sqlite_fdw : %s for RelId %u", __func__, foreignTableId);
-#else
-	elog(DEBUG1, "sqlite_fdw : %s", __func__);
 #endif
+	elog(DEBUG1, "sqlite_fdw : %s for RelId %u", __func__, foreignTableId);
 
 	oldcontext = MemoryContextSwitchTo(fmstate->temp_cxt);
 
@@ -5311,11 +5312,7 @@ sqlite_execute_insert(EState *estate,
 #endif
 
 			value = slot_getattr(slots[i], attnum + 1, &isnull);
-#if PG_VERSION_NUM >= 140000
 			sqlite_bind_sql_var(att, bindnum, value, fmstate->stmt, &isnull, foreignTableId);
-#else
-			sqlite_bind_sql_var(att, bindnum, value, fmstate->stmt, &isnull, InvalidOid);
-#endif
 			bindnum++;
 		}
 	}
@@ -5746,7 +5743,6 @@ sqlite_affinity_eqv_to_pgtype(Oid type)
 const char*
 sqlite_datatype(int t)
 {
-	static const char *azType[] = { "?", "integer", "real", "text", "blob", "null" };
 	switch (t)
 	{
 		case SQLITE_INTEGER:
@@ -5762,6 +5758,25 @@ sqlite_datatype(int t)
 		default:
 			return azType[0];
 	}
+}
+
+/*
+ * Give SQLite affinity enum int for SQLite data affinity string
+ */
+const int
+sqlite_affinity_code(char* t)
+{
+	if ( t == NULL )
+		return SQLITE_NULL;
+	if (strcasecmp(t, azType[1]) == 0 || strcasecmp(t, "int") == 0)
+		return SQLITE_INTEGER;
+	if (strcasecmp(t, azType[2]) == 0)
+		return SQLITE_FLOAT;
+	if (strcasecmp(t, azType[3]) == 0)
+		return SQLITE_TEXT;
+	if (strcasecmp(t, azType[4]) == 0)
+		return SQLITE_BLOB;
+	return SQLITE_NULL;
 }
 
 /*
@@ -5896,7 +5911,7 @@ conversion_error_callback(void *arg)
 			value_text = palloc (max_logged_byte_length * 2 + 1);
 			for (size_t i = 0; i < value_byte_size_blob_or_utf8; ++i)
 				sprintf(value_text + i * 2, "%02x", vt[i]);
-	    }
+		}
 
 		err_hint_mess = err_hint_mess0;
 		err_hint_mess += sprintf(
