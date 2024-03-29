@@ -461,6 +461,15 @@ FROM regr_test WHERE x IN (10,20,30,80);
 SELECT count(*), sum(x), regr_sxx(y,x), sum(y),regr_syy(y,x), regr_sxy(y,x)
 FROM regr_test;
 
+--Testcase 590:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT count(*), sum(x), regr_sxx(y,x), sum(y),regr_syy(y,x), regr_sxy(y,x)
+FROM regr_test WHERE x IN (10,20,30,80);
+--Testcase 591:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT count(*), sum(x), regr_sxx(y,x), sum(y),regr_syy(y,x), regr_sxy(y,x)
+FROM regr_test;
+
 --Testcase 365:
 CREATE FOREIGN TABLE agg_t15 (a text, b int, c int, id int options (key 'true')) SERVER sqlite_svr;
 --Testcase 366:

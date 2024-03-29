@@ -797,6 +797,32 @@ FROM regr_test;
      5 | 240 |     6280 | 1490 |    95080 |     8680
 (1 row)
 
+--Testcase 590:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT count(*), sum(x), regr_sxx(y,x), sum(y),regr_syy(y,x), regr_sxy(y,x)
+FROM regr_test WHERE x IN (10,20,30,80);
+                                                                    QUERY PLAN                                                                     
+---------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate
+   Output: count(*), sum(x), regr_sxx(y, x), sum(y), regr_syy(y, x), regr_sxy(y, x)
+   ->  Foreign Scan on public.regr_test
+         Output: x, y, id
+         SQLite query: SELECT sqlite_fdw_float(`x`), sqlite_fdw_float(`y`) FROM main."regr_test" WHERE (sqlite_fdw_float(`x`) IN (10, 20, 30, 80))
+(5 rows)
+
+--Testcase 591:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT count(*), sum(x), regr_sxx(y,x), sum(y),regr_syy(y,x), regr_sxy(y,x)
+FROM regr_test;
+                                           QUERY PLAN                                            
+-------------------------------------------------------------------------------------------------
+ Aggregate
+   Output: count(*), sum(x), regr_sxx(y, x), sum(y), regr_syy(y, x), regr_sxy(y, x)
+   ->  Foreign Scan on public.regr_test
+         Output: x, y, id
+         SQLite query: SELECT sqlite_fdw_float(`x`), sqlite_fdw_float(`y`) FROM main."regr_test"
+(5 rows)
+
 --Testcase 365:
 CREATE FOREIGN TABLE agg_t15 (a text, b int, c int, id int options (key 'true')) SERVER sqlite_svr;
 --Testcase 366:

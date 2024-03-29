@@ -78,6 +78,7 @@ CREATE FOREIGN TABLE VARCHAR_TBL(f1 varchar(4) OPTIONS (key 'true')) SERVER sqli
 --Testcase 276:
 CREATE FOREIGN TABLE FLOAT8_TBL(f1 float8 OPTIONS (key 'true')) SERVER sqlite_svr;
 
+
 -- avoid bit-exact output here because operations may not be bit-exact.
 --Testcase 588:
 SET extra_float_digits = 0;
@@ -87,13 +88,31 @@ SELECT avg(four) AS avg_1 FROM onek;
 --Testcase 2:
 SELECT avg(a) AS avg_32 FROM aggtest WHERE a < 100;
 
+CREATE FOREIGN TABLE agg_tb(v int, id integer OPTIONS (key 'true')) SERVER sqlite_svr;
+INSERT INTO agg_tb(v) VALUES(1), (2), (3);
+SELECT any_value(v) FROM agg_tb;
+
+DELETE FROM agg_tb;
+INSERT INTO agg_tb(v) VALUES (NULL);
+SELECT any_value(v) FROM agg_tb;
+
+DELETE FROM agg_tb;
+INSERT INTO agg_tb(v) VALUES (NULL), (1), (2);
+SELECT any_value(v) FROM agg_tb;
+
+CREATE FOREIGN TABLE agg_tb2(v text) SERVER sqlite_svr;
+INSERT INTO agg_tb2(v) VALUES (array['hello', 'world']);
+SELECT any_value(v) FROM agg_tb2;
+
 -- In 7.1, avg(float4) is computed using float8 arithmetic.
 --Testcase 3:
 -- Round the result to limited digits to avoid platform-specific results.
+--Testcase 678:
 SELECT avg(b)::numeric(10,3) AS avg_107_943 FROM aggtest;
 
 --Testcase 4:
 -- Round the result to limited digits to avoid platform-specific results.
+--Testcase 679:
 SELECT avg(gpa)::numeric(10,3) AS avg_3_4 FROM ONLY student;
 
 
@@ -103,9 +122,11 @@ SELECT sum(four) AS sum_1500 FROM onek;
 SELECT sum(a) AS sum_198 FROM aggtest;
 --Testcase 7:
 -- Round the result to limited digits to avoid platform-specific results.
+--Testcase 680:
 SELECT sum(b)::numeric(10,3) AS avg_431_773 FROM aggtest;
 --Testcase 8:
 -- Round the result to limited digits to avoid platform-specific results.
+--Testcase 681:
 SELECT sum(gpa)::numeric(10,3) AS avg_6_8 FROM ONLY student;
 
 --Testcase 9:
@@ -119,15 +140,19 @@ SELECT max(student.gpa) AS max_3_7 FROM student;
 
 --Testcase 13:
 -- Round the result to limited digits to avoid platform-specific results.
+--Testcase 682:
 SELECT stddev_pop(b)::numeric(20,10) FROM aggtest;
 --Testcase 14:
 -- Round the result to limited digits to avoid platform-specific results.
+--Testcase 683:
 SELECT stddev_samp(b)::numeric(20,10) FROM aggtest;
 --Testcase 15:
 -- Round the result to limited digits to avoid platform-specific results.
+--Testcase 684:
 SELECT var_pop(b)::numeric(20,10) FROM aggtest;
 --Testcase 16:
 -- Round the result to limited digits to avoid platform-specific results.
+--Testcase 685:
 SELECT var_samp(b)::numeric(20,10) FROM aggtest;
 
 --Testcase 17:
@@ -371,24 +396,31 @@ SELECT regr_count(b, a) FROM aggtest;
 SELECT regr_sxx(b, a) FROM aggtest;
 --Testcase 23:
 -- Round the result to limited digits to avoid platform-specific results.
+--Testcase 686:
 SELECT regr_syy(b, a)::numeric(20,10) FROM aggtest;
 --Testcase 24:
 -- Round the result to limited digits to avoid platform-specific results.
+--Testcase 687:
 SELECT regr_sxy(b, a)::numeric(20,10) FROM aggtest;
 --Testcase 25:
 -- Round the result to limited digits to avoid platform-specific results.
+--Testcase 688:
 SELECT regr_avgx(b, a), regr_avgy(b, a)::numeric(20,10) FROM aggtest;
 --Testcase 26:
 -- Round the result to limited digits to avoid platform-specific results.
+--Testcase 689:
 SELECT regr_r2(b, a)::numeric(20,10) FROM aggtest;
 --Testcase 27:
 -- Round the result to limited digits to avoid platform-specific results.
+--Testcase 690:
 SELECT regr_slope(b, a)::numeric(20,10), regr_intercept(b, a)::numeric(20,10) FROM aggtest;
 --Testcase 28:
 -- Round the result to limited digits to avoid platform-specific results.
+--Testcase 691:
 SELECT covar_pop(b, a)::numeric(20,10), covar_samp(b, a)::numeric(20,10) FROM aggtest;
 --Testcase 29:
 -- Round the result to limited digits to avoid platform-specific results.
+--Testcase 692:
 SELECT corr(b, a)::numeric(20,10) FROM aggtest;
 
 -- check single-tuple behavior
@@ -426,6 +458,15 @@ INSERT INTO regr_test VALUES (10,150),(20,250),(30,350),(80,540),(100,200);
 SELECT count(*), sum(x), regr_sxx(y,x), sum(y),regr_syy(y,x), regr_sxy(y,x)
 FROM regr_test WHERE x IN (10,20,30,80);
 --Testcase 364:
+SELECT count(*), sum(x), regr_sxx(y,x), sum(y),regr_syy(y,x), regr_sxy(y,x)
+FROM regr_test;
+
+--Testcase 590:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT count(*), sum(x), regr_sxx(y,x), sum(y),regr_syy(y,x), regr_sxy(y,x)
+FROM regr_test WHERE x IN (10,20,30,80);
+--Testcase 591:
+EXPLAIN (VERBOSE, COSTS OFF)
 SELECT count(*), sum(x), regr_sxx(y,x), sum(y),regr_syy(y,x), regr_sxy(y,x)
 FROM regr_test;
 
@@ -913,7 +954,9 @@ select distinct min(f1), max(f1) from minmaxtest;
 select max(min(unique1)) from tenk1;
 --Testcase 88:
 select (select max(min(unique1)) from int8_tbl) from tenk1;
-
+select avg((select avg(a1.col1 order by (select avg(a2.col2) from tenk1 a3))
+            from tenk1 a1(col1)))
+from tenk1 a2(col2);
 --
 -- Test removal of redundant GROUP BY columns
 --
@@ -983,9 +1026,9 @@ explain (costs off) select * from only agg_t1 group by a,b,c,d;
 --
 
 --Testcase 426:
-create foreign table t1(f1 int, f2 bigint) server sqlite_svr;
+create foreign table t1(f1 int, f2 int) server sqlite_svr;
 --Testcase 427:
-create foreign table t2(f1 bigint, f22 bigint) server sqlite_svr;
+create foreign table t2(f1 bigint, f2 oid) server sqlite_svr;
 
 --Testcase 428:
 select f1 from t1 left join t2 using (f1) group by f1;
@@ -997,8 +1040,81 @@ select t1.f1 from t1 left join t2 using (f1) group by t1.f1;
 --Testcase 431:
 select t1.f1 from t1 left join t2 using (f1) group by f1;
 
+-- check case where we have to inject nullingrels into coerced join alias
+select f1, count(*) from
+t1 x(x0,x1) left join (t1 left join t2 using(f1)) on (x0 = 0)
+group by f1;
+
+-- same, for a RelabelType coercion
+select f2, count(*) from
+t1 x(x0,x1) left join (t1 left join t2 using(f2)) on (x0 = 0)
+group by f2;
+
 --Testcase 432:
 drop foreign table t1, t2;
+--
+-- Test planner's selection of pathkeys for ORDER BY aggregates
+--
+
+-- Ensure we order by four.  This suits the most aggregate functions.
+explain (costs off)
+select sum(two order by two),max(four order by four), min(four order by four)
+from tenk1;
+
+-- Ensure we order by two.  It's a tie between ordering by two and four but
+-- we tiebreak on the aggregate's position.
+explain (costs off)
+select
+  sum(two order by two), max(four order by four),
+  min(four order by four), max(two order by two)
+from tenk1;
+
+-- Similar to above, but tiebreak on ordering by four
+explain (costs off)
+select
+  max(four order by four), sum(two order by two),
+  min(four order by four), max(two order by two)
+from tenk1;
+
+-- Ensure this one orders by ten since there are 3 aggregates that require ten
+-- vs two that suit two and four.
+explain (costs off)
+select
+  max(four order by four), sum(two order by two),
+  min(four order by four), max(two order by two),
+  sum(ten order by ten), min(ten order by ten), max(ten order by ten)
+from tenk1;
+
+-- Try a case involving a GROUP BY clause where the GROUP BY column is also
+-- part of an aggregate's ORDER BY clause.  We want a sort order that works
+-- for the GROUP BY along with the first and the last aggregate.
+explain (costs off)
+select
+  sum(unique1 order by ten, two), sum(unique1 order by four),
+  sum(unique1 order by two, four)
+from tenk1
+group by ten;
+
+-- Ensure that we never choose to provide presorted input to an Aggref with
+-- a volatile function in the ORDER BY / DISTINCT clause.  We want to ensure
+-- these sorts are performed individually rather than at the query level.
+explain (costs off)
+select
+  sum(unique1 order by two), sum(unique1 order by four),
+  sum(unique1 order by four, two), sum(unique1 order by two, random()),
+  sum(unique1 order by two, random(), random() + 1)
+from tenk1
+group by ten;
+
+-- Ensure consecutive NULLs are properly treated as distinct from each other
+select array_agg(distinct val)
+from (select null as val from generate_series(1, 2));
+
+-- Ensure no ordering is requested when enable_presorted_aggregate is off
+set enable_presorted_aggregate to off;
+explain (costs off)
+select sum(two order by two) from tenk1;
+reset enable_presorted_aggregate;
 
 --
 -- Test combinations of DISTINCT and/or ORDER BY
@@ -1243,6 +1359,70 @@ select string_agg(v, decode('ee', 'hex')) from bytea_test_table;
 --Testcase 447:
 drop foreign table bytea_test_table;
 
+-- Test parallel string_agg and array_agg
+create foreign table pagg_test (x int, y int) server sqlite_svr;
+insert into pagg_test
+select (case x % 4 when 1 then null else x end), x % 10
+from generate_series(1,5000) x;
+
+set parallel_setup_cost TO 0;
+set parallel_tuple_cost TO 0;
+set parallel_leader_participation TO 0;
+set min_parallel_table_scan_size = 0;
+set bytea_output = 'escape';
+set max_parallel_workers_per_gather = 2;
+
+-- create a view as we otherwise have to repeat this query a few times.
+create view v_pagg_test AS
+select
+	y,
+	min(t) AS tmin,max(t) AS tmax,count(distinct t) AS tndistinct,
+	min(b) AS bmin,max(b) AS bmax,count(distinct b) AS bndistinct,
+	min(a) AS amin,max(a) AS amax,count(distinct a) AS andistinct,
+	min(aa) AS aamin,max(aa) AS aamax,count(distinct aa) AS aandistinct
+from (
+	select
+		y,
+		unnest(regexp_split_to_array(a1.t, ','))::int AS t,
+		unnest(regexp_split_to_array(a1.b::text, ',')) AS b,
+		unnest(a1.a) AS a,
+		unnest(a1.aa) AS aa
+	from (
+		select
+			y,
+			string_agg(x::text, ',') AS t,
+			string_agg(x::text::bytea, ',') AS b,
+			array_agg(x) AS a,
+			array_agg(ARRAY[x]) AS aa
+		from pagg_test
+		group by y
+	) a1
+) a2
+group by y;
+
+-- Ensure results are correct.
+select * from v_pagg_test order by y;
+
+-- Ensure parallel aggregation is actually being used.
+explain (costs off) select * from v_pagg_test order by y;
+
+set max_parallel_workers_per_gather = 0;
+
+-- Ensure results are the same without parallel aggregation.
+select * from v_pagg_test order by y;
+
+-- Clean up
+reset max_parallel_workers_per_gather;
+reset bytea_output;
+reset min_parallel_table_scan_size;
+reset parallel_leader_participation;
+reset parallel_tuple_cost;
+reset parallel_setup_cost;
+
+drop view v_pagg_test;
+drop foreign table pagg_test;
+
+
 -- FILTER tests
 
 --Testcase 158:
@@ -1268,6 +1448,10 @@ insert into agg_t17 values ('a', 'b');
 --Testcase 450:
 select max(foo COLLATE "C") filter (where (bar collate "POSIX") > '0')
 from agg_t17;
+
+create foreign table agg_t170(v int) server sqlite_svr;
+insert into agg_t170(v) values (1), (2), (3);
+select any_value(v) filter (where v > 2) from agg_t170;
 
 -- outer reference in FILTER (PostgreSQL extension)
 --Testcase 451:
@@ -1378,12 +1562,15 @@ rollback;
 
 --Testcase 179:
 -- Round the result to limited digits to avoid platform-specific results.
+--Testcase 693:
 select (percentile_cont(0.5) within group (order by b))::numeric(20,10) from aggtest;
 --Testcase 180:
 -- Round the result to limited digits to avoid platform-specific results.
+--Testcase 694:
 select (percentile_cont(0.5) within group (order by b))::numeric(20,10), sum(b)::numeric(10,3) from aggtest;
 --Testcase 181:
 -- Round the result to limited digits to avoid platform-specific results.
+--Testcase 695:
 select percentile_cont(0.5) within group (order by thousand) from tenk1;
 --Testcase 182:
 select percentile_disc(0.5) within group (order by thousand) from tenk1;
@@ -1401,6 +1588,7 @@ select cume_dist(3) within group (order by f1) from INT4_TBL;
 insert into INT4_TBL values (5);
 --Testcase 458:
 -- Round the result to limited digits to avoid platform-specific results.
+--Testcase 696:
 select (percent_rank(3) within group (order by f1))::numeric(20,10) from INT4_TBL;
 --Testcase 459:
 delete from INT4_TBL where f1 = 5;
@@ -1924,6 +2112,48 @@ CREATE AGGREGATE balk(int4)
 -- SELECT balk(hundred) FROM tenk1;
 
 ROLLBACK;
+
+-- test multiple usage of an aggregate whose finalfn returns a R/W datum
+BEGIN;
+
+CREATE FUNCTION rwagg_sfunc(x anyarray, y anyarray) RETURNS anyarray
+LANGUAGE plpgsql IMMUTABLE AS $$
+BEGIN
+    RETURN array_fill(y[1], ARRAY[4]);
+END;
+$$;
+
+CREATE FUNCTION rwagg_finalfunc(x anyarray) RETURNS anyarray
+LANGUAGE plpgsql STRICT IMMUTABLE AS $$
+DECLARE
+    res x%TYPE;
+BEGIN
+    -- assignment is essential for this test, it expands the array to R/W
+    res := array_fill(x[1], ARRAY[4]);
+    RETURN res;
+END;
+$$;
+
+CREATE AGGREGATE rwagg(anyarray) (
+    STYPE = anyarray,
+    SFUNC = rwagg_sfunc,
+    FINALFUNC = rwagg_finalfunc
+);
+
+CREATE FUNCTION eatarray(x real[]) RETURNS real[]
+LANGUAGE plpgsql STRICT IMMUTABLE AS $$
+BEGIN
+    x[1] := x[1] + 1;
+    RETURN x;
+END;
+$$;
+
+CREATE FOREIGN TABLE float_tb(f real) SERVER sqlite_svr;
+INSERT INTO float_tb(f)  VALUES (1.0);
+SELECT eatarray(rwagg(ARRAY[f::real])), eatarray(rwagg(ARRAY[f::real])) FROM float_tb;
+
+ROLLBACK;
+
 
 -- test coverage for aggregate combine/serial/deserial functions
 BEGIN;
