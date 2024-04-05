@@ -151,7 +151,7 @@ SELECT c3, c4 FROM ft1 ORDER BY c3, c1 LIMIT 1;  -- should work
 ALTER SERVER sqlite_svr OPTIONS (SET database 'no such database');
 --Testcase 7:
 SELECT c3, c4 FROM ft1 ORDER BY c3, c1 LIMIT 1;  -- should fail
-ERROR:  Failed to open SQLite DB
+ERROR:  Failed to open SQLite DB, file 'no such database', result code 14
 DO $d$
     BEGIN
         EXECUTE $$ALTER SERVER sqlite_svr

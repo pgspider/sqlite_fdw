@@ -220,9 +220,7 @@ sqlite_make_new_connection(ConnCacheEntry *entry, ForeignServer *server)
 	if (rc != SQLITE_OK)
 		ereport(ERROR,
 				(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
-				 errmsg("Failed to open SQLite DB"),
-				 errcontext("File %s", dbpath),
-				 errhint("SQLite code rc %d", rc)));
+				 errmsg("Failed to open SQLite DB, file '%s', result code %d", dbpath, rc)));
 	/* make 'LIKE' of SQLite case sensitive like PostgreSQL */
 	rc = sqlite3_exec(entry->conn, "pragma case_sensitive_like=1",
 					  NULL, NULL, &err);
@@ -235,8 +233,7 @@ sqlite_make_new_connection(ConnCacheEntry *entry, ForeignServer *server)
 		entry->conn = NULL;
 		ereport(ERROR,
 				(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
-				 errmsg("Failed to open SQLite DB"),
-				 errhint("SQLite error '%s', SQLite result code %d", perr, rc)));
+				 errmsg("Failed to open SQLite DB, file '%s', SQLite error '%s', result code %d", dbpath, perr, rc)));
 	}
 	/* add included inner SQLite functions from separate c file
 	 * for using in data unifying during deparsing
