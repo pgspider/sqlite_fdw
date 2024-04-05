@@ -151,7 +151,7 @@ SELECT c3, c4 FROM ft1 ORDER BY c3, c1 LIMIT 1;  -- should work
 ALTER SERVER sqlite_svr OPTIONS (SET database 'no such database');
 --Testcase 7:
 SELECT c3, c4 FROM ft1 ORDER BY c3, c1 LIMIT 1;  -- should fail
-ERROR:  failed to open SQLite DB. rc=14 path=no such database
+ERROR:  Failed to open SQLite DB
 DO $d$
     BEGIN
         EXECUTE $$ALTER SERVER sqlite_svr
@@ -6554,8 +6554,9 @@ ALTER FOREIGN TABLE ft1 RENAME TO ft1_org;
 ALTER FOREIGN TABLE ft1_constraint RENAME TO ft1;
 --Testcase 319:
 INSERT INTO ft1(c1, c2) VALUES(11, 12);  -- duplicate key
-ERROR:  failed to execute remote SQL: rc=19 UNIQUE constraint failed: t1_constraint.c1 
-   sql=INSERT INTO main."t1_constraint"(`c1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+ERROR:  Failed to execute remote SQL
+HINT:  SQLite error 'UNIQUE constraint failed: t1_constraint.c1', SQLite result code 19
+CONTEXT:  SQL query: INSERT INTO main."t1_constraint"(`c1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 --Testcase 320:
 INSERT INTO ft1(c1, c2) VALUES(11, 12) ON CONFLICT (c1, c2) DO NOTHING; -- unsupported
 ERROR:  there is no unique or exclusion constraint matching the ON CONFLICT specification
@@ -6564,12 +6565,14 @@ INSERT INTO ft1(c1, c2) VALUES(11, 12) ON CONFLICT (c1, c2) DO UPDATE SET c3 = '
 ERROR:  there is no unique or exclusion constraint matching the ON CONFLICT specification
 --Testcase 743:
 INSERT INTO ft1(c1, c2) VALUES(1111, -2);  -- c2positive
-ERROR:  failed to execute remote SQL: rc=19 CHECK constraint failed: c2 >= 0 
-   sql=INSERT INTO main."t1_constraint"(`c1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+ERROR:  Failed to execute remote SQL
+HINT:  SQLite error 'CHECK constraint failed: c2 >= 0', SQLite result code 19
+CONTEXT:  SQL query: INSERT INTO main."t1_constraint"(`c1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 --Testcase 744:
 UPDATE ft1 SET c2 = -c2 WHERE c1 = 1;  -- c2positive
-ERROR:  failed to execute remote SQL: rc=19 CHECK constraint failed: c2 >= 0 
-   sql=UPDATE main."t1_constraint" SET `c2` = (- `c2`) WHERE ((`c1` = 1))
+ERROR:  Failed to execute remote SQL
+HINT:  SQLite error 'CHECK constraint failed: c2 >= 0', SQLite result code 19
+CONTEXT:  SQL query: UPDATE main."t1_constraint" SET `c2` = (- `c2`) WHERE ((`c1` = 1))
 --Testcase 750:
 ALTER FOREIGN TABLE ft1 RENAME TO ft1_constraint;
 --Testcase 751:
@@ -6973,12 +6976,14 @@ RESET constraint_exclusion;
 -- check constraint is enforced on the remote side, not locally
 --Testcase 745:
 INSERT INTO ft1(c1, c2) VALUES(1111, -2);  -- c2positive
-ERROR:  failed to execute remote SQL: rc=19 CHECK constraint failed: c2 >= 0 
-   sql=INSERT INTO main."t1_constraint"(`c1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+ERROR:  Failed to execute remote SQL
+HINT:  SQLite error 'CHECK constraint failed: c2 >= 0', SQLite result code 19
+CONTEXT:  SQL query: INSERT INTO main."t1_constraint"(`c1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 --Testcase 746:
 UPDATE ft1 SET c2 = -c2 WHERE c1 = 1;  -- c2positive
-ERROR:  failed to execute remote SQL: rc=19 CHECK constraint failed: c2 >= 0 
-   sql=UPDATE main."t1_constraint" SET `c2` = (- `c2`) WHERE ((`c1` = 1))
+ERROR:  Failed to execute remote SQL
+HINT:  SQLite error 'CHECK constraint failed: c2 >= 0', SQLite result code 19
+CONTEXT:  SQL query: UPDATE main."t1_constraint" SET `c2` = (- `c2`) WHERE ((`c1` = 1))
 --Testcase 817:
 ALTER FOREIGN TABLE ft1 DROP CONSTRAINT ft1_c2positive;
 -- But inconsistent check constraints provide inconsistent results

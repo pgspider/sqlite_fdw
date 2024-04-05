@@ -220,7 +220,9 @@ sqlite_make_new_connection(ConnCacheEntry *entry, ForeignServer *server)
 	if (rc != SQLITE_OK)
 		ereport(ERROR,
 				(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
-				 errmsg("failed to open SQLite DB. rc=%d path=%s", rc, dbpath)));
+				 errmsg("Failed to open SQLite DB"),
+				 errcontext("File %s", dbpath),
+				 errhint("SQLite code rc %d", rc)));
 	/* make 'LIKE' of SQLite case sensitive like PostgreSQL */
 	rc = sqlite3_exec(entry->conn, "pragma case_sensitive_like=1",
 					  NULL, NULL, &err);
@@ -233,7 +235,8 @@ sqlite_make_new_connection(ConnCacheEntry *entry, ForeignServer *server)
 		entry->conn = NULL;
 		ereport(ERROR,
 				(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
-				 errmsg("failed to open SQLite DB. err=%s rc=%d", perr, rc)));
+				 errmsg("Failed to open SQLite DB"),
+				 errhint("SQLite error '%s', SQLite result code %d", perr, rc)));
 	}
 	/* add included inner SQLite functions from separate c file
 	 * for using in data unifying during deparsing
@@ -270,8 +273,9 @@ sqlite_cleanup_connection(void)
 		{
 			ereport(ERROR,
 					(errcode(ERRCODE_FDW_UNABLE_TO_CREATE_EXECUTION),
-					 errmsg("close connection failed: %s rc=%d", sqlite3_errmsg(entry->conn), rc)
-					 ));
+					 errmsg("Failed to close SQLite DB"),
+					 errhint("SQLite error '%s', SQLite result code %d", sqlite3_errmsg(entry->conn), rc)
+					));
 		}
 	}
 }
@@ -315,15 +319,18 @@ sqlite_do_sql_command(sqlite3 * conn, const char *sql, int level, List **busy_co
 			{
 				ereport(level,
 						(errcode(ERRCODE_FDW_ERROR),
-						 errmsg("SQLite failed to execute sql: %s %s", sql, perr)
-						 ));
+						 errmsg("SQLite failed to execute a query"),
+						 errcontext("SQL query: %s", sql),
+						 errhint("SQLite error '%s'", perr)));
+
 				pfree(perr);
 			}
 		}
 		else
 			ereport(level,
 					(errcode(ERRCODE_FDW_ERROR),
-					 errmsg("SQLite failed to execute sql: %s", sql)
+					 errmsg("SQLite failed to execute a query"),
+					 errcontext("SQL query: %s", sql)
 					 ));
 	}
 }
@@ -389,10 +396,10 @@ sqlitefdw_report_error(int elevel, sqlite3_stmt * stmt, sqlite3 * conn,
 	}
 	ereport(ERROR,
 			(errcode(sqlstate),
-			 errmsg("failed to execute remote SQL: rc=%d %s \n   sql=%s",
-					rc, message ? message : "", sql ? sql : "")
-			 ));
-
+			 errmsg("Failed to execute remote SQL"),
+			 errcontext("SQL query: %s", sql ? sql : ""),
+			 errhint("SQLite error '%s', SQLite result code %d", message ? message : "", rc)
+			));
 }
 
 
@@ -891,9 +898,12 @@ sqlitefdw_abort_cleanup(ConnCacheEntry *entry, bool toplevel, List **busy_connec
 	{
 		char		sql[100];
 		int			curlevel = GetCurrentTransactionNestLevel();
-		snprintf(sql, sizeof(sql),
-					"ROLLBACK TO SAVEPOINT s%d; RELEASE SAVEPOINT s%d",
-					curlevel, curlevel);
+		snprintf(sql,
+				 sizeof(sql),
+				 "ROLLBACK TO SAVEPOINT s%d; RELEASE SAVEPOINT s%d",
+				 curlevel,
+				 curlevel
+				);
 		if (!sqlite3_get_autocommit(entry->conn))
 			sqlite_do_sql_command(entry->conn, sql, ERROR, busy_connection);
 	}
