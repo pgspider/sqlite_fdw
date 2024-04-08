@@ -1,18 +1,23 @@
 #!/bin/bash
-#ファイルの概要
-#postgresをビルドするファイルです。
 
-#使い方
-#引数として、postgresqlのバージョン番号を指定してください 例えば、 16.0 など
-
-#前提条件
-#postgresqlのソースコードが配布URLからダウンロードできる必要があります。
+################################################################################
+#
+# This script downloads PostgreSQL from the official web site into ./workdir
+# then builds it.
+#
+# Usage: ./build_postgres.sh pg_version
+#     pg_version is a PostgreSQL version to be installed like 16.0.
+#
+# Requirements
+# - be able to connect to the PostgreSQL official web site by curl.
+#
+################################################################################
 
 VERSION=$1
-mkdir ~/workdir
-cd ~/workdir
+mkdir -p ./workdir
+cd ./workdir
 curl -O https://ftp.postgresql.org/pub/source/v${VERSION}/postgresql-${VERSION}.tar.bz2
 tar xjf postgresql-${VERSION}.tar.bz2
 cd postgresql-${VERSION}
-./configure --prefix ~/workdir/db
+./configure
 make

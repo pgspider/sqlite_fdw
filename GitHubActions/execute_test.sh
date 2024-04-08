@@ -1,32 +1,42 @@
 #!/bin/bash
-#ファイルの概要
-#test.shを実行しリグレッションテストを行うファイルです。
-#全て合格していたら正常終了し、全て合格でなければ異常終了します。
 
-#使い方
-#引数として、postgresqlのバージョン番号を指定してください。ex. 16.0 など
+################################################################################
+#
+# This script executes a regression test pf sqlite_fdw by calling test.sh in
+# sqlite_fdw. If all tests are passed, this script will exit successfully.
+# Otherwise, it will exit with failure.
 
-#前提条件
-#前段階として、postgresqlのビルドと、sqliteのインストール、sqlite_fdwのビルドが必要です
-#sqlite_fdwが提供するtest.shスクリプト内の処理が以下である必要があります。
-#テストが全部成功したとき、"ALL 20 tests passed"という文字列をmake_check.outというファイルの末尾の行か、末尾から数えて3行目に出力する
+# Usage: ./execute_test.sh pg_version
+#     pg_version is a PostgreSQL version to be tested like 16.0.
+#
+# Requiremets
+# - the source code of PostgreSQL is located in ./workdir/postgresql-{pg_version}.
+# - the source code of sqlite_fdw is loacted in ./workdir/postgresql-{pg_version}/contrib/sqlite_fdw.
+# - PostgreSQL and sqlite_fdw were built.
+# - this script assumes that tests are passed if this file (created by executing
+#   the test) contains " ALL {number} tests passed" at the last or the 3rd line
+#   from the end.
+#
+################################################################################
 
 VERSION=$1
-cd ~/workdir/postgresql-${VERSION}/contrib/sqlite_fdw
+cd ./workdir/postgresql-${VERSION}/contrib/sqlite_fdw
+chmod +x ./test.sh
 ./test.sh
 
 last_line=$(tail -n 1 make_check.out)
 third_line_from_the_last=$(tail -n 3 make_check.out | head -n 1)
-string_test_passed="All 20 tests passed"
 
-if [[ "$last_line" == *$string_test_passed* ]]; then
-        echo "The last line of make_check.out contains '$string_test_passed'"
+pattern=" All [0-9]+ tests passed.+"
 
-elif [[ "$third_line_from_the_last" == *$string_test_passed* ]]; then
-        echo "The third line from the last of make_check.out contains '$string_test_passed'"
+if [[ "$last_line" =~ $pattern ]]; then
+	echo "last_line"
+
+elif [[ "$third_line_from_the_last" =~ $pattern ]]; then
+	 echo "$third_line_from_the_last"
 else
-        echo "Error : not All the tests passed"
-        echo "last line : '$last_line'"
-        echo "thierd_line_from_the_last : '$third_line_from_the_last'"
-        exit 1
+	echo "Error : not All the tests passed"
+	echo "last line : '$last_line'"
+	echo "thierd_line_from_the_last : '$third_line_from_the_last'"
+	exit 1
 fi

@@ -8,26 +8,48 @@ on:
       - master
       - main
 jobs:
+  detect-pgversion:
+    runs-on: ubuntu-22.04
+    outputs:
+      pgversion: ${{ steps.detect-pgversion.outputs.targets }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: detect-pgversion
+        id: detect-pgversion
+        run: |
+          targets=`bash GitHubActions/detect_targets.sh`
+          echo "targets=$targets" >> $GITHUB_OUTPUT
+
   test:
+    needs: detect-pgversion
     env:
       SQLITE_VERSION : "3420000"
       SQLITE_YEAR: "2023"
+      HTTP_PROXY: ""
+      HTTPS_PROXY: ""
     strategy:
       fail-fast: false
       matrix:
-        pg: ["16.0","15.3","14.8","13.11","12.15"]
+        pg: ${{ fromJSON(needs.detect-pgversion.outputs.pgversion) }}
         
     name: Test on PostgreSQL ${{ matrix.pg }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
+      - name: tar
+        run: tar zcvf sqlite_fdw.tar.gz ./*
+      
+      - name: set_proxy
+        run: bash GitHubActions/env.sh
+
       - name: install locales
         run: bash GitHubActions/install_locales.sh
-      
+            
       - name: build PostgreSQL ${{ matrix.pg }}
         run: bash GitHubActions/build_postgres.sh ${{ matrix.pg }}
-      
+
       - name: install SQLite
         run: bash GitHubActions/install_sqlite.sh ${{ env.SQLITE_VERSION }} ${{ env.SQLITE_YEAR }}
       
