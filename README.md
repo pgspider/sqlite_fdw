@@ -301,7 +301,10 @@ Full list of PostgreSQL-leveled conditions of data modification access to SQLite
 - The `FOREIGN SERVER` of the SQLite file have no `force_readonly` = `true` option value.
 - You have `USAGE` `GRANT` for the `FOREIGN SERVER`.
 - The `FOREIGN TABLE` of SQLite table have no `updatable` = `false` option value.
-- If the `FOREIGN TABLE` have no `updatable` option, ensure `FOREIGN TABLE` have no `updatable` = `false` option value.
+- If the `FOREIGN TABLE` have no `updatable` option, ensure `FOREIGN SERVER` have no `updatable` = `false` option value.
+
+Generally for `sqlite_fdw` access managment `FOREIGN SERVER` owner can be like _remote access manager_ for other FDWs.
+_Remote access manager_ can block any data modififcations in remote database for _remote user_ of a FDW. In this case SQLite have no user or separate access conceptions, hence `FOREIGN SERVER` owner combines _remote access manager_ role with inrernal PostgreSQL roles such as `FOREIGN SERVER` access managment.
 
 Functions
 ---------
