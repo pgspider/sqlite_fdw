@@ -431,7 +431,7 @@ stored in SQLite, only [`PRAGMA encoding;`](https://www.sqlite.org/pragma.html#p
 When `sqlite_fdw` connects to a SQLite, all strings are interpreted acording the PostgreSQL database's server encoding.
 It's not a problem if your PostgreSQL database encoding belongs to Unicode family. Otherewise interpretation transformation problems can occur. Some unproper for PostgreSQL database encoding characters will be replaced to default 'no such character' character or there will error like `character with byte sequence 0x** in encoding "UTF8" has no equivalent in encoding "**"`.
 
-Character case functions such as `upper`, `lower` and other are not pushed down because they does not work with Unocdoe character in SQLite.
+Character case functions such as `upper`, `lower` and other are not pushed down because they does not work with Unicode character in SQLite.
 
 `Sqlite_fdw` tested with PostgreSQL database encodings `EUC_JP`, `EUC_KR`, `ISO_8859_5`, `ISO_8859_6`, `ISO_8859_7`, `ISO_8859_8`, `LATIN1`, `LATIN2`, `LATIN3`, `LATIN4`, `LATIN5`, `LATIN6`, `LATIN7`, `LATIN8`, `LATIN9`, `LATIN9`, `LATIN10`, `WIN1250`, `WIN1251`, `WIN1252`, `WIN1253`, `WIN1254`, `WIN1255`, `WIN1256`, `WIN1257` and it's synomyms. Some other encodings also can be supported, but not tested.
 
