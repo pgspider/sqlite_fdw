@@ -8,3 +8,6 @@ Scripts in this directory (GitHubActions/*.sh) are referred by CI.yml.
 
 The regression test will be executed for multi-versions of PostgreSQL.
 Target versions are determined automatically based on directory names in "sql" directory.
+
+If the regression test failed, test result files (result directory, regression.diff amd regression.out) are uploaded as artifacts.
+7 days later, artifact files will be deleted.
