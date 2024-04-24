@@ -14,7 +14,13 @@ RETURNS bool
 AS 'MODULE_PATHNAME'
 LANGUAGE C STRICT PARALLEL RESTRICTED;
 
+COMMENT ON FUNCTION sqlite_fdw_disconnect(text)
+IS 'closes a SQLite connection by name of FOREIGN SERVER';
+
 CREATE FUNCTION sqlite_fdw_disconnect_all ()
 RETURNS bool
 AS 'MODULE_PATHNAME'
 LANGUAGE C STRICT PARALLEL RESTRICTED;
+
+COMMENT ON FUNCTION sqlite_fdw_disconnect_all()
+IS 'closes all opened SQLite connections';

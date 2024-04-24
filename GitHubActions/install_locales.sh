@@ -6,7 +6,7 @@
 # tests in Ubuntu.
 #
 # Usage: ./install_locales.sh
-# 
+#
 # Requirements:
 # - having superuser privileges
 #
