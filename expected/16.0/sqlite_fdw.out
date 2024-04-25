@@ -17,7 +17,7 @@ CREATE FOREIGN TABLE numbers(a int OPTIONS (key 'true'), b varchar(255)) SERVER 
 CREATE FOREIGN TABLE multiprimary(a int, b int OPTIONS (key 'true'), c int OPTIONS(key 'true')) SERVER sqlite_svr;
 --Testcase 136:
 CREATE FOREIGN TABLE noprimary(a int, b text) SERVER sqlite_svr;
--- updatable option test (github pull 59)
+--Testcase 137:
 CREATE FOREIGN TABLE RO_RW_test(i int OPTIONS (key 'true'), a text, b float, c int) SERVER sqlite_svr;
 --Testcase 1:
 SELECT * FROM department LIMIT 10;
@@ -1834,7 +1834,6 @@ ERROR:  cannot convert constant value to Sqlite value
 HINT:  Constant value data type: "tsquery" in column "b"
 --Testcase 279:
 ALTER FOREIGN TABLE numbers ALTER COLUMN b TYPE varchar(255);
--- updatable option test (github pull 59)
 --Testcase 277:
 DELETE FROM RO_RW_test;
 --Testcase 278:
@@ -2075,28 +2074,25 @@ ALTER SERVER sqlite_svr OPTIONS (DROP updatable);
 --Testcase 363:
 ALTER FOREIGN TABLE RO_RW_test OPTIONS (DROP updatable);
 --Testcase 364:
-ALTER FOREIGN TABLE RO_RW_test OPTIONS (DROP force_readonly);
-ERROR:  option "force_readonly" not found
+ALTER SERVER sqlite_svr OPTIONS (DROP force_readonly);
 --Testcase 365:
 SELECT * FROM RO_RW_test ORDER BY i;
  i | a | b | c 
 ---+---+---+---
 (0 rows)
 
--- End of RO/RW test
--- readonly/readwrite test github pull 59
+--Testcase 366:
 DROP FOREIGN TABLE RO_RW_test;
+-- End of RO/RW test
 --Bind error message test for some unsupported data type
 --Testcase 366:
 ALTER FOREIGN TABLE numbers ALTER COLUMN b TYPE tsquery;
 --Testcase 367:
 INSERT INTO numbers VALUES(8,'fat & (rat | cat)');
-ERROR:  foreign table "numbers" does not allow inserts
+ERROR:  cannot convert constant value to Sqlite value
+HINT:  Constant value data type: "tsquery" in column "b"
 --Testcase 368:
 ALTER FOREIGN TABLE numbers ALTER COLUMN b TYPE varchar(255);
--- updatable option test (github pull 59)
-DROP FOREIGN TABLE RO_RW_test;
-ERROR:  foreign table "ro_rw_test" does not exist
 --Testcase 142:
 DROP FUNCTION test_param_WHERE();
 --Testcase 143:

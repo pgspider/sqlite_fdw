@@ -5680,7 +5680,8 @@ sqliteIsForeignRelUpdatable(Relation rel)
 
 	/*
 	 * By default, all sqlite_fdw foreign tables are assumed updatable.
-	 * If force_readonly option is set, table option 'updatable' is ignored
+	 * If force_readonly option is set, foreign server option 'updatable'
+	 * is ignored, table option 'updatable' is also ignored
 	 */
 	updatable = true;
 	readonly_db_file = false;
@@ -5694,7 +5695,7 @@ sqliteIsForeignRelUpdatable(Relation rel)
 
 		if (strcmp(def->defname, "updatable") == 0)
 			updatable = defGetBoolean(def);
-		if (strcmp(def->defname, "force_readonly") == 0)
+		else if (strcmp(def->defname, "force_readonly") == 0)
 			readonly_db_file = defGetBoolean(def);
 	}
 	foreach(lc, table->options)
@@ -6012,3 +6013,4 @@ conversion_error_callback(void *arg)
 		pfree(err_cont_mess0);
 	}
 }
+

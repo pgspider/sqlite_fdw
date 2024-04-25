@@ -775,7 +775,6 @@ INSERT INTO numbers VALUES(8,'fat & (rat | cat)');
 --Testcase 279:
 ALTER FOREIGN TABLE numbers ALTER COLUMN b TYPE varchar(255);
 
--- updatable option test (github pull 59)
 --Testcase 277:
 DELETE FROM RO_RW_test;
 
@@ -991,15 +990,21 @@ ALTER SERVER sqlite_svr OPTIONS (DROP updatable);
 ALTER FOREIGN TABLE RO_RW_test OPTIONS (DROP updatable);
 
 --Testcase 364:
-ALTER FOREIGN TABLE RO_RW_test OPTIONS (DROP force_readonly);
+ALTER SERVER sqlite_svr OPTIONS (DROP force_readonly);
 
 --Testcase 365:
 SELECT * FROM RO_RW_test ORDER BY i;
-
+--Testcase 366:
+DROP FOREIGN TABLE RO_RW_test;
 -- End of RO/RW test
 
--- readonly/readwrite test github pull 59
-DROP FOREIGN TABLE RO_RW_test;
+--Bind error message test for some unsupported data type
+--Testcase 366:
+ALTER FOREIGN TABLE numbers ALTER COLUMN b TYPE tsquery;
+--Testcase 367:
+INSERT INTO numbers VALUES(8,'fat & (rat | cat)');
+--Testcase 368:
+ALTER FOREIGN TABLE numbers ALTER COLUMN b TYPE varchar(255);
 
 --Testcase 142:
 DROP FUNCTION test_param_WHERE();

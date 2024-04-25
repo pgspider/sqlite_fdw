@@ -4058,3 +4058,4 @@ sqlite_classify_conditions(PlannerInfo *root,
 			*local_conds = lappend(*local_conds, ri);
 	}
 }
+

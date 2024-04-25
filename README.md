@@ -137,13 +137,13 @@ Usage
 
 - **force_readonly** as *boolean*, optional, default *false*
 
-  This option is useful if you need grant user permission to create a foreign tables on the foreign server and revoke user permission to modify any table data on this foreign server. This option with `true` value can disallow any write operations on foreign server table data througth SQLite file readonly access mode. This option driven only by foreign server owner role can not be overwritten by any `updatable` option value. This is a strong restiction given by PostgreSQL foreign server owner user not to modify data in any foreign server tables. Also see [Connection to SQLite database file and access control](#connection-to-sqlite-database-file-and-access-control).
+  This option is useful if you need grant user permission to create a foreign tables on the foreign server and revoke user permission to modify any table data on this foreign server. This option with `true` value can disallow any write operations on foreign server table data through SQLite file readonly access mode. This option driven only by foreign server owner role can not be overwritten by any `updatable` option value. This is a strong restriction given by PostgreSQL foreign server owner user not to modify data in any foreign server tables. Also see [Connection to SQLite database file and access control](#connection-to-sqlite-database-file-and-access-control).
 
 - **truncatable** as *boolean*, optional, default *false*
 
   Allows foreign tables to be truncated using the `TRUNCATE` command.
 
-- **keep_connections** as *boolean*, optional, default *false*
+- **keep_connections** as *boolean*, optional, default *true*
 
   Allows to keep connections to SQLite while there is no SQL operations between PostgreSQL and SQLite.
 
@@ -198,7 +198,7 @@ in SQLite (mixed affinity case). Updated and inserted values will have this affi
   Indicates a column as a part of primary key or unique key of SQLite table.
 
 #### Datatypes
-**WARNING! The table above represents roadmap**, work still in progress. Untill it will be ended please refer real behaviour in non-obvious cases, where there is no ✔ or ∅ mark.
+**WARNING! The table below represents roadmap**, work still in progress. Until it will be ended please refer real behaviour in non-obvious cases, where there is no ✔ or ∅ mark.
 
 This table represents `sqlite_fdw` behaviour if in PostgreSQL foreign table column some [affinity](https://www.sqlite.org/datatype3.html) of SQLite data is detected. Some details about data values support see in [limitations](#limitations).
 
@@ -288,23 +288,24 @@ For succesfully connection to SQLite database file you must have at least existe
 #### Data change access
 
 Data modification access in `sqlite_fdw` drived by both operating system and PostgreSQL.
+
 OS restrictions can disallow any SQLite data modifications. Hence any PostgreSQL `FOREIGN SERVER` or `FOREIGN TABLE` options or `GRANT`s can be absolutely not effective. In this case SQLite data modification operations allowed by PostgreSQL can cause error message from SQLite like `attempt to write a readonly database` with result code `8`.
 
 Full list of OS-leveled conditions of data modification access to SQLite database file
 - Existed SQLite file is not corrupted by SQLite engine conditions.
 - All path elements of the file are readable (listable) for OS user of PostgreSQL server process.
-- The file and a direcotory of the file placed on readwrite filesystem. For example `sqashfs` is always read-only, remote `sshfs` can be read-only, a disk partition can be mounted in read-only mode etc.
+- The file and a directory of the file placed on readwrite filesystem. For example `sqashfs` is always read-only, remote `sshfs` can be read-only, a disk partition can be mounted in read-only mode etc.
 - The file is writable for OS user of PostgreSQL server process.
 - The directory of the file is writable for OS user of PostgreSQL server process because SQLite creates some temporary transaction files.
 
 Full list of PostgreSQL-leveled conditions of data modification access to SQLite database file
 - The `FOREIGN SERVER` of the SQLite file have no `force_readonly` = `true` option value.
-- You have `USAGE` `GRANT` for the `FOREIGN SERVER`.
+- You have `USAGE` right `GRANT` for the `FOREIGN SERVER`.
 - The `FOREIGN TABLE` of SQLite table have no `updatable` = `false` option value.
 - If the `FOREIGN TABLE` have no `updatable` option, ensure `FOREIGN SERVER` have no `updatable` = `false` option value.
 
-Generally for `sqlite_fdw` access managment `FOREIGN SERVER` owner can be like _remote access manager_ for other FDWs.
-_Remote access manager_ can block any data modififcations in remote database for _remote user_ of a FDW. In this case SQLite have no user or separate access conceptions, hence `FOREIGN SERVER` owner combines _remote access manager_ role with inrernal PostgreSQL roles such as `FOREIGN SERVER` access managment.
+Generally for `sqlite_fdw` access management `FOREIGN SERVER` owner can be like _remote access manager_ for other FDWs.
+_Remote access manager_ can block any data modififcations in remote database for _remote user_ of a FDW. In this case SQLite have no user or separate access conceptions, hence `FOREIGN SERVER` owner combines _remote access manager_ role with internal PostgreSQL roles such as `FOREIGN SERVER` access management.
 
 Functions
 ---------

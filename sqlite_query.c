@@ -734,3 +734,4 @@ binstr2int64(const char *s)
 	}
 	return rc;
 }
+

@@ -8,23 +8,14 @@ RETURNS fdw_handler
 AS 'MODULE_PATHNAME'
 LANGUAGE C STRICT;
 
-COMMENT ON FUNCTION sqlite_fdw_handler()
-IS 'SQLite foreign data wrapper handler';
-
 CREATE FUNCTION sqlite_fdw_validator(text[], oid)
 RETURNS void
 AS 'MODULE_PATHNAME'
 LANGUAGE C STRICT;
 
-COMMENT ON FUNCTION sqlite_fdw_validator(text[], oid)
-IS 'SQLite foreign data wrapper options validator';
-
 CREATE FOREIGN DATA WRAPPER sqlite_fdw
   HANDLER sqlite_fdw_handler
   VALIDATOR sqlite_fdw_validator;
-
-COMMENT ON FOREIGN DATA WRAPPER sqlite_fdw
-IS 'SQLite foreign data wrapper';
 
 CREATE OR REPLACE FUNCTION sqlite_fdw_version()
   RETURNS pg_catalog.int4 STRICT

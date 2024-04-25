@@ -17,8 +17,7 @@ CREATE FOREIGN TABLE numbers(a int OPTIONS (key 'true'), b varchar(255)) SERVER 
 CREATE FOREIGN TABLE multiprimary(a int, b int OPTIONS (key 'true'), c int OPTIONS(key 'true')) SERVER sqlite_svr;
 --Testcase 136:
 CREATE FOREIGN TABLE noprimary(a int, b text) SERVER sqlite_svr;
-
--- updatable option test (github pull 59)
+--Testcase 137:
 CREATE FOREIGN TABLE RO_RW_test(i int OPTIONS (key 'true'), a text, b float, c int) SERVER sqlite_svr;
 
 --Testcase 1:
@@ -775,7 +774,6 @@ INSERT INTO numbers VALUES(8,'fat & (rat | cat)');
 --Testcase 279:
 ALTER FOREIGN TABLE numbers ALTER COLUMN b TYPE varchar(255);
 
--- updatable option test (github pull 59)
 --Testcase 277:
 DELETE FROM RO_RW_test;
 
@@ -991,15 +989,13 @@ ALTER SERVER sqlite_svr OPTIONS (DROP updatable);
 ALTER FOREIGN TABLE RO_RW_test OPTIONS (DROP updatable);
 
 --Testcase 364:
-ALTER FOREIGN TABLE RO_RW_test OPTIONS (DROP force_readonly);
+ALTER SERVER sqlite_svr OPTIONS (DROP force_readonly);
 
 --Testcase 365:
 SELECT * FROM RO_RW_test ORDER BY i;
-
--- End of RO/RW test
-
--- readonly/readwrite test github pull 59
+--Testcase 366:
 DROP FOREIGN TABLE RO_RW_test;
+-- End of RO/RW test
 
 --Bind error message test for some unsupported data type
 --Testcase 366:
@@ -1008,9 +1004,6 @@ ALTER FOREIGN TABLE numbers ALTER COLUMN b TYPE tsquery;
 INSERT INTO numbers VALUES(8,'fat & (rat | cat)');
 --Testcase 368:
 ALTER FOREIGN TABLE numbers ALTER COLUMN b TYPE varchar(255);
-
--- updatable option test (github pull 59)
-DROP FOREIGN TABLE RO_RW_test;
 
 --Testcase 142:
 DROP FUNCTION test_param_WHERE();

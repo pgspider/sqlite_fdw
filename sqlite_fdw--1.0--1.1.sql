@@ -24,3 +24,12 @@ LANGUAGE C STRICT PARALLEL RESTRICTED;
 
 COMMENT ON FUNCTION sqlite_fdw_disconnect_all()
 IS 'closes all opened SQLite connections';
+
+COMMENT ON FUNCTION sqlite_fdw_handler()
+IS 'SQLite foreign data wrapper handler';
+
+COMMENT ON FUNCTION sqlite_fdw_validator(text[], oid)
+IS 'SQLite foreign data wrapper options validator';
+
+COMMENT ON FOREIGN DATA WRAPPER sqlite_fdw
+IS 'SQLite foreign data wrapper';
