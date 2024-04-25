@@ -5692,11 +5692,10 @@ sqliteIsForeignRelUpdatable(Relation rel)
 	foreach(lc, server->options)
 	{
 		DefElem	*def = (DefElem *) lfirst(lc);
-
-		if (strcmp(def->defname, "updatable") == 0)
-			updatable = defGetBoolean(def);
-		else if (strcmp(def->defname, "force_readonly") == 0)
+		if (strcmp(def->defname, "force_readonly") == 0)
 			readonly_db_file = defGetBoolean(def);
+		if (!readonly_db_file && strcmp(def->defname, "updatable") == 0)
+			updatable = defGetBoolean(def);
 	}
 	foreach(lc, table->options)
 	{
