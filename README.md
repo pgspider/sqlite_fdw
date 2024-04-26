@@ -269,7 +269,7 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 `sqlite_fdw` implements the foreign data wrapper `TRUNCATE` API, available
 from PostgreSQL 14.
 
-As SQlite does not provide a `TRUNCATE` command, it is simulated with a
+As SQLite does not provide a `TRUNCATE` command, it is simulated with a
 simple unqualified `DELETE` operation.
 
 Actually, `TRUNCATE ... CASCADE` can be simulated if we create child table of SQLite with foreign keys and `ON DELETE CASCADE`, and then executing `TRUNCATE` (which will be deparsed to `DELETE`).
@@ -305,6 +305,7 @@ Full list of PostgreSQL-leveled conditions of data modification access to SQLite
 - If the `FOREIGN TABLE` have no `updatable` option, ensure `FOREIGN SERVER` have no `updatable` = `false` option value.
 
 Generally for `sqlite_fdw` access management `FOREIGN SERVER` owner can be like _remote access manager_ for other FDWs.
+
 _Remote access manager_ can block any data modififcations in remote database for _remote user_ of a FDW. In this case SQLite have no user or separate access conceptions, hence `FOREIGN SERVER` owner combines _remote access manager_ role with internal PostgreSQL roles such as `FOREIGN SERVER` access management.
 
 Functions
@@ -393,7 +394,7 @@ If there is
 	  b REAL
 	);
 ```
-in SQLite, both `a` and `A` , `b` and `B` columns will have the same real datasource in SQlite in follow foreign table:
+in SQLite, both `a` and `A` , `b` and `B` columns will have the same real datasource in SQLite in follow foreign table:
 
 ```sql
 	CREATE FOREIGN TABLE "SQLite test" (
