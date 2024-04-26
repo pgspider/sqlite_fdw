@@ -1074,4 +1074,3 @@ sqlite_append_stmt_to_list(List *list, sqlite3_stmt * stmt)
 	MemoryContextSwitchTo(oldcontext);
 	return list;
 }
-

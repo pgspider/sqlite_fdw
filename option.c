@@ -247,4 +247,3 @@ sqlite_get_options(Oid foreignoid)
 
 	return opt;
 }
-

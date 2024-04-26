@@ -393,4 +393,3 @@ sqlite3_int64
 			binstr2int64(const char *s);
 
 #endif							/* SQLITE_FDW_H */
-

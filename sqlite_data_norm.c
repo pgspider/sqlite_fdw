@@ -374,4 +374,3 @@ sqlite_fdw_data_norm_functs_init(sqlite3* db)
 	 *	sqlite3_create_function(db, "gen_random_uuid", 1, flags, 0, uuid_generate, 0, 0);
 	 */
 }
-
