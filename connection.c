@@ -41,6 +41,7 @@ typedef struct ConnCacheEntry
 	bool		keep_connections;	/* setting value of keep_connections
 									 * server option */
 	bool		truncatable;	/* check table can truncate or not */
+	bool		readonly;		/* option force_readonly, readonly SQLite file mode */
 	bool		invalidated;	/* true if reconnect is pending */
 	Oid			serverid;		/* foreign server OID used to get server name */
 	List	   *stmtList;		/* list stmt associated with conn */
@@ -60,7 +61,7 @@ PG_FUNCTION_INFO_V1(sqlite_fdw_get_connections);
 PG_FUNCTION_INFO_V1(sqlite_fdw_disconnect);
 PG_FUNCTION_INFO_V1(sqlite_fdw_disconnect_all);
 
-static sqlite3 *sqlite_open_db(const char *dbpath);
+static sqlite3 *sqlite_open_db(const char *dbpath, int flags);
 static void sqlite_make_new_connection(ConnCacheEntry *entry, ForeignServer *server);
 void		sqlite_do_sql_command(sqlite3 * conn, const char *sql, int level, List **busy_connection);
 static void sqlite_begin_remote_xact(ConnCacheEntry *entry);
@@ -184,21 +185,21 @@ sqlite_get_connection(ForeignServer *server, bool truncatable)
 }
 
 /*
- * Open remote sqlite database using specified database path.
+ * Open remote sqlite database using specified database path
+ * and flags of opened file descriptor mode.
  */
 static sqlite3 *
-sqlite_open_db(const char *dbpath)
+sqlite_open_db(const char *dbpath, int flags)
 {
 	sqlite3	   *conn = NULL;
 	int			rc;
 	char	   *err;
-
-	rc = sqlite3_open(dbpath, &conn);
+	const char *zVfs = NULL;
+	rc = sqlite3_open_v2(dbpath, &conn, flags, zVfs);
 	if (rc != SQLITE_OK)
 		ereport(ERROR,
 				(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
-				 errmsg("failed to open SQLite DB. rc=%d path=%s", rc, dbpath)));
-
+				 errmsg("Failed to open SQLite DB, file '%s', result code %d", dbpath, rc)));
 	/* make 'LIKE' of SQLite case sensitive like PostgreSQL */
 	rc = sqlite3_exec(conn, "pragma case_sensitive_like=1",
 					  NULL, NULL, &err);
@@ -208,9 +209,10 @@ sqlite_open_db(const char *dbpath)
 
 		sqlite3_free(err);
 		sqlite3_close(conn);
+		conn = NULL;
 		ereport(ERROR,
 				(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
-				 errmsg("failed to open SQLite DB. rc=%d err=%s", rc, perr)));
+				 errmsg("Failed to open SQLite DB, file '%s', SQLite error '%s', result code %d", dbpath, perr, rc)));
 	}
 	/* add included inner SQLite functions from separate c file
 	 * for using in data unifying during deparsing
@@ -218,6 +220,7 @@ sqlite_open_db(const char *dbpath)
 	sqlite_fdw_data_norm_functs_init(conn);
 	return conn;
 }
+
 
 /*
  * Reset all transient state fields in the cached connection entry and
@@ -228,6 +231,7 @@ sqlite_make_new_connection(ConnCacheEntry *entry, ForeignServer *server)
 {
 	const char *dbpath = NULL;
 	ListCell   *lc;
+	int flags = 0;
 
 	Assert(entry->conn == NULL);
 
@@ -236,6 +240,7 @@ sqlite_make_new_connection(ConnCacheEntry *entry, ForeignServer *server)
 	entry->invalidated = false;
 	entry->stmtList = NULL;
 	entry->keep_connections = true;
+	entry->readonly = false;
 	entry->server_hashvalue =
 		GetSysCacheHashValue1(FOREIGNSERVEROID,
 							  ObjectIdGetDatum(server->serverid));
@@ -247,10 +252,13 @@ sqlite_make_new_connection(ConnCacheEntry *entry, ForeignServer *server)
 			dbpath = defGetString(def);
 		else if (strcmp(def->defname, "keep_connections") == 0)
 			entry->keep_connections = defGetBoolean(def);
+		else if (strcmp(def->defname, "force_readonly") == 0)
+			entry->readonly = defGetBoolean(def);
 	}
 
+	flags = flags | (entry->readonly ? SQLITE_OPEN_READONLY : SQLITE_OPEN_READWRITE);
 	/* Try to make the connection */
-	entry->conn = sqlite_open_db(dbpath);
+	entry->conn = sqlite_open_db(dbpath, flags);
 }
 
 /*
@@ -282,8 +290,9 @@ sqlite_cleanup_connection(void)
 		{
 			ereport(ERROR,
 					(errcode(ERRCODE_FDW_UNABLE_TO_CREATE_EXECUTION),
-					 errmsg("close connection failed: %s rc=%d", sqlite3_errmsg(entry->conn), rc)
-					 ));
+					 errmsg("Failed to close SQLite DB"),
+					 errhint("SQLite error '%s', SQLite result code %d", sqlite3_errmsg(entry->conn), rc)
+					));
 		}
 	}
 }
@@ -327,15 +336,18 @@ sqlite_do_sql_command(sqlite3 * conn, const char *sql, int level, List **busy_co
 			{
 				ereport(level,
 						(errcode(ERRCODE_FDW_ERROR),
-						 errmsg("SQLite failed to execute sql: %s %s", sql, perr)
-						 ));
+						 errmsg("SQLite failed to execute a query"),
+						 errcontext("SQL query: %s", sql),
+						 errhint("SQLite error '%s'", perr)));
+
 				pfree(perr);
 			}
 		}
 		else
 			ereport(level,
 					(errcode(ERRCODE_FDW_ERROR),
-					 errmsg("SQLite failed to execute sql: %s", sql)
+					 errmsg("SQLite failed to execute a query"),
+					 errcontext("SQL query: %s", sql)
 					 ));
 	}
 }
@@ -401,10 +413,10 @@ sqlitefdw_report_error(int elevel, sqlite3_stmt * stmt, sqlite3 * conn,
 	}
 	ereport(ERROR,
 			(errcode(sqlstate),
-			 errmsg("failed to execute remote SQL: rc=%d %s \n   sql=%s",
-					rc, message ? message : "", sql ? sql : "")
-			 ));
-
+			 errmsg("Failed to execute remote SQL"),
+			 errcontext("SQL query: %s", sql ? sql : ""),
+			 errhint("SQLite error '%s', SQLite result code %d", message ? message : "", rc)
+			));
 }
 
 
@@ -903,9 +915,12 @@ sqlitefdw_abort_cleanup(ConnCacheEntry *entry, bool toplevel, List **busy_connec
 	{
 		char		sql[100];
 		int			curlevel = GetCurrentTransactionNestLevel();
-		snprintf(sql, sizeof(sql),
-					"ROLLBACK TO SAVEPOINT s%d; RELEASE SAVEPOINT s%d",
-					curlevel, curlevel);
+		snprintf(sql,
+				 sizeof(sql),
+				 "ROLLBACK TO SAVEPOINT s%d; RELEASE SAVEPOINT s%d",
+				 curlevel,
+				 curlevel
+				);
 		if (!sqlite3_get_autocommit(entry->conn))
 			sqlite_do_sql_command(entry->conn, sql, ERROR, busy_connection);
 	}

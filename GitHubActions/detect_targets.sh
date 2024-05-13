@@ -2,7 +2,7 @@
 
 ################################################################################
 #
-# This script detects target PostgreSQL versions for sqlite_fdw testing from 
+# This script detects target PostgreSQL versions for sqlite_fdw testing from
 # directory names in ./sql directory. Detected versions will be outputed to
 # the standard output as an array of string like ["15.4","16.0"].
 #

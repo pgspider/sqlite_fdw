@@ -28,9 +28,9 @@ Features
 
 ### Common features
 - Transactions
-- Support `INSERT`/`UPDATE`/`DELETE` (both Direct modification and Foreign modification).
-- Support `TRUNCATE` by deparsing into `DELETE` statement without `WHERE` clause
-- Allow control over whether foreign servers keep connections open after transaction completion. This is controlled by `keep_connections` and defaults to on
+- Support `INSERT`/`UPDATE`/`DELETE` (both Direct modification and Foreign modification), see [access control](#connection-to-sqlite-database-file-and-access-control) about conditions of succesfully data modification.
+- Support `TRUNCATE` by deparsing into `DELETE` statement without `WHERE` clause.
+- Allow control over whether foreign servers keep connections open after transaction completion. This is controlled by `keep_connections` and defaults to on.
 - Support list cached connections to foreign servers by using function `sqlite_fdw_get_connections()`
 - Support discard cached connections to foreign servers by using function `sqlite_fdw_disconnect()`, `sqlite_fdw_disconnect_all()`.
 - Support Bulk `INSERT` by using `batch_size` option
@@ -52,7 +52,7 @@ Features
 - `CASE` expressions are pushdowned.
 - `LIMIT` and `OFFSET` are pushdowned (*when all tables queried are fdw)
 - Support `GROUP BY`, `HAVING` push-down.
-- `mod()` is pushdowned. In PostgreSQL gives [argument-dependend data type](https://www.postgresql.org/docs/current/functions-math.html), but result from SQLite always [have `real` affinity](https://www.sqlite.org/lang_mathfunc.html#mod).
+- `mod()` is pushdowned. In PostgreSQL this function gives [argument-dependend data type](https://www.postgresql.org/docs/current/functions-math.html), but result from SQLite always [have `real` affinity](https://www.sqlite.org/lang_mathfunc.html#mod).
 - `upper`, `lower` and other character case functions are **not** pushed down because they does not work with UNICODE character in SQLite.
 - `WITH TIES` option is **not** pushed down.
 - Bit string `#` (XOR) operator is **not** pushed down because there is no equal SQLite operator.
@@ -65,7 +65,7 @@ Features
 - SQLite evaluates division by zero as `NULL`. It is different from PostgreSQL, which will display `Division by zero` error.
 - The data type of column of foreign table should match with data type of column in SQLite to avoid wrong result. For example, if the column of SQLite is `float` (which will be stored as `float8`), the column of foreign table should be `float8`, too. If the column of foreign table is `float4`, it may cause wrong result when `SELECT`.
 - For `key` option, user needs to specify the primary key column of SQLite table corresponding with the `key` option. If not, wrong result may occur when `UPDATE` or `DELETE`.
-- When `Sum` of data in table is out of range, `sqlite_fdw` will display `Infinity` value. It is different from PostgreSQL FDW, which will display `ERROR: value out of range: overflow` error.
+- When `sum` function result value is out of range, `sqlite_fdw` will display `Infinity` value. It is different from PostgreSQL, which gives `ERROR: value out of range: overflow` error.
 - For `numeric` data type, `sqlite_fdw` use `sqlite3_column_double` to get value, while SQLite shell uses `sqlite3_column_text` to get value. Those 2 APIs may return different numeric value. Therefore, for `numeric` data type, the value returned from `sqlite_fdw` may different from the value returned from SQLite shell.
 - `sqlite_fdw` can return implementation-dependent order for column if the column is not specified in `ORDER BY` clause.
 - When the column type is `varchar array`, if the string is shorter than the declared length, values of type character will be space-padded; values of type `character varying` will simply store the shorter string.
@@ -123,8 +123,82 @@ make install
 Usage
 -----
 
-### Datatypes
-**WARNING! The table above represents roadmap**, work still in progress. Untill it will be ended please refer real behaviour in non-obvious cases, where there is no ✔ or ∅ mark.
+### CREATE SERVER options
+
+`sqlite_fdw` accepts the following options via the `CREATE SERVER` command:
+
+- **database** as *string*, **required**, no default
+
+  SQLite database path.
+
+- **updatable** as *boolean*, optional, default *true*
+
+  This option can allow or disallow data modification on foreign server for all foreign objects by default. Please note, this option can be overwritten on table level or have no effect because of some filesystem restrictions, see [connection to SQLite database file and access control](#connection-to-sqlite-database-file-and-access-control). This is only recommentadion of PostgreSQL foreign server owner user not to modify data in foreign server tables. For strong restriction see the next option `force_readonly`.
+
+- **force_readonly** as *boolean*, optional, default *false*
+
+  This option is useful if you need grant user permission to create a foreign tables on the foreign server and revoke user permission to modify any table data on this foreign server. This option with `true` value can disallow any write operations on foreign server table data through SQLite file readonly access mode. This option driven only by foreign server owner role can not be overwritten by any `updatable` option value. This is a strong restriction given by PostgreSQL foreign server owner user not to modify data in any foreign server tables. Also see [Connection to SQLite database file and access control](#connection-to-sqlite-database-file-and-access-control).
+
+- **truncatable** as *boolean*, optional, default *false*
+
+  Allows foreign tables to be truncated using the `TRUNCATE` command.
+
+- **keep_connections** as *boolean*, optional, default *true*
+
+  Allows to keep connections to SQLite while there is no SQL operations between PostgreSQL and SQLite.
+
+- **batch_size** as *integer*, optional, default *1*
+
+  Specifies the number of rows which should be inserted in a single `INSERT` operation. This setting can be overridden for individual tables.
+
+### CREATE USER MAPPING options
+
+There is no user or password conceptions in SQLite, hence `sqlite_fdw` no need any `CREATE USER MAPPING` command.
+
+About access model and possible data modifications problems see about [connection to SQLite database file and access control](#connection-to-sqlite-database-file-and-access-control).
+
+### CREATE FOREIGN TABLE options
+
+`sqlite_fdw` accepts the following table-level options via the
+`CREATE FOREIGN TABLE` command:
+
+- **table** as *string*, optional, no default
+
+  SQLite table name. Use if not equal to name of foreign table in PostgreSQL. Also see about [identifier case handling](#identifier-case-handling).
+
+- **truncatable** as *boolean*, optional, default from the same `CREATE SERVER` option
+
+  See `CREATE SERVER` options section for details.
+
+- **batch_size** as *integer*, optional, default from the same `CREATE SERVER` option
+
+  See `CREATE SERVER` options section for details.
+
+- **updatable** as *boolean*, optional, default *true*
+
+  This option can allow or disallow data modification on separate foreign table. Please note, this option can have no effect if there is foreign server option `force_readonly` = `true` or depends on filesystem context, see about [connection to SQLite database file and access control](#connection-to-sqlite-database-file-and-access-control).
+
+`sqlite_fdw` accepts the following column-level options via the
+`CREATE FOREIGN TABLE` command:
+
+- **column_name** as *string*, optional, no default
+
+  This option gives the column name to use for the column on the remote server. Also see about [identifier case handling](#identifier-case-handling).
+
+- **column_type** as *string*, optional, no default
+
+	Set preferred SQLite affinity for some PostgreSQL data types can be stored in different ways
+in SQLite (mixed affinity case). Updated and inserted values will have this affinity. Default preferred SQLite affinity for `timestamp` and `uuid` PostgreSQL data types is `text`.
+
+  - Use `INT` value for SQLite column (epoch Unix Time) to be treated/visualized as `timestamp` in PostgreSQL.
+  - Use `BLOB` value for SQLite column to be treated/visualized as `uuid`.
+
+- **key** as *boolean*, optional, default *false*
+
+  Indicates a column as a part of primary key or unique key of SQLite table.
+
+#### Datatypes
+**WARNING! The table below represents roadmap**, work still in progress. Until it will be ended please refer real behaviour in non-obvious cases, where there is no ✔ or ∅ mark.
 
 This table represents `sqlite_fdw` behaviour if in PostgreSQL foreign table column some [affinity](https://www.sqlite.org/datatype3.html) of SQLite data is detected. Some details about data values support see in [limitations](#limitations).
 
@@ -160,79 +234,6 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 |      varchar |      ?       |       ?      |      T       |      ✔       |      V       | TEXT         |
 |    varbit(n) |    V n<=64   |       ∅      |      V       |      ∅       |      ∅       | INT          |
 
-### CREATE SERVER options
-
-`sqlite_fdw` accepts the following options via the `CREATE SERVER` command:
-
-- **database** as *string*, **required**, no default
-
-  SQLite database path.
-
-- **updatable** as *boolean*, optional, default *true*
-
-  This option allow or disallow write operations on SQLite database file.
-
-- **truncatable** as *boolean*, optional, default *true*
-
-  Allows foreign tables to be truncated using the `TRUNCATE` command.
-
-- **keep_connections** as *boolean*, optional, default *true*
-
-  Allows to keep connections to SQLite while there is no SQL operations between PostgreSQL and SQLite.
-
-- **batch_size** as *integer*, optional, default *1*
-
-  Specifies the number of rows which should be inserted in a single `INSERT` operation. This setting can be overridden for individual tables.
-
-### CREATE USER MAPPING options
-
-There is no user or password conceptions in SQLite, hence `sqlite_fdw` no need any `CREATE USER MAPPING` command.
-
-In OS `sqlite_fdw` works as executed code with permissions of user of PostgreSQL server. Usually it is `postgres` OS user. For interacting with SQLite database without access errors ensure this user have follow permissions:
-- read permission on all directories by path to the SQLite database file;
-- read permission on SQLite database file;
-- write permissions both on SQLite database file and *directory it contains* if you need a modification. During `INSERT`, `UPDATE` or `DELETE` in SQLite database, SQLite engine functions makes temporary files with transaction data in the directory near SQLite database file. Hence without write permissions you'll have a message `failed to execute remote SQL: rc=8 attempt to write a readonly database`.
-
-### CREATE FOREIGN TABLE options
-
-`sqlite_fdw` accepts the following table-level options via the
-`CREATE FOREIGN TABLE` command:
-
-- **table** as *string*, optional, no default
-
-  SQLite table name. Use if not equal to name of foreign table in PostgreSQL. Also see about [identifier case handling](#identifier-case-handling).
-
-- **truncatable** as *boolean*, optional, default from the same `CREATE SERVER` option
-
-  See `CREATE SERVER` options section for details.
-
-- **batch_size** as *integer*, optional, default from the same `CREATE SERVER` option
-
-  See `CREATE SERVER` options section for details.
-
-- **updatable** as *boolean*, optional, default *true*
-
-  This option can allow or disallow write operations on a SQLite table independed of the same server option.
-
-`sqlite_fdw` accepts the following column-level options via the
-`CREATE FOREIGN TABLE` command:
-
-- **column_name** as *string*, optional, no default
-
-  This option gives the column name to use for the column on the remote server. Also see about [identifier case handling](#identifier-case-handling).
-
-- **column_type** as *string*, optional, no default
-
-	Set preferred SQLite affinity for some PostgreSQL data types can be stored in different ways
-in SQLite (mixed affinity case). Updated and inserted values will have this affinity. Default preferred SQLite affinity for `timestamp` and `uuid` PostgreSQL data types is `text`.
-
-  - Use `INT` value for SQLite column (epoch Unix Time) to be treated/visualized as `timestamp` in PostgreSQL.
-  - Use `BLOB` value for SQLite column to be treated/visualized as `uuid`.
-
-- **key** as *boolean*, optional, default *false*
-
-  Indicates a column as a part of primary key or unique key of SQLite table.
-
 ### IMPORT FOREIGN SCHEMA options
 
 `sqlite_fdw` supports [IMPORT FOREIGN SCHEMA](https://www.postgresql.org/docs/current/sql-importforeignschema.html)
@@ -261,13 +262,14 @@ in SQLite (mixed affinity case). Updated and inserted values will have this affi
 | datetime     | timestamp        |
 | time         | time             |
 | date         | date             |
+| uuid         | uuid             |
 
 ### TRUNCATE support
 
 `sqlite_fdw` implements the foreign data wrapper `TRUNCATE` API, available
 from PostgreSQL 14.
 
-As SQlite does not provide a `TRUNCATE` command, it is simulated with a
+As SQLite does not provide a `TRUNCATE` command, it is simulated with a
 simple unqualified `DELETE` operation.
 
 Actually, `TRUNCATE ... CASCADE` can be simulated if we create child table of SQLite with foreign keys and `ON DELETE CASCADE`, and then executing `TRUNCATE` (which will be deparsed to `DELETE`).
@@ -275,6 +277,36 @@ Actually, `TRUNCATE ... CASCADE` can be simulated if we create child table of SQ
 Following restrictions apply:
  - `TRUNCATE ... RESTART IDENTITY` is not supported
  - SQLite tables with foreign key references can cause errors during truncating
+
+### Connection to SQLite database file and access control
+
+In OS `sqlite_fdw` works as executed code with permissions of user of PostgreSQL server. Usually it is `postgres` OS user.
+
+#### Data read access
+For succesfully connection to SQLite database file you must have at least existed and correct SQLite file readable for OS user of PostgreSQL server process. This means all directories by path to the file must be also readable (listable) for OS user of PostgreSQL server process. There are no other conditions for PostreSQL database superuser to read all of SQLite data if there are also `sqlite_fdw` extension in the database and `FOREIGN SERVER` for SQLite database file.
+
+#### Data change access
+
+Data modification access in `sqlite_fdw` drived by both operating system and PostgreSQL.
+
+OS restrictions can disallow any SQLite data modifications. Hence any PostgreSQL `FOREIGN SERVER` or `FOREIGN TABLE` options or `GRANT`s can be absolutely not effective. In this case SQLite data modification operations allowed by PostgreSQL can cause error message from SQLite like `attempt to write a readonly database` with result code `8`.
+
+Full list of OS-leveled conditions of data modification access to SQLite database file
+- Existed SQLite file is not corrupted by SQLite engine conditions.
+- All path elements of the file are readable (listable) for OS user of PostgreSQL server process.
+- The file and a directory of the file placed on readwrite filesystem. For example `sqashfs` is always read-only, remote `sshfs` can be read-only, a disk partition can be mounted in read-only mode etc.
+- The file is writable for OS user of PostgreSQL server process.
+- The directory of the file is writable for OS user of PostgreSQL server process because SQLite creates some temporary transaction files.
+
+Full list of PostgreSQL-leveled conditions of data modification access to SQLite database file
+- The `FOREIGN SERVER` of the SQLite file have no `force_readonly` = `true` option value.
+- You have `USAGE` right `GRANT` for the `FOREIGN SERVER`.
+- The `FOREIGN TABLE` of SQLite table have no `updatable` = `false` option value.
+- If the `FOREIGN TABLE` have no `updatable` option, ensure `FOREIGN SERVER` have no `updatable` = `false` option value.
+
+Generally for `sqlite_fdw` access management `FOREIGN SERVER` owner can be like _remote access manager_ for other FDWs.
+
+_Remote access manager_ can block any data modififcations in remote database for _remote user_ of a FDW. In this case SQLite have no user or separate access conceptions, hence `FOREIGN SERVER` owner combines _remote access manager_ role with internal PostgreSQL roles such as `FOREIGN SERVER` access management.
 
 Functions
 ---------
@@ -297,11 +329,12 @@ sqlite_fdw_version
 --------------------
               20400
 ```
+
 Identifier case handling
 ------------------------
 
 PostgreSQL folds identifiers to lower case by default, SQLite is case insensitive by default
-and doesn't differ uppercase and lowercase ASCII base latin letters. It's important
+only for uppercase and lowercase ASCII base latin letters. It's important
 to be aware of potential issues with table and column names.
 
 Following SQL isn't correct for SQLite: `Error: duplicate column name: a`, but is correct for PostgreSQL
@@ -340,7 +373,7 @@ For SQLite there is no difference between
 ```
 For PostgreSQL the query with comment `№4` is independend query to table `T`, not to table `t` as other queries.
 Please note this table name composed from ASCII base latin letters *only*. This is not applicable for other
-alphabet systems or mixed names. This is because `toLower` operation in PostgreSQL is Unicode opration but
+alphabet systems or mixed names. This is because `toLower` operation in PostgreSQL is Unicode operation but
 ASCII only operation in SQLite, hence other characters will not be changed.
 
 ```sql
@@ -361,7 +394,7 @@ If there is
 	  b REAL
 	);
 ```
-in SQLite, both `a` and `A` , `b` and `B` columns will have the same real datasource in SQlite in follow foreign table:
+in SQLite, both `a` and `A` , `b` and `B` columns will have the same real datasource in SQLite in follow foreign table:
 
 ```sql
 	CREATE FOREIGN TABLE "SQLite test" (
@@ -400,7 +433,7 @@ stored in SQLite, only [`PRAGMA encoding;`](https://www.sqlite.org/pragma.html#p
 When `sqlite_fdw` connects to a SQLite, all strings are interpreted acording the PostgreSQL database's server encoding.
 It's not a problem if your PostgreSQL database encoding belongs to Unicode family. Otherewise interpretation transformation problems can occur. Some unproper for PostgreSQL database encoding characters will be replaced to default 'no such character' character or there will error like `character with byte sequence 0x** in encoding "UTF8" has no equivalent in encoding "**"`.
 
-Character case functions such as `upper`, `lower` and other are not pushed down because they does not work with UNICODE character in SQLite.
+Character case functions such as `upper`, `lower` and other are not pushed down because they does not work with Unicode character in SQLite.
 
 `Sqlite_fdw` tested with PostgreSQL database encodings `EUC_JP`, `EUC_KR`, `ISO_8859_5`, `ISO_8859_6`, `ISO_8859_7`, `ISO_8859_8`, `LATIN1`, `LATIN2`, `LATIN3`, `LATIN4`, `LATIN5`, `LATIN6`, `LATIN7`, `LATIN8`, `LATIN9`, `LATIN9`, `LATIN10`, `WIN1250`, `WIN1251`, `WIN1252`, `WIN1253`, `WIN1254`, `WIN1255`, `WIN1256`, `WIN1257` and it's synomyms. Some other encodings also can be supported, but not tested.
 
