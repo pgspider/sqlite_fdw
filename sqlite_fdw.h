@@ -43,6 +43,8 @@
 
 #define CR_NO_ERROR 0
 
+#define SQLITE_FDW_BIT_DATATYPE_BUF_SIZE sizeof(sqlite3_int64) * CHAR_BIT + 1
+
 #if (PG_VERSION_NUM < 120000)
 #define table_close(rel, lock)	heap_close(rel, lock)
 #define table_open(rel, lock)	heap_open(rel, lock)
@@ -50,7 +52,7 @@
 #endif
 
 /* Code version is updated at new release. */
-#define CODE_VERSION   20300
+#define CODE_VERSION   20400
 
 #if (PG_VERSION_NUM < 100000)
 /*
@@ -126,6 +128,8 @@ typedef struct SqliteFdwPathExtraData
  */
 typedef struct SQLiteFdwExecState
 {
+	ForeignServer *server;		/* Foreign server handle */
+	ForeignTable  *table;		/* Foreign scan deal with this foreign table */
 	sqlite3    *conn;			/* SQLite connection handle */
 	sqlite3_stmt *stmt;			/* SQLite prepared stament handle */
 	char	   *query;			/* Query string */
@@ -166,8 +170,8 @@ typedef struct SQLiteFdwExecState
 	/* working memory context */
 	MemoryContext temp_cxt;		/* context for per-tuple temporary data */
 	AttrNumber *junk_idx;
-}			SqliteFdwExecState;
 
+}			SqliteFdwExecState;
 
 typedef struct SqliteFdwRelationInfo
 {
@@ -263,6 +267,9 @@ typedef struct SqliteFdwRelationInfo
  */
 typedef struct SqliteFdwDirectModifyState
 {
+	ForeignServer *server;		/* Foreign server handle */
+	ForeignTable  *table;		/* Foreign scan deal with this foreign table */
+
 	Relation	rel;			/* relcache entry for the foreign table */
 	AttInMetadata *attinmeta;	/* attribute datatype conversion metadata */
 
@@ -318,6 +325,7 @@ extern EquivalenceMember *sqlite_find_em_for_rel_target(PlannerInfo *root,
 /* in sqlite_fdw.c */
 extern int	sqlite_set_transmission_modes(void);
 extern void sqlite_reset_transmission_modes(int nestlevel);
+extern const int sqlite_affinity_code(char* t);
 
 /* option.c headers */
 extern sqlite_opt * sqlite_get_options(Oid foreigntableid);
@@ -373,8 +381,15 @@ void		sqlite_rel_connection(sqlite3 * conn);
 void		sqlitefdw_report_error(int elevel, sqlite3_stmt * stmt, sqlite3 * conn, const char *sql, int rc);
 void		sqlite_cache_stmt(ForeignServer *server, sqlite3_stmt * *stmt);
 
-NullableDatum sqlite_convert_to_pg(Oid pgtyp, int pgtypmod, sqlite3_stmt * stmt, int stmt_colid, AttInMetadata *attinmeta, AttrNumber attnum, int sqlite_value_affinity, int AffinityBehaviourFlags);
+NullableDatum sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *attinmeta, AttrNumber attnum, int sqlite_value_affinity, int AffinityBehaviourFlags);
 
-void		sqlite_bind_sql_var(Oid type, int attnum, Datum value, sqlite3_stmt * stmt, bool *isnull);
+void		sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt * stmt, bool *isnull, Oid relid);
 extern void sqlite_do_sql_command(sqlite3 * conn, const char *sql, int level, List **busy_connection);
+
+void sqlite_fdw_data_norm_functs_init(sqlite3* db);
+
+/* sqlite_query.c headers */
+sqlite3_int64
+			binstr2int64(const char *s);
+
 #endif							/* SQLITE_FDW_H */

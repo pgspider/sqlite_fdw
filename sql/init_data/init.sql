@@ -22,7 +22,9 @@ create table grem1_2 (a int primary key, b int generated always as (a * 2) store
 CREATE TABLE case_exp(c1 int primary key, c3 text, c6 varchar(10));
 
 CREATE TABLE "type_STRING" (col text primary key);
-CREATE TABLE "type_BOOLEAN" (col boolean primary key);
+CREATE TABLE "type_BOOLEANpk" (col boolean primary key);
+CREATE TABLE "type_BOOLEAN" (i int primary key, b boolean);
+CREATE VIEW  "type_BOOLEAN+" AS SELECT *, typeof("b") t, length("b") l FROM "type_BOOLEAN";
 CREATE TABLE "type_BYTE" (col char(1) primary key);
 CREATE TABLE "type_SINT" (col smallint primary key);
 CREATE TABLE "type_BINT" (col bigint primary key);
@@ -33,6 +35,13 @@ CREATE TABLE "type_TIMESTAMP" (col timestamp primary key, b timestamp);--, c dat
 CREATE TABLE "type_BLOB" (col blob primary key);
 CREATE TABLE "type_DATE" (col date primary key);
 CREATE TABLE "type_TIME" (col time primary key);
+CREATE TABLE "type_BIT" (i int, b bit);
+CREATE VIEW  "type_BIT+" AS SELECT *, typeof(b) t, length(b) l FROM "type_BIT";
+CREATE TABLE "type_VARBIT" (i int, b bit);
+CREATE VIEW  "type_VARBIT+" AS SELECT *, typeof(b) t, length(b) l FROM "type_VARBIT";
+CREATE TABLE "type_UUIDpk" (col uuid primary key);
+CREATE TABLE "type_UUID" (i int, u uuid);
+CREATE VIEW  "type_UUID+" AS SELECT *, typeof("u") t, length("u") l FROM "type_UUID";
 CREATE TABLE BitT (p integer primary key, a BIT(3), b BIT VARYING(5));
 CREATE TABLE notype (a);
 CREATE TABLE typetest (i integer, v varchar(10) , c char(10), t text, d datetime, ti timestamp);
@@ -42,7 +51,7 @@ INSERT INTO  alltypetest VALUES (583647,   127,        12767,       388607,     
 
 -- a table that is missing some fields
 CREATE TABLE shorty (
-   id  integer primary key, 
+   id  integer primary key,
    c   character(10)
 );
 
@@ -51,7 +60,7 @@ CREATE TABLE "A a" (col int primary key);
 -- test for issue #44 github
 CREATE VIRTUAL TABLE fts_table USING fts5(name, description, tokenize = porter);
 
--- updatable option test (github pull 59)
+-- github.com/pull/59
 CREATE TABLE RO_RW_test (
     i   int primary key not null,
     a   text,
@@ -84,5 +93,16 @@ INSERT INTO "Unicode data" (i, t) VALUES ('epo', 'Laŭ Ludoviko Zamenhof bongust
 INSERT INTO "Unicode data" (i, t) VALUES ('cze', 'Zvlášť zákeřný učeň s ďolíčky běží podél zóny úlů.');
 INSERT INTO "Unicode data" (i, t) VALUES ('ara', 'أبجد هوَّز حُطّي كلَمُن سَعْفَص قُرِشَت ثَخَدٌ ضَظَغ');
 INSERT INTO "Unicode data" (i, t) VALUES ('heb', 'עטלף אבק נס דרך מזגן שהתפוצץ כי חם');
+
+
+CREATE TABLE "type_BOOLEAN_oper" AS
+WITH booldata AS (
+	SELECT row_number() over () i, column1 AS b
+	  FROM ( VALUES
+	('Yes'), ('YeS'), ('yes'), ('on'),  ('ON'),  ('t'), ('T'), ('Y'), ('y'), (1), ('1'), ('true'),  ('tRuE'),
+	('no'),  ('No'),  ('nO'),  ('off'), ('oFf'), ('f'), ('F'), ('N'), ('n'), (0), ('0'), ('false'), ('fALsE'),
+	(NULL) )
+				 )
+SELECT ROW_NUMBER() OVER () i, t1.i i1, t1.b b1, t2.i i2, t2.b b2 FROM booldata t1 INNER JOIN booldata t2 ON 1;
 
 analyze;

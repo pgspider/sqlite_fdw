@@ -11,35 +11,20 @@
  */
 
 #include "postgres.h"
-
 #include "sqlite_fdw.h"
-
-#include <stdio.h>
-#include <sys/stat.h>
-#include <unistd.h>
 
 #include "funcapi.h"
 #include "access/reloptions.h"
 #include "catalog/pg_foreign_server.h"
 #include "catalog/pg_foreign_table.h"
-#include "catalog/pg_user_mapping.h"
 #include "catalog/pg_type.h"
 #include "commands/defrem.h"
-#include "commands/explain.h"
-#include "foreign/fdwapi.h"
-#include "foreign/foreign.h"
-#include "miscadmin.h"
-#include "mb/pg_wchar.h"
-#include "storage/fd.h"
-#include "utils/array.h"
-#include "utils/builtins.h"
 #include "utils/guc.h"
-#include "utils/rel.h"
 #include "utils/lsyscache.h"
-#include "optimizer/cost.h"
-#include "optimizer/pathnode.h"
-#include "optimizer/restrictinfo.h"
-#include "optimizer/planmain.h"
+#if PG_VERSION_NUM >= 160000
+	#include "utils/varlena.h"
+#endif
+
 /*
  * Describes the valid options for objects that use this wrapper.
  */
@@ -58,6 +43,7 @@ static struct SqliteFdwOption valid_options[] =
 {
 	{"database", ForeignServerRelationId},
 	{"keep_connections", ForeignServerRelationId},
+	{"force_readonly", ForeignServerRelationId},
 	{"table", ForeignTableRelationId},
 	{"key", AttributeRelationId},
 	{"column_name", AttributeRelationId},
@@ -105,12 +91,41 @@ sqlite_fdw_validator(PG_FUNCTION_ARGS)
 		if (!sqlite_is_valid_option(def->defname, catalog))
 		{
 			struct SqliteFdwOption *opt;
-			StringInfoData buf;
 
+#if (PG_VERSION_NUM >= 160000)
+			/*
+			 * Unknown option specified, complain about it. Provide a hint
+			 * with a valid option that looks similar, if there is one.
+			 */
+			const char *closest_match;
+			ClosestMatchState match_state;
+			bool		has_valid_options = false;
+			initClosestMatch(&match_state, def->defname, 4);
+
+			for (opt = valid_options; opt->optname; opt++)
+			{
+				if (catalog == opt->optcontext)
+				{
+					has_valid_options = true;
+					updateClosestMatch(&match_state, opt->optname);
+				}
+			}
+
+			closest_match = getClosestMatch(&match_state);
+			ereport(ERROR,
+					(errcode(ERRCODE_FDW_INVALID_OPTION_NAME),
+					 errmsg("sqlite_fdw: invalid option \"%s\"", def->defname),
+					 has_valid_options ? closest_match ?
+					 errhint("Perhaps you meant the option \"%s\".",
+							 closest_match) : 0 :
+					 errhint("There are no valid options in this context.")));
+#else
 			/*
 			 * Unknown option specified, complain about it. Provide a hint
 			 * with list of valid options for the object.
 			 */
+			StringInfoData buf;
+
 			initStringInfo(&buf);
 			for (opt = valid_options; opt->optname; opt++)
 			{
@@ -125,12 +140,14 @@ sqlite_fdw_validator(PG_FUNCTION_ARGS)
 					 buf.len > 0 ?
 					 errhint("Valid options in this context are: %s", buf.data) :
 					 errhint("There are no valid options in this context.")));
+#endif
 		}
 
 		/* Validate option value */
 		if (strcmp(def->defname, "truncatable") == 0 ||
 			strcmp(def->defname, "keep_connections") == 0 ||
-			strcmp(def->defname, "updatable") == 0)
+			strcmp(def->defname, "updatable") == 0 ||
+			strcmp(def->defname, "force_readonly") == 0)
 		{
 			defGetBoolean(def);
 		}
