@@ -86,29 +86,41 @@ SELECT avg(a) AS avg_32 FROM aggtest WHERE a < 100;
  32.6666666666667
 (1 row)
 
+--Testcase 2+1:
 CREATE FOREIGN TABLE agg_tb(v int, id integer OPTIONS (key 'true')) SERVER sqlite_svr;
+--Testcase 2+2:
 INSERT INTO agg_tb(v) VALUES(1), (2), (3);
+--Testcase 2+3: -- Pg 16+
 SELECT any_value(v) FROM agg_tb;
 ERROR:  function any_value(integer) does not exist
 LINE 1: SELECT any_value(v) FROM agg_tb;
                ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+--Testcase 2+4:
 DELETE FROM agg_tb;
+--Testcase 2+5:
 INSERT INTO agg_tb(v) VALUES (NULL);
+--Testcase 2+6: -- Pg 16+
 SELECT any_value(v) FROM agg_tb;
 ERROR:  function any_value(integer) does not exist
 LINE 1: SELECT any_value(v) FROM agg_tb;
                ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+--Testcase 2+7:
 DELETE FROM agg_tb;
+--Testcase 2+8:
 INSERT INTO agg_tb(v) VALUES (NULL), (1), (2);
+--Testcase 2+9: -- Pg 16+
 SELECT any_value(v) FROM agg_tb;
 ERROR:  function any_value(integer) does not exist
 LINE 1: SELECT any_value(v) FROM agg_tb;
                ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+--Testcase 2+10:
 CREATE FOREIGN TABLE agg_tb2(v text) SERVER sqlite_svr;
+--Testcase 2+11:
 INSERT INTO agg_tb2(v) VALUES (array['hello', 'world']);
+--Testcase 2+12: -- Pg 16+
 SELECT any_value(v) FROM agg_tb2;
 ERROR:  function any_value(text) does not exist
 LINE 1: SELECT any_value(v) FROM agg_tb2;
@@ -584,7 +596,7 @@ SELECT sum(a), avg(a), var_pop(a) FROM agg_t3;
 
 --Testcase 606:
 DELETE FROM agg_t3;
---Testcase 607:
+--Testcase 607: -- Pg 14+
 INSERT INTO agg_t3 VALUES ('1'::numeric), ('infinity'::numeric);
 ERROR:  invalid input syntax for type numeric: "infinity"
 LINE 1: INSERT INTO agg_t3 VALUES ('1'::numeric), ('infinity'::numer...
@@ -1170,7 +1182,7 @@ CREATE FOREIGN TABLE bitwise_test(
   x INT2
 ) SERVER sqlite_svr;
 -- empty case
---Testcase 43:
+--Testcase 43: -- bit_xor Pg 14+
 SELECT
   BIT_AND(i2) AS "?",
   BIT_OR(i4)  AS "?",
@@ -1185,7 +1197,7 @@ INSERT INTO bitwise_test VALUES
   (1, 1, 1, 1, 1),
   (3, 3, 3, null, 2),
   (7, 7, 7, 3, 4);
---Testcase 45:
+--Testcase 45:-- bit_xor Pg 14+
 SELECT
   BIT_AND(i2) AS "1",
   BIT_AND(i4) AS "1",

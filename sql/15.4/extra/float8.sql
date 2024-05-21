@@ -1109,9 +1109,6 @@ INSERT INTO "type_FLOAT_INF" (i, f) VALUES (13, 'Inf');
 INSERT INTO "type_FLOAT_INF" (i, f) VALUES (14, '+Inf');
 --Testcase 288:
 INSERT INTO "type_FLOAT_INF" (i, f) VALUES (15, '-Inf');
---Testcase 289: Inserted as NULL!!!
---see https://github.com/sqlite/sqlite/blob/6db0b11e078f4b651f0cf00f845f3d77700c1a3a/src/vdbemem.c#L973
---INSERT INTO "type_FLOAT_INF" (i, f) VALUES (16, 'NaN');
 --Testcase 290:
 ALTER FOREIGN TABLE "type_FLOAT_INF" ALTER COLUMN "f" TYPE text;
 --Testcase 291:

@@ -394,10 +394,6 @@ sqlite_fdw_data_norm_float(sqlite3_context* context, int argc, sqlite3_value** a
 			sqlite3_result_double(context, -INFINITY);
 			return;
 		}
-		/* 
-		 * No NaN processing here because of SQLite NULL, see
-		 * https://github.com/sqlite/sqlite/blob/6db0b11e078f4b651f0cf00f845f3d77700c1a3a/src/vdbemem.c#L973
-		 */
 	}
 	sqlite3_result_value(context, arg);
 }

@@ -86,32 +86,44 @@ SELECT avg(a) AS avg_32 FROM aggtest WHERE a < 100;
  32.6666666666667
 (1 row)
 
+--Testcase 2+1:
 CREATE FOREIGN TABLE agg_tb(v int, id integer OPTIONS (key 'true')) SERVER sqlite_svr;
+--Testcase 2+2:
 INSERT INTO agg_tb(v) VALUES(1), (2), (3);
+--Testcase 2+3:
 SELECT any_value(v) FROM agg_tb;
  any_value 
 -----------
          1
 (1 row)
 
+--Testcase 2+4:
 DELETE FROM agg_tb;
+--Testcase 2+5:
 INSERT INTO agg_tb(v) VALUES (NULL);
+--Testcase 2+6:
 SELECT any_value(v) FROM agg_tb;
  any_value 
 -----------
           
 (1 row)
 
+--Testcase 2+7:
 DELETE FROM agg_tb;
+--Testcase 2+8:
 INSERT INTO agg_tb(v) VALUES (NULL), (1), (2);
+--Testcase 2+9:
 SELECT any_value(v) FROM agg_tb;
  any_value 
 -----------
          1
 (1 row)
 
+--Testcase 2+10:
 CREATE FOREIGN TABLE agg_tb2(v text) SERVER sqlite_svr;
+--Testcase 2+11:
 INSERT INTO agg_tb2(v) VALUES (array['hello', 'world']);
+--Testcase 2+12:
 SELECT any_value(v) FROM agg_tb2;
    any_value   
 ---------------

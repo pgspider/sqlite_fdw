@@ -5,7 +5,7 @@
  * Portions Copyright (c) 2018, TOSHIBA CORPORATION
  *
  * IDENTIFICATION
- *        deparse.c
+ *		deparse.c
  *
  *-------------------------------------------------------------------------
  */
@@ -2667,9 +2667,9 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 						appendStringInfoString(buf, extval);
 				}
 				else
-				ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-						errmsg("Invalid input syntax. Invalid characters in number"),
-						errhint("Value: %s", extval)));
+					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+							errmsg("Invalid input syntax. Invalid characters in number"),
+							errhint("Value: %s", extval)));
 			}
 			break;
 		case FLOAT4OID:
@@ -2688,32 +2688,27 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 					else
 						appendStringInfoString(buf, extval);
 				}
-				else if (strcasecmp(extval, "NaN") == 0)
+				else if (strcasecmp(extval, "Inf") == 0 ||
+						 strcasecmp(extval, "Infinity") == 0 ||
+						 strcasecmp(extval + 1, "Inf") == 0 ||
+						 strcasecmp(extval + 1, "Infinity") == 0)
 				{
-				 /* https://stackoverflow.com/questions/20619957
-				  * https://github.com/sqlite/sqlite/blob/6db0b11e078f4b651f0cf00f845f3d77700c1a3a/src/vdbemem.c#L973
-				  * TODO: check possible alternative
-				  * appendStringInfo(buf, "NULL");
-				  */
-					appendStringInfo(buf, "'NaN'");
+					bool is_negative_or_positive = false;
+					if (extval[0] == '-' || extval[0] == '+')
+						is_negative_or_positive = true;
+
+					if (is_negative_or_positive)
+						appendStringInfo(buf, "(%c", extval[0]);
+
+					appendStringInfo(buf, "9e999");
+
+					if (is_negative_or_positive)
+						appendStringInfo(buf, ")");
 				}
 				else
 				{
-					if (extval[0] == '-')
-						appendStringInfo(buf, "(-");
-					if (extval[0] == '+')
-						appendStringInfo(buf, "(+");
-
-					if (strcasecmp(extval, "Inf") == 0 ||
-						strcasecmp(extval, "Infinity") == 0 ||
-						strcasecmp(extval + 1, "Inf") == 0 ||
-						strcasecmp(extval + 1, "Infinity") == 0)
-					{
-						appendStringInfo(buf, "9e999");
-					}
-
-					if (extval[0] == '-' || extval[0] == '+')
-						appendStringInfo(buf, ")");
+					/* NaN and other */
+					appendStringInfo(buf, "\'%s\'", extval);
 				}
 			}
 			break;
@@ -3079,8 +3074,6 @@ sqlite_deparse_scalar_array_op_expr(ScalarArrayOpExpr *node, deparse_expr_cxt *c
 						case INT2ARRAYOID:
 						case BOOLARRAYOID:
 						case OIDARRAYOID:
-							isstr = false;
-							break;
 						case NUMERICARRAYOID:
 						case FLOAT4ARRAYOID:
 						case FLOAT8ARRAYOID:
