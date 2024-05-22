@@ -338,20 +338,51 @@ sqlite_fdw_data_norm_bool(sqlite3_context* context, int argc, sqlite3_value** ar
 	sqlite3_result_value(context, arg);
 }
 
+/* Base ∞ constants */
+static const char * infs = "Inf";
+static const char * infl = "Infinity";
+
 /*
- * ISO:SQL valid float/double precision values with text affinity such as Infinity or Inf or NaN
+ * Try to check SQLite value if there is any ∞ value with text affinity
+ */
+bool infinity_processing (double* d, const char* t)
+{
+	static const char * minfs = "-Inf";
+	static const char * minfl = "-Infinity";
+	static const char * pinfs = "+Inf";
+	static const char * pinfl = "+Infinity";
+
+	if (strcasecmp(t, infs) == 0 ||
+		strcasecmp(t, pinfs) == 0 ||
+		strcasecmp(t, infl) == 0 ||
+		strcasecmp(t, pinfl) == 0)
+	{
+		*d = INFINITY;
+		return true;
+	}
+	if (strcasecmp(t, minfs) == 0 ||
+		strcasecmp(t, minfl) == 0)
+	{
+		*d = -INFINITY;
+		return true;
+	}
+	return false;
+}
+
+/*
+ * ISO:SQL valid float/double precision values with text affinity such as Infinity or Inf
  * will be treated as float like in PostgreSQL console input
- * Note: SQLite also have Infinity support with real affinity, but this values isn't suitable for insert,
- * there is any overflow number instead
+ * Note: SQLite also have Infinity support with real affinity, but this values
+ * isn't suitable for insert, there is any overflow number instead
  */
 static void
 sqlite_fdw_data_norm_float(sqlite3_context* context, int argc, sqlite3_value** argv)
 {
-	static const char * infs = "Inf";
-	static const char * infl = "Infinity";
 	sqlite3_value* arg = argv[0];
 	int dt = sqlite3_value_type(arg);
 	int l;
+	const char* t = NULL;
+	double result;
 
 	if (dt == SQLITE_FLOAT)
 	{
@@ -372,28 +403,11 @@ sqlite_fdw_data_norm_float(sqlite3_context* context, int argc, sqlite3_value** a
 		sqlite3_result_value(context, arg);
 		return;
 	}
-
+	t = (const char*)sqlite3_value_text(arg);
+	if (infinity_processing (&result, t))
 	{
-		static const char * minfs = "-Inf";
-		static const char * minfl = "-Infinity";
-		static const char * pinfs = "+Inf";
-		static const char * pinfl = "+Infinity";
-		const char* t = (const char*)sqlite3_value_text(arg);
-
-		if (strcasecmp(t, infs) == 0 ||
-			strcasecmp(t, pinfs) == 0 ||
-			strcasecmp(t, infl) == 0 ||
-			strcasecmp(t, pinfl) == 0)
-		{
-			sqlite3_result_double(context, INFINITY);
-			return;
-		}
-		if (strcasecmp(t, minfs) == 0 ||
-			strcasecmp(t, minfl) == 0)
-		{
-			sqlite3_result_double(context, -INFINITY);
-			return;
-		}
+		sqlite3_result_double(context, result);
+		return;
 	}
 	sqlite3_result_value(context, arg);
 }
