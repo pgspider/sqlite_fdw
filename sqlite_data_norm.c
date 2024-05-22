@@ -26,6 +26,7 @@
 #include "utils/uuid.h"
 
 static void error_helper(sqlite3* db, int rc);
+static bool infinity_processing (double* d, const char* t);
 
 #if !defined(SQLITE_ASCII) && !defined(SQLITE_EBCDIC)
 #define SQLITE_ASCII 1
@@ -345,7 +346,8 @@ static const char * infl = "Infinity";
 /*
  * Try to check SQLite value if there is any ∞ value with text affinity
  */
-bool infinity_processing (double* d, const char* t)
+static bool
+infinity_processing (double* d, const char* t)
 {
 	static const char * minfs = "-Inf";
 	static const char * minfl = "-Infinity";

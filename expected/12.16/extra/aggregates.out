@@ -1978,11 +1978,12 @@ group by ten;
 
 -- Ensure consecutive NULLs are properly treated as distinct from each other
 select array_agg(distinct val)
-from (select null as val from generate_series(1, 2));
-ERROR:  subquery in FROM must have an alias
-LINE 2: from (select null as val from generate_series(1, 2));
-             ^
-HINT:  For example, FROM (SELECT ...) [AS] foo.
+from (select null as val from generate_series(1, 2)) g;
+ array_agg 
+-----------
+ {NULL}
+(1 row)
+
 -- Ensure no ordering is requested when enable_presorted_aggregate is off
 set enable_presorted_aggregate to off;
 ERROR:  unrecognized configuration parameter "enable_presorted_aggregate"
