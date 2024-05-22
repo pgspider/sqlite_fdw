@@ -52,7 +52,7 @@ Features
 - `ORDER BY` is pushdowned
 - Joins (left/right/inner/cross) are pushdowned
 - `CASE` expressions are pushdowned.
-- `LIMIT` and `OFFSET` are pushdowned when all tables in the query is foreign tables belongs to the same PostgreSQL `FOREIGN SERVER` object.
+- `LIMIT` and `OFFSET` are pushdowned when all tables in the query are foreign tables belongs to the same PostgreSQL `FOREIGN SERVER` object.
 - Support `GROUP BY`, `HAVING` push-down.
 - `mod()` is pushdowned. In PostgreSQL this function gives [argument-dependend data type](https://www.postgresql.org/docs/current/functions-math.html), but result from SQLite always [have `real` affinity](https://www.sqlite.org/lang_mathfunc.html#mod).
 - `upper`, `lower` and other character case functions are **not** pushed down because they does not work with UNICODE character in SQLite.
