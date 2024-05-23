@@ -39,10 +39,12 @@ Features
 - Support mixed SQLite [data affinity](https://www.sqlite.org/datatype3.html) input and filtering (`SELECT`/`WHERE` usage) for such data types as
 	- `timestamp`: `text` and `int`,
 	- `uuid`: `text`(32..39) and `blob`(16),
- 	- `bool`: `text`(1..5) and `int`.
+ 	- `bool`: `text`(1..5) and `int`,
+ 	- `double precision`, `float` and `numeric`: `real` values and special values with `text` affinity (`+Infinity` and `-Infinity`).
 - Support mixed SQLite [data affinity](https://www.sqlite.org/datatype3.html) output (`INSERT`/`UPDATE`) for such data types as
 	- `timestamp`: `text`(default) or `int`,
  	- `uuid`: `text`(36) or `blob`(16)(default).
+- Full support for `+Infinity` (means ∞) and `-Infinity` (means -∞) special values for IEEE 754-2008 numbers in `double precision`, `float` and `numeric` columns including such conditions as ` n < '+Infinity'` or ` m > '-Infinity'`.
 
 ### Pushdowning
 - `WHERE` clauses are pushdowned
@@ -50,7 +52,7 @@ Features
 - `ORDER BY` is pushdowned
 - Joins (left/right/inner/cross) are pushdowned
 - `CASE` expressions are pushdowned.
-- `LIMIT` and `OFFSET` are pushdowned (*when all tables queried are fdw)
+- `LIMIT` and `OFFSET` are pushdowned when all tables in the query are foreign tables belongs to the same PostgreSQL `FOREIGN SERVER` object.
 - Support `GROUP BY`, `HAVING` push-down.
 - `mod()` is pushdowned. In PostgreSQL this function gives [argument-dependend data type](https://www.postgresql.org/docs/current/functions-math.html), but result from SQLite always [have `real` affinity](https://www.sqlite.org/lang_mathfunc.html#mod).
 - `upper`, `lower` and other character case functions are **not** pushed down because they does not work with UNICODE character in SQLite.
@@ -129,7 +131,7 @@ Usage
 
 - **database** as *string*, **required**, no default
 
-  SQLite database path.
+  SQLite database file address.
 
 - **updatable** as *boolean*, optional, default *true*
 
@@ -557,6 +559,9 @@ Limitations
 - `TRUNCATE` in `sqlite_fdw` always delete data of both parent and child tables (no matter user inputs `TRUNCATE table CASCADE` or `TRUNCATE table RESTRICT`) if there are foreign-keys references with `ON DELETE CASCADE` clause.
 - `RETURNING` is not supported.
 
+### Mixed affinity support
+SQLite `text` affinity values which is different for SQLite unique checks can be equal for PostgreSQL because `sqlite_fdw` unifyes semantics of values, not storage form. For example `1`(integer), `Y`(text) and `tRuE`(text) SQLite values is different in SQLite but equal in PostgreSQL as `true` values of `boolean` column. This is also applicable for a data with `text` affinity in `uuid`, `timestamp`, `double precision`, `float` and `numeric` columns of foreign tables. **Please be carefully if you want to use mixed affinity column as PostgreSQL foreign table primary key**.
+
 ### Arrays
 - `sqlite_fdw` only supports `ARRAY` const, for example, `ANY (ARRAY[1, 2, 3])` or `ANY ('{1, 2 ,3}')`.
 - `sqlite_fdw` does not support `ARRAY` expression, for example, `ANY (ARRAY[c1, 1, c1+0])`.
@@ -566,7 +571,8 @@ Limitations
 - For `sum` function of SQLite, output of `sum(bigint)` is `integer` value. If input values are big, the overflow error may occurs on SQLite because it overflow within the range of signed 64bit. For PostgreSQL, it can calculate as over the precision of `bigint`, so overflow does not occur.
 - SQLite promises to preserve the 15 most significant digits of a floating point value. The big value which exceed 15 most significant digits may become different value after inserted.
 - SQLite does not support `numeric` type as PostgreSQL. Therefore, it does not allow to store numbers with too high precision and scale. Error out of range occurs.
-- SQLite does not support special values for IEEE 754-2008 numbers such as `NaN`, `+Infinity` and `-Infinity` in SQL expressions with numeric context. Also SQLite can not store this values with `real` [affinity](https://www.sqlite.org/datatype3.html). In opposite to SQLite, PostgreSQL can store special values in columns belongs to `real` datatype family such as `float` or `double precision` and use arithmetic comparation for this values. In oppose to PostgreSQL, SQLite stores `NaN`, `+Infinity` and `-Infinity` as a text values. Also conditions with special literals (such as ` n < '+Infinity'` or ` m > '-Infinity'` ) isn't numeric conditions in SQLite and gives unexpected result after pushdowning in oppose to internal PostgreSQL calculations. During `INSERT INTO ... SELECT` or in `WHERE` conditions `sqlite_fdw` uses given by PostgreSQL standard case sensitive literals **only** in follow forms: `NaN`, `-Infinity`, `Infinity`, not original strings from `WHERE` condition. *This can caused selecting issues*.
+- SQLite does not support `NaN` special value for IEEE 754-2008 numbers. Please use this special value very cerefully because there is no such conception in SQLite at all and `NaN` value treated in SQLite as `NULL`.
+- SQLite support `+Infinity` and `-Infinity` special values for IEEE 754-2008 numbers in SQL expressions with numeric context. This values can be readed with both `text` and `real` affiniy, but can be writed to SQLite only with `real` affinity (as signed out of range value `9e999`).
 
 ### Boolean values
 - `sqlite_fdw` boolean values support exists only for `bool` columns in foreign table. SQLite documentation recommends to store boolean as value with `integer` [affinity](https://www.sqlite.org/datatype3.html). `NULL` isn't converted, 1 converted to `true`, all other `NOT NULL` values converted to `false`. During `SELECT ... WHERE condition_column` condition converted only to `condition_column`.

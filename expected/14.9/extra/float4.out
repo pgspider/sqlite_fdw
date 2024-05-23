@@ -1233,7 +1233,598 @@ begin
   end loop;
 end;
 $d$;
---Testcase 183:
+--Testcase 280:
+CREATE FOREIGN TABLE "type_FLOAT_INF"( "i" int OPTIONS (key 'true'), "f" float8) SERVER sqlite_svr OPTIONS (table 'type_FLOAT_INF');
+--Testcase 281:
+CREATE FOREIGN TABLE "type_FLOAT_INF+"( "i" int OPTIONS (key 'true'), "f" float8, "t" text, "l" smallint) SERVER sqlite_svr OPTIONS (table 'type_FLOAT_INF+');
+--Testcase 282:
+SELECT * FROM "type_FLOAT_INF+";
+ i |     f     |  t   | l 
+---+-----------+------+---
+ 1 | -Infinity | real | 4
+ 2 |  Infinity | real | 3
+ 3 | -Infinity | real | 4
+ 4 |  Infinity | real | 3
+ 5 |   -1e+308 | real | 9
+ 6 |         0 | real | 3
+ 7 |    1e+308 | real | 8
+(7 rows)
+
+--Testcase 283:
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (10, 'Infinity');
+--Testcase 284:
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (11, '+Infinity');
+--Testcase 285:
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (12, '-Infinity');
+--Testcase 286:
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (13, 'Inf');
+--Testcase 287:
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (14, '+Inf');
+--Testcase 288:
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (15, '-Inf');
+--Testcase 290:
+ALTER FOREIGN TABLE "type_FLOAT_INF" ALTER COLUMN "f" TYPE text;
+--Testcase 291:
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (17, 'Infinity');
+--Testcase 292:
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (18, '+Infinity');
+--Testcase 293:
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (19, '-Infinity');
+--Testcase 294:
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (20, 'Inf');
+--Testcase 295:
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (21, '+Inf');
+--Testcase 296:
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (22, '-Inf');
+--Testcase 297:
+--INSERT INTO "type_FLOAT_INF" (i, f) VALUES (23, 'NaN');
+--Testcase 298:
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (24, 'Infinity__');
+--Testcase 299:
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (25, 'Infi');
+--Testcase 300:
+ALTER FOREIGN TABLE "type_FLOAT_INF" ALTER COLUMN "f" TYPE float8;
+--Testcase 301: error : improper data with text affinity
+SELECT * FROM "type_FLOAT_INF+";
+ERROR:  SQLite value is not compatible with PostgreSQL column data type
+HINT:  SQLite value with "text" affinity (10 bytes) : 'Infinity__'
+CONTEXT:  foreign table "type_FLOAT_INF+" foreign column "f" have data type "double precision" (usual affinity "real"), in query there is reference to foreign column
+--Testcase 302:
+DELETE FROM "type_FLOAT_INF" WHERE i = 24;
+--Testcase 303: error : improper data with text affinity
+SELECT * FROM "type_FLOAT_INF+";
+ERROR:  SQLite value is not compatible with PostgreSQL column data type
+HINT:  SQLite value with "text" affinity (4 bytes) : 'Infi'
+CONTEXT:  foreign table "type_FLOAT_INF+" foreign column "f" have data type "double precision" (usual affinity "real"), in query there is reference to foreign column
+--Testcase 304:
+DELETE FROM "type_FLOAT_INF" WHERE i = 25;
+--Testcase 305:
+SELECT * FROM "type_FLOAT_INF";
+ i  |     f     
+----+-----------
+  1 | -Infinity
+  2 |  Infinity
+  3 | -Infinity
+  4 |  Infinity
+  5 |   -1e+308
+  6 |         0
+  7 |    1e+308
+ 10 |  Infinity
+ 11 |  Infinity
+ 12 | -Infinity
+ 13 |  Infinity
+ 14 |  Infinity
+ 15 | -Infinity
+ 17 |  Infinity
+ 18 |  Infinity
+ 19 | -Infinity
+ 20 |  Infinity
+ 21 |  Infinity
+ 22 | -Infinity
+(19 rows)
+
+--Testcase 306:
+SELECT * FROM "type_FLOAT_INF+";
+ i  |     f     |  t   | l 
+----+-----------+------+---
+  1 | -Infinity | real | 4
+  2 |  Infinity | real | 3
+  3 | -Infinity | real | 4
+  4 |  Infinity | real | 3
+  5 |   -1e+308 | real | 9
+  6 |         0 | real | 3
+  7 |    1e+308 | real | 8
+ 10 |  Infinity | real | 3
+ 11 |  Infinity | real | 3
+ 12 | -Infinity | real | 4
+ 13 |  Infinity | real | 3
+ 14 |  Infinity | real | 3
+ 15 | -Infinity | real | 4
+ 17 |  Infinity | text | 8
+ 18 |  Infinity | text | 9
+ 19 | -Infinity | text | 9
+ 20 |  Infinity | text | 3
+ 21 |  Infinity | text | 4
+ 22 | -Infinity | text | 4
+(19 rows)
+
+--Testcase 307:
+SELECT * FROM "type_FLOAT_INF+" ORDER BY f ASC, i;
+ i  |     f     |  t   | l 
+----+-----------+------+---
+  1 | -Infinity | real | 4
+  3 | -Infinity | real | 4
+ 12 | -Infinity | real | 4
+ 15 | -Infinity | real | 4
+ 19 | -Infinity | text | 9
+ 22 | -Infinity | text | 4
+  5 |   -1e+308 | real | 9
+  6 |         0 | real | 3
+  7 |    1e+308 | real | 8
+  2 |  Infinity | real | 3
+  4 |  Infinity | real | 3
+ 10 |  Infinity | real | 3
+ 11 |  Infinity | real | 3
+ 13 |  Infinity | real | 3
+ 14 |  Infinity | real | 3
+ 17 |  Infinity | text | 8
+ 18 |  Infinity | text | 9
+ 20 |  Infinity | text | 3
+ 21 |  Infinity | text | 4
+(19 rows)
+
+--Testcase 308:
+SELECT * FROM "type_FLOAT_INF+" ORDER BY f DESC, i;
+ i  |     f     |  t   | l 
+----+-----------+------+---
+  2 |  Infinity | real | 3
+  4 |  Infinity | real | 3
+ 10 |  Infinity | real | 3
+ 11 |  Infinity | real | 3
+ 13 |  Infinity | real | 3
+ 14 |  Infinity | real | 3
+ 17 |  Infinity | text | 8
+ 18 |  Infinity | text | 9
+ 20 |  Infinity | text | 3
+ 21 |  Infinity | text | 4
+  7 |    1e+308 | real | 8
+  6 |         0 | real | 3
+  5 |   -1e+308 | real | 9
+  1 | -Infinity | real | 4
+  3 | -Infinity | real | 4
+ 12 | -Infinity | real | 4
+ 15 | -Infinity | real | 4
+ 19 | -Infinity | text | 9
+ 22 | -Infinity | text | 4
+(19 rows)
+
+--Testcase 309:
+SELECT * FROM "type_FLOAT_INF+" WHERE f > '+Infinity' ORDER BY i;
+ i | f | t | l 
+---+---+---+---
+(0 rows)
+
+--Testcase 310:
+SELECT * FROM "type_FLOAT_INF+" WHERE f < '+Infinity' ORDER BY i;
+ i  |     f     |  t   | l 
+----+-----------+------+---
+  1 | -Infinity | real | 4
+  3 | -Infinity | real | 4
+  5 |   -1e+308 | real | 9
+  6 |         0 | real | 3
+  7 |    1e+308 | real | 8
+ 12 | -Infinity | real | 4
+ 15 | -Infinity | real | 4
+ 19 | -Infinity | text | 9
+ 22 | -Infinity | text | 4
+(9 rows)
+
+--Testcase 311:
+SELECT * FROM "type_FLOAT_INF+" WHERE f = '+Infinity' ORDER BY i;
+ i  |    f     |  t   | l 
+----+----------+------+---
+  2 | Infinity | real | 3
+  4 | Infinity | real | 3
+ 10 | Infinity | real | 3
+ 11 | Infinity | real | 3
+ 13 | Infinity | real | 3
+ 14 | Infinity | real | 3
+ 17 | Infinity | text | 8
+ 18 | Infinity | text | 9
+ 20 | Infinity | text | 3
+ 21 | Infinity | text | 4
+(10 rows)
+
+--Testcase 312:
+SELECT * FROM "type_FLOAT_INF+" WHERE f > '+Inf' ORDER BY i;
+ i | f | t | l 
+---+---+---+---
+(0 rows)
+
+--Testcase 313:
+SELECT * FROM "type_FLOAT_INF+" WHERE f < '+Inf' ORDER BY i;
+ i  |     f     |  t   | l 
+----+-----------+------+---
+  1 | -Infinity | real | 4
+  3 | -Infinity | real | 4
+  5 |   -1e+308 | real | 9
+  6 |         0 | real | 3
+  7 |    1e+308 | real | 8
+ 12 | -Infinity | real | 4
+ 15 | -Infinity | real | 4
+ 19 | -Infinity | text | 9
+ 22 | -Infinity | text | 4
+(9 rows)
+
+--Testcase 314:
+SELECT * FROM "type_FLOAT_INF+" WHERE f = '+Inf' ORDER BY i;
+ i  |    f     |  t   | l 
+----+----------+------+---
+  2 | Infinity | real | 3
+  4 | Infinity | real | 3
+ 10 | Infinity | real | 3
+ 11 | Infinity | real | 3
+ 13 | Infinity | real | 3
+ 14 | Infinity | real | 3
+ 17 | Infinity | text | 8
+ 18 | Infinity | text | 9
+ 20 | Infinity | text | 3
+ 21 | Infinity | text | 4
+(10 rows)
+
+--Testcase 315:
+SELECT * FROM "type_FLOAT_INF+" WHERE f > '-Infinity' ORDER BY i;
+ i  |    f     |  t   | l 
+----+----------+------+---
+  2 | Infinity | real | 3
+  4 | Infinity | real | 3
+  5 |  -1e+308 | real | 9
+  6 |        0 | real | 3
+  7 |   1e+308 | real | 8
+ 10 | Infinity | real | 3
+ 11 | Infinity | real | 3
+ 13 | Infinity | real | 3
+ 14 | Infinity | real | 3
+ 17 | Infinity | text | 8
+ 18 | Infinity | text | 9
+ 20 | Infinity | text | 3
+ 21 | Infinity | text | 4
+(13 rows)
+
+--Testcase 316:
+SELECT * FROM "type_FLOAT_INF+" WHERE f < '-Infinity' ORDER BY i;
+ i | f | t | l 
+---+---+---+---
+(0 rows)
+
+--Testcase 317:
+SELECT * FROM "type_FLOAT_INF+" WHERE f = '-Infinity' ORDER BY i;
+ i  |     f     |  t   | l 
+----+-----------+------+---
+  1 | -Infinity | real | 4
+  3 | -Infinity | real | 4
+ 12 | -Infinity | real | 4
+ 15 | -Infinity | real | 4
+ 19 | -Infinity | text | 9
+ 22 | -Infinity | text | 4
+(6 rows)
+
+--Testcase 318:
+SELECT * FROM "type_FLOAT_INF+" WHERE f > '-Inf' ORDER BY i;
+ i  |    f     |  t   | l 
+----+----------+------+---
+  2 | Infinity | real | 3
+  4 | Infinity | real | 3
+  5 |  -1e+308 | real | 9
+  6 |        0 | real | 3
+  7 |   1e+308 | real | 8
+ 10 | Infinity | real | 3
+ 11 | Infinity | real | 3
+ 13 | Infinity | real | 3
+ 14 | Infinity | real | 3
+ 17 | Infinity | text | 8
+ 18 | Infinity | text | 9
+ 20 | Infinity | text | 3
+ 21 | Infinity | text | 4
+(13 rows)
+
+--Testcase 319:
+SELECT * FROM "type_FLOAT_INF+" WHERE f < '-Inf' ORDER BY i;
+ i | f | t | l 
+---+---+---+---
+(0 rows)
+
+--Testcase 320:
+SELECT * FROM "type_FLOAT_INF+" WHERE f = '-Inf' ORDER BY i;
+ i  |     f     |  t   | l 
+----+-----------+------+---
+  1 | -Infinity | real | 4
+  3 | -Infinity | real | 4
+ 12 | -Infinity | real | 4
+ 15 | -Infinity | real | 4
+ 19 | -Infinity | text | 9
+ 22 | -Infinity | text | 4
+(6 rows)
+
+--Testcase 321:
+SELECT * FROM "type_FLOAT_INF+" WHERE f > 'Infinity' ORDER BY i;
+ i | f | t | l 
+---+---+---+---
+(0 rows)
+
+--Testcase 322:
+SELECT * FROM "type_FLOAT_INF+" WHERE f < 'Infinity' ORDER BY i;
+ i  |     f     |  t   | l 
+----+-----------+------+---
+  1 | -Infinity | real | 4
+  3 | -Infinity | real | 4
+  5 |   -1e+308 | real | 9
+  6 |         0 | real | 3
+  7 |    1e+308 | real | 8
+ 12 | -Infinity | real | 4
+ 15 | -Infinity | real | 4
+ 19 | -Infinity | text | 9
+ 22 | -Infinity | text | 4
+(9 rows)
+
+--Testcase 323:
+SELECT * FROM "type_FLOAT_INF+" WHERE f = 'Infinity' ORDER BY i;
+ i  |    f     |  t   | l 
+----+----------+------+---
+  2 | Infinity | real | 3
+  4 | Infinity | real | 3
+ 10 | Infinity | real | 3
+ 11 | Infinity | real | 3
+ 13 | Infinity | real | 3
+ 14 | Infinity | real | 3
+ 17 | Infinity | text | 8
+ 18 | Infinity | text | 9
+ 20 | Infinity | text | 3
+ 21 | Infinity | text | 4
+(10 rows)
+
+--Testcase 324:
+SELECT * FROM "type_FLOAT_INF+" WHERE f > 'Inf' ORDER BY i;
+ i | f | t | l 
+---+---+---+---
+(0 rows)
+
+--Testcase 325:
+SELECT * FROM "type_FLOAT_INF+" WHERE f < 'Inf' ORDER BY i;
+ i  |     f     |  t   | l 
+----+-----------+------+---
+  1 | -Infinity | real | 4
+  3 | -Infinity | real | 4
+  5 |   -1e+308 | real | 9
+  6 |         0 | real | 3
+  7 |    1e+308 | real | 8
+ 12 | -Infinity | real | 4
+ 15 | -Infinity | real | 4
+ 19 | -Infinity | text | 9
+ 22 | -Infinity | text | 4
+(9 rows)
+
+--Testcase 326:
+SELECT * FROM "type_FLOAT_INF+" WHERE f = 'Inf' ORDER BY i;
+ i  |    f     |  t   | l 
+----+----------+------+---
+  2 | Infinity | real | 3
+  4 | Infinity | real | 3
+ 10 | Infinity | real | 3
+ 11 | Infinity | real | 3
+ 13 | Infinity | real | 3
+ 14 | Infinity | real | 3
+ 17 | Infinity | text | 8
+ 18 | Infinity | text | 9
+ 20 | Infinity | text | 3
+ 21 | Infinity | text | 4
+(10 rows)
+
+--Testcase 330:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f > '+Infinity' ORDER BY i;
+                                                                         QUERY PLAN                                                                          
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public."type_FLOAT_INF+"
+   Output: i, f, t, l
+   SQLite query: SELECT `i`, sqlite_fdw_float(`f`), `t`, `l` FROM main."type_FLOAT_INF+" WHERE ((sqlite_fdw_float(`f`) > 9e999)) ORDER BY `i` ASC NULLS LAST
+(3 rows)
+
+--Testcase 331:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f < '+Infinity' ORDER BY i;
+                                                                         QUERY PLAN                                                                          
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public."type_FLOAT_INF+"
+   Output: i, f, t, l
+   SQLite query: SELECT `i`, sqlite_fdw_float(`f`), `t`, `l` FROM main."type_FLOAT_INF+" WHERE ((sqlite_fdw_float(`f`) < 9e999)) ORDER BY `i` ASC NULLS LAST
+(3 rows)
+
+--Testcase 332:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f = '+Infinity' ORDER BY i;
+                                                              QUERY PLAN                                                               
+---------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Output: i, f, t, l
+   Sort Key: "type_FLOAT_INF+".i
+   ->  Foreign Scan on public."type_FLOAT_INF+"
+         Output: i, f, t, l
+         SQLite query: SELECT `i`, sqlite_fdw_float(`f`), `t`, `l` FROM main."type_FLOAT_INF+" WHERE ((sqlite_fdw_float(`f`) = 9e999))
+(6 rows)
+
+--Testcase 333:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f > '+Inf' ORDER BY i;
+                                                                         QUERY PLAN                                                                          
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public."type_FLOAT_INF+"
+   Output: i, f, t, l
+   SQLite query: SELECT `i`, sqlite_fdw_float(`f`), `t`, `l` FROM main."type_FLOAT_INF+" WHERE ((sqlite_fdw_float(`f`) > 9e999)) ORDER BY `i` ASC NULLS LAST
+(3 rows)
+
+--Testcase 334:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f < '+Inf' ORDER BY i;
+                                                                         QUERY PLAN                                                                          
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public."type_FLOAT_INF+"
+   Output: i, f, t, l
+   SQLite query: SELECT `i`, sqlite_fdw_float(`f`), `t`, `l` FROM main."type_FLOAT_INF+" WHERE ((sqlite_fdw_float(`f`) < 9e999)) ORDER BY `i` ASC NULLS LAST
+(3 rows)
+
+--Testcase 335:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f = '+Inf' ORDER BY i;
+                                                              QUERY PLAN                                                               
+---------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Output: i, f, t, l
+   Sort Key: "type_FLOAT_INF+".i
+   ->  Foreign Scan on public."type_FLOAT_INF+"
+         Output: i, f, t, l
+         SQLite query: SELECT `i`, sqlite_fdw_float(`f`), `t`, `l` FROM main."type_FLOAT_INF+" WHERE ((sqlite_fdw_float(`f`) = 9e999))
+(6 rows)
+
+--Testcase 336:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f > '-Infinity' ORDER BY i;
+                                                                           QUERY PLAN                                                                           
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public."type_FLOAT_INF+"
+   Output: i, f, t, l
+   SQLite query: SELECT `i`, sqlite_fdw_float(`f`), `t`, `l` FROM main."type_FLOAT_INF+" WHERE ((sqlite_fdw_float(`f`) > (-9e999))) ORDER BY `i` ASC NULLS LAST
+(3 rows)
+
+--Testcase 337:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f < '-Infinity' ORDER BY i;
+                                                                           QUERY PLAN                                                                           
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public."type_FLOAT_INF+"
+   Output: i, f, t, l
+   SQLite query: SELECT `i`, sqlite_fdw_float(`f`), `t`, `l` FROM main."type_FLOAT_INF+" WHERE ((sqlite_fdw_float(`f`) < (-9e999))) ORDER BY `i` ASC NULLS LAST
+(3 rows)
+
+--Testcase 338:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f = '-Infinity' ORDER BY i;
+                                                                QUERY PLAN                                                                
+------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Output: i, f, t, l
+   Sort Key: "type_FLOAT_INF+".i
+   ->  Foreign Scan on public."type_FLOAT_INF+"
+         Output: i, f, t, l
+         SQLite query: SELECT `i`, sqlite_fdw_float(`f`), `t`, `l` FROM main."type_FLOAT_INF+" WHERE ((sqlite_fdw_float(`f`) = (-9e999)))
+(6 rows)
+
+--Testcase 339:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f > '-Inf' ORDER BY i;
+                                                                           QUERY PLAN                                                                           
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public."type_FLOAT_INF+"
+   Output: i, f, t, l
+   SQLite query: SELECT `i`, sqlite_fdw_float(`f`), `t`, `l` FROM main."type_FLOAT_INF+" WHERE ((sqlite_fdw_float(`f`) > (-9e999))) ORDER BY `i` ASC NULLS LAST
+(3 rows)
+
+--Testcase 340:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f < '-Inf' ORDER BY i;
+                                                                           QUERY PLAN                                                                           
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public."type_FLOAT_INF+"
+   Output: i, f, t, l
+   SQLite query: SELECT `i`, sqlite_fdw_float(`f`), `t`, `l` FROM main."type_FLOAT_INF+" WHERE ((sqlite_fdw_float(`f`) < (-9e999))) ORDER BY `i` ASC NULLS LAST
+(3 rows)
+
+--Testcase 341:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f = '-Inf' ORDER BY i;
+                                                                QUERY PLAN                                                                
+------------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Output: i, f, t, l
+   Sort Key: "type_FLOAT_INF+".i
+   ->  Foreign Scan on public."type_FLOAT_INF+"
+         Output: i, f, t, l
+         SQLite query: SELECT `i`, sqlite_fdw_float(`f`), `t`, `l` FROM main."type_FLOAT_INF+" WHERE ((sqlite_fdw_float(`f`) = (-9e999)))
+(6 rows)
+
+--Testcase 342:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f > 'Infinity' ORDER BY i;
+                                                                         QUERY PLAN                                                                          
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public."type_FLOAT_INF+"
+   Output: i, f, t, l
+   SQLite query: SELECT `i`, sqlite_fdw_float(`f`), `t`, `l` FROM main."type_FLOAT_INF+" WHERE ((sqlite_fdw_float(`f`) > 9e999)) ORDER BY `i` ASC NULLS LAST
+(3 rows)
+
+--Testcase 343:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f < 'Infinity' ORDER BY i;
+                                                                         QUERY PLAN                                                                          
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public."type_FLOAT_INF+"
+   Output: i, f, t, l
+   SQLite query: SELECT `i`, sqlite_fdw_float(`f`), `t`, `l` FROM main."type_FLOAT_INF+" WHERE ((sqlite_fdw_float(`f`) < 9e999)) ORDER BY `i` ASC NULLS LAST
+(3 rows)
+
+--Testcase 344:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f = 'Infinity' ORDER BY i;
+                                                              QUERY PLAN                                                               
+---------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Output: i, f, t, l
+   Sort Key: "type_FLOAT_INF+".i
+   ->  Foreign Scan on public."type_FLOAT_INF+"
+         Output: i, f, t, l
+         SQLite query: SELECT `i`, sqlite_fdw_float(`f`), `t`, `l` FROM main."type_FLOAT_INF+" WHERE ((sqlite_fdw_float(`f`) = 9e999))
+(6 rows)
+
+--Testcase 345:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f > 'Inf' ORDER BY i;
+                                                                         QUERY PLAN                                                                          
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public."type_FLOAT_INF+"
+   Output: i, f, t, l
+   SQLite query: SELECT `i`, sqlite_fdw_float(`f`), `t`, `l` FROM main."type_FLOAT_INF+" WHERE ((sqlite_fdw_float(`f`) > 9e999)) ORDER BY `i` ASC NULLS LAST
+(3 rows)
+
+--Testcase 346:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f < 'Inf' ORDER BY i;
+                                                                         QUERY PLAN                                                                          
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public."type_FLOAT_INF+"
+   Output: i, f, t, l
+   SQLite query: SELECT `i`, sqlite_fdw_float(`f`), `t`, `l` FROM main."type_FLOAT_INF+" WHERE ((sqlite_fdw_float(`f`) < 9e999)) ORDER BY `i` ASC NULLS LAST
+(3 rows)
+
+--Testcase 347:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f = 'Inf' ORDER BY i;
+                                                              QUERY PLAN                                                               
+---------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Output: i, f, t, l
+   Sort Key: "type_FLOAT_INF+".i
+   ->  Foreign Scan on public."type_FLOAT_INF+"
+         Output: i, f, t, l
+         SQLite query: SELECT `i`, sqlite_fdw_float(`f`), `t`, `l` FROM main."type_FLOAT_INF+" WHERE ((sqlite_fdw_float(`f`) = 9e999))
+(6 rows)
+
+--Testcase 351:
+DELETE FROM "type_FLOAT_INF" WHERE i >= 10;
+--Testcase 352:
+DROP FOREIGN TABLE "type_FLOAT_INF";
+--Testcase 353:
+DROP FOREIGN TABLE "type_FLOAT_INF+";
+--Testcase 270:
 DROP SERVER sqlite_svr;
---Testcase 184:
+--Testcase 271:
 DROP EXTENSION sqlite_fdw CASCADE;
