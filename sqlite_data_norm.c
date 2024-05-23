@@ -15,8 +15,26 @@
  *-------------------------------------------------------------------------
  */
 
+#include <assert.h>
+#include <ctype.h>
+#include <string.h>
+#include <math.h>
+
+#include "sqlite3.h"
+#include "postgres.h"
+#include "sqlite_fdw.h"
+#include "utils/uuid.h"
+
+static void error_helper(sqlite3* db, int rc);
+static bool infinity_processing (double* d, const char* t);
+
+#if !defined(SQLITE_ASCII) && !defined(SQLITE_EBCDIC)
+#define SQLITE_ASCII 1
+#endif
+
 /*
- * This SQLite extension implements functions that handling RFC-4122 UUIDs
+ * This UUID SQLite extension as a group of UUID C functions
+ * implements functions that handling RFC-4122 UUIDs
  * Three SQL functions are implemented:
  *
  *	 sqlite_fdw_uuid_str(X)   - convert a UUID X into a well-formed UUID string
@@ -63,20 +81,6 @@
  * If the X input string has too few or too many digits or contains
  * stray characters other than {, }, or -, then NULL is returned.
  */
-#include <assert.h>
-#include <ctype.h>
-#include <string.h>
-
-#include "sqlite3.h"
-#include "postgres.h"
-#include "sqlite_fdw.h"
-#include "utils/uuid.h"
-
-static void error_helper(sqlite3* db, int rc);
-
-#if !defined(SQLITE_ASCII) && !defined(SQLITE_EBCDIC)
-#define SQLITE_ASCII 1
-#endif
 
 /*
  * Translate a single byte of Hex into an integer.
@@ -226,6 +230,8 @@ sqlite_fdw_data_norm_uuid(sqlite3_context* context, int argc, sqlite3_value** ar
 	sqlite3_result_value(context, arg);
 }
 
+/* ********************* End of UUID SQLite extension *********************** */
+
 /*
  * ISO:SQL valid boolean values with text affinity such as Y, no, f, t, oN etc.
  * will be treated as boolean like in PostgreSQL console input
@@ -333,6 +339,81 @@ sqlite_fdw_data_norm_bool(sqlite3_context* context, int argc, sqlite3_value** ar
 	sqlite3_result_value(context, arg);
 }
 
+/* Base ∞ constants */
+static const char * infs = "Inf";
+static const char * infl = "Infinity";
+
+/*
+ * Try to check SQLite value if there is any ∞ value with text affinity
+ */
+static bool
+infinity_processing (double* d, const char* t)
+{
+	static const char * minfs = "-Inf";
+	static const char * minfl = "-Infinity";
+	static const char * pinfs = "+Inf";
+	static const char * pinfl = "+Infinity";
+
+	if (strcasecmp(t, infs) == 0 ||
+		strcasecmp(t, pinfs) == 0 ||
+		strcasecmp(t, infl) == 0 ||
+		strcasecmp(t, pinfl) == 0)
+	{
+		*d = INFINITY;
+		return true;
+	}
+	if (strcasecmp(t, minfs) == 0 ||
+		strcasecmp(t, minfl) == 0)
+	{
+		*d = -INFINITY;
+		return true;
+	}
+	return false;
+}
+
+/*
+ * ISO:SQL valid float/double precision values with text affinity such as Infinity or Inf
+ * will be treated as float like in PostgreSQL console input
+ * Note: SQLite also have Infinity support with real affinity, but this values
+ * isn't suitable for insert, there is any overflow number instead
+ */
+static void
+sqlite_fdw_data_norm_float(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+	sqlite3_value* arg = argv[0];
+	int dt = sqlite3_value_type(arg);
+	int l;
+	const char* t = NULL;
+	double result;
+
+	if (dt == SQLITE_FLOAT)
+	{
+		/* The fastest call because expected very often */
+		sqlite3_result_value(context, arg);
+		return;
+	}
+	if (dt != SQLITE3_TEXT && dt != SQLITE_BLOB )
+	{
+		/* INT, NULL*/
+		sqlite3_result_value(context, arg);
+		return;
+	}
+
+	l = sqlite3_value_bytes(arg);
+	if (l > strlen(infl) + 2 || l < strlen(infs))
+	{
+		sqlite3_result_value(context, arg);
+		return;
+	}
+	t = (const char*)sqlite3_value_text(arg);
+	if (infinity_processing (&result, t))
+	{
+		sqlite3_result_double(context, result);
+		return;
+	}
+	sqlite3_result_value(context, arg);
+}
+
 /*
  * Makes pg error from SQLite error.
  * Interrupts normal executing, no need return after place of calling
@@ -364,6 +445,9 @@ sqlite_fdw_data_norm_functs_init(sqlite3* db)
 	if (rc != SQLITE_OK)
 		error_helper(db, rc);
 	rc = sqlite3_create_function(db, "sqlite_fdw_uuid_str", 1, det_flags, 0, sqlite_fdw_uuid_str, 0, 0);
+	if (rc != SQLITE_OK)
+		error_helper(db, rc);
+	rc = sqlite3_create_function(db, "sqlite_fdw_float", 1, det_flags, 0, sqlite_fdw_data_norm_float, 0, 0);
 	if (rc != SQLITE_OK)
 		error_helper(db, rc);
 

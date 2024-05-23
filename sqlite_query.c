@@ -161,7 +161,7 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 						Datum d = DirectFunctionCall1(int84, Int64GetDatum((int64) i64v));
 						return (struct NullableDatum) {d, false};
 					}
-					case SQLITE_FLOAT: /* TODO: This code is untill mod() pushdowning fix here*/
+					case SQLITE_FLOAT: /* TODO: This code is untill mod() pushdowning fix here */
 					{
 						int			value = sqlite3_value_int(val);
 
@@ -194,7 +194,7 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 							sqlite3_int64 value = sqlite3_value_int64(val);
 							return (struct NullableDatum) {Int64GetDatum(value), false};
 						}
-					case SQLITE_FLOAT: /* TODO: This code is untill mod() pushdowning fix here*/
+					case SQLITE_FLOAT: /* TODO: This code is untill mod() pushdowning fix here */
 					{
 						double		value = sqlite3_value_double(val);
 						Datum	 	d = DirectFunctionCall1(dtoi8, Float8GetDatum((float8) value));
@@ -238,7 +238,9 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 					case SQLITE3_TEXT:
 					{
 						if (value_byte_size_blob_or_utf8)
-							sqlite_value_to_pg_error();
+						{
+		 					sqlite_value_to_pg_error();
+			 			}
 						else
 							pg_column_void_text_error();
 						break;
@@ -265,7 +267,9 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 					case SQLITE3_TEXT:
 					{
 						if (value_byte_size_blob_or_utf8)
-							sqlite_value_to_pg_error();
+						{
+		 					sqlite_value_to_pg_error();
+			 			}
 						else
 							pg_column_void_text_error();
 						break;
@@ -338,7 +342,9 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 					case SQLITE3_TEXT:
 					{
 						if (value_byte_size_blob_or_utf8)
-							sqlite_value_to_pg_error();
+						{
+		 					sqlite_value_to_pg_error();
+			 			}
 						else
 							pg_column_void_text_error();
 						break;

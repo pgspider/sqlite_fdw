@@ -88,20 +88,32 @@ SELECT avg(four) AS avg_1 FROM onek;
 --Testcase 2:
 SELECT avg(a) AS avg_32 FROM aggtest WHERE a < 100;
 
+--Testcase 697:
 CREATE FOREIGN TABLE agg_tb(v int, id integer OPTIONS (key 'true')) SERVER sqlite_svr;
+--Testcase 698:
 INSERT INTO agg_tb(v) VALUES(1), (2), (3);
+--Testcase 699: -- Pg 16+
 SELECT any_value(v) FROM agg_tb;
 
+--Testcase 700:
 DELETE FROM agg_tb;
+--Testcase 701:
 INSERT INTO agg_tb(v) VALUES (NULL);
+--Testcase 702: -- Pg 16+
 SELECT any_value(v) FROM agg_tb;
 
+--Testcase 703:
 DELETE FROM agg_tb;
+--Testcase 704:
 INSERT INTO agg_tb(v) VALUES (NULL), (1), (2);
+--Testcase 705: -- Pg 16+
 SELECT any_value(v) FROM agg_tb;
 
+--Testcase 706:
 CREATE FOREIGN TABLE agg_tb2(v text) SERVER sqlite_svr;
+--Testcase 707:
 INSERT INTO agg_tb2(v) VALUES (array['hello', 'world']);
+--Testcase 708: -- Pg 16+
 SELECT any_value(v) FROM agg_tb2;
 
 -- In 7.1, avg(float4) is computed using float8 arithmetic.
@@ -458,6 +470,15 @@ INSERT INTO regr_test VALUES (10,150),(20,250),(30,350),(80,540),(100,200);
 SELECT count(*), sum(x), regr_sxx(y,x), sum(y),regr_syy(y,x), regr_sxy(y,x)
 FROM regr_test WHERE x IN (10,20,30,80);
 --Testcase 364:
+SELECT count(*), sum(x), regr_sxx(y,x), sum(y),regr_syy(y,x), regr_sxy(y,x)
+FROM regr_test;
+
+--Testcase 590:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT count(*), sum(x), regr_sxx(y,x), sum(y),regr_syy(y,x), regr_sxy(y,x)
+FROM regr_test WHERE x IN (10,20,30,80);
+--Testcase 591:
+EXPLAIN (VERBOSE, COSTS OFF)
 SELECT count(*), sum(x), regr_sxx(y,x), sum(y),regr_syy(y,x), regr_sxy(y,x)
 FROM regr_test;
 
@@ -1099,7 +1120,7 @@ group by ten;
 
 -- Ensure consecutive NULLs are properly treated as distinct from each other
 select array_agg(distinct val)
-from (select null as val from generate_series(1, 2));
+from (select null as val from generate_series(1, 2)) g;
 
 -- Ensure no ordering is requested when enable_presorted_aggregate is off
 set enable_presorted_aggregate to off;

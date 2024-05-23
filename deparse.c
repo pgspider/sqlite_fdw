@@ -5,7 +5,7 @@
  * Portions Copyright (c) 2018, TOSHIBA CORPORATION
  *
  * IDENTIFICATION
- *        deparse.c
+ *		deparse.c
  *
  *-------------------------------------------------------------------------
  */
@@ -2080,7 +2080,16 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 		 * Recommended form for normalisation is someone from 1<->1 with PostgreSQL
 		 * internal storage, hence usually this will not original text data.
 		 */
-		if (!dml_context && pg_atttyp == BOOLOID)
+		if (!dml_context && ( pg_atttyp == FLOAT8OID || pg_atttyp == FLOAT4OID || pg_atttyp == NUMERICOID) )
+		{
+			elog(DEBUG2, "floatN unification for \"%s\"", colname);
+			appendStringInfoString(buf, "sqlite_fdw_float(");
+			if (qualify_col)
+				ADD_REL_QUALIFIER(buf, varno);
+			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+			appendStringInfoString(buf, ")");
+		}
+		else if (!dml_context && pg_atttyp == BOOLOID)
 		{
 			elog(DEBUG2, "boolean unification for \"%s\"", colname);
 			appendStringInfoString(buf, "sqlite_fdw_bool(");
@@ -2648,12 +2657,26 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 		case INT4OID:
 		case INT8OID:
 		case OIDOID:
+			{
+				extval = OidOutputFunctionCall(typoutput, node->constvalue);
+				if (strspn(extval, "0123456789+-eE.") == strlen(extval))
+				{
+					if (extval[0] == '+' || extval[0] == '-')
+						appendStringInfo(buf, "(%s)", extval);
+					else
+						appendStringInfoString(buf, extval);
+				}
+				else
+					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+							errmsg("Invalid input syntax. Invalid characters in number"),
+							errhint("Value: %s", extval)));
+			}
+			break;
 		case FLOAT4OID:
 		case FLOAT8OID:
 		case NUMERICOID:
 			{
 				extval = OidOutputFunctionCall(typoutput, node->constvalue);
-
 				/*
 				 * No need to quote unless it's a special value such as 'NaN' or 'Infinity'.
 				 * See comments in get_const_expr().
@@ -2665,8 +2688,28 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 					else
 						appendStringInfoString(buf, extval);
 				}
+				else if (strcasecmp(extval, "Inf") == 0 ||
+						 strcasecmp(extval, "Infinity") == 0 ||
+						 strcasecmp(extval + 1, "Inf") == 0 ||
+						 strcasecmp(extval + 1, "Infinity") == 0)
+				{
+					bool is_negative_or_positive = false;
+					if (extval[0] == '-' || extval[0] == '+')
+						is_negative_or_positive = true;
+
+					if (is_negative_or_positive)
+						appendStringInfo(buf, "(%c", extval[0]);
+
+					appendStringInfo(buf, "9e999");
+
+					if (is_negative_or_positive)
+						appendStringInfo(buf, ")");
+				}
 				else
+				{
+					/* NaN and other */
 					appendStringInfo(buf, "\'%s\'", extval);
+				}
 			}
 			break;
 		case BITOID:
@@ -2677,7 +2720,7 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 				{
 					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
 							errmsg("SQLite FDW dosens't support very long bit/varbit data"),
-							errhint("bit length %ld, maxmum %ld", strlen(extval), SQLITE_FDW_BIT_DATATYPE_BUF_SIZE - 1)));
+							errhint("bit length %ld, maximum %ld", strlen(extval), SQLITE_FDW_BIT_DATATYPE_BUF_SIZE - 1)));
 				}
 				appendStringInfo(buf, "%lld", binstr2int64(extval));
 			}
@@ -2726,12 +2769,8 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 			}
 			break;
 		case UUIDOID:
-			/* always deparse to BLOB because this is internal PostgreSQL storage
-			 * the string for BYTEA always seems to be in the format "\\x##"
-			 * where # is a hex digit, Even if the value passed in is
-			 * 'hi'::bytea we will receive "\x6869". Making this assumption
-			 * allows us to quickly convert postgres escaped strings to sqlite
-			 * ones for comparison
+			/* always deparse to BLOB, in case of UPDATE with text affinity
+			 * transformation function will be added
 			 */
  			{
 				int i = 0;
@@ -3031,7 +3070,13 @@ sqlite_deparse_scalar_array_op_expr(ScalarArrayOpExpr *node, deparse_expr_cxt *c
 					switch (c->consttype)
 					{
 						case INT4ARRAYOID:
+						case INT8ARRAYOID:
+						case INT2ARRAYOID:
+						case BOOLARRAYOID:
 						case OIDARRAYOID:
+						case NUMERICARRAYOID:
+						case FLOAT4ARRAYOID:
+						case FLOAT8ARRAYOID:
 							isstr = false;
 							break;
 						default:

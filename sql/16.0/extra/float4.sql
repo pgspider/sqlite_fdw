@@ -679,7 +679,163 @@ begin
 end;
 $d$;
 
---Testcase 183:
+--Testcase 280:
+CREATE FOREIGN TABLE "type_FLOAT_INF"( "i" int OPTIONS (key 'true'), "f" float8) SERVER sqlite_svr OPTIONS (table 'type_FLOAT_INF');
+--Testcase 281:
+CREATE FOREIGN TABLE "type_FLOAT_INF+"( "i" int OPTIONS (key 'true'), "f" float8, "t" text, "l" smallint) SERVER sqlite_svr OPTIONS (table 'type_FLOAT_INF+');
+--Testcase 282:
+SELECT * FROM "type_FLOAT_INF+";
+--Testcase 283:
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (10, 'Infinity');
+--Testcase 284:
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (11, '+Infinity');
+--Testcase 285:
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (12, '-Infinity');
+--Testcase 286:
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (13, 'Inf');
+--Testcase 287:
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (14, '+Inf');
+--Testcase 288:
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (15, '-Inf');
+--Testcase 290:
+ALTER FOREIGN TABLE "type_FLOAT_INF" ALTER COLUMN "f" TYPE text;
+--Testcase 291:
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (17, 'Infinity');
+--Testcase 292:
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (18, '+Infinity');
+--Testcase 293:
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (19, '-Infinity');
+--Testcase 294:
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (20, 'Inf');
+--Testcase 295:
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (21, '+Inf');
+--Testcase 296:
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (22, '-Inf');
+--Testcase 297:
+--INSERT INTO "type_FLOAT_INF" (i, f) VALUES (23, 'NaN');
+--Testcase 298:
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (24, 'Infinity__');
+--Testcase 299:
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (25, 'Infi');
+--Testcase 300:
+ALTER FOREIGN TABLE "type_FLOAT_INF" ALTER COLUMN "f" TYPE float8;
+--Testcase 301: error : improper data with text affinity
+SELECT * FROM "type_FLOAT_INF+";
+--Testcase 302:
+DELETE FROM "type_FLOAT_INF" WHERE i = 24;
+--Testcase 303: error : improper data with text affinity
+SELECT * FROM "type_FLOAT_INF+";
+--Testcase 304:
+DELETE FROM "type_FLOAT_INF" WHERE i = 25;
+--Testcase 305:
+SELECT * FROM "type_FLOAT_INF";
+--Testcase 306:
+SELECT * FROM "type_FLOAT_INF+";
+--Testcase 307:
+SELECT * FROM "type_FLOAT_INF+" ORDER BY f ASC, i;
+--Testcase 308:
+SELECT * FROM "type_FLOAT_INF+" ORDER BY f DESC, i;
+--Testcase 309:
+SELECT * FROM "type_FLOAT_INF+" WHERE f > '+Infinity' ORDER BY i;
+--Testcase 310:
+SELECT * FROM "type_FLOAT_INF+" WHERE f < '+Infinity' ORDER BY i;
+--Testcase 311:
+SELECT * FROM "type_FLOAT_INF+" WHERE f = '+Infinity' ORDER BY i;
+--Testcase 312:
+SELECT * FROM "type_FLOAT_INF+" WHERE f > '+Inf' ORDER BY i;
+--Testcase 313:
+SELECT * FROM "type_FLOAT_INF+" WHERE f < '+Inf' ORDER BY i;
+--Testcase 314:
+SELECT * FROM "type_FLOAT_INF+" WHERE f = '+Inf' ORDER BY i;
+--Testcase 315:
+SELECT * FROM "type_FLOAT_INF+" WHERE f > '-Infinity' ORDER BY i;
+--Testcase 316:
+SELECT * FROM "type_FLOAT_INF+" WHERE f < '-Infinity' ORDER BY i;
+--Testcase 317:
+SELECT * FROM "type_FLOAT_INF+" WHERE f = '-Infinity' ORDER BY i;
+--Testcase 318:
+SELECT * FROM "type_FLOAT_INF+" WHERE f > '-Inf' ORDER BY i;
+--Testcase 319:
+SELECT * FROM "type_FLOAT_INF+" WHERE f < '-Inf' ORDER BY i;
+--Testcase 320:
+SELECT * FROM "type_FLOAT_INF+" WHERE f = '-Inf' ORDER BY i;
+--Testcase 321:
+SELECT * FROM "type_FLOAT_INF+" WHERE f > 'Infinity' ORDER BY i;
+--Testcase 322:
+SELECT * FROM "type_FLOAT_INF+" WHERE f < 'Infinity' ORDER BY i;
+--Testcase 323:
+SELECT * FROM "type_FLOAT_INF+" WHERE f = 'Infinity' ORDER BY i;
+--Testcase 324:
+SELECT * FROM "type_FLOAT_INF+" WHERE f > 'Inf' ORDER BY i;
+--Testcase 325:
+SELECT * FROM "type_FLOAT_INF+" WHERE f < 'Inf' ORDER BY i;
+--Testcase 326:
+SELECT * FROM "type_FLOAT_INF+" WHERE f = 'Inf' ORDER BY i;
+
+--Testcase 330:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f > '+Infinity' ORDER BY i;
+--Testcase 331:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f < '+Infinity' ORDER BY i;
+--Testcase 332:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f = '+Infinity' ORDER BY i;
+--Testcase 333:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f > '+Inf' ORDER BY i;
+--Testcase 334:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f < '+Inf' ORDER BY i;
+--Testcase 335:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f = '+Inf' ORDER BY i;
+--Testcase 336:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f > '-Infinity' ORDER BY i;
+--Testcase 337:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f < '-Infinity' ORDER BY i;
+--Testcase 338:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f = '-Infinity' ORDER BY i;
+--Testcase 339:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f > '-Inf' ORDER BY i;
+--Testcase 340:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f < '-Inf' ORDER BY i;
+--Testcase 341:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f = '-Inf' ORDER BY i;
+--Testcase 342:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f > 'Infinity' ORDER BY i;
+--Testcase 343:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f < 'Infinity' ORDER BY i;
+--Testcase 344:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f = 'Infinity' ORDER BY i;
+--Testcase 345:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f > 'Inf' ORDER BY i;
+--Testcase 346:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f < 'Inf' ORDER BY i;
+--Testcase 347:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f = 'Inf' ORDER BY i;
+
+
+--Testcase 351:
+DELETE FROM "type_FLOAT_INF" WHERE i >= 10;
+--Testcase 352:
+DROP FOREIGN TABLE "type_FLOAT_INF";
+--Testcase 353:
+DROP FOREIGN TABLE "type_FLOAT_INF+";
+
+--Testcase 270:
 DROP SERVER sqlite_svr;
---Testcase 184:
+--Testcase 271:
 DROP EXTENSION sqlite_fdw CASCADE;
