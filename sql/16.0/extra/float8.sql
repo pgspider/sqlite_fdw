@@ -1134,6 +1134,9 @@ INSERT INTO "type_FLOAT_INF" (i, f) VALUES (13, 'Inf');
 INSERT INTO "type_FLOAT_INF" (i, f) VALUES (14, '+Inf');
 --Testcase 288:
 INSERT INTO "type_FLOAT_INF" (i, f) VALUES (15, '-Inf');
+--Testcase 289: Inserted as NULL!!!
+--see https://github.com/sqlite/sqlite/blob/6db0b11e078f4b651f0cf00f845f3d77700c1a3a/src/vdbemem.c#L973
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (16, 'NaN');
 --Testcase 290:
 ALTER FOREIGN TABLE "type_FLOAT_INF" ALTER COLUMN "f" TYPE text;
 --Testcase 291:
@@ -1208,6 +1211,12 @@ SELECT * FROM "type_FLOAT_INF+" WHERE f > 'Inf' ORDER BY i;
 SELECT * FROM "type_FLOAT_INF+" WHERE f < 'Inf' ORDER BY i;
 --Testcase 326:
 SELECT * FROM "type_FLOAT_INF+" WHERE f = 'Inf' ORDER BY i;
+--Testcase 327:
+SELECT * FROM "type_FLOAT_INF+" WHERE f > 'NaN' ORDER BY i;
+--Testcase 328:
+SELECT * FROM "type_FLOAT_INF+" WHERE f < 'NaN' ORDER BY i;
+--Testcase 329:
+SELECT * FROM "type_FLOAT_INF+" WHERE f = 'NaN' ORDER BY i;
 
 --Testcase 330:
 EXPLAIN (VERBOSE, COSTS OFF)
@@ -1263,7 +1272,15 @@ SELECT * FROM "type_FLOAT_INF+" WHERE f < 'Inf' ORDER BY i;
 --Testcase 347:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT * FROM "type_FLOAT_INF+" WHERE f = 'Inf' ORDER BY i;
-
+--Testcase 348:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f > 'NaN' ORDER BY i;
+--Testcase 349:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f < 'NaN' ORDER BY i;
+--Testcase 350:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f = 'NaN' ORDER BY i;
 
 --Testcase 351:
 DELETE FROM "type_FLOAT_INF" WHERE i >= 10;

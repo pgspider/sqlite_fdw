@@ -1657,6 +1657,9 @@ INSERT INTO "type_FLOAT_INF" (i, f) VALUES (13, 'Inf');
 INSERT INTO "type_FLOAT_INF" (i, f) VALUES (14, '+Inf');
 --Testcase 288:
 INSERT INTO "type_FLOAT_INF" (i, f) VALUES (15, '-Inf');
+--Testcase 289: Inserted as NULL!!!
+--see https://github.com/sqlite/sqlite/blob/6db0b11e078f4b651f0cf00f845f3d77700c1a3a/src/vdbemem.c#L973
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (16, 'NaN');
 --Testcase 290:
 ALTER FOREIGN TABLE "type_FLOAT_INF" ALTER COLUMN "f" TYPE text;
 --Testcase 291:
@@ -1710,13 +1713,14 @@ SELECT * FROM "type_FLOAT_INF";
  13 |  Infinity
  14 |  Infinity
  15 | -Infinity
+ 16 |          
  17 |  Infinity
  18 |  Infinity
  19 | -Infinity
  20 |  Infinity
  21 |  Infinity
  22 | -Infinity
-(19 rows)
+(20 rows)
 
 --Testcase 306:
 SELECT * FROM "type_FLOAT_INF+";
@@ -1735,13 +1739,14 @@ SELECT * FROM "type_FLOAT_INF+";
  13 |  Infinity | real | 3
  14 |  Infinity | real | 3
  15 | -Infinity | real | 4
+ 16 |           | null |  
  17 |  Infinity | text | 8
  18 |  Infinity | text | 9
  19 | -Infinity | text | 9
  20 |  Infinity | text | 3
  21 |  Infinity | text | 4
  22 | -Infinity | text | 4
-(19 rows)
+(20 rows)
 
 --Testcase 307:
 SELECT * FROM "type_FLOAT_INF+" ORDER BY f ASC, i;
@@ -1766,12 +1771,14 @@ SELECT * FROM "type_FLOAT_INF+" ORDER BY f ASC, i;
  18 |  Infinity | text | 9
  20 |  Infinity | text | 3
  21 |  Infinity | text | 4
-(19 rows)
+ 16 |           | null |  
+(20 rows)
 
 --Testcase 308:
 SELECT * FROM "type_FLOAT_INF+" ORDER BY f DESC, i;
  i  |     f     |  t   | l 
 ----+-----------+------+---
+ 16 |           | null |  
   2 |  Infinity | real | 3
   4 |  Infinity | real | 3
  10 |  Infinity | real | 3
@@ -1791,7 +1798,7 @@ SELECT * FROM "type_FLOAT_INF+" ORDER BY f DESC, i;
  15 | -Infinity | real | 4
  19 | -Infinity | text | 9
  22 | -Infinity | text | 4
-(19 rows)
+(20 rows)
 
 --Testcase 309:
 SELECT * FROM "type_FLOAT_INF+" WHERE f > '+Infinity' ORDER BY i;
@@ -2015,6 +2022,43 @@ SELECT * FROM "type_FLOAT_INF+" WHERE f = 'Inf' ORDER BY i;
  21 | Infinity | text | 4
 (10 rows)
 
+--Testcase 327:
+SELECT * FROM "type_FLOAT_INF+" WHERE f > 'NaN' ORDER BY i;
+ i | f | t | l 
+---+---+---+---
+(0 rows)
+
+--Testcase 328:
+SELECT * FROM "type_FLOAT_INF+" WHERE f < 'NaN' ORDER BY i;
+ i  |     f     |  t   | l 
+----+-----------+------+---
+  1 | -Infinity | real | 4
+  2 |  Infinity | real | 3
+  3 | -Infinity | real | 4
+  4 |  Infinity | real | 3
+  5 |   -1e+308 | real | 9
+  6 |         0 | real | 3
+  7 |    1e+308 | real | 8
+ 10 |  Infinity | real | 3
+ 11 |  Infinity | real | 3
+ 12 | -Infinity | real | 4
+ 13 |  Infinity | real | 3
+ 14 |  Infinity | real | 3
+ 15 | -Infinity | real | 4
+ 17 |  Infinity | text | 8
+ 18 |  Infinity | text | 9
+ 19 | -Infinity | text | 9
+ 20 |  Infinity | text | 3
+ 21 |  Infinity | text | 4
+ 22 | -Infinity | text | 4
+(19 rows)
+
+--Testcase 329:
+SELECT * FROM "type_FLOAT_INF+" WHERE f = 'NaN' ORDER BY i;
+ i | f | t | l 
+---+---+---+---
+(0 rows)
+
 --Testcase 330:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT * FROM "type_FLOAT_INF+" WHERE f > '+Infinity' ORDER BY i;
@@ -2211,6 +2255,39 @@ SELECT * FROM "type_FLOAT_INF+" WHERE f = 'Inf' ORDER BY i;
    ->  Foreign Scan on public."type_FLOAT_INF+"
          Output: i, f, t, l
          SQLite query: SELECT `i`, sqlite_fdw_float(`f`), `t`, `l` FROM main."type_FLOAT_INF+" WHERE ((sqlite_fdw_float(`f`) = 9e999))
+(6 rows)
+
+--Testcase 348:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f > 'NaN' ORDER BY i;
+                                                                         QUERY PLAN                                                                          
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public."type_FLOAT_INF+"
+   Output: i, f, t, l
+   SQLite query: SELECT `i`, sqlite_fdw_float(`f`), `t`, `l` FROM main."type_FLOAT_INF+" WHERE ((sqlite_fdw_float(`f`) > 'NaN')) ORDER BY `i` ASC NULLS LAST
+(3 rows)
+
+--Testcase 349:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f < 'NaN' ORDER BY i;
+                                                                         QUERY PLAN                                                                          
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public."type_FLOAT_INF+"
+   Output: i, f, t, l
+   SQLite query: SELECT `i`, sqlite_fdw_float(`f`), `t`, `l` FROM main."type_FLOAT_INF+" WHERE ((sqlite_fdw_float(`f`) < 'NaN')) ORDER BY `i` ASC NULLS LAST
+(3 rows)
+
+--Testcase 350:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+" WHERE f = 'NaN' ORDER BY i;
+                                                              QUERY PLAN                                                               
+---------------------------------------------------------------------------------------------------------------------------------------
+ Sort
+   Output: i, f, t, l
+   Sort Key: "type_FLOAT_INF+".i
+   ->  Foreign Scan on public."type_FLOAT_INF+"
+         Output: i, f, t, l
+         SQLite query: SELECT `i`, sqlite_fdw_float(`f`), `t`, `l` FROM main."type_FLOAT_INF+" WHERE ((sqlite_fdw_float(`f`) = 'NaN'))
 (6 rows)
 
 --Testcase 351:
