@@ -239,7 +239,11 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 					{
 						if (value_byte_size_blob_or_utf8)
 						{
-		 					sqlite_value_to_pg_error();
+							const char* text_value = (const char*) sqlite3_value_text(val);
+							if (strcasecmp(text_value, "NaN") == 0)
+								return (struct NullableDatum) {Float8GetDatum(NAN), false};
+							else
+								sqlite_value_to_pg_error();
 			 			}
 						else
 							pg_column_void_text_error();
@@ -268,7 +272,11 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 					{
 						if (value_byte_size_blob_or_utf8)
 						{
-		 					sqlite_value_to_pg_error();
+							const char* text_value = (const char*) sqlite3_value_text(val);
+							if (strcasecmp(text_value, "NaN") == 0)
+								return (struct NullableDatum) {Float8GetDatum(NAN), false};
+							else
+								sqlite_value_to_pg_error();
 			 			}
 						else
 							pg_column_void_text_error();
@@ -343,7 +351,11 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 					{
 						if (value_byte_size_blob_or_utf8)
 						{
-		 					sqlite_value_to_pg_error();
+							const char* text_value = (const char*) sqlite3_value_text(val);
+							if (strcasecmp(text_value, "NaN") == 0)
+								return (struct NullableDatum) {Float8GetDatum(NAN), false};
+							else
+								sqlite_value_to_pg_error();
 			 			}
 						else
 							pg_column_void_text_error();

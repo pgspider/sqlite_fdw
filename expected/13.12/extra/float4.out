@@ -1258,7 +1258,7 @@ INSERT INTO "type_FLOAT_INF" (i, f) VALUES (21, '+Inf');
 --Testcase 296:
 INSERT INTO "type_FLOAT_INF" (i, f) VALUES (22, '-Inf');
 --Testcase 297:
---INSERT INTO "type_FLOAT_INF" (i, f) VALUES (23, 'NaN');
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (23, 'NaN');
 --Testcase 298:
 INSERT INTO "type_FLOAT_INF" (i, f) VALUES (24, 'Infinity__');
 --Testcase 299:
@@ -1303,7 +1303,8 @@ SELECT * FROM "type_FLOAT_INF";
  20 |  Infinity
  21 |  Infinity
  22 | -Infinity
-(20 rows)
+ 23 |       NaN
+(21 rows)
 
 --Testcase 306:
 SELECT * FROM "type_FLOAT_INF+";
@@ -1329,7 +1330,8 @@ SELECT * FROM "type_FLOAT_INF+";
  20 |  Infinity | text | 3
  21 |  Infinity | text | 4
  22 | -Infinity | text | 4
-(20 rows)
+ 23 |       NaN | text | 3
+(21 rows)
 
 --Testcase 307:
 SELECT * FROM "type_FLOAT_INF+" ORDER BY f ASC, i;
@@ -1354,14 +1356,16 @@ SELECT * FROM "type_FLOAT_INF+" ORDER BY f ASC, i;
  18 |  Infinity | text | 9
  20 |  Infinity | text | 3
  21 |  Infinity | text | 4
+ 23 |       NaN | text | 3
  16 |           | null |  
-(20 rows)
+(21 rows)
 
 --Testcase 308:
 SELECT * FROM "type_FLOAT_INF+" ORDER BY f DESC, i;
  i  |     f     |  t   | l 
 ----+-----------+------+---
  16 |           | null |  
+ 23 |       NaN | text | 3
   2 |  Infinity | real | 3
   4 |  Infinity | real | 3
  10 |  Infinity | real | 3
@@ -1381,13 +1385,14 @@ SELECT * FROM "type_FLOAT_INF+" ORDER BY f DESC, i;
  15 | -Infinity | real | 4
  19 | -Infinity | text | 9
  22 | -Infinity | text | 4
-(20 rows)
+(21 rows)
 
 --Testcase 309:
 SELECT * FROM "type_FLOAT_INF+" WHERE f > '+Infinity' ORDER BY i;
- i | f | t | l 
----+---+---+---
-(0 rows)
+ i  |  f  |  t   | l 
+----+-----+------+---
+ 23 | NaN | text | 3
+(1 row)
 
 --Testcase 310:
 SELECT * FROM "type_FLOAT_INF+" WHERE f < '+Infinity' ORDER BY i;
@@ -1422,9 +1427,10 @@ SELECT * FROM "type_FLOAT_INF+" WHERE f = '+Infinity' ORDER BY i;
 
 --Testcase 312:
 SELECT * FROM "type_FLOAT_INF+" WHERE f > '+Inf' ORDER BY i;
- i | f | t | l 
----+---+---+---
-(0 rows)
+ i  |  f  |  t   | l 
+----+-----+------+---
+ 23 | NaN | text | 3
+(1 row)
 
 --Testcase 313:
 SELECT * FROM "type_FLOAT_INF+" WHERE f < '+Inf' ORDER BY i;
@@ -1474,7 +1480,8 @@ SELECT * FROM "type_FLOAT_INF+" WHERE f > '-Infinity' ORDER BY i;
  18 | Infinity | text | 9
  20 | Infinity | text | 3
  21 | Infinity | text | 4
-(13 rows)
+ 23 |      NaN | text | 3
+(14 rows)
 
 --Testcase 316:
 SELECT * FROM "type_FLOAT_INF+" WHERE f < '-Infinity' ORDER BY i;
@@ -1511,7 +1518,8 @@ SELECT * FROM "type_FLOAT_INF+" WHERE f > '-Inf' ORDER BY i;
  18 | Infinity | text | 9
  20 | Infinity | text | 3
  21 | Infinity | text | 4
-(13 rows)
+ 23 |      NaN | text | 3
+(14 rows)
 
 --Testcase 319:
 SELECT * FROM "type_FLOAT_INF+" WHERE f < '-Inf' ORDER BY i;
@@ -1533,9 +1541,10 @@ SELECT * FROM "type_FLOAT_INF+" WHERE f = '-Inf' ORDER BY i;
 
 --Testcase 321:
 SELECT * FROM "type_FLOAT_INF+" WHERE f > 'Infinity' ORDER BY i;
- i | f | t | l 
----+---+---+---
-(0 rows)
+ i  |  f  |  t   | l 
+----+-----+------+---
+ 23 | NaN | text | 3
+(1 row)
 
 --Testcase 322:
 SELECT * FROM "type_FLOAT_INF+" WHERE f < 'Infinity' ORDER BY i;
@@ -1570,9 +1579,10 @@ SELECT * FROM "type_FLOAT_INF+" WHERE f = 'Infinity' ORDER BY i;
 
 --Testcase 324:
 SELECT * FROM "type_FLOAT_INF+" WHERE f > 'Inf' ORDER BY i;
- i | f | t | l 
----+---+---+---
-(0 rows)
+ i  |  f  |  t   | l 
+----+-----+------+---
+ 23 | NaN | text | 3
+(1 row)
 
 --Testcase 325:
 SELECT * FROM "type_FLOAT_INF+" WHERE f < 'Inf' ORDER BY i;
@@ -1638,9 +1648,10 @@ SELECT * FROM "type_FLOAT_INF+" WHERE f < 'NaN' ORDER BY i;
 
 --Testcase 329:
 SELECT * FROM "type_FLOAT_INF+" WHERE f = 'NaN' ORDER BY i;
- i | f | t | l 
----+---+---+---
-(0 rows)
+ i  |  f  |  t   | l 
+----+-----+------+---
+ 23 | NaN | text | 3
+(1 row)
 
 --Testcase 330:
 EXPLAIN (VERBOSE, COSTS OFF)

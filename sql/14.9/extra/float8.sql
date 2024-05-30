@@ -1127,7 +1127,7 @@ INSERT INTO "type_FLOAT_INF" (i, f) VALUES (21, '+Inf');
 --Testcase 296:
 INSERT INTO "type_FLOAT_INF" (i, f) VALUES (22, '-Inf');
 --Testcase 297:
---INSERT INTO "type_FLOAT_INF" (i, f) VALUES (23, 'NaN');
+INSERT INTO "type_FLOAT_INF" (i, f) VALUES (23, 'NaN');
 --Testcase 298:
 INSERT INTO "type_FLOAT_INF" (i, f) VALUES (24, 'Infinity__');
 --Testcase 299:
