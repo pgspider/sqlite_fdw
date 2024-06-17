@@ -230,6 +230,10 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 						}
 					case SQLITE_INTEGER:
 					case SQLITE_BLOB:
+						{
+							sqlite_value_to_pg_error();
+							break;
+						}
 					case SQLITE3_TEXT:
 						{
 							if (value_byte_size_blob_or_utf8)
@@ -263,6 +267,10 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 						}
 					case SQLITE_INTEGER:
 					case SQLITE_BLOB:
+						{
+							sqlite_value_to_pg_error();
+							break;
+						}
 					case SQLITE3_TEXT:
 						{
 							if (value_byte_size_blob_or_utf8)
