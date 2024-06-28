@@ -45,6 +45,9 @@
 
 #define SQLITE_FDW_BIT_DATATYPE_BUF_SIZE sizeof(sqlite3_int64) * CHAR_BIT + 1
 
+#define MACADDR_LEN 6
+#define MACADDR8_LEN 8
+
 #if (PG_VERSION_NUM < 120000)
 #define table_close(rel, lock)	heap_close(rel, lock)
 #define table_open(rel, lock)	heap_open(rel, lock)
