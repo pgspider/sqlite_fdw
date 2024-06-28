@@ -231,6 +231,20 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 							Datum		d = DirectFunctionCall1(dtof, Float8GetDatum((float8)value));
 							return (struct NullableDatum) {d, false};
 						}
+					case SQLITE3_TEXT:
+						{
+							if (value_byte_size_blob_or_utf8)
+							{
+								const char* text_value = (const char*) sqlite3_value_text(val);
+								if (strcasecmp(text_value, "NaN") == 0)
+									return (struct NullableDatum) {Float8GetDatum(NAN), false};
+								else
+									sqlite_value_to_pg_error();
+				 			}
+							else
+								pg_column_void_text_error();
+							break;
+						}
 					case SQLITE_INTEGER:
 					case SQLITE_BLOB:
 					default:
@@ -238,16 +252,6 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 							sqlite_value_to_pg_error();
 							break;
 						}
-					case SQLITE3_TEXT:
-					{
-						if (value_byte_size_blob_or_utf8)
-						{
-		 					sqlite_value_to_pg_error();
-			 			}
-						else
-							pg_column_void_text_error();
-						break;
-					}
 				}
 				break;
 			}
@@ -260,6 +264,20 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 							double		value = sqlite3_value_double(val);
 							return (struct NullableDatum) {Float8GetDatum((float8) value), false};
 						}
+					case SQLITE3_TEXT:
+						{
+							if (value_byte_size_blob_or_utf8)
+							{
+								const char* text_value = (const char*) sqlite3_value_text(val);
+								if (strcasecmp(text_value, "NaN") == 0)
+									return (struct NullableDatum) {Float8GetDatum(NAN), false};
+								else
+									sqlite_value_to_pg_error();
+				 			}
+							else
+								pg_column_void_text_error();
+							break;
+						}
 					case SQLITE_INTEGER:
 					case SQLITE_BLOB:
 					default:
@@ -267,16 +285,6 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 							sqlite_value_to_pg_error();
 							break;
 						}
-					case SQLITE3_TEXT:
-					{
-						if (value_byte_size_blob_or_utf8)
-						{
-		 					sqlite_value_to_pg_error();
-			 			}
-						else
-							pg_column_void_text_error();
-						break;
-					}
 				}
 				break;
 			}
@@ -346,7 +354,11 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 					{
 						if (value_byte_size_blob_or_utf8)
 						{
-		 					sqlite_value_to_pg_error();
+							const char* text_value = (const char*) sqlite3_value_text(val);
+							if (strcasecmp(text_value, "NaN") == 0)
+								return (struct NullableDatum) {Float8GetDatum(NAN), false};
+							else
+								sqlite_value_to_pg_error();
 			 			}
 						else
 							pg_column_void_text_error();
