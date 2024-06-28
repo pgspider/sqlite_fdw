@@ -2041,7 +2041,7 @@ sqliteBeginForeignModify(ModifyTableState *mtstate,
 	Plan	   *subplan;
 	int			i;
 
-	elog(DEBUG1, " sqlite_fdw : %s", __func__);
+	elog(DEBUG1, "sqlite_fdw : %s", __func__);
 
 	foreignTableId = RelationGetRelid(rel);
 #if (PG_VERSION_NUM >= 140000)
@@ -4271,7 +4271,7 @@ sqlite_add_foreign_ordered_paths(PlannerInfo *root, RelOptInfo *input_rel,
 		/*
 		 * Can't push down the sort if pathkey's opfamily is not built-in.
 		 */
-		if (!sqlite_is_builtin(pathkey->pk_opfamily))
+		if (!is_pg_builtin_Oid(pathkey->pk_opfamily))
 			return;
 
 		/*
@@ -5143,6 +5143,8 @@ sqlite_to_pg_type(StringInfo str, char *type)
 		{"varchar"},
 		{"char"},
 		{"uuid"},
+		{"geometry"},
+		{"geography"},
 		{NULL}
 	};
 
