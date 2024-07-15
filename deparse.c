@@ -339,6 +339,8 @@ sqlite_is_valid_type(Oid type)
 		case TIMESTAMPOID:
 		case TIMESTAMPTZOID:
 		case UUIDOID:
+		case MACADDROID:
+		case MACADDR8OID:
 			return true;
 	}
 	return false;
@@ -2107,6 +2109,24 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
 			appendStringInfoString(buf, ")");
 		}
+		else if (!dml_context && pg_atttyp == MACADDROID)
+		{
+			elog(DEBUG2, "MAC address unification for \"%s\"", colname);
+			appendStringInfoString(buf, "sqlite_fdw_macaddr_int(");
+			if (qualify_col)
+				ADD_REL_QUALIFIER(buf, varno);
+			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+			appendStringInfo(buf, ", %d)", MACADDR_LEN);
+		}
+		else if (!dml_context && pg_atttyp == MACADDR8OID)
+		{
+			elog(DEBUG2, "MAC address unification for \"%s\"", colname);
+			appendStringInfoString(buf, "sqlite_fdw_macaddr_int(");
+			if (qualify_col)
+				ADD_REL_QUALIFIER(buf, varno);
+			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+			appendStringInfo(buf, ", %d)", MACADDR8_LEN);
+		}
 		else
 		{
 			elog(DEBUG4, "column name without data unification = \"%s\"", colname);
@@ -2425,7 +2445,29 @@ sqlite_deparse_direct_update_sql(StringInfo buf, PlannerInfo *root,
 			appendStringInfo(buf, "sqlite_fdw_uuid_str(");
 			special_affinity = true;
 		}
+		if (pg_attyp == TIMESTAMPOID && preferred_affinity == SQLITE_INTEGER)
+		{
+			appendStringInfo(buf, "strftime(");
+			special_affinity = true;
+		}
+		if ((pg_attyp == MACADDROID || pg_attyp == MACADDR8OID) && preferred_affinity != SQLITE_INTEGER)
+		{
+			if (preferred_affinity == SQLITE3_TEXT)
+				appendStringInfo(buf, "sqlite_fdw_macaddr_str(");
+			if (preferred_affinity == SQLITE_BLOB)
+				appendStringInfo(buf, "sqlite_fdw_macaddr_blob(");
+			special_affinity = true;
+		}
+
 		sqlite_deparse_expr((Expr *) tle->expr, &context);
+
+		if ((pg_attyp == MACADDROID || pg_attyp == MACADDR8OID) &&
+			(preferred_affinity == SQLITE3_TEXT || preferred_affinity == SQLITE_BLOB))
+			appendStringInfo(buf, ", ");
+		if (pg_attyp == MACADDROID && (preferred_affinity == SQLITE3_TEXT || preferred_affinity == SQLITE_BLOB))
+			appendStringInfo(buf, "%d", MACADDR_LEN);
+		if (pg_attyp == MACADDR8OID && (preferred_affinity == SQLITE3_TEXT || preferred_affinity == SQLITE_BLOB))
+			appendStringInfo(buf, "%d", MACADDR8_LEN);
 
 		if (special_affinity)
 		{
@@ -2779,10 +2821,24 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 				for (i = 0; i < strlen(extval); i++)
 				{
 					char c = extval[i];
-					if ( c != '-' )
+					if ( c != '-')
 						appendStringInfoChar(buf, c);
 				}
 	  			appendStringInfo(buf, "\'");
+			}
+			break;
+		case MACADDROID:
+		case MACADDR8OID:
+ 			{
+				int i = 0;
+				extval = OidOutputFunctionCall(typoutput, node->constvalue);
+				appendStringInfo(buf, "0x");
+				for (i = 0; i < strlen(extval); i++)
+				{
+					char c = extval[i];
+					if ( c != '-' && c != '.' && c != ':')
+						appendStringInfoChar(buf, c);
+				}
 			}
 			break;
 		default:
