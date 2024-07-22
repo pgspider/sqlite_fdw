@@ -32,6 +32,7 @@ jobs:
       fail-fast: false
       matrix:
         pg: ${{ fromJSON(needs.detect-pgversion.outputs.pgversion) }}
+        config: ["default"]
         
     name: Test on PostgreSQL ${{ matrix.pg }}
     runs-on: ubuntu-22.04
@@ -40,22 +41,32 @@ jobs:
       
       - name: tar
         run: tar zcvf sqlite_fdw.tar.gz ./*
-      
+
       - name: set_proxy
         run: bash GitHubActions/env.sh
 
       - name: install locales
         run: bash GitHubActions/install_locales.sh
-            
-      - name: build PostgreSQL ${{ matrix.pg }}
-        run: bash GitHubActions/build_postgres.sh ${{ matrix.pg }}
 
-      - name: install SQLite
-        run: bash GitHubActions/install_sqlite.sh ${{ env.SQLITE_VERSION }} ${{ env.SQLITE_YEAR }}
+      - name: build PostgreSQL ${{ matrix.pg }} with ${{ matrix.config }}
+        run: |
+          if [[ "${{ matrix.config }}" == "yes" ]]; then
+            bash GitHubActions/build_postgres.sh ${{ matrix.pg }}
+          fi
+
+      - name: install SQLite with ${{ matrix.postgis }}
+        run: |
+          if [[ "${{ matrix.postgis }}" == "yes" ]]; then
+            bash GitHubActions/install_sqlite.sh ${{ env.SQLITE_VERSION }} ${{ env.SQLITE_YEAR }}
+          fi
+
       
-      - name: build sqlite_fdw
-        run: bash GitHubActions/build_sqlite_fdw.sh ${{ matrix.pg }}
-      
+      - name: build sqlite_fdw with ${{ matrix.config }}
+        run: |
+          if [[ "${{ matrix.config }}" == "yes" ]]; then
+            bash GitHubActions/build_sqlite_fdw.sh ${{ matrix.pg }}
+          fi
+
       - name: execute sqlite_fdw test
         run: bash GitHubActions/execute_test.sh ${{ matrix.pg }}
       
@@ -63,7 +74,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.pg }}-test-results
+          name: ${{ matrix.pg }}-${{ matrix.config }}-test-results
           path: |
             workdir/postgresql-${{ matrix.pg }}/contrib/sqlite_fdw/regression.diffs
             workdir/postgresql-${{ matrix.pg }}/contrib/sqlite_fdw/regression.out
