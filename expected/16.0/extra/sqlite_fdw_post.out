@@ -6944,7 +6944,7 @@ ALTER FOREIGN TABLE ft1_constraint RENAME TO ft1;
 --Testcase 319:
 INSERT INTO ft1(c1, c2) VALUES(11, 12);  -- duplicate key
 ERROR:  Failed to execute remote SQL
-HINT:  SQLite error 'UNIQUE constraint failed: t1_constraint.c1', SQLite result code 19
+HINT:  SQLite error 'UNIQUE constraint failed: t1_constraint.c1', SQLite result code 1555
 CONTEXT:  SQL query: INSERT INTO main."t1_constraint"(`c1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 --Testcase 320:
 INSERT INTO ft1(c1, c2) VALUES(11, 12) ON CONFLICT (c1, c2) DO NOTHING; -- unsupported
@@ -6955,12 +6955,12 @@ ERROR:  there is no unique or exclusion constraint matching the ON CONFLICT spec
 --Testcase 743:
 INSERT INTO ft1(c1, c2) VALUES(1111, -2);  -- c2positive
 ERROR:  Failed to execute remote SQL
-HINT:  SQLite error 'CHECK constraint failed: c2 >= 0', SQLite result code 19
+HINT:  SQLite error 'CHECK constraint failed: c2 >= 0', SQLite result code 275
 CONTEXT:  SQL query: INSERT INTO main."t1_constraint"(`c1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 --Testcase 744:
 UPDATE ft1 SET c2 = -c2 WHERE c1 = 1;  -- c2positive
 ERROR:  Failed to execute remote SQL
-HINT:  SQLite error 'CHECK constraint failed: c2 >= 0', SQLite result code 19
+HINT:  SQLite error 'CHECK constraint failed: c2 >= 0', SQLite result code 275
 CONTEXT:  SQL query: UPDATE main."t1_constraint" SET `c2` = (- `c2`) WHERE ((`c1` = 1))
 --Testcase 750:
 ALTER FOREIGN TABLE ft1 RENAME TO ft1_constraint;
@@ -7366,12 +7366,12 @@ RESET constraint_exclusion;
 --Testcase 745:
 INSERT INTO ft1(c1, c2) VALUES(1111, -2);  -- c2positive
 ERROR:  Failed to execute remote SQL
-HINT:  SQLite error 'CHECK constraint failed: c2 >= 0', SQLite result code 19
+HINT:  SQLite error 'CHECK constraint failed: c2 >= 0', SQLite result code 275
 CONTEXT:  SQL query: INSERT INTO main."t1_constraint"(`c1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 --Testcase 746:
 UPDATE ft1 SET c2 = -c2 WHERE c1 = 1;  -- c2positive
 ERROR:  Failed to execute remote SQL
-HINT:  SQLite error 'CHECK constraint failed: c2 >= 0', SQLite result code 19
+HINT:  SQLite error 'CHECK constraint failed: c2 >= 0', SQLite result code 275
 CONTEXT:  SQL query: UPDATE main."t1_constraint" SET `c2` = (- `c2`) WHERE ((`c1` = 1))
 --Testcase 817:
 ALTER FOREIGN TABLE ft1 DROP CONSTRAINT ft1_c2positive;
