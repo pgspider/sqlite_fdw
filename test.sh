@@ -1,15 +1,12 @@
 #!/bin/bash
 
 NO_CLEAN=false
-REGRESS_PGSpider=false
 
 while (( "$#" )); do
     if [ "$1" == "--no-clean" ]; then
         NO_CLEAN=true
-    elif [ "$1" == "REGRESS_PREFIX=PGSpider" ]; then
-        REGRESS_PGSpider=true
-    shift
     fi
+    shift
 done
 
 testdir='/tmp/sqlite_fdw_test';
@@ -29,8 +26,4 @@ if [ "$NO_CLEAN" = false ]; then
   make;
 fi
 
-if [ "$REGRESS_PGSpider" = false ]; then
-    make check | tee make_check.out;
-else
-    make check REGRESS_PREFIX=PGSpider | tee make_check.out;
-fi
+make check | tee make_check.out;

@@ -22,7 +22,7 @@
 VERSION=$1
 cd ./workdir/postgresql-${VERSION}/contrib/sqlite_fdw
 chmod +x ./test.sh
-./test.sh
+./test.sh "${@:2}"
 
 last_line=$(tail -n 1 make_check.out)
 third_line_from_the_last=$(tail -n 3 make_check.out | head -n 1)
