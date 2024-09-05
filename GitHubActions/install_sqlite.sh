@@ -31,7 +31,7 @@ done
 mkdir -p ./workdir
 cd ./workdir
 curl -O https://www.sqlite.org/${YEAR}/sqlite-src-${VERSION}.zip
-unzip sqlite-src-${VERSION}.zip
+unzip sqlite-src-${VERSION}.zip > /dev/null
 cd sqlite-src-${VERSION}
 
 if [ -z "$CONFIGURE_OPTIONS" ]; then

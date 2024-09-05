@@ -6,8 +6,9 @@
 # sqlite_fdw. If all tests are passed, this script will exit successfully.
 # Otherwise, it will exit with failure.
 
-# Usage: ./execute_test.sh pg_version
+# Usage: ./execute_test.sh pg_version mode
 #     pg_version is a PostgreSQL version to be tested like 16.0.
+#	  mode is flag for sqlite_fdw compiler.
 #
 # Requiremets
 # - the source code of PostgreSQL is located in ./workdir/postgresql-{pg_version}.
@@ -20,7 +21,22 @@
 ################################################################################
 
 VERSION=$1
+MODE="$2"
+
+[ "$MODE" == "postgis" ] && export ENABLE_GIS=1
+echo "$MODE mode, gis = $ENABLE_GIS"
+
+# Start postgres server
+POSTGRES_HOME=/usr/local/pgsql
+${POSTGRES_HOME}/bin/initdb ${POSTGRES_HOME}/databases
+${POSTGRES_HOME}/bin/pg_ctl -D ${POSTGRES_HOME}/databases -l logfile start
+
 cd ./workdir/postgresql-${VERSION}/contrib/sqlite_fdw
+
+# Change the testing method
+sed -i 's/make check/make installcheck/' test.sh
+
+# Execute test script
 chmod +x ./test.sh
 ./test.sh
 

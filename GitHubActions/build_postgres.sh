@@ -15,7 +15,6 @@
 ################################################################################
 
 VERSION=$1
-
 CONFIGURE_OPTIONS=""
 
 while (( "$#" )); do
@@ -36,3 +35,5 @@ else
 fi
 
 make
+sudo make install
+sudo chown -R $USER /usr/local/pgsql
