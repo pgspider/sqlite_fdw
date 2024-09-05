@@ -23,18 +23,20 @@
 VERSION=$1
 MODE="$2"
 
-[ "$MODE" == "postgis" ] && export ENABLE_GIS=1
-echo "$MODE mode, gis = $ENABLE_GIS"
-
-# Start postgres server
-POSTGRES_HOME=/usr/local/pgsql
-${POSTGRES_HOME}/bin/initdb ${POSTGRES_HOME}/databases
-${POSTGRES_HOME}/bin/pg_ctl -D ${POSTGRES_HOME}/databases -l logfile start
-
 cd ./workdir/postgresql-${VERSION}/contrib/sqlite_fdw
 
-# Change the testing method
-sed -i 's/make check/make installcheck/' test.sh
+if [ "$MODE" == "postgis" ]; then
+	export ENABLE_GIS=1
+	echo "$MODE mode, gis = $ENABLE_GIS"
+
+	# Start postgres server
+	POSTGRES_HOME=/usr/local/pgsql
+	${POSTGRES_HOME}/bin/initdb ${POSTGRES_HOME}/databases
+	${POSTGRES_HOME}/bin/pg_ctl -D ${POSTGRES_HOME}/databases -l logfile start
+
+	# Change the testing method
+	sed -i 's/make check/make installcheck/' test.sh
+fi
 
 # Execute test script
 chmod +x ./test.sh
