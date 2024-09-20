@@ -26,47 +26,60 @@ jobs:
     env:
       SQLITE_VERSION : "3420000"
       SQLITE_YEAR: "2023"
+      POSTGIS_VERSION : "3.4.2"
       HTTP_PROXY: ""
       HTTPS_PROXY: ""
     strategy:
       fail-fast: false
       matrix:
         pg: ${{ fromJSON(needs.detect-pgversion.outputs.pgversion) }}
+        config: ["default", "postgis"]
         
-    name: Test on PostgreSQL ${{ matrix.pg }}
+    name: Test on PostgreSQL ${{ matrix.pg }}, ${{ matrix.config }} mode
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       
       - name: tar
         run: tar zcvf sqlite_fdw.tar.gz ./*
-      
+
       - name: set_proxy
         run: bash GitHubActions/env.sh
 
       - name: install locales
         run: bash GitHubActions/install_locales.sh
-            
-      - name: build PostgreSQL ${{ matrix.pg }}
+
+      - name: build PostgreSQL ${{ matrix.pg }} with ${{ matrix.config }}
         run: bash GitHubActions/build_postgres.sh ${{ matrix.pg }}
 
-      - name: install SQLite
-        run: bash GitHubActions/install_sqlite.sh ${{ env.SQLITE_VERSION }} ${{ env.SQLITE_YEAR }}
-      
-      - name: build sqlite_fdw
-        run: bash GitHubActions/build_sqlite_fdw.sh ${{ matrix.pg }}
-      
+      - name: build PostGIS ${{ env.POSTGIS_VERSION }} for PostgreSQL ${{ matrix.pg }}, ${{ matrix.config }} mode
+        run: |
+          if [[ "${{ matrix.config }}" == "postgis" ]]; then
+            bash GitHubActions/build_postgis.sh ${{ matrix.pg }} ${{ env.POSTGIS_VERSION }}
+          fi
+
+      - name: install SQLite, ${{ matrix.config }} mode
+        run: |
+          if [[ "${{ matrix.config }}" == "default" ]]; then
+            bash GitHubActions/install_sqlite.sh ${{ env.SQLITE_VERSION }} ${{ env.SQLITE_YEAR }}
+          elif [[ "${{ matrix.config }}" == "postgis" ]]; then
+            bash GitHubActions/install_sqlite.sh ${{ env.SQLITE_VERSION }} ${{ env.SQLITE_YEAR }} --enable-rtree
+          fi
+
+      - name: build sqlite_fdw, ${{ matrix.config }} mode
+        run: |
+          bash GitHubActions/build_sqlite_fdw.sh ${{ matrix.pg }} ${{ matrix.config }}
+
       - name: execute sqlite_fdw test
-        run: bash GitHubActions/execute_test.sh ${{ matrix.pg }}
-      
+        run: bash GitHubActions/execute_test.sh ${{ matrix.pg }} ${{ matrix.config }}
+
       - name: download output files (regression.diffs)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.pg }}-test-results
+          name: ${{ matrix.pg }}-${{ matrix.config }}-test-results
           path: |
             workdir/postgresql-${{ matrix.pg }}/contrib/sqlite_fdw/regression.diffs
             workdir/postgresql-${{ matrix.pg }}/contrib/sqlite_fdw/regression.out
             workdir/postgresql-${{ matrix.pg }}/contrib/sqlite_fdw/results
           retention-days: 7
-
