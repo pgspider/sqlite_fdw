@@ -200,6 +200,7 @@ sqlite_open_db(const char *dbpath, int flags)
 		ereport(ERROR,
 				(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
 				 errmsg("Failed to open SQLite DB, file '%s', result code %d", dbpath, rc)));
+	sqlite3_extended_result_codes(conn, true);
 	/* make 'LIKE' of SQLite case sensitive like PostgreSQL */
 	rc = sqlite3_exec(conn, "pragma case_sensitive_like=1",
 					  NULL, NULL, &err);

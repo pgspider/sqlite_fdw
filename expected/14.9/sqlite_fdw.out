@@ -576,7 +576,7 @@ SELECT * from numbers;
 --Testcase 68:
 INSERT INTO numbers VALUES(1, 'One');
 ERROR:  Failed to execute remote SQL
-HINT:  SQLite error 'UNIQUE constraint failed: numbers.b', SQLite result code 19
+HINT:  SQLite error 'UNIQUE constraint failed: numbers.b', SQLite result code 2067
 CONTEXT:  SQL query: INSERT INTO main."numbers"(`a`, `b`) VALUES (?, ?)
 --Testcase 69:
 DELETE from numbers;
@@ -590,7 +590,7 @@ COMMIT;
 --Testcase 72:
 UPDATE numbers SET b='Two' WHERE a = 1; 
 ERROR:  Failed to execute remote SQL
-HINT:  SQLite error 'UNIQUE constraint failed: numbers.b', SQLite result code 19
+HINT:  SQLite error 'UNIQUE constraint failed: numbers.b', SQLite result code 2067
 CONTEXT:  SQL query: UPDATE main."numbers" SET `b` = 'Two' WHERE ((`a` = 1))
 --Testcase 73:
 SELECT * from numbers;

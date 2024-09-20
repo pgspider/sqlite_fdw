@@ -514,7 +514,7 @@ INSERT INTO "type_DOUBLE" VALUES (PI());
 --Testcase 109: ERR primary key
 INSERT INTO "type_DOUBLE" VALUES (PI());
 ERROR:  Failed to execute remote SQL
-HINT:  SQLite error 'UNIQUE constraint failed: type_DOUBLE.col', SQLite result code 19
+HINT:  SQLite error 'UNIQUE constraint failed: type_DOUBLE.col', SQLite result code 1555
 CONTEXT:  SQL query: INSERT INTO main."type_DOUBLE"(`col`) VALUES (?)
 --Testcase 110:
 INSERT INTO "type_DOUBLE" VALUES ('Infinity');
@@ -533,12 +533,12 @@ SELECT * FROM "type_DOUBLE"; -- OK, +- Inf
 --Testcase 114: ERR primary key
 INSERT INTO "type_DOUBLE" VALUES ('Infinity');
 ERROR:  Failed to execute remote SQL
-HINT:  SQLite error 'UNIQUE constraint failed: type_DOUBLE.col', SQLite result code 19
+HINT:  SQLite error 'UNIQUE constraint failed: type_DOUBLE.col', SQLite result code 1555
 CONTEXT:  SQL query: INSERT INTO main."type_DOUBLE"(`col`) VALUES (?)
 --Testcase 115: ERR primary key
 INSERT INTO "type_DOUBLE" VALUES ('-Infinity');
 ERROR:  Failed to execute remote SQL
-HINT:  SQLite error 'UNIQUE constraint failed: type_DOUBLE.col', SQLite result code 19
+HINT:  SQLite error 'UNIQUE constraint failed: type_DOUBLE.col', SQLite result code 1555
 CONTEXT:  SQL query: INSERT INTO main."type_DOUBLE"(`col`) VALUES (?)
 --Testcase 116:
 SELECT * FROM "type_DOUBLE"; -- OK, +- Inf
