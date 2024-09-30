@@ -6,6 +6,7 @@
 # then builds it.
 #
 # Usage: ./build_postgis.sh pg_version postgis_version
+
 #     pg_version is a PostgreSQL version to be installed like 16.0.
 #     postgis_version is a PostGIS version to be installed.
 #
@@ -33,8 +34,6 @@ tar -xzf postgis-${POSTGIS_VERSION}.tar.gz
 mv postgis-${POSTGIS_VERSION} postgis -v
 cd postgis
 echo " - PostGIS directory"
-pwd
-ls -la .
 export LD_LIBRARY_PATH=/usr/local/lib/:$LD_LIBRARY_PATH
 ./configure --with-pgconfig=/usr/local/pgsql/bin/pg_config --with-geosconfig=$GEOS_CONFIG_PATH
 make

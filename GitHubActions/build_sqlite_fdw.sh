@@ -4,9 +4,9 @@
 #
 # This script builds sqlite_fdw in PostgreSQL source tree.
 #
-# Usage: ./build_sqlite_fdw.sh pg_version [configure_options]
+# Usage: ./build_sqlite_fdw.sh pg_version mode
 #     pg_version is a PostgreSQL version like 16.0 to be built in.
-#     configure_options are a list of option for sqlite_fdw compiler.
+#     mode is flag for sqlite_fdw compiler.
 #
 # Requirements
 # - the source code of sqlite_fdw is available by git clone.
@@ -27,3 +27,5 @@ if [ "$MODE" == "postgis" ]; then
 else
   make
 fi
+
+sudo make install

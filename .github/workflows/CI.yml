@@ -50,8 +50,7 @@ jobs:
         run: bash GitHubActions/install_locales.sh
 
       - name: build PostgreSQL ${{ matrix.pg }} with ${{ matrix.config }}
-        run: |
-          bash GitHubActions/build_postgres.sh ${{ matrix.pg }}
+        run: bash GitHubActions/build_postgres.sh ${{ matrix.pg }}
 
       - name: build PostGIS ${{ env.POSTGIS_VERSION }} for PostgreSQL ${{ matrix.pg }}, ${{ matrix.config }} mode
         run: |
@@ -72,7 +71,7 @@ jobs:
           bash GitHubActions/build_sqlite_fdw.sh ${{ matrix.pg }} ${{ matrix.config }}
 
       - name: execute sqlite_fdw test
-        run: bash GitHubActions/execute_test.sh ${{ matrix.pg }} ${{ matrix.config }} --no-clean
+        run: bash GitHubActions/execute_test.sh ${{ matrix.pg }} ${{ matrix.config }}
 
       - name: download output files (regression.diffs)
         if: failure()
@@ -84,4 +83,3 @@ jobs:
             workdir/postgresql-${{ matrix.pg }}/contrib/sqlite_fdw/regression.out
             workdir/postgresql-${{ matrix.pg }}/contrib/sqlite_fdw/results
           retention-days: 7
-

@@ -5,7 +5,7 @@
 # This script downloads PostgreSQL from the official web site into ./workdir
 # then builds it.
 #
-# Usage: ./build_postgres.sh pg_version postgis_flag postgis_version [configure_options]
+# Usage: ./build_postgres.sh pg_version [configure_options]
 #     pg_version is a PostgreSQL version to be installed like 16.0.
 #     configure_options are a list of option for postgres server.
 #
@@ -33,5 +33,7 @@ if [ -z "$CONFIGURE_OPTIONS" ]; then
 else
   ./configure $CONFIGURE_OPTIONS
 fi
+
 make
 sudo make install
+sudo chown -R $USER /usr/local/pgsql
