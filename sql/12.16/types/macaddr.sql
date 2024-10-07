@@ -308,13 +308,42 @@ ALTER FOREIGN TABLE "type_MACADDRpk" ALTER COLUMN col OPTIONS (SET column_type '
 --Testcase 156: NO ERR, but the same semantics!
 INSERT INTO "type_MACADDRpk" VALUES ('01:02:03:04:05:06');
 --Testcase 157:
-ALTER FOREIGN TABLE "type_MACADDRpk" ALTER COLUMN col OPTIONS (ADD column_type 'BLOB');
+ALTER FOREIGN TABLE "type_MACADDRpk" ALTER COLUMN col OPTIONS (SET column_type 'BLOB');
 --Testcase 158: ERR - primary key
 INSERT INTO "type_MACADDRpk" VALUES ('01-02-03-04-05-06');
 --Testcase 159:
 SELECT * FROM "type_MACADDRpk";
 --Testcase 160:
 DELETE FROM "type_MACADDRpk";
+
+--no macaddr operators pushing down
+--Testcase 161:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "m" | '01:02:03:04:05:06' FROM "type_MACADDR";
+--Testcase 162:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "m" & '01:02:03:04:05:06' FROM "type_MACADDR";
+--Testcase 163:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT ~"m" FROM "type_MACADDR";
+--Testcase 164:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "m" > '01:02:03:04:05:06' FROM "type_MACADDR";
+--Testcase 165:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "m" < '01:02:03:04:05:06' FROM "type_MACADDR";
+--Testcase 166:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "m" = '01:02:03:04:05:06' FROM "type_MACADDR";
+--Testcase 167:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "m" >= '01:02:03:04:05:06' FROM "type_MACADDR";
+--Testcase 168:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "m" <= '01:02:03:04:05:06' FROM "type_MACADDR";
+--Testcase 169:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "m" != '01:02:03:04:05:06' FROM "type_MACADDR";
 
 --Testcase 200:
 DROP EXTENSION sqlite_fdw CASCADE;

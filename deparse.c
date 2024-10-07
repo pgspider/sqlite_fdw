@@ -2042,6 +2042,7 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 		List	   *options;
 		ListCell   *lc;
 		Oid			pg_atttyp = 0;
+		bool		no_unification = false;
 
 		elog(DEBUG3, "sqlite_fdw : %s , varattrno != 0", __func__);
 		/* varno must not be any of OUTER_VAR, INNER_VAR and INDEX_VAR. */
@@ -2077,57 +2078,69 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 #endif
 		pg_atttyp = get_atttype(rte->relid, varattno);
 
-		/* PostgreSQL data types with possible mixed affinity SQLite base we should
+		/*
+		 * PostgreSQL data types with possible mixed affinity SQLite base we should
 		 * normalize to preferred form in SQLite before transfer to PostgreSQL.
 		 * Recommended form for normalisation is someone from 1<->1 with PostgreSQL
 		 * internal storage, hence usually this will not original text data.
 		 */
-		if (!dml_context && ( pg_atttyp == FLOAT8OID || pg_atttyp == FLOAT4OID || pg_atttyp == NUMERICOID) )
+		if (!dml_context)
 		{
-			elog(DEBUG2, "floatN unification for \"%s\"", colname);
-			appendStringInfoString(buf, "sqlite_fdw_float(");
-			if (qualify_col)
-				ADD_REL_QUALIFIER(buf, varno);
-			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
-			appendStringInfoString(buf, ")");
-		}
-		else if (!dml_context && pg_atttyp == BOOLOID)
-		{
-			elog(DEBUG2, "boolean unification for \"%s\"", colname);
-			appendStringInfoString(buf, "sqlite_fdw_bool(");
-			if (qualify_col)
-				ADD_REL_QUALIFIER(buf, varno);
-			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
-			appendStringInfoString(buf, ")");
-		}
-		else if (!dml_context && pg_atttyp == UUIDOID)
-		{
-			elog(DEBUG2, "UUID unification for \"%s\"", colname);
-			appendStringInfoString(buf, "sqlite_fdw_uuid_blob(");
-			if (qualify_col)
-				ADD_REL_QUALIFIER(buf, varno);
-			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
-			appendStringInfoString(buf, ")");
-		}
-		else if (!dml_context && pg_atttyp == MACADDROID)
-		{
-			elog(DEBUG2, "MAC address unification for \"%s\"", colname);
-			appendStringInfoString(buf, "sqlite_fdw_macaddr_int(");
-			if (qualify_col)
-				ADD_REL_QUALIFIER(buf, varno);
-			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
-			appendStringInfo(buf, ", %d)", MACADDR_LEN);
-		}
-		else if (!dml_context && pg_atttyp == MACADDR8OID)
-		{
-			elog(DEBUG2, "MAC address unification for \"%s\"", colname);
-			appendStringInfoString(buf, "sqlite_fdw_macaddr_int(");
-			if (qualify_col)
-				ADD_REL_QUALIFIER(buf, varno);
-			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
-			appendStringInfo(buf, ", %d)", MACADDR8_LEN);
+			switch (pg_atttyp)
+			{
+				case FLOAT8OID:
+				case FLOAT4OID:
+				case NUMERICOID:
+				{
+					elog(DEBUG2, "floatN unification for \"%s\"", colname);
+					appendStringInfoString(buf, "sqlite_fdw_float(");
+					if (qualify_col)
+						ADD_REL_QUALIFIER(buf, varno);
+					appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+					appendStringInfoString(buf, ")");
+					break;
+				}
+				case BOOLOID:
+				{
+					elog(DEBUG2, "boolean unification for \"%s\"", colname);
+					appendStringInfoString(buf, "sqlite_fdw_bool(");
+					if (qualify_col)
+						ADD_REL_QUALIFIER(buf, varno);
+					appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+					appendStringInfoString(buf, ")");
+					break;
+				}
+				case UUIDOID:
+				{
+					elog(DEBUG2, "UUID unification for \"%s\"", colname);
+					appendStringInfoString(buf, "sqlite_fdw_uuid_blob(");
+					if (qualify_col)
+						ADD_REL_QUALIFIER(buf, varno);
+					appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+					appendStringInfoString(buf, ")");
+					break;
+				}
+				case MACADDROID:
+				case MACADDR8OID:
+				{
+					int mac_len = (pg_atttyp == MACADDROID) ? MACADDR_LEN : MACADDR8_LEN;
+
+					elog(DEBUG2, "MAC%d address unification for \"%s\"", mac_len, colname);
+					appendStringInfoString(buf, "sqlite_fdw_macaddr_int(");
+					if (qualify_col)
+						ADD_REL_QUALIFIER(buf, varno);
+					appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+					appendStringInfo(buf, ", %d)", mac_len);
+					break;
+				}
+				default:
+				   no_unification = true;
+			}
 		}
 		else
+			no_unification = true;
+
+		if (no_unification)
 		{
 			elog(DEBUG4, "column name without data unification = \"%s\"", colname);
 			if (qualify_col)
@@ -2445,29 +2458,24 @@ sqlite_deparse_direct_update_sql(StringInfo buf, PlannerInfo *root,
 			appendStringInfo(buf, "sqlite_fdw_uuid_str(");
 			special_affinity = true;
 		}
-		if (pg_attyp == TIMESTAMPOID && preferred_affinity == SQLITE_INTEGER)
-		{
-			appendStringInfo(buf, "strftime(");
-			special_affinity = true;
-		}
-		if ((pg_attyp == MACADDROID || pg_attyp == MACADDR8OID) && preferred_affinity != SQLITE_INTEGER)
+		else if ((pg_attyp == MACADDROID || pg_attyp == MACADDR8OID) && preferred_affinity != SQLITE_INTEGER)
 		{
 			if (preferred_affinity == SQLITE3_TEXT)
 				appendStringInfo(buf, "sqlite_fdw_macaddr_str(");
-			if (preferred_affinity == SQLITE_BLOB)
+			else if (preferred_affinity == SQLITE_BLOB)
 				appendStringInfo(buf, "sqlite_fdw_macaddr_blob(");
 			special_affinity = true;
 		}
 
 		sqlite_deparse_expr((Expr *) tle->expr, &context);
 
-		if ((pg_attyp == MACADDROID || pg_attyp == MACADDR8OID) &&
-			(preferred_affinity == SQLITE3_TEXT || preferred_affinity == SQLITE_BLOB))
-			appendStringInfo(buf, ", ");
-		if (pg_attyp == MACADDROID && (preferred_affinity == SQLITE3_TEXT || preferred_affinity == SQLITE_BLOB))
-			appendStringInfo(buf, "%d", MACADDR_LEN);
-		if (pg_attyp == MACADDR8OID && (preferred_affinity == SQLITE3_TEXT || preferred_affinity == SQLITE_BLOB))
-			appendStringInfo(buf, "%d", MACADDR8_LEN);
+		if (preferred_affinity == SQLITE3_TEXT || preferred_affinity == SQLITE_BLOB)
+		{
+			if (pg_attyp == MACADDROID)
+				appendStringInfo(buf, ", %d", MACADDR_LEN);
+			else if (pg_attyp == MACADDR8OID)
+				appendStringInfo(buf, ", %d", MACADDR8_LEN);
+		}
 
 		if (special_affinity)
 		{
@@ -2730,10 +2738,10 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 					else
 						appendStringInfoString(buf, extval);
 				}
-				else if (strcasecmp(extval, "Inf") == 0 ||
-						 strcasecmp(extval, "Infinity") == 0 ||
-						 strcasecmp(extval + 1, "Inf") == 0 ||
-						 strcasecmp(extval + 1, "Infinity") == 0)
+				else if (strcasecmp(extval, infs) == 0 ||
+						 strcasecmp(extval, infl) == 0 ||
+						 strcasecmp(extval + 1, infs) == 0 ||
+						 strcasecmp(extval + 1, infl) == 0)
 				{
 					bool is_negative_or_positive = false;
 					if (extval[0] == '-' || extval[0] == '+')
@@ -2811,7 +2819,8 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 			}
 			break;
 		case UUIDOID:
-			/* always deparse to BLOB, in case of UPDATE with text affinity
+			/*
+			 * always deparse to BLOB, in case of UPDATE with text affinity
 			 * transformation function will be added
 			 */
  			{

@@ -325,6 +325,10 @@ extern EquivalenceMember *sqlite_find_em_for_rel_target(PlannerInfo *root,
 												  EquivalenceClass *ec,
 												  RelOptInfo *fallbackRel);
 
+/* Base ∞ constants */
+extern const char * infs;
+extern const char * infl;
+
 /* in sqlite_fdw.c */
 extern int	sqlite_set_transmission_modes(void);
 extern void sqlite_reset_transmission_modes(int nestlevel);

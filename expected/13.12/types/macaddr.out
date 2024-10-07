@@ -836,8 +836,7 @@ ALTER FOREIGN TABLE "type_MACADDRpk" ALTER COLUMN col OPTIONS (SET column_type '
 --Testcase 156: NO ERR, but the same semantics!
 INSERT INTO "type_MACADDRpk" VALUES ('01:02:03:04:05:06');
 --Testcase 157:
-ALTER FOREIGN TABLE "type_MACADDRpk" ALTER COLUMN col OPTIONS (ADD column_type 'BLOB');
-ERROR:  option "column_type" provided more than once
+ALTER FOREIGN TABLE "type_MACADDRpk" ALTER COLUMN col OPTIONS (SET column_type 'BLOB');
 --Testcase 158: ERR - primary key
 INSERT INTO "type_MACADDRpk" VALUES ('01-02-03-04-05-06');
 ERROR:  Failed to execute remote SQL
@@ -854,6 +853,97 @@ SELECT * FROM "type_MACADDRpk";
 
 --Testcase 160:
 DELETE FROM "type_MACADDRpk";
+--no macaddr operators pushing down
+--Testcase 161:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "m" | '01:02:03:04:05:06' FROM "type_MACADDR";
+                                   QUERY PLAN                                   
+--------------------------------------------------------------------------------
+ Foreign Scan on public."type_MACADDR"
+   Output: (m | '01:02:03:04:05:06'::macaddr)
+   SQLite query: SELECT sqlite_fdw_macaddr_int(`m`, 6) FROM main."type_MACADDR"
+(3 rows)
+
+--Testcase 162:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "m" & '01:02:03:04:05:06' FROM "type_MACADDR";
+                                   QUERY PLAN                                   
+--------------------------------------------------------------------------------
+ Foreign Scan on public."type_MACADDR"
+   Output: (m & '01:02:03:04:05:06'::macaddr)
+   SQLite query: SELECT sqlite_fdw_macaddr_int(`m`, 6) FROM main."type_MACADDR"
+(3 rows)
+
+--Testcase 163:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT ~"m" FROM "type_MACADDR";
+                                   QUERY PLAN                                   
+--------------------------------------------------------------------------------
+ Foreign Scan on public."type_MACADDR"
+   Output: (~ m)
+   SQLite query: SELECT sqlite_fdw_macaddr_int(`m`, 6) FROM main."type_MACADDR"
+(3 rows)
+
+--Testcase 164:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "m" > '01:02:03:04:05:06' FROM "type_MACADDR";
+                                   QUERY PLAN                                   
+--------------------------------------------------------------------------------
+ Foreign Scan on public."type_MACADDR"
+   Output: (m > '01:02:03:04:05:06'::macaddr)
+   SQLite query: SELECT sqlite_fdw_macaddr_int(`m`, 6) FROM main."type_MACADDR"
+(3 rows)
+
+--Testcase 165:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "m" < '01:02:03:04:05:06' FROM "type_MACADDR";
+                                   QUERY PLAN                                   
+--------------------------------------------------------------------------------
+ Foreign Scan on public."type_MACADDR"
+   Output: (m < '01:02:03:04:05:06'::macaddr)
+   SQLite query: SELECT sqlite_fdw_macaddr_int(`m`, 6) FROM main."type_MACADDR"
+(3 rows)
+
+--Testcase 166:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "m" = '01:02:03:04:05:06' FROM "type_MACADDR";
+                                   QUERY PLAN                                   
+--------------------------------------------------------------------------------
+ Foreign Scan on public."type_MACADDR"
+   Output: (m = '01:02:03:04:05:06'::macaddr)
+   SQLite query: SELECT sqlite_fdw_macaddr_int(`m`, 6) FROM main."type_MACADDR"
+(3 rows)
+
+--Testcase 167:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "m" >= '01:02:03:04:05:06' FROM "type_MACADDR";
+                                   QUERY PLAN                                   
+--------------------------------------------------------------------------------
+ Foreign Scan on public."type_MACADDR"
+   Output: (m >= '01:02:03:04:05:06'::macaddr)
+   SQLite query: SELECT sqlite_fdw_macaddr_int(`m`, 6) FROM main."type_MACADDR"
+(3 rows)
+
+--Testcase 168:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "m" <= '01:02:03:04:05:06' FROM "type_MACADDR";
+                                   QUERY PLAN                                   
+--------------------------------------------------------------------------------
+ Foreign Scan on public."type_MACADDR"
+   Output: (m <= '01:02:03:04:05:06'::macaddr)
+   SQLite query: SELECT sqlite_fdw_macaddr_int(`m`, 6) FROM main."type_MACADDR"
+(3 rows)
+
+--Testcase 169:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "m" != '01:02:03:04:05:06' FROM "type_MACADDR";
+                                   QUERY PLAN                                   
+--------------------------------------------------------------------------------
+ Foreign Scan on public."type_MACADDR"
+   Output: (m <> '01:02:03:04:05:06'::macaddr)
+   SQLite query: SELECT sqlite_fdw_macaddr_int(`m`, 6) FROM main."type_MACADDR"
+(3 rows)
+
 --Testcase 200:
 DROP EXTENSION sqlite_fdw CASCADE;
 NOTICE:  drop cascades to 5 other objects
