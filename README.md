@@ -53,7 +53,7 @@ Features
 - Full support for `+Infinity` (means ∞) and `-Infinity` (means -∞) special values for IEEE 754-2008 numbers in `double precision`, `float` and `numeric` columns including such conditions as ` n < '+Infinity'` or ` m > '-Infinity'`.
 - Bidirectional data transformation for `geometry` and `geography` data types for SpatiaLite ↔ PostGIS. [EWKB](https://libgeos.org/specifications/wkb/#extended-wkb) data transport is used. See [GIS support description](GIS.md).
 
-### Pushdowning
+### Pushing down
 - `WHERE` clauses are pushdowned
 - Aggregate function are pushdowned
 - `ORDER BY` is pushdowned
@@ -66,9 +66,9 @@ Features
 - `upper`, `lower` and other character case functions are **not** pushed down because they does not work with UNICODE character in SQLite.
 - `WITH TIES` option is **not** pushed down.
 - Bit string `#` (XOR) operator is **not** pushed down because there is no equal SQLite operator.
-- operators for GIS data objects are **not** pushdowned except to `=`.
+- operators for GIS data objects are **not** pushdowned except for `=`.
 
-### Notes about pushdowning
+### Notes about pushing down
 
 - For push-down case, the number after floating point may be different from the result of PostgreSQL.
 
@@ -107,7 +107,7 @@ Prerequisites:
 * `make`
 * `postgresql-server-dev`, especially `postgres.h`
 * `libsqlite3-dev`, especially `sqlite.h`
-* `libspatialite-dev` only for geoinformational data types support (SpatiaLite ↔ PostGIS) or full tests
+* `libspatialite-dev` only for `geometry` and `geography` data types support (SpatiaLite ↔ PostGIS) or for full tests
 
 #### 1. Install SQLite & Postgres Development Libraries
 
@@ -123,9 +123,9 @@ Instead of `libsqlite3-dev` you can also [download SQLite source code][1] and [b
 
 #### 2. Build and install sqlite_fdw
 
-You can compile without `libspatialite-dev` and GIS support. This library is necessary only for full tests. PostGIS is not necessary for `sqlite_fdw` compilation anyway and also used only for full tests.
+`sqlite_fdw` does not require to be compiled with PostGIS and `libspatialite-dev`. They are used only for full test which includes test for GIS support.
 
-Before building please add a directory of `pg_config` to PATH or ensure `pg_config` program is accessable from command line only by the name.
+Before building please add a directory of `pg_config` to PATH or ensure `pg_config` program is accessible from command line only by the name.
 
 Build and install without GIS support
 ```sh
@@ -145,7 +145,7 @@ make
 make install
 ```
 You also can add `ENABLE_GIS=1` for GIS support or for testing if you have got
-compiled PostGIS in `contrib/postgis` directory. Please refer [PostGIS installation script](GitHubActions/build_postgres.sh) for Debian/Ubuntu configuration details.
+compiled PostGIS in `contrib/postgis` directory. Please refer [PostGIS installation script](GitHubActions/build_postgis.sh) for Debian/Ubuntu configuration details.
 
 Usage
 -----
@@ -296,8 +296,8 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 | [geometry](GIS.md)     | geometry         |
 | [geography](GIS.md)    | geography        |
 
-**Note:** in case of `sqlite_fdw` compiling without GIS support,
-GIS data types will be converted to `bytea`.
+**Note:** In case of `sqlite_fdw` compiling without GIS support, GIS data
+types will be converted to `bytea`.
 
 ### TRUNCATE support
 

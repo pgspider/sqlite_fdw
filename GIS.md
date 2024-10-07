@@ -15,27 +15,27 @@ Common conditions of GIS support
 2. You must install SpatiaLite header files before compilation.
 Linux packages like `libspatialite-dev` or `libspatialite-devel` can contain this files.
 3. A column should have data type (domain) name from following list:
-* addbandarg
-* box2d
-* box3d
-* geography
-* geometry
-* geometry_dump
-* geomval
-* getfaceedges_returntype
-* rastbandarg
-* raster
-* reclassarg
-* summarystats
-* topoelement
-* topoelementarray
-* topogeometry
-* unionarg
-* validatetopology_returntype
+	* addbandarg
+	* box2d
+	* box3d
+	* geography
+	* geometry
+	* geometry_dump
+	* geomval
+	* getfaceedges_returntype
+	* rastbandarg
+	* raster
+	* reclassarg
+	* summarystats
+	* topoelement
+	* topoelementarray
+	* topogeometry
+	* unionarg
+	* validatetopology_returntype
 
-Only listed data types have full data transformation support:
-* geography
-* geometry
+	Only listed data types have full data transformation support:
+	* geography
+	* geometry
 
 All other data types (domains) are treated as PostGIS specific, but unsupported.
 
@@ -75,12 +75,12 @@ Limitations
 * In opposition to PostGIS, **SpatiaLite doesn't allow to store any GIS vector data without SRID**.
 Hence any well-formed SpatiaLite data can be converted for PostGIS, but
 well-formed PostGIS data _without SRID_ cannot be converted for SpatiaLite.
-All of Spatialite input functions will return `NULL` in this case.
+All of SpatiaLite input functions will return `NULL` in this case.
 Please use [ST_SetSRID PostGIS function](https://postgis.net/docs/ST_SetSRID.html)
 in case of incomplete SRID data to prepare PostGIS data for importing to SpatiaLite
 or comparing with SpatiaLite data.
 
-* Only `=` PostgreSQL operator is pushdowned to SQLite (SpatiaLite) for vector GIS data such
-as `geography` or `geometry`. `<>` PostgreSQL operator is NOT pushdowned.
+* Only `=` PostgreSQL operator is pushed down to SQLite (SpatiaLite) for vector GIS data such
+as `geography` or `geometry`. `<>` PostgreSQL operator is NOT pushed down.
 
 End of description.

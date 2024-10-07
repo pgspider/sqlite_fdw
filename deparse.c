@@ -326,15 +326,13 @@ sqlite_is_foreign_param(PlannerInfo *root,
 /*
  * sqlite_deparsable_data_type:
  *
- * Checks if values of the data type with given Oid can be deparsed to SQLite
+ * Checks if values of the data type with given Oid can be deparsed
+ * to SQLite data type.
  */
 static bool
 sqlite_deparsable_data_type(Param *p)
 {
 	Oid type = p->paramtype;
-#ifdef SQLITE_FDW_GIS_ENABLE
-	const char *pg_dataTypeName = NULL;
-#endif
 	switch (type)
 	{
 		case INT2OID:
@@ -354,11 +352,8 @@ sqlite_deparsable_data_type(Param *p)
 	}
 #ifdef SQLITE_FDW_GIS_ENABLE
 	/* PostGIS data types can be supported only by name */
-	pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(type, p->paramtypmod));
-	elog(DEBUG3, "sqlite_fdw : %s, unusual %s column", __func__, pg_dataTypeName);
-	if (listed_datatype(pg_dataTypeName, postGisSQLiteCompatibleTypes))
+	if (listed_datatype_oid(type, p->paramtypmod, postGisSQLiteCompatibleTypes))
 	{
-		elog(DEBUG3, "sqlite_fdw : PostGIS listed column %s", pg_dataTypeName);
 		return true;
 	}
 #endif
@@ -385,7 +380,7 @@ sqlite_is_foreign_pathkey(PlannerInfo *root,
 		return false;
 
 	/* can't push down the sort if the pathkey's opfamily is not built-in */
-	if (!is_pg_builtin_Oid(pathkey->pk_opfamily))
+	if (!sqlite_is_builtin(pathkey->pk_opfamily))
 		return false;
 
 	/* Find a suitable EC member */
@@ -676,7 +671,6 @@ sqlite_foreign_expr_walker(Node *node,
 				Form_pg_operator	form;
 				Oid					oprleft = InvalidOid;
 				Oid					oprright = InvalidOid;
-				const char		   *pg_dataTypeName = NULL;
 
 				elog(DEBUG2, "sqlite_fdw : %s T_OpExpr|T_NullIfExpr", __func__);
 
@@ -696,7 +690,7 @@ sqlite_foreign_expr_walker(Node *node,
 				 * (If the operator is, surely its underlying function is
 				 * too.)
 				 */
-				if (!is_pg_builtin_Oid(oe->opno) && (strcmp(cur_opname, "=") != 0))
+				if (!sqlite_is_builtin(oe->opno) && (strcmp(cur_opname, "=") != 0))
 					return false;
 
 				/*
@@ -715,14 +709,19 @@ sqlite_foreign_expr_walker(Node *node,
 					return false;
 				}
 
+				/*
+				 * Operators with not standard Oids which also have different
+				 * data types or operators for data types outside of PostGIS
+				 * list will not pushed down.
+				 */
 				if (oprleft != InvalidOid && oprright != InvalidOid)
 				{
-					pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(oprleft, -1));
-					if(!is_pg_builtin_Oid(oe->opno) && (
-						!listed_datatype(pg_dataTypeName, postGisSQLiteCompatibleTypes) ||
+					if (!sqlite_is_builtin(oe->opno) &&
+						(!listed_datatype_oid(oprleft, -1, postGisSQLiteCompatibleTypes) ||
 						oprleft != oprright))
 						return false;
-					elog(DEBUG2, "sqlite_fdw : %s operator %s for %s", __func__, cur_opname, pg_dataTypeName);
+					/* Log operator for potential pushing down */
+					elog(DEBUG2, "sqlite_fdw : %s operator", cur_opname);
 				}
 
 				/*
@@ -764,7 +763,7 @@ sqlite_foreign_expr_walker(Node *node,
 				/*
 				 * Again, only built-in operators can be sent to remote.
 				 */
-				if (!is_pg_builtin_Oid(oe->opno))
+				if (!sqlite_is_builtin(oe->opno))
 					return false;
 
 				/*
@@ -1137,12 +1136,8 @@ sqlite_foreign_expr_walker(Node *node,
 	if (check_type)
 	{
 		Oid typeOid = exprType(node);
-		if (!is_pg_builtin_Oid(typeOid))
-		{
-			const char * resTypeName = TypeNameToString(makeTypeNameFromOid(typeOid, -1));
-			if (!listed_datatype(resTypeName, postGisSQLiteCompatibleTypes))
-				return false;
-		}
+		if (!sqlite_is_builtin(typeOid) && listed_datatype_oid(typeOid, -1, postGisSQLiteCompatibleTypes))
+			return false;
 	}
 
 	/*
@@ -2787,7 +2782,7 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 				if (strlen(extval) > SQLITE_FDW_BIT_DATATYPE_BUF_SIZE - 1 )
 				{
 					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-							errmsg("SQLite FDW dosens't support very long bit/varbit data"),
+							errmsg("SQLite FDW doens't support very long bit/varbit data"),
 							errhint("bit length %ld, maximum %ld", strlen(extval), SQLITE_FDW_BIT_DATATYPE_BUF_SIZE - 1)));
 				}
 				appendStringInfo(buf, "%lld", binstr2int64(extval));
@@ -2859,18 +2854,17 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 				/* PostGIS data types can be supported only by name
 				 * This is very rare and not fast algorythm branch
 				 */
-				const char *pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(node->consttype, node->consttypmod));
 
-				if (listed_datatype(pg_dataTypeName, postGisSpecificTypes))
+				if (listed_datatype_oid(node->consttype, node->consttypmod, postGisSpecificTypes))
 				{
-					elog(DEBUG4, "sqlite_fdw : deparse is postGisSpecificType %s", pg_dataTypeName);
+					const char *pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(node->consttype, node->consttypmod));
 					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
 									errmsg("This data type is PostGIS specific and is not supported by SpatiaLite"),
 									errhint("Data type: \"%s\" ", pg_dataTypeName)));
 					break;
 				}
 
-				if (listed_datatype(pg_dataTypeName, postGisSQLiteCompatibleTypes))
+				if (listed_datatype_oid(node->consttype, node->consttypmod, postGisSQLiteCompatibleTypes))
 				{
 					extval = OidOutputFunctionCall(typoutput, node->constvalue);
 					sqlite_deparse_PostGIS_value(extval, context->buf);
@@ -3048,7 +3042,8 @@ sqlite_deparse_operator_name(StringInfo buf, Form_pg_operator opform)
 	/* opname is not a SQL identifier, so we should not quote it. */
 	cur_opname = NameStr(opform->oprname);
 
-	/* Non built-in operators, for example PostGIS
+	/*
+	 * Non built-in operators, for example PostGIS
 	 * This operators doesn't belong to pg_catalog
 	 */
 	if (opform->oprnamespace != PG_CATALOG_NAMESPACE)
@@ -3513,7 +3508,7 @@ sqlite_print_remote_placeholder(Oid paramtype, int32 paramtypmod,
  * track of that would be a huge exercise.
  */
 bool
-is_pg_builtin_Oid(Oid oid)
+sqlite_is_builtin(Oid oid)
 {
 #if PG_VERSION_NUM >= 120000
 	return (oid < FirstGenbkiObjectId);

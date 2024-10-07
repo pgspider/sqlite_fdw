@@ -267,13 +267,13 @@ DROP SCHEMA "♂";
 --Testcase 305:
 DROP FOREIGN TABLE "types_PostGIS";
 
---Testcase 004:
-DROP EXTENSION sqlite_fdw CASCADE;
---Testcase 005:
-DROP EXTENSION postgis CASCADE;
 --Testcase 006:
-DROP EXTENSION postgis_raster CASCADE;
+DROP EXTENSION sqlite_fdw CASCADE;
 --Testcase 007:
+DROP EXTENSION postgis CASCADE;
+--Testcase 008:
+DROP EXTENSION postgis_raster CASCADE;
+--Testcase 009:
 DROP EXTENSION postgis_topology CASCADE;
---Testcase 008: -- types for types test
+--Testcase 010: -- types for types test
 CREATE EXTENSION postgis;

@@ -7,7 +7,8 @@
  * IDENTIFICATION
  * 		sqlite_gis.c
  *
- * routines that convert between SpatiaLite BLOB storage form and PostGIS EWKB
+ * Routines that convert between SpatiaLite BLOB storage form and PostGIS EWKB
+ * and some functions about detecting data type names from PostGIS set
  *-------------------------------------------------------------------------
  */
 
@@ -28,8 +29,10 @@
 static void
 			common_EWKB_error (Form_pg_attribute att, int len, const char* data, bool direction_to_pg);
 static char*
-			hexStringOfBlob(blobOutput b);
+			getHexFormOfBlob(blobOutput b);
 #endif
+
+#define		EWKT_SRID_TEST_PREFIX_LEN 12
 
 /*
  * This is data types from PostGIS 3.4. For a newer version use the following query
@@ -65,34 +68,28 @@ SpatiaLiteAsPostGISgeom (blobOutput spatiaLiteBlob, Form_pg_attribute att)
 	int res_len = 0;
 	char *res = NULL;
 
-	geo = gaiaFromSpatiaLiteBlobWkbEx (
-		(unsigned char *)spatiaLiteBlob.dat,
-		spatiaLiteBlob.len,
-		gpkg_mode,
-		gpkg_amphibious
-	);
+	geo = gaiaFromSpatiaLiteBlobWkbEx ((unsigned char *)spatiaLiteBlob.dat,
+										spatiaLiteBlob.len,
+										gpkg_mode,
+										gpkg_amphibious);
+
 	if (!geo)
 	{
-		common_EWKB_error(
-			att,
-			spatiaLiteBlob.len,
-			hexStringOfBlob(spatiaLiteBlob),
-			true
-		);
-		return NULL;
+		common_EWKB_error (att,
+						   spatiaLiteBlob.len,
+						   getHexFormOfBlob(spatiaLiteBlob),
+						   true);
 	}
+
 	gaiaOutBufferInitialize (&out_buf);
 	gaiaToEWKB (&out_buf, geo);
 	if (out_buf.Error || out_buf.Buffer == NULL)
 	{
 		gaiaOutBufferReset (&out_buf);
-		common_EWKB_error(
-			att,
-			spatiaLiteBlob.len,
-			hexStringOfBlob(spatiaLiteBlob),
-			true
-		);
-		return NULL;
+		common_EWKB_error (att,
+						   spatiaLiteBlob.len,
+						   getHexFormOfBlob(spatiaLiteBlob),
+						   true);
 	}
 
 	res_len = strlen(out_buf.Buffer);
@@ -103,17 +100,18 @@ SpatiaLiteAsPostGISgeom (blobOutput spatiaLiteBlob, Form_pg_attribute att)
 }
 
 /*
- * hexStringOfBlob:
+ * getHexFormOfBlob:
  *
  * Return normal ASCII hex string for a bytes from given BLOB
  */
 char*
-hexStringOfBlob(blobOutput b)
+getHexFormOfBlob(blobOutput b)
 {
 	const char hex[] = "0123456789abcdef";
 	const char *bstr = b.dat;
 	char* hstr = (char*)palloc(b.len * 2 + 1);
 	unsigned char *phstr = (unsigned char *)hstr;
+
 	for (int i = 0; i < b.len; i++)
 	{
 		if (bstr[i] == -128)
@@ -141,15 +139,14 @@ static inline bool hasSRID (char *hexEWKB)
 	int				endian;
 	int				endian_arch = gaiaEndianArch ();
 	int				srid;
-	#define			prefixLen 12
-	char			hexPrefix[prefixLen];
-	int				i = 0;
+	char			hexPrefix[EWKT_SRID_TEST_PREFIX_LEN];
+	int				i;
 
 	/* Copy only some initial hex byte images to get SRID flag and SRID */
-    for (;i < prefixLen && hexEWKB[i] != '\0'; i++) {
-        hexPrefix[i] = hexEWKB[i];
-    }
-    hexPrefix[i] = '\0'; // Null-terminate the substring
+	for (i = 0; i < EWKT_SRID_TEST_PREFIX_LEN && hexEWKB[i] != '\0'; i++) {
+		hexPrefix[i] = hexEWKB[i];
+	}
+	hexPrefix[i] = '\0'; /* Null-terminate the substring */
 	blob = gaiaParseHexEWKB ((const unsigned char *)hexPrefix, &blob_size);
 	if (blob == NULL)
 		return false;
@@ -188,13 +185,13 @@ EWKB2SpatiaLiteBlobImage (char *hexEWKB, Form_pg_attribute att)
 		{
 			char *pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(att->atttypid, att->atttypmod));
 			ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-							errmsg("SpatiaLite doesn't accenpt GIS data without SRID"),
+							errmsg("SpatiaLite doesn't accept GIS data without SRID"),
 							errhint("In column \"%.*s\" with data type \"%s\" there is incorrect value in %d bytes", (int)sizeof(att->attname.data), att->attname.data, pg_dataTypeName, len),
 							errcontext("Hex data: %s", hexEWKB)));
 		}
 		else
 			ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-							errmsg("SpatiaLite doesn't accenpt GIS data without SRID"),
+							errmsg("SpatiaLite doesn't accept GIS data without SRID"),
 							errhint("Not deparsable value for SpatiaLite in %d bytes", len),
 							errcontext("Hex data: %s", hexEWKB)));
 		pfree(hexEWKB);
@@ -252,7 +249,7 @@ common_EWKB_error (Form_pg_attribute att, int len, const char* data, bool direct
 	else
 		ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
 						errmsg("GIS data transformation error GEOS/PostGIS->SpatiaLite"),
-						((att != NULL) ? (errhint("In column \"%.*s\" with data type \"%s\" there is incorrect value in %d bytes", (int)sizeof(pgColND.data), pgColND.data, pg_dataTypeName, len)): (						errhint("Not deparsable value for SpatiaLite in %d bytes", len))),
+						((att != NULL) ? (errhint("In column \"%.*s\" with data type \"%s\" there is incorrect value in %d bytes", (int)sizeof(pgColND.data), pgColND.data, pg_dataTypeName, len)): (errhint("Not deparsable value for SpatiaLite in %d bytes", len))),
 						errcontext("Hex data: %s", data)));
 }
 
@@ -265,10 +262,9 @@ common_EWKB_error (Form_pg_attribute att, int len, const char* data, bool direct
 void
 sqlite_deparse_PostGIS_value(char *extval, StringInfo buf)
 {
-	blobOutput bO;
-	char* hexform = NULL;
-	bO = EWKB2SpatiaLiteBlobImage (extval, NULL);
-	hexform = hexStringOfBlob(bO);
+	blobOutput bO = EWKB2SpatiaLiteBlobImage (extval, NULL);
+	char* hexform = getHexFormOfBlob(bO);
+
 	appendStringInfo(buf, "X\'%s\'", hexform);
 	elog(DEBUG4, "sqlite_fdw : SpatialiteData %s", hexform);
 	pfree(hexform);

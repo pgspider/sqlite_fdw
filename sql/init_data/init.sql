@@ -107,6 +107,7 @@ WITH booldata AS (
 SELECT ROW_NUMBER() OVER () i, t1.i i1, t1.b b1, t2.i i2, t2.b b2 FROM booldata t1 INNER JOIN booldata t2 ON 1;
 
 -- SpatiaLite/PostGIS test
+-- This table name also tests SpatiaLite and PostGIS metadata functions. Made as analog of the next "martian" table.
 CREATE TABLE "♁" (
 	geom geometry NOT NULL,
 	osm_type varchar(16) NOT NULL,
@@ -117,6 +118,8 @@ CREATE TABLE "♁" (
 );
 
 -- SpatiaLite/PostGIS test
+-- This table and column names also tests SpatiaLite and PostGIS metadata functions. Any geometry or geography column declaration cause some actions inside of spatial metadata storage or journals of SpatiaLite and PostGIS.
+-- This is real table and column names from one of DBs of Union Astronomique International.
 CREATE TABLE "♂" (
 	id int4,
 	"UAI" varchar(254),

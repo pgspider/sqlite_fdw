@@ -4271,7 +4271,7 @@ sqlite_add_foreign_ordered_paths(PlannerInfo *root, RelOptInfo *input_rel,
 		/*
 		 * Can't push down the sort if pathkey's opfamily is not built-in.
 		 */
-		if (!is_pg_builtin_Oid(pathkey->pk_opfamily))
+		if (!sqlite_is_builtin(pathkey->pk_opfamily))
 			return;
 
 		/*
@@ -5164,14 +5164,15 @@ sqlite_to_pg_type(StringInfo str, char *type)
 		if (strncmp(type, t0, strlen(t0)) == 0)
 		{
 			bool postgis = false;
+
 			for (j = 0; postGisSQLiteCompatibleTypes[j] != NULL; j++)
 			{
 				const char *pgt = postGisSQLiteCompatibleTypes[j];
-					if (strncmp(type, pgt, strlen(pgt)) == 0)
-					{
-						postgis = true;
-						break;
-					}
+				if (strncmp(type, pgt, strlen(pgt)) == 0)
+				{
+					postgis = true;
+					break;
+				}
 			}
 
 			/* Pass type to PostgreSQL as it is */
@@ -5180,7 +5181,10 @@ sqlite_to_pg_type(StringInfo str, char *type)
 #ifdef SQLITE_FDW_GIS_ENABLE
 				appendStringInfoString(str, type);
 #else
-				/* Without GIS support columns with listed data type names treated just as BLOBs */
+				/*
+				 * Without GIS support.
+				 * Columns with listed data type names treated just as bytea
+				 */
 				if (postgis)
 					appendStringInfoString(str, "bytea");
 				else
@@ -5766,7 +5770,10 @@ sqlite_affinity_eqv_to_pgtype(Oid type)
 		case UUIDOID:
 			return SQLITE_BLOB;
 		default:
-			return SQLITE3_TEXT;
+			if (listed_datatype_oid(type, -1, postGisSQLiteCompatibleTypes))
+				return SQLITE_BLOB; /* SpatiaLite GIS data */
+			else
+				return SQLITE3_TEXT;
 	}
 }
 

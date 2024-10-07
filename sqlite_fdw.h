@@ -319,7 +319,7 @@ extern bool sqlite_is_foreign_pathkey(PlannerInfo *root,
 extern bool sqlite_is_foreign_function_tlist(PlannerInfo *root,
 											 RelOptInfo *baserel,
 											 List *tlist);
-extern bool is_pg_builtin_Oid(Oid objectId);
+extern bool sqlite_is_builtin(Oid objectId);
 
 extern EquivalenceMember *sqlite_find_em_for_rel(PlannerInfo *root,
 									EquivalenceClass *ec,
@@ -395,24 +395,19 @@ extern void sqlite_do_sql_command(sqlite3 * conn, const char *sql, int level, Li
 void sqlite_fdw_data_norm_functs_init(sqlite3* db);
 
 /* sqlite_query.c headers */
-sqlite3_int64
-			binstr2int64(const char *s);
-bool
-			listed_datatype (const char * tn, const char ** arr);
-blobOutput
-			sqlite_bind_blob_algo (Datum value);
+sqlite3_int64 binstr2int64(const char *s);
+bool		listed_datatype (const char * tn, const char ** arr);
+blobOutput	sqlite_datum_to_blob (Datum value);
+bool		listed_datatype_oid (Oid atttypid, Oid atttypmod, const char **arr);
 
+/* sqlite_gis.c headers */
 extern const char *postGisSpecificTypes[];
 extern const char *postGisSQLiteCompatibleTypes[];
 
-/* sqlite_gis.c headers */
 #ifdef SQLITE_FDW_GIS_ENABLE
-char*
-			SpatiaLiteAsPostGISgeom (blobOutput spatiaLiteBlob, Form_pg_attribute att);
-blobOutput
-			PostGISgeomAsSpatiaLite (Datum value, Form_pg_attribute att);
-void
-			sqlite_deparse_PostGIS_value(char *extval, StringInfo buf);
+char*		SpatiaLiteAsPostGISgeom (blobOutput spatiaLiteBlob, Form_pg_attribute att);
+blobOutput	PostGISgeomAsSpatiaLite (Datum value, Form_pg_attribute att);
+void		sqlite_deparse_PostGIS_value(char *extval, StringInfo buf);
 #endif
 
 #endif							/* SQLITE_FDW_H */

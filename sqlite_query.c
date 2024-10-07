@@ -121,7 +121,6 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 						memcpy(VARDATA(value_datum), sqlite3_value_blob(val), value_byte_size_blob_or_utf8);
 						SET_VARSIZE(value_datum, value_byte_size_blob_or_utf8 + VARHDRSZ);
 						return (struct NullableDatum) {PointerGetDatum((const void *)value_datum), false};
-						break;
 					}
 				}
 				break;
@@ -473,7 +472,7 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 				{
 					elog(DEBUG4, "sqlite_fdw : is postGisSpecificType %s", pg_dataTypeName);
 					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-									errmsg("This data type is PostGIS specific and is not supported by SpatiaLite"),
+									errmsg("This data type is PostGIS specific and is not supported by SpatiaLite or sqlite_fdw"),
 									errhint("Data type: \"%s\" in column \"%.*s\"", pg_dataTypeName, (int)sizeof(pgColND.data), pgColND.data)));
 				}
 
@@ -491,23 +490,23 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 							}
 						case SQLITE_BLOB: /* <-- proper and recommended SQLite affinity of value for pgtyp */
 						{
-							#ifdef SQLITE_FDW_GIS_ENABLE
+#ifdef SQLITE_FDW_GIS_ENABLE
 							unsigned const char * p_blob = sqlite3_value_blob(val);
 							valstr = SpatiaLiteAsPostGISgeom (
 								(struct blobOutput){(const char *)p_blob, value_byte_size_blob_or_utf8},
 								att
 							);
 							/* !!! use valstr later! Hex Input */
-							#else
+#else
 							ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
 											errmsg("This PostGIS data type is supported by SpatiaLite, but FDW compiled without GIS data support"),
 											errhint("Data type: \"%s\" in column \"%.*s\"", pg_dataTypeName, (int)sizeof(pgColND.data), pgColND.data)));
-							#endif
+#endif
 							break;
 						}
 						case SQLITE3_TEXT:
 						{
-							/* WKT data transport between PostGIS and SpatiaLite ? */
+							/* WKT data transport is not implemented */
 							sqlite_value_to_pg_error();
 							break;
 						}
@@ -518,7 +517,6 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 					/* common, not PostGIS case */
 					valstr = sqlite_text_value_to_pg_db_encoding(val);
 				}
-				break;
 			}
 		break;
 	}
@@ -531,12 +529,12 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 }
 
 /*
- * sqlite_bind_blob_algo:
+ * sqlite_datum_to_blob:
  * Common part of extracting and preparing PostgreSQL bytea data
  * for SQLite binding as blob
  */
 blobOutput
-sqlite_bind_blob_algo (Datum value)
+sqlite_datum_to_blob (Datum value)
 {
 	int			len;
 	char	   *dat = NULL;
@@ -680,7 +678,7 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 			}
 		case BYTEAOID:
 			{
-				blobOutput b = sqlite_bind_blob_algo(value);
+				blobOutput b = sqlite_datum_to_blob(value);
 				ret = sqlite3_bind_blob(stmt, attnum, b.dat, b.len, SQLITE_TRANSIENT);
 				break;
 			}
@@ -746,14 +744,14 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 				 */
 				if (listed_datatype(pg_dataTypeName, postGisSQLiteCompatibleTypes))
 				{
-					#ifdef SQLITE_FDW_GIS_ENABLE
+#ifdef SQLITE_FDW_GIS_ENABLE
 					blobOutput b = PostGISgeomAsSpatiaLite(value, att);
 					ret = sqlite3_bind_blob(stmt, attnum, b.dat, b.len, SQLITE_TRANSIENT);
-					#else
+#else
 					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
 									errmsg("This PostGIS data type is supported by SpatiaLite, but FDW compiled without GIS data support"),
 									errhint("Data type: \"%s\" in column \"%.*s\"", pg_dataTypeName, (int)sizeof(pgColND.data), pgColND.data)));
-					#endif
+#endif
 					break;
 				}
 
@@ -780,7 +778,7 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 
 /*
  * sqlite_text_value_to_pg_db_encoding:
- * Gives text from SQLite in PostgreSQL database encoding
+ * Convert SQLite text to PostgreSQL text with database encoding
  */
 static char *
 sqlite_text_value_to_pg_db_encoding(sqlite3_value *val)
@@ -856,6 +854,7 @@ listed_datatype (const char * tn, const char ** arr)
 {
 	int i = 0;
 	char * n = strchr(tn, '.');
+
 	if ( n != NULL )
 		n = n + sizeof(char);
 	else
@@ -870,5 +869,20 @@ listed_datatype (const char * tn, const char ** arr)
 		i++;
 	}
 	return false;
+}
+
+/*
+ * listed_datatype_oid:
+ * Checks if Oid of data type is one of Oids of listed data types
+ * listed in given array.
+ */
+bool
+listed_datatype_oid(Oid atttypid, Oid atttypmod, const char** arr)
+{
+	const char *pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(atttypid, atttypmod));
+	bool		listed = listed_datatype(pg_dataTypeName, arr);
+
+	elog(DEBUG2, "sqlite_fdw : %s : unusual data type %s, listed = %d", __func__, pg_dataTypeName, listed);
+	return listed;
 }
 

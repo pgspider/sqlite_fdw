@@ -44,7 +44,7 @@ CREATE DOMAIN validatetopology_returntype AS bytea;
 --Testcase 30:
 CREATE FOREIGN TABLE "types_PostGIS"( "i" int OPTIONS (key 'true'), gm geometry, gg geography, r raster, t text) SERVER sqlite_svr;
 
---Testcase 31: ERR - raster
+--Testcase 31: ERR - geometry
 INSERT INTO "types_PostGIS" ( "i", gm, gg, r, t ) VALUES (1, decode('0101000020e6100000fd5aa846f9733e406c054d4bacd74d40', 'hex'),  decode('0101000020e6100000fd5aa846f9733e406c054d4bacd74d40', 'hex'),  decode('1223456890', 'hex'), '{"genus": "Rhododendron", "taxon": "Rhododendron ledebourii", "natural": "shrub", "genus:ru": "Рододендрон", "taxon:ru": "Рододендрон Ледебура", "source:taxon": "board"}');
 --Testcase 32:
 ALTER FOREIGN TABLE "types_PostGIS" ALTER COLUMN "gm" TYPE bytea;
@@ -58,7 +58,7 @@ INSERT INTO "types_PostGIS" ( "i", gm, gg, t ) VALUES (1, decode('0001e6100000bf
 ALTER FOREIGN TABLE "types_PostGIS" ALTER COLUMN "gm" TYPE geometry;
 --Testcase 36:
 ALTER FOREIGN TABLE "types_PostGIS" ALTER COLUMN "gg" TYPE geography;
---Testcase 37: OK
+--Testcase 37: ERR - no GIS data support
 SELECT "i", gm, gg, t FROM "types_PostGIS";
 --Testcase 38:
 EXPLAIN (VERBOSE, COSTS OFF)
@@ -66,11 +66,11 @@ SELECT "i", gm, gg, t FROM "types_PostGIS";
 --Testcase 39:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm, gg, t FROM "types_PostGIS" WHERE gm = '0101000020e6100000bf72ce99fe763e40ed4960730ed84d40'::geometry;
---Testcase 40:
+--Testcase 40: ERR - no GIS data support
 SELECT "i", gm, gg, t FROM "types_PostGIS" WHERE gm = '0101000020e6100000bf72ce99fe763e40ed4960730ed84d40'::geometry;
 
 -- Insert PostGIS/GEOS BLOB, read SpatiaLite BLOB
---Testcase 41: OK
+--Testcase 41: ERR - no GIS data support
 INSERT INTO "types_PostGIS" ( "i", gm, gg, t ) VALUES (2, decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex'),  decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex'), '{"genus": "Rhododendron", "taxon": "Rhododendron ledebourii"}');
 --Testcase 42:
 ALTER FOREIGN TABLE "types_PostGIS" ALTER COLUMN "gm" TYPE bytea;
@@ -111,9 +111,10 @@ CREATE FOREIGN TABLE "♁ FDW"(
 	ver int NOT NULL,
 	arr text,
 	t jsonb
-) SERVER sqlite_svr;
+) SERVER sqlite_svr
+OPTIONS (table '♁');
 
---Testcase 57:
+--Testcase 57: empty data set, no problems
 SELECT * FROM "♁ FDW";
 
 --Testcase 004:

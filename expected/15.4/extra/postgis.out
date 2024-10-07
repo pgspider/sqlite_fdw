@@ -294,7 +294,7 @@ CREATE FOREIGN TABLE "♁ FDW"(
 ) SERVER sqlite_svr OPTIONS (table '♁');
 --Testcase 54: ERR - No SRID
 INSERT INTO "♁ FDW" SELECT * FROM "♁";
-ERROR:  SpatiaLite doesn't accenpt GIS data without SRID
+ERROR:  SpatiaLite doesn't accept GIS data without SRID
 HINT:  In column "geom" with data type "public.geometry" there is incorrect value in 42 bytes
 CONTEXT:  Hex data: 01010000009DA62AC82A763E4045F69C4F78D84D40
 --Testcase 55: OK
@@ -668,19 +668,19 @@ DROP TABLE "♂"."テスト";
 DROP SCHEMA "♂";
 --Testcase 305:
 DROP FOREIGN TABLE "types_PostGIS";
---Testcase 004:
+--Testcase 006:
 DROP EXTENSION sqlite_fdw CASCADE;
 NOTICE:  drop cascades to server sqlite_svr
---Testcase 005:
+--Testcase 007:
 DROP EXTENSION postgis CASCADE;
 NOTICE:  drop cascades to 2 other objects
 DETAIL:  drop cascades to extension postgis_raster
 drop cascades to extension postgis_topology
---Testcase 006:
+--Testcase 008:
 DROP EXTENSION postgis_raster CASCADE;
 ERROR:  extension "postgis_raster" does not exist
---Testcase 007:
+--Testcase 009:
 DROP EXTENSION postgis_topology CASCADE;
 ERROR:  extension "postgis_topology" does not exist
---Testcase 008: -- types for types test
+--Testcase 010: -- types for types test
 CREATE EXTENSION postgis;
