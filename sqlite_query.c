@@ -394,7 +394,8 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 								break;
 							}
 						}
-					/* SQLite UUID output always normalized to blob.
+					/*
+					 * SQLite UUID output always normalized to blob.
 					 * In sqlite_data_norm.c there is special additional C function.
 					 */
 					case SQLITE3_TEXT:
@@ -417,7 +418,8 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 			{
 				switch (sqlite_value_affinity)
 				{
-					/* SQLite MAC address output always normalized to int64.
+					/*
+					 * SQLite MAC address output always normalized to int64.
 					 * In sqlite_data_norm.c there is special additional C function.
 					 */
 					case SQLITE_INTEGER: /* <-- proper and recommended SQLite affinity of value for pgtyp */
@@ -465,7 +467,8 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 			{
 				switch (sqlite_value_affinity)
 				{
-					/* SQLite MAC address output always normalized to int64.
+					/*
+					 * SQLite MAC address output always normalized to int64.
 					 * In sqlite_data_norm.c there is special additional C function.
 					 */
 					case SQLITE_INTEGER: /* <-- proper and recommended SQLite affinity of value for pgtyp */
@@ -542,7 +545,8 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 					}
 					break;
 				}
-		/* some popular datatypes for default algorythm branch
+		/*
+		 * some popular datatypes for default algorythm branch
 		 * case BPCHAROID:
 		 * case VARCHAROID:
 		 * case TEXTOID:
@@ -719,6 +723,7 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 		case UUIDOID:
 			{
 				int	sqlite_aff = SQLITE_NULL;
+
 				if (relid)
 				{
 					char * optv = get_column_option_string (relid, attnum, "column_type");
@@ -726,6 +731,7 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 					elog(DEBUG3, "sqlite_fdw : col type %s ", optv);
 					sqlite_aff = sqlite_affinity_code(optv);
 				}
+
 				if (sqlite_aff == SQLITE_BLOB)
 				{
 					unsigned char *dat = palloc0(UUID_LEN);
@@ -749,8 +755,10 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 				break;
 			}
 		case MACADDROID:
+		case MACADDR8OID:
 			{
-				int	sqlite_aff = SQLITE_NULL;
+				int	sqlite_aff = SQLITE_INTEGER; /* default mac addr affinity */
+				
 				if (relid)
 				{
 					char * optv = get_column_option_string (relid, attnum, "column_type");
@@ -758,21 +766,8 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 					elog(DEBUG3, "sqlite_fdw : column_type affinity %s ", optv);
 					sqlite_aff = sqlite_affinity_code(optv);
 				}
-				if (sqlite_aff == SQLITE_BLOB)
-				{
-					unsigned char  *mca = palloc0(MACADDR_LEN);
-					macaddr		   *m = DatumGetMacaddrP(value);
-
-					elog(DEBUG2, "sqlite_fdw : bind mac as blob");
-					mca[0] = m->a;
-					mca[1] = m->b;
-					mca[2] = m->c;
-					mca[3] = m->d;
-					mca[4] = m->e;
-					mca[5] = m->f;
-					ret = sqlite3_bind_blob(stmt, attnum, mca, MACADDR_LEN, SQLITE_TRANSIENT);
-				}
-				else if (sqlite_aff == SQLITE3_TEXT)
+				
+				if (sqlite_aff == SQLITE3_TEXT)
 				{
 					char	   *outputString = NULL;
 					Oid			outputFunctionId = InvalidOid;
@@ -782,77 +777,70 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 					outputString = OidOutputFunctionCall(outputFunctionId, value); /* MAC text belongs to ASCII subset, no need to translate encoding */
 					ret = sqlite3_bind_text(stmt, attnum, outputString, -1, SQLITE_TRANSIENT);
 				}
-				else
+				else if (sqlite_aff == SQLITE_BLOB)
 				{
-					/* MAC as integer, default */
-					macaddr *m = DatumGetMacaddrP(value);
+					if (type == MACADDROID)
+					{
+						unsigned char  *mca = palloc0(MACADDR_LEN);
+						macaddr		   *m = DatumGetMacaddrP(value);
+
+						elog(DEBUG2, "sqlite_fdw : bind mac as blob");
+						mca[0] = m->a;
+						mca[1] = m->b;
+						mca[2] = m->c;
+						mca[3] = m->d;
+						mca[4] = m->e;
+						mca[5] = m->f;
+						ret = sqlite3_bind_blob(stmt, attnum, mca, MACADDR_LEN, SQLITE_TRANSIENT);
+					}
+					else
+					{
+						unsigned char  *mca = palloc0(MACADDR8_LEN);
+						macaddr8	   *m = DatumGetMacaddr8P(value);
+
+						elog(DEBUG2, "sqlite_fdw : bind mac8 as blob");
+						mca[0] = m->a;
+						mca[1] = m->b;
+						mca[2] = m->c;
+						mca[3] = m->d;
+						mca[4] = m->e;
+						mca[5] = m->f;
+						mca[6] = m->g;
+						mca[7] = m->h;
+						ret = sqlite3_bind_blob(stmt, attnum, mca, MACADDR8_LEN, SQLITE_TRANSIENT);
+					}
+				}
+				else /* default, INTEGER */
+				{
 					sqlite3_uint64 dat = 0;
+					
+					if (type == MACADDROID)
+					{
+						macaddr *m = DatumGetMacaddrP(value);
 
-					elog(DEBUG2, "sqlite_fdw : bind mac as integer");
-					dat = ((sqlite3_int64)(m->a) << (CHAR_BIT*5))
-						+ ((sqlite3_int64)(m->b) << (CHAR_BIT*4))
-						+ ((sqlite3_int64)(m->c) << (CHAR_BIT*3))
-						+ ((sqlite3_int64)(m->d) << (CHAR_BIT*2))
-						+ ((sqlite3_int64)(m->e) << (CHAR_BIT*1))
-						+ ((sqlite3_int64)(m->f) << (CHAR_BIT*0));
-					elog(DEBUG2, "sqlite_fdw : bind mac68 as integer %lld", dat);
+						dat = ((sqlite3_int64)(m->a) << (CHAR_BIT*5))
+							+ ((sqlite3_int64)(m->b) << (CHAR_BIT*4))
+							+ ((sqlite3_int64)(m->c) << (CHAR_BIT*3))
+							+ ((sqlite3_int64)(m->d) << (CHAR_BIT*2))
+							+ ((sqlite3_int64)(m->e) << (CHAR_BIT*1))
+							+ ((sqlite3_int64)(m->f) << (CHAR_BIT*0));
+						elog(DEBUG2, "sqlite_fdw : bind mac6 as integer %lld", dat);
+						}
+					else
+					{
+						macaddr8 *m = DatumGetMacaddr8P(value);
+
+						dat = ((sqlite3_int64)(m->a) << (CHAR_BIT*7))
+							+ ((sqlite3_int64)(m->b) << (CHAR_BIT*6))
+							+ ((sqlite3_int64)(m->c) << (CHAR_BIT*5))
+							+ ((sqlite3_int64)(m->d) << (CHAR_BIT*4))
+							+ ((sqlite3_int64)(m->e) << (CHAR_BIT*3))
+							+ ((sqlite3_int64)(m->f) << (CHAR_BIT*2))
+							+ ((sqlite3_int64)(m->g) << (CHAR_BIT*1))
+							+ ((sqlite3_int64)(m->h) << (CHAR_BIT*0));
+						elog(DEBUG2, "sqlite_fdw : bind mac8 as integer %lld", dat);
+					}
 					ret = sqlite3_bind_int64(stmt, attnum, dat);
-				}
-				break;
-			}
-		case MACADDR8OID:
-			{
-				int	sqlite_aff = SQLITE_NULL;
-				if (relid)
-				{
-					char * optv = get_column_option_string (relid, attnum, "column_type");
-
-					elog(DEBUG3, "sqlite_fdw : col type %s ", optv);
-					sqlite_aff = sqlite_affinity_code(optv);
-				}
-				if (sqlite_aff == SQLITE_BLOB)
-				{
-					unsigned char  *mca = palloc0(MACADDR8_LEN);
-					macaddr8	   *m = DatumGetMacaddr8P(value);
-
-					elog(DEBUG2, "sqlite_fdw : bind mac8 as blob");
-					mca[0] = m->a;
-					mca[1] = m->b;
-					mca[2] = m->c;
-					mca[3] = m->d;
-					mca[4] = m->e;
-					mca[5] = m->f;
-					mca[6] = m->g;
-					mca[7] = m->h;
-					ret = sqlite3_bind_blob(stmt, attnum, mca, MACADDR8_LEN, SQLITE_TRANSIENT);
-				}
-				else if (sqlite_aff == SQLITE3_TEXT)
-				{
-					char	   *outputString = NULL;
-					Oid			outputFunctionId = InvalidOid;
-					bool		typeVarLength = false;
-					elog(DEBUG2, "sqlite_fdw : bind mac as text");
-					getTypeOutputInfo(type, &outputFunctionId, &typeVarLength);
-					outputString = OidOutputFunctionCall(outputFunctionId, value); /* MAC text belongs to ASCII subset, no need to translate encoding */
-					ret = sqlite3_bind_text(stmt, attnum, outputString, -1, SQLITE_TRANSIENT);
-				}
-				else
-				{
-					/* MAC as integer, default */
-					macaddr8 *m = DatumGetMacaddr8P(value);
-					sqlite3_uint64 dat = 0;
-
-					elog(DEBUG2, "sqlite_fdw : bind mac8 as integer");
-					dat = ((sqlite3_int64)(m->a) << (CHAR_BIT*7))
-						+ ((sqlite3_int64)(m->b) << (CHAR_BIT*6))
-						+ ((sqlite3_int64)(m->c) << (CHAR_BIT*5))
-						+ ((sqlite3_int64)(m->d) << (CHAR_BIT*4))
-						+ ((sqlite3_int64)(m->e) << (CHAR_BIT*3))
-						+ ((sqlite3_int64)(m->f) << (CHAR_BIT*2))
-						+ ((sqlite3_int64)(m->g) << (CHAR_BIT*1))
-						+ ((sqlite3_int64)(m->h) << (CHAR_BIT*0));
-					ret = sqlite3_bind_int64(stmt, attnum, dat);
-					elog(DEBUG2, "sqlite_fdw : bind mac8 as integer %lld", dat);
 				}
 				break;
 			}

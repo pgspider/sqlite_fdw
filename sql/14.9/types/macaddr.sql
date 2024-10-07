@@ -308,7 +308,7 @@ ALTER FOREIGN TABLE "type_MACADDRpk" ALTER COLUMN col OPTIONS (SET column_type '
 --Testcase 156: NO ERR, but the same semantics!
 INSERT INTO "type_MACADDRpk" VALUES ('01:02:03:04:05:06');
 --Testcase 157:
-ALTER FOREIGN TABLE "type_MACADDRpk" ALTER COLUMN col OPTIONS (ADD column_type 'BLOB');
+ALTER FOREIGN TABLE "type_MACADDRpk" ALTER COLUMN col OPTIONS (SET column_type 'BLOB');
 --Testcase 158: ERR - primary key
 INSERT INTO "type_MACADDRpk" VALUES ('01-02-03-04-05-06');
 --Testcase 159:

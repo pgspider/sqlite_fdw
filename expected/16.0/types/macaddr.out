@@ -81,10 +81,9 @@ INSERT INTO "type_MACADDR" ("i", "m") VALUES (30, '08002F010203');
                     QUERY PLAN                    
 --------------------------------------------------
  Insert on public."type_MACADDR"
-   Batch Size: 1
    ->  Result
          Output: 30, '08:00:2f:01:02:03'::macaddr
-(4 rows)
+(3 rows)
 
 --Testcase 044:
 ALTER FOREIGN TABLE "type_MACADDR" ALTER COLUMN "m" OPTIONS (ADD column_type 'BLOB');
@@ -122,10 +121,9 @@ INSERT INTO "type_MACADDR" ("i", "m") VALUES (44, '08002F010203');
                     QUERY PLAN                    
 --------------------------------------------------
  Insert on public."type_MACADDR"
-   Batch Size: 1
    ->  Result
          Output: 44, '08:00:2f:01:02:03'::macaddr
-(4 rows)
+(3 rows)
 
 --Testcase 060:
 ALTER FOREIGN TABLE "type_MACADDR" ALTER COLUMN "m" OPTIONS (SET column_type 'text');
@@ -163,10 +161,9 @@ INSERT INTO "type_MACADDR" ("i", "m") VALUES (58, '08002F010203');
                     QUERY PLAN                    
 --------------------------------------------------
  Insert on public."type_MACADDR"
-   Batch Size: 1
    ->  Result
          Output: 58, '08:00:2f:01:02:03'::macaddr
-(4 rows)
+(3 rows)
 
 --Testcase 076:
 CREATE FOREIGN TABLE "type_MACADDR+"( "i" int OPTIONS (key 'true'), "m" macaddr, "t" text, "l" smallint, "tx" varchar(64)) SERVER sqlite_svr OPTIONS (table 'type_MACADDR+');
@@ -839,8 +836,7 @@ ALTER FOREIGN TABLE "type_MACADDRpk" ALTER COLUMN col OPTIONS (SET column_type '
 --Testcase 156: NO ERR, but the same semantics!
 INSERT INTO "type_MACADDRpk" VALUES ('01:02:03:04:05:06');
 --Testcase 157:
-ALTER FOREIGN TABLE "type_MACADDRpk" ALTER COLUMN col OPTIONS (ADD column_type 'BLOB');
-ERROR:  option "column_type" provided more than once
+ALTER FOREIGN TABLE "type_MACADDRpk" ALTER COLUMN col OPTIONS (SET column_type 'BLOB');
 --Testcase 158: ERR - primary key
 INSERT INTO "type_MACADDRpk" VALUES ('01-02-03-04-05-06');
 ERROR:  Failed to execute remote SQL
