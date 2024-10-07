@@ -26,8 +26,7 @@ MODE="$2"
 cd ./workdir/postgresql-${VERSION}/contrib/sqlite_fdw
 
 if [ "$MODE" == "postgis" ]; then
-	MAKEFILE_OPT="ENABLE_GIS=1"
-	echo "$MODE mode, makefile option = $MAKEFILE_OPT"
+	export ENABLE_GIS=1
 
 	# Start postgres server
 	POSTGRES_HOME=/usr/local/pgsql

@@ -2041,7 +2041,7 @@ sqliteBeginForeignModify(ModifyTableState *mtstate,
 	Plan	   *subplan;
 	int			i;
 
-	elog(DEBUG1, " sqlite_fdw : %s", __func__);
+	elog(DEBUG1, "sqlite_fdw : %s", __func__);
 
 	foreignTableId = RelationGetRelid(rel);
 #if (PG_VERSION_NUM >= 140000)
@@ -5118,6 +5118,7 @@ static void
 sqlite_to_pg_type(StringInfo str, char *type)
 {
 	int			i;
+	int			j;
 
 	/*
 	 * type conversion based on SQLite affiniy
@@ -5143,6 +5144,8 @@ sqlite_to_pg_type(StringInfo str, char *type)
 		{"varchar"},
 		{"char"},
 		{"uuid"},
+		{"geometry"},
+		{"geography"},
 		{NULL}
 	};
 
@@ -5157,11 +5160,37 @@ sqlite_to_pg_type(StringInfo str, char *type)
 
 	for (i = 0; pg_type[i][0] != NULL; i++)
 	{
-		if (strncmp(type, pg_type[i][0], strlen(pg_type[i][0])) == 0)
+		const char *t0 = pg_type[i][0];
+		if (strncmp(type, t0, strlen(t0)) == 0)
 		{
+			bool postgis = false;
+
+			for (j = 0; postGisSQLiteCompatibleTypes[j] != NULL; j++)
+			{
+				const char *pgt = postGisSQLiteCompatibleTypes[j];
+				if (strncmp(type, pgt, strlen(pgt)) == 0)
+				{
+					postgis = true;
+					break;
+				}
+			}
+
 			/* Pass type to PostgreSQL as it is */
 			if (pg_type[i][1] == NULL)
+			{
+#ifdef SQLITE_FDW_GIS_ENABLE
 				appendStringInfoString(str, type);
+#else
+				/*
+				 * Without GIS support.
+				 * Columns with listed data type names treated just as bytea
+				 */
+				if (postgis)
+					appendStringInfoString(str, "bytea");
+				else
+					appendStringInfoString(str, type);
+#endif
+			}
 			else
 				appendStringInfoString(str, pg_type[i][1]);
 			pfree(type);
@@ -5741,7 +5770,10 @@ sqlite_affinity_eqv_to_pgtype(Oid type)
 		case UUIDOID:
 			return SQLITE_BLOB;
 		default:
-			return SQLITE3_TEXT;
+			if (listed_datatype_oid(type, -1, postGisSQLiteCompatibleTypes))
+				return SQLITE_BLOB; /* SpatiaLite GIS data */
+			else
+				return SQLITE3_TEXT;
 	}
 }
 
