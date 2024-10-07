@@ -2078,7 +2078,7 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 #endif
 		pg_atttyp = get_atttype(rte->relid, varattno);
 
-		/* 
+		/*
 		 * PostgreSQL data types with possible mixed affinity SQLite base we should
 		 * normalize to preferred form in SQLite before transfer to PostgreSQL.
 		 * Recommended form for normalisation is someone from 1<->1 with PostgreSQL
@@ -2824,7 +2824,7 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 			}
 			break;
 		case UUIDOID:
-			/* 
+			/*
 			 * always deparse to BLOB, in case of UPDATE with text affinity
 			 * transformation function will be added
 			 */

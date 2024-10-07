@@ -590,14 +590,14 @@ sqlite_fdw_data_norm_macaddr(sqlite3_context* context, int argc, sqlite3_value**
 	sqlite3_value* len_arg = argv[1];
 	int val_aff = sqlite3_value_type(val_arg);
 	int len = 0;
-	
+
 	if (val_aff == SQLITE_INTEGER)
 	{
 		/* the fastest call for typical case */
 		sqlite3_result_value(context, val_arg);
 		return;
 	}
-	
+
 	if (sqlite3_value_type(len_arg) != SQLITE_INTEGER)
 	{
 		ereport(ERROR,
@@ -723,7 +723,7 @@ error_catcher(sqlite3* db, int rc)
 	if (rc == SQLITE_OK)
 		return;
 	else
-	{	
+	{
 		const char * err = sqlite3_errmsg(db);
 		ereport(ERROR,
 				(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
@@ -757,12 +757,12 @@ sqlite_fdw_data_norm_functs_init(sqlite3* db)
 	rc = sqlite3_create_function(db, "sqlite_fdw_macaddr_blob", 2, det_flags, 0, sqlite_fdw_macaddr_blob, 0, 0);
 	error_catcher(db, rc);
 
-	/* 
+	/*
 	 *	static const int flags = SQLITE_UTF8 | SQLITE_INNOCUOUS;
 	 *	sqlite3_create_function(db, "uuid_generate_v4", 0, flags, 0, uuid_generate, 0, 0);
 	 *	sqlite3_create_function(db, "gen_random_uuid", 1, flags, 0, uuid_generate, 0, 0);
 	 *
 	 * no rc because in future SQLite releases it can be added UUID generation function
-	 * PostgreSQL 13+, no gen_random_uuid() before	 
+	 * PostgreSQL 13+, no gen_random_uuid() before
 	 */
 }

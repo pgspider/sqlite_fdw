@@ -758,7 +758,7 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 		case MACADDR8OID:
 			{
 				int	sqlite_aff = SQLITE_INTEGER; /* default mac addr affinity */
-				
+
 				if (relid)
 				{
 					char * optv = get_column_option_string (relid, attnum, "column_type");
@@ -766,7 +766,7 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 					elog(DEBUG3, "sqlite_fdw : column_type affinity %s ", optv);
 					sqlite_aff = sqlite_affinity_code(optv);
 				}
-				
+
 				if (sqlite_aff == SQLITE3_TEXT)
 				{
 					char	   *outputString = NULL;
@@ -813,7 +813,7 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 				else /* default, INTEGER */
 				{
 					sqlite3_uint64 dat = 0;
-					
+
 					if (type == MACADDROID)
 					{
 						macaddr *m = DatumGetMacaddrP(value);
