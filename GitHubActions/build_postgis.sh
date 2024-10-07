@@ -6,7 +6,6 @@
 # then builds it.
 #
 # Usage: ./build_postgis.sh pg_version postgis_version
-
 #     pg_version is a PostgreSQL version to be installed like 16.0.
 #     postgis_version is a PostGIS version to be installed.
 #

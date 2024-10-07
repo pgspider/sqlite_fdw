@@ -39,7 +39,7 @@ fi
 
 # Execute test script
 chmod +x ./test.sh
-./test.sh
+./test.sh $MAKEFILE_OPT
 
 last_line=$(tail -n 1 make_check.out)
 third_line_from_the_last=$(tail -n 3 make_check.out | head -n 1)
