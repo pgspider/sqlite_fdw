@@ -854,6 +854,97 @@ SELECT * FROM "type_MACADDR8pk";
 
 --Testcase 160:
 DELETE FROM "type_MACADDR8pk";
+--no macaddr8 operators pushing down
+--Testcase 161:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "m" | '01:02:03:04:05:06:07:08' FROM "type_MACADDR8";
+                                   QUERY PLAN                                    
+---------------------------------------------------------------------------------
+ Foreign Scan on public."type_MACADDR8"
+   Output: (m | '01:02:03:04:05:06:07:08'::macaddr8)
+   SQLite query: SELECT sqlite_fdw_macaddr_int(`m`, 8) FROM main."type_MACADDR8"
+(3 rows)
+
+--Testcase 162:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "m" & '01:02:03:04:05:06:07:08' FROM "type_MACADDR8";
+                                   QUERY PLAN                                    
+---------------------------------------------------------------------------------
+ Foreign Scan on public."type_MACADDR8"
+   Output: (m & '01:02:03:04:05:06:07:08'::macaddr8)
+   SQLite query: SELECT sqlite_fdw_macaddr_int(`m`, 8) FROM main."type_MACADDR8"
+(3 rows)
+
+--Testcase 163:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT ~"m" FROM "type_MACADDR8";
+                                   QUERY PLAN                                    
+---------------------------------------------------------------------------------
+ Foreign Scan on public."type_MACADDR8"
+   Output: (~ m)
+   SQLite query: SELECT sqlite_fdw_macaddr_int(`m`, 8) FROM main."type_MACADDR8"
+(3 rows)
+
+--Testcase 164:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "m" > '01:02:03:04:05:06:07:08' FROM "type_MACADDR8";
+                                   QUERY PLAN                                    
+---------------------------------------------------------------------------------
+ Foreign Scan on public."type_MACADDR8"
+   Output: (m > '01:02:03:04:05:06:07:08'::macaddr8)
+   SQLite query: SELECT sqlite_fdw_macaddr_int(`m`, 8) FROM main."type_MACADDR8"
+(3 rows)
+
+--Testcase 165:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "m" < '01:02:03:04:05:06:07:08' FROM "type_MACADDR8";
+                                   QUERY PLAN                                    
+---------------------------------------------------------------------------------
+ Foreign Scan on public."type_MACADDR8"
+   Output: (m < '01:02:03:04:05:06:07:08'::macaddr8)
+   SQLite query: SELECT sqlite_fdw_macaddr_int(`m`, 8) FROM main."type_MACADDR8"
+(3 rows)
+
+--Testcase 166:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "m" = '01:02:03:04:05:06:07:08' FROM "type_MACADDR8";
+                                   QUERY PLAN                                    
+---------------------------------------------------------------------------------
+ Foreign Scan on public."type_MACADDR8"
+   Output: (m = '01:02:03:04:05:06:07:08'::macaddr8)
+   SQLite query: SELECT sqlite_fdw_macaddr_int(`m`, 8) FROM main."type_MACADDR8"
+(3 rows)
+
+--Testcase 167:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "m" >= '01:02:03:04:05:06:07:08' FROM "type_MACADDR8";
+                                   QUERY PLAN                                    
+---------------------------------------------------------------------------------
+ Foreign Scan on public."type_MACADDR8"
+   Output: (m >= '01:02:03:04:05:06:07:08'::macaddr8)
+   SQLite query: SELECT sqlite_fdw_macaddr_int(`m`, 8) FROM main."type_MACADDR8"
+(3 rows)
+
+--Testcase 168:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "m" <= '01:02:03:04:05:06:07:08' FROM "type_MACADDR8";
+                                   QUERY PLAN                                    
+---------------------------------------------------------------------------------
+ Foreign Scan on public."type_MACADDR8"
+   Output: (m <= '01:02:03:04:05:06:07:08'::macaddr8)
+   SQLite query: SELECT sqlite_fdw_macaddr_int(`m`, 8) FROM main."type_MACADDR8"
+(3 rows)
+
+--Testcase 169:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "m" != '01:02:03:04:05:06:07:08' FROM "type_MACADDR8";
+                                   QUERY PLAN                                    
+---------------------------------------------------------------------------------
+ Foreign Scan on public."type_MACADDR8"
+   Output: (m <> '01:02:03:04:05:06:07:08'::macaddr8)
+   SQLite query: SELECT sqlite_fdw_macaddr_int(`m`, 8) FROM main."type_MACADDR8"
+(3 rows)
+
 --Testcase 200:
 DROP EXTENSION sqlite_fdw CASCADE;
 NOTICE:  drop cascades to 5 other objects
