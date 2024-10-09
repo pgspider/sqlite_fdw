@@ -2458,11 +2458,6 @@ sqlite_deparse_direct_update_sql(StringInfo buf, PlannerInfo *root,
 			appendStringInfo(buf, "sqlite_fdw_uuid_str(");
 			special_affinity = true;
 		}
-		else if (pg_attyp == TIMESTAMPOID && preferred_affinity == SQLITE_INTEGER)
-		{
-			appendStringInfo(buf, "strftime(");
-			special_affinity = true;
-		}
 		else if ((pg_attyp == MACADDROID || pg_attyp == MACADDR8OID) && preferred_affinity != SQLITE_INTEGER)
 		{
 			if (preferred_affinity == SQLITE3_TEXT)
