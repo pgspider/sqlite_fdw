@@ -5118,7 +5118,6 @@ static void
 sqlite_to_pg_type(StringInfo str, char *type)
 {
 	int			i;
-	int			j;
 
 	/*
 	 * type conversion based on SQLite affiniy
@@ -5173,7 +5172,8 @@ sqlite_to_pg_type(StringInfo str, char *type)
 				 * Without GIS support.
 				 * Columns with listed data type names treated just as bytea
 				 */
-				bool postgis = false;
+				bool	postgis = false;
+				int		j;
 
 				for (j = 0; postGisSQLiteCompatibleTypes[j] != NULL; j++)
 				{
