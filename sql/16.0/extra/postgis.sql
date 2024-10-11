@@ -268,8 +268,6 @@ DROP TABLE "♁";
 DROP TABLE "♂"."テスト";
 --Testcase 78:
 DROP SCHEMA "♂";
---Testcase 79:
-DROP FOREIGN TABLE "types_PostGIS";
 
 --Testcase 100:
 EXPLAIN (VERBOSE, COSTS OFF)
@@ -659,7 +657,8 @@ SELECT "i", gg = decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'h
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gg != decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
 
-
+--Testcase 300:
+DROP FOREIGN TABLE "types_PostGIS";
 --Testcase 301:
 DROP EXTENSION sqlite_fdw CASCADE;
 --Testcase 302:
