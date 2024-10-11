@@ -269,6 +269,11 @@ DROP TABLE "♂"."テスト";
 --Testcase 78:
 DROP SCHEMA "♂";
 
+-- Test ALL operators for pushing down by list of built-in geometry operators 
+-- Some operators doesn't implemented and doesn't exist in PostGIS
+-- geometry -> geometry + bytea const -> geography -> geography + bytea const
+-- TC 100   -> TC 150                 -> TC200     -> TC250
+
 --Testcase 100:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm + gm1 g FROM "types_PostGIS";
