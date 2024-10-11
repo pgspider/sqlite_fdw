@@ -695,7 +695,7 @@ sqlite_foreign_expr_walker(Node *node,
 				{
 					/*
 					 * Predicate of non built-in operators possible
-					 * can be pushed down. For example, PostGIS oparators.
+					 * can be pushed down. For example, some PostGIS oparators.
 					 */
 					if ((strcmp(cur_opname, "=") == 0))
 						non_builtin_pushable_opr = true; /* Set it to true for later check */
@@ -722,11 +722,11 @@ sqlite_foreign_expr_walker(Node *node,
 				if (non_builtin_pushable_opr)
 				{
 					/* If left operand is not PostGIS supported data type, do not push down */
-					if (sqlite_is_builtin(oprleft) || (!listed_datatype_oid(oprleft, -1, postGisSQLiteCompatibleTypes)))
+					if (oprleft != InvalidOid && !listed_datatype_oid(oprleft, -1, postGisSQLiteCompatibleTypes)))
 						return false;
 
 					/* If right operand is not PostGIS supported data type, do not push down */
-					if (sqlite_is_builtin(oprright) || (!listed_datatype_oid(oprright, -1, postGisSQLiteCompatibleTypes)))
+					if (oprright != InvalidOid && !listed_datatype_oid(oprright, -1, postGisSQLiteCompatibleTypes)))
 						return false;
 
 					/* Log operator for potential pushing down */
