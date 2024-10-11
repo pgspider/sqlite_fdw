@@ -710,19 +710,16 @@ sqlite_foreign_expr_walker(Node *node,
 				}
 
 				/*
-				 * Operators with not standard Oids which also have different
-				 * data types or operators for data types outside of PostGIS
-				 * list will not pushed down.
+				 * Operator = will not pushed down if one of operands
+				 * does not belongs to PostGIS.
 				 */
-				if (oprleft != InvalidOid && oprright != InvalidOid)
-				{
-					if (!sqlite_is_builtin(oe->opno) &&
-						(!listed_datatype_oid(oprleft, -1, postGisSQLiteCompatibleTypes) ||
-						!listed_datatype_oid(oprright, -1, postGisSQLiteCompatibleTypes)))
+				if (!sqlite_is_builtin(oe->opno) &&
+					strcmp(cur_opname, "=") == 0 &&
+					oprleft != InvalidOid &&
+					oprright != InvalidOid &&
+					(!listed_datatype_oid(oprleft, -1, postGisSQLiteCompatibleTypes) ||
+					!listed_datatype_oid(oprright, -1, postGisSQLiteCompatibleTypes)))
 						return false;
-					/* Log operator for potential pushing down */
-					elog(DEBUG2, "sqlite_fdw : %s operator", cur_opname);
-				}
 
 				/*
 				 * Recurse to input subexpressions.
