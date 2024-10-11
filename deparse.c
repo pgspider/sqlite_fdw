@@ -717,8 +717,8 @@ sqlite_foreign_expr_walker(Node *node,
 				if (oprleft != InvalidOid && oprright != InvalidOid)
 				{
 					if (!sqlite_is_builtin(oe->opno) &&
-						!listed_datatype_oid(oprleft, -1, postGisSQLiteCompatibleTypes) &&
-						!listed_datatype_oid(oprright, -1, postGisSQLiteCompatibleTypes))
+						(!listed_datatype_oid(oprleft, -1, postGisSQLiteCompatibleTypes) ||
+						!listed_datatype_oid(oprright, -1, postGisSQLiteCompatibleTypes)))
 						return false;
 					/* Log operator for potential pushing down */
 					elog(DEBUG2, "sqlite_fdw : %s operator", cur_opname);
