@@ -697,11 +697,9 @@ sqlite_foreign_expr_walker(Node *node,
 					 * Predicate of non built-in operators possible
 					 * can be pushed down. For example, PostGIS oparators.
 					 */
-#ifdef SQLITE_FDW_GIS_ENABLE
 					if ((strcmp(cur_opname, "=") == 0))
 						non_builtin_pushable_opr = true; /* Set it to true for later check */
 					else
-#endif
 						return false;
 				}
 
