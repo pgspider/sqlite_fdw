@@ -5163,18 +5163,6 @@ sqlite_to_pg_type(StringInfo str, char *type)
 		const char *t0 = pg_type[i][0];
 		if (strncmp(type, t0, strlen(t0)) == 0)
 		{
-			bool postgis = false;
-
-			for (j = 0; postGisSQLiteCompatibleTypes[j] != NULL; j++)
-			{
-				const char *pgt = postGisSQLiteCompatibleTypes[j];
-				if (strncmp(type, pgt, strlen(pgt)) == 0)
-				{
-					postgis = true;
-					break;
-				}
-			}
-
 			/* Pass type to PostgreSQL as it is */
 			if (pg_type[i][1] == NULL)
 			{
@@ -5185,6 +5173,17 @@ sqlite_to_pg_type(StringInfo str, char *type)
 				 * Without GIS support.
 				 * Columns with listed data type names treated just as bytea
 				 */
+				bool postgis = false;
+
+				for (j = 0; postGisSQLiteCompatibleTypes[j] != NULL; j++)
+				{
+					const char *pgt = postGisSQLiteCompatibleTypes[j];
+					if (strncmp(type, pgt, strlen(pgt)) == 0)
+					{
+						postgis = true;
+						break;
+					}
+				}
 				if (postgis)
 					appendStringInfoString(str, "bytea");
 				else
