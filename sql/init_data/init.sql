@@ -41,7 +41,7 @@ CREATE TABLE "type_VARBIT" (i int, b bit);
 CREATE VIEW  "type_VARBIT+" AS SELECT *, typeof(b) t, length(b) l FROM "type_VARBIT";
 CREATE TABLE "type_UUIDpk" (col uuid primary key);
 CREATE TABLE "type_UUID" (i int, u uuid);
-CREATE TABLE "types_PostGIS" (i int, gm geometry, gg geography, r raster, t text);
+CREATE TABLE "types_PostGIS" (i int, gm geometry, gg geography, r raster, t text, gm1 geometry, gg1 geography);
 CREATE VIEW  "type_UUID+" AS SELECT *, typeof("u") t, length("u") l FROM "type_UUID";
 CREATE TABLE BitT (p integer primary key, a BIT(3), b BIT VARYING(5));
 CREATE TABLE notype (a);

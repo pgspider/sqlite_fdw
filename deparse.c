@@ -686,9 +686,9 @@ sqlite_foreign_expr_walker(Node *node,
 				ReleaseSysCache(tuple);
 
 				/*
-				 * Similarly, only built-in, PostGIS = operators can be sent to remote.
-				 * (If the operator is, surely its underlying function is
-				 * too.)
+				 * Similarly, only built-in or PostGIS = operators can be
+				 * sent to remote. (If the operator is remote executable,
+				 * surely its underlying function is too.)
 				 */
 				if (!sqlite_is_builtin(oe->opno) && (strcmp(cur_opname, "=") != 0))
 					return false;

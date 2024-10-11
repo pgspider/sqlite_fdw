@@ -16,7 +16,7 @@ EXTENSION = sqlite_fdw
 DATA = sqlite_fdw--1.0.sql sqlite_fdw--1.0--1.1.sql
 
 ifdef ENABLE_GIS
-override PGFLAGS += -DSQLITE_FDW_GIS_ENABLE=1
+override PG_CFLAGS += -DSQLITE_FDW_GIS_ENABLE
 GISPREF=postgis
 else
 GISPREF=nogis
