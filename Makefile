@@ -16,10 +16,10 @@ EXTENSION = sqlite_fdw
 DATA = sqlite_fdw--1.0.sql sqlite_fdw--1.0--1.1.sql
 
 ifdef ENABLE_GIS
-	override CFLAGS := $(CFLAGS) -DSQLITE_FDW_GIS_ENABLE=1
-	GISPREF=postgis
+override PGFLAGS += -DSQLITE_FDW_GIS_ENABLE=1
+GISPREF=postgis
 else
-	GISPREF=nogis
+GISPREF=nogis
 endif
 
 REGRESS = extra/sqlite_fdw_post extra/bitstring extra/bool extra/float4 extra/float8 extra/int4 extra/int8 extra/numeric extra/$(GISPREF) extra/out_of_range extra/timestamp extra/uuid extra/join extra/limit extra/aggregates extra/prepare extra/select_having extra/select extra/insert extra/update extra/encodings sqlite_fdw type aggregate selectfunc
@@ -31,38 +31,38 @@ SQLITE_LIB = sqlite3
 UNAME = uname
 OS := $(shell $(UNAME))
 ifeq ($(OS), Darwin)
-	DLSUFFIX = .dylib
+DLSUFFIX = .dylib
 else
-	DLSUFFIX = .so
+DLSUFFIX = .so
 endif
 
 SHLIB_LINK := -lsqlite3
 
 ifdef ENABLE_GIS
-	override SHLIB_LINK := $(SHLIB_LINK) -lspatialite
+override SHLIB_LINK += -lspatialite
 endif
 
 ifdef USE_PGXS
-	PG_CONFIG = pg_config
-	PGXS := $(shell $(PG_CONFIG) --pgxs)
-	include $(PGXS)
-	ifndef MAJORVERSION
-		MAJORVERSION := $(basename $(VERSION))
-	endif
-	ifeq (,$(findstring $(MAJORVERSION), 12 13 14 15 16))
-		$(error PostgreSQL 12, 13, 14, 15 or 16 is required to compile this extension)
-	endif
+PG_CONFIG = pg_config
+PGXS := $(shell $(PG_CONFIG) --pgxs)
+include $(PGXS)
+ifndef MAJORVERSION
+MAJORVERSION := $(basename $(VERSION))
+endif
+ifeq (,$(findstring $(MAJORVERSION), 12 13 14 15 16))
+$(error PostgreSQL 12, 13, 14, 15 or 16 is required to compile this extension)
+endif
 else
-	subdir = contrib/sqlite_fdw
-	top_builddir = ../..
-	include $(top_builddir)/src/Makefile.global
-	include $(top_srcdir)/contrib/contrib-global.mk
+subdir = contrib/sqlite_fdw
+top_builddir = ../..
+include $(top_builddir)/src/Makefile.global
+include $(top_srcdir)/contrib/contrib-global.mk
 endif
 
 ifdef REGRESS_PREFIX
-	REGRESS_PREFIX_SUB = $(REGRESS_PREFIX)
+REGRESS_PREFIX_SUB = $(REGRESS_PREFIX)
 else
-	REGRESS_PREFIX_SUB = $(VERSION)
+REGRESS_PREFIX_SUB = $(VERSION)
 endif
 
 REGRESS := $(addprefix $(REGRESS_PREFIX_SUB)/,$(REGRESS))
@@ -70,7 +70,7 @@ $(shell mkdir -p results/$(REGRESS_PREFIX_SUB)/extra)
 $(shell mkdir -p results/$(REGRESS_PREFIX_SUB)/types)
 
 ifdef ENABLE_GIS
-  check: temp-install
-  temp-install: EXTRA_INSTALL+=contrib/postgis
-  checkprep: EXTRA_INSTALL+=contrib/postgis
+check: temp-install
+temp-install: EXTRA_INSTALL+=contrib/postgis
+checkprep: EXTRA_INSTALL+=contrib/postgis
 endif

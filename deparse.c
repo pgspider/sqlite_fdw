@@ -1136,7 +1136,7 @@ sqlite_foreign_expr_walker(Node *node,
 	if (check_type)
 	{
 		Oid typeOid = exprType(node);
-		if (!sqlite_is_builtin(typeOid) && listed_datatype_oid(typeOid, -1, postGisSQLiteCompatibleTypes))
+		if (!(sqlite_is_builtin(typeOid) || listed_datatype_oid(typeOid, -1, postGisSQLiteCompatibleTypes)))
 			return false;
 	}
 
