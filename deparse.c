@@ -671,6 +671,7 @@ sqlite_foreign_expr_walker(Node *node,
 				Form_pg_operator	form;
 				Oid					oprleft = InvalidOid;
 				Oid					oprright = InvalidOid;
+				bool				non_builtin_pushable_opr = false;
 
 				elog(DEBUG2, "sqlite_fdw : %s T_OpExpr|T_NullIfExpr", __func__);
 
@@ -690,6 +691,17 @@ sqlite_foreign_expr_walker(Node *node,
 				 * sent to remote. (If the operator is remote executable,
 				 * surely its underlying function is too.)
 				 */
+				if (!sqlite_is_builtin(oe->opno))
+				{
+					/*
+					 * Predicate of non built-in operators possible
+					 * can be pushed down. For example, PostGIS oparators.
+					 */
+					if ((strcmp(cur_opname, "=") != 0))
+						non_builtin_pushable_opr = true; /* Set it to true for later check */
+					else
+						return false;
+				}
 				if (!sqlite_is_builtin(oe->opno) && (strcmp(cur_opname, "=") != 0))
 					return false;
 
@@ -709,17 +721,19 @@ sqlite_foreign_expr_walker(Node *node,
 					return false;
 				}
 
-				/*
-				 * Operator = will not pushed down if one of operands
-				 * does not belongs to PostGIS.
-				 */
-				if (!sqlite_is_builtin(oe->opno) &&
-					strcmp(cur_opname, "=") == 0 &&
-					oprleft != InvalidOid &&
-					oprright != InvalidOid &&
-					(!listed_datatype_oid(oprleft, -1, postGisSQLiteCompatibleTypes) ||
-					!listed_datatype_oid(oprright, -1, postGisSQLiteCompatibleTypes)))
+				if (non_builtin_pushable_opr)
+				{
+					/* If left operand is not PostGIS supported data type, not push down */
+					if (sqlite_is_builtin(oprleft) || (!listed_datatype_oid(oprleft, -1, postGisSQLiteCompatibleTypes)))
 						return false;
+
+					/* If right operand is not PostGIS supported data type, not push down */
+					if (sqlite_is_builtin(oprright) || (!listed_datatype_oid(oprright, -1, postGisSQLiteCompatibleTypes)))
+						return false;
+
+					/* Log operator for potential pushing down */
+					elog(DEBUG2, "sqlite_fdw : %s possible pushable operator", cur_opname);
+				}
 
 				/*
 				 * Recurse to input subexpressions.
