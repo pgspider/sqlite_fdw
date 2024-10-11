@@ -739,7 +739,8 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 				NameData	pgColND = att->attname;
 				char	*pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(type, pgtypmod));
 
-				/* PostGIS data types can be supported only by name
+				/*
+				 * PostGIS data types can be supported only by name
 				 * This is very rare and not fast algorythm branch
 				 */
 				if (listed_datatype(pg_dataTypeName, postGisSQLiteCompatibleTypes))
