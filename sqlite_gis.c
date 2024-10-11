@@ -92,7 +92,7 @@ SpatiaLiteAsPostGISgeom (blobOutput spatiaLiteBlob, Form_pg_attribute att)
 						   true);
 	}
 
-	res_len = strlen(out_buf.Buffer);
+	res_len = strlen(out_buf.Buffer) + 1; /* Include \0 on the end */
 	res = (char*) palloc(res_len*sizeof(char));
 	strcpy(res, out_buf.Buffer);
 	gaiaOutBufferReset (&out_buf);

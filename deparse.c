@@ -723,16 +723,16 @@ sqlite_foreign_expr_walker(Node *node,
 
 				if (non_builtin_pushable_opr)
 				{
-					/* If left operand is not PostGIS supported data type, not push down */
+					/* If left operand is not PostGIS supported data type, do not push down */
 					if (sqlite_is_builtin(oprleft) || (!listed_datatype_oid(oprleft, -1, postGisSQLiteCompatibleTypes)))
 						return false;
 
-					/* If right operand is not PostGIS supported data type, not push down */
+					/* If right operand is not PostGIS supported data type, do not push down */
 					if (sqlite_is_builtin(oprright) || (!listed_datatype_oid(oprright, -1, postGisSQLiteCompatibleTypes)))
 						return false;
 
 					/* Log operator for potential pushing down */
-					elog(DEBUG2, "sqlite_fdw : %s possible pushable operator", cur_opname);
+					elog(DEBUG2, "sqlite_fdw : %s pushable not built-in operator", cur_opname);
 				}
 
 				/*
