@@ -43,8 +43,8 @@ CREATE DOMAIN validatetopology_returntype AS bytea;
 CREATE FOREIGN TABLE "types_PostGIS"( "i" int OPTIONS (key 'true'), gm geometry, gg geography, r raster, t text) SERVER sqlite_svr;
 --Testcase 31: ERR - geometry
 INSERT INTO "types_PostGIS" ( "i", gm, gg, r, t ) VALUES (1, decode('0101000020e6100000fd5aa846f9733e406c054d4bacd74d40', 'hex'),  decode('0101000020e6100000fd5aa846f9733e406c054d4bacd74d40', 'hex'),  decode('1223456890', 'hex'), '{"genus": "Rhododendron", "taxon": "Rhododendron ledebourii", "natural": "shrub", "genus:ru": "Рододендрон", "taxon:ru": "Рододендрон Ледебура", "source:taxon": "board"}');
-ERROR:  This PostGIS data type is supported by SpatiaLite, but FDW compiled without GIS data support
-HINT:  Data type: "public.geometry" in column "gm"
+ERROR:  This data type is PostGIS specific and have not any SpatiaLite value
+HINT:  Data type: "public.raster" in column "r"
 --Testcase 32:
 ALTER FOREIGN TABLE "types_PostGIS" ALTER COLUMN "gm" TYPE bytea;
 --Testcase 33:
@@ -58,9 +58,11 @@ ALTER FOREIGN TABLE "types_PostGIS" ALTER COLUMN "gm" TYPE geometry;
 ALTER FOREIGN TABLE "types_PostGIS" ALTER COLUMN "gg" TYPE geography;
 --Testcase 37: ERR - no GIS data support
 SELECT "i", gm, gg, t FROM "types_PostGIS";
-ERROR:  This PostGIS data type is supported by SpatiaLite, but FDW compiled without GIS data support
-HINT:  SQLite value with "blob" affinity (60 bytes) in hex : 0001e6100000bf72ce99fe763e40ed4960730ed84d40bf72ce99fe763e40ed4960730ed84d407c01000000bf72ce99fe763e40ed4960730ed84d40fe
-CONTEXT:  foreign table "types_PostGIS" foreign column "gm" have data type "geometry" (usual affinity "blob"), in query there is reference to foreign column
+ i |                                                             gm                                                             |                                                             gg                                                             |                                                                                     t                                                                                     
+---+----------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ 1 | \x0001e6100000bf72ce99fe763e40ed4960730ed84d40bf72ce99fe763e40ed4960730ed84d407c01000000bf72ce99fe763e40ed4960730ed84d40fe | \x0001e6100000bf72ce99fe763e40ed4960730ed84d40bf72ce99fe763e40ed4960730ed84d407c01000000bf72ce99fe763e40ed4960730ed84d40fe | {"genus": "Rhododendron", "taxon": "Rhododendron ledebourii", "natural": "shrub", "genus:ru": "Рододендрон", "taxon:ru": "Рододендрон Ледебура", "source:taxon": "board"}
+(1 row)
+
 --Testcase 38:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm, gg, t FROM "types_PostGIS";
@@ -74,24 +76,22 @@ SELECT "i", gm, gg, t FROM "types_PostGIS";
 --Testcase 39:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm, gg, t FROM "types_PostGIS" WHERE gm = '0101000020e6100000bf72ce99fe763e40ed4960730ed84d40'::geometry;
-                                                                        QUERY PLAN                                                                         
------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                           QUERY PLAN                                                                                           
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Foreign Scan on public."types_PostGIS"
    Output: i, gm, gg, t
-   Filter: (("types_PostGIS".gm)::bytea = '\x3031303130303030323065363130303030306266373263653939666537363365343065643439363037333065643834643430'::bytea)
-   SQLite query: SELECT `i`, `gm`, `gg`, `t` FROM main."types_PostGIS"
-(4 rows)
+   SQLite query: SELECT `i`, `gm`, `gg`, `t` FROM main."types_PostGIS" WHERE ((`gm` = X'3031303130303030323065363130303030306266373263653939666537363365343065643439363037333065643834643430'))
+(3 rows)
 
 --Testcase 40: ERR - no GIS data support
 SELECT "i", gm, gg, t FROM "types_PostGIS" WHERE gm = '0101000020e6100000bf72ce99fe763e40ed4960730ed84d40'::geometry;
-ERROR:  This PostGIS data type is supported by SpatiaLite, but FDW compiled without GIS data support
-HINT:  SQLite value with "blob" affinity (60 bytes) in hex : 0001e6100000bf72ce99fe763e40ed4960730ed84d40bf72ce99fe763e40ed4960730ed84d407c01000000bf72ce99fe763e40ed4960730ed84d40fe
-CONTEXT:  foreign table "types_PostGIS" foreign column "gm" have data type "geometry" (usual affinity "blob"), in query there is reference to foreign column
+ i | gm | gg | t 
+---+----+----+---
+(0 rows)
+
 -- Insert PostGIS/GEOS BLOB, read SpatiaLite BLOB
 --Testcase 41: ERR - no GIS data support
 INSERT INTO "types_PostGIS" ( "i", gm, gg, t ) VALUES (2, decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex'),  decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex'), '{"genus": "Rhododendron", "taxon": "Rhododendron ledebourii"}');
-ERROR:  This PostGIS data type is supported by SpatiaLite, but FDW compiled without GIS data support
-HINT:  Data type: "public.geometry" in column "gm"
 --Testcase 42:
 ALTER FOREIGN TABLE "types_PostGIS" ALTER COLUMN "gm" TYPE bytea;
 --Testcase 43:
@@ -101,7 +101,8 @@ SELECT "i", gm, gg, t FROM "types_PostGIS";
  i |                                                             gm                                                             |                                                             gg                                                             |                                                                                     t                                                                                     
 ---+----------------------------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  1 | \x0001e6100000bf72ce99fe763e40ed4960730ed84d40bf72ce99fe763e40ed4960730ed84d407c01000000bf72ce99fe763e40ed4960730ed84d40fe | \x0001e6100000bf72ce99fe763e40ed4960730ed84d40bf72ce99fe763e40ed4960730ed84d407c01000000bf72ce99fe763e40ed4960730ed84d40fe | {"genus": "Rhododendron", "taxon": "Rhododendron ledebourii", "natural": "shrub", "genus:ru": "Рододендрон", "taxon:ru": "Рододендрон Ледебура", "source:taxon": "board"}
-(1 row)
+ 2 | \x0101000020e6100000bf72ce99fe763e40ed4960730ed84d40                                                                       | \x0101000020e6100000bf72ce99fe763e40ed4960730ed84d40                                                                       | {"genus": "Rhododendron", "taxon": "Rhododendron ledebourii"}
+(2 rows)
 
 --Testcase 45:
 CREATE FOREIGN TABLE "♂" (

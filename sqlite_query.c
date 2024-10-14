@@ -498,9 +498,25 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 							);
 							/* !!! use valstr later! Hex Input */
 #else
-							ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-											errmsg("This PostGIS data type is supported by SpatiaLite, but FDW compiled without GIS data support"),
-											errhint("Data type: \"%s\" in column \"%.*s\"", pg_dataTypeName, (int)sizeof(pgColND.data), pgColND.data)));
+							Oid			atttypid = att->atttypid;
+							int32		atttypmod = att->atttypmod;
+
+							/*
+							 * If a domain has been declared as bytea, it can support PostGIS data type
+							 */
+							atttypid = getBaseTypeAndTypmod(atttypid, &atttypmod);
+
+							if (atttypid == BYTEAOID)
+							{
+								value_datum = (Datum) palloc0(value_byte_size_blob_or_utf8 + VARHDRSZ);
+								memcpy(VARDATA(value_datum), sqlite3_value_blob(val), value_byte_size_blob_or_utf8);
+								SET_VARSIZE(value_datum, value_byte_size_blob_or_utf8 + VARHDRSZ);
+								return (struct NullableDatum) {PointerGetDatum((const void *)value_datum), false};
+							}
+							else
+								ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+												errmsg("This PostGIS data type is supported by SpatiaLite, but FDW compiled without GIS data support"),
+												errhint("Data type: \"%s\" in column \"%.*s\"", pg_dataTypeName, (int)sizeof(pgColND.data), pgColND.data)));
 #endif
 							break;
 						}
@@ -749,9 +765,23 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 					blobOutput b = PostGISgeomAsSpatiaLite(value, att);
 					ret = sqlite3_bind_blob(stmt, attnum, b.dat, b.len, SQLITE_TRANSIENT);
 #else
-					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-									errmsg("This PostGIS data type is supported by SpatiaLite, but FDW compiled without GIS data support"),
-									errhint("Data type: \"%s\" in column \"%.*s\"", pg_dataTypeName, (int)sizeof(pgColND.data), pgColND.data)));
+					Oid			atttypid = att->atttypid;
+					int32		atttypmod = att->atttypmod;
+
+					/*
+					 * If a domain has been declared as bytea, it can support PostGIS data type
+					 */
+					atttypid = getBaseTypeAndTypmod(atttypid, &atttypmod);
+
+					if (atttypid == BYTEAOID)
+					{
+						blobOutput b = sqlite_datum_to_blob(value);
+						ret = sqlite3_bind_blob(stmt, attnum, b.dat, b.len, SQLITE_TRANSIENT);
+					}
+					else
+						ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+										errmsg("This PostGIS data type is supported by SpatiaLite, but FDW compiled without GIS data support"),
+										errhint("Data type: \"%s\" in column \"%.*s\"", pg_dataTypeName, (int)sizeof(pgColND.data), pgColND.data)));
 #endif
 					break;
 				}
