@@ -2859,11 +2859,10 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 			break;
 		default:
 			{
-#ifdef SQLITE_FDW_GIS_ENABLE
-				/* PostGIS data types can be supported only by name
+				/*
+				 * PostGIS data types can be supported only by name
 				 * This is very rare and not fast algorythm branch
 				 */
-
 				if (listed_datatype_oid(node->consttype, node->consttypmod, postGisSpecificTypes))
 				{
 					const char *pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(node->consttype, node->consttypmod));
@@ -2875,11 +2874,19 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 
 				if (listed_datatype_oid(node->consttype, node->consttypmod, postGisSQLiteCompatibleTypes))
 				{
+#ifdef SQLITE_FDW_GIS_ENABLE
 					extval = OidOutputFunctionCall(typoutput, node->constvalue);
 					sqlite_deparse_PostGIS_value(extval, context->buf);
+#else
+					const char *pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(node->consttype, node->consttypmod));
+
+					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+									errmsg("A constant of supported PostGIS data cannot be deparsed without GIS support in sqlite_fdw"),
+									errhint("Data type: \"%s\" ", pg_dataTypeName)));
+#endif
 					break;
 				}
-#endif
+
 				/* common branch of unknown data type */
 				extval = OidOutputFunctionCall(typoutput, node->constvalue);
 				sqlite_deparse_string_literal(buf, extval);
