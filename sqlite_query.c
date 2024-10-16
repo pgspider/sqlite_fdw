@@ -115,7 +115,7 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 							break;
 						}
 					case SQLITE_BLOB: /* <-- proper and recommended SQLite affinity of value for pgtyp */
-					case SQLITE3_TEXT: /* threated as UTF-8 text BLOB */
+					case SQLITE3_TEXT: /* treated as UTF-8 text BLOB */
 					{
 						value_datum = (Datum) palloc0(value_byte_size_blob_or_utf8 + VARHDRSZ);
 						memcpy(VARDATA(value_datum), sqlite3_value_blob(val), value_byte_size_blob_or_utf8);
@@ -395,7 +395,8 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 								break;
 							}
 						}
-					/* SQLite UUID output always normalized to blob.
+					/*
+					 * SQLite UUID output always normalized to blob.
 					 * In sqlite_data_norm.c there is special additional C function.
 					 */
 					case SQLITE3_TEXT:
@@ -462,7 +463,8 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 			}
 		default:
 			{
-				/* PostGIS data types can be supported only by name
+				/*
+				 * PostGIS data types can be supported only by name
 				 * This is very rare and not fast algorythm branch
 				 */
 				char *pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(att->atttypid, att->atttypmod));

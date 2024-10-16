@@ -130,6 +130,7 @@ getHexFormOfBlob(blobOutput b)
 /*
  * hasSRID:
  * return true if there is any SRID data in hex input of EWKB
+ * in other cases, including damaged input data, returns false
  */
 static inline bool hasSRID (char *hexEWKB)
 {
@@ -211,7 +212,6 @@ EWKB2SpatiaLiteBlobImage (char *hexEWKB, Form_pg_attribute att)
 	return (struct blobOutput){(char *)spatialite_blob, len};
 }
 
-
 /*
  * PostGISgeomAsSpatiaLite:
  * Gives PostGIS/GEOS BLOB, returns SpatiaLite BLOB
@@ -256,7 +256,7 @@ common_EWKB_error (Form_pg_attribute att, int len, const char* data, bool direct
 /*
  * sqlite_deparse_PostGIS_value:
  *
- * PostGIS gives a GEOS value and the function transforms a value to Spatialite constant
+ * PostGIS gives a GEOS value and the function transforms a value to SpatiaLite constant
  * text input converted to EWKB and than EWKB converted to hex code.
  */
 void

@@ -2113,7 +2113,7 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 		char	   *colname = NULL;
 		List	   *options;
 		ListCell   *lc;
-		Oid			pg_atttyp = 0;
+		Oid			pg_atttyp = InvalidOid;
 
 		/* varno must not be any of OUTER_VAR, INNER_VAR and INDEX_VAR. */
 		Assert(!IS_SPECIAL_VARNO(varno));
@@ -2178,6 +2178,39 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 				ADD_REL_QUALIFIER(buf, varno);
 			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
 			appendStringInfoString(buf, ")");
+		}
+		else if (!dml_context && listed_datatype_oid(pg_atttyp, -1, postGisSQLiteCompatibleTypes))
+		{
+#ifdef SQLITE_FDW_GIS_ENABLE
+			if (qualify_col)
+				ADD_REL_QUALIFIER(buf, varno);
+			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+#else
+			int32		typmod = -1;
+			Oid			typid = getBaseTypeAndTypmod(pg_atttyp, &typmod);
+			char	   *pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(pg_atttyp, -1));
+
+			if (typid == BYTEAOID)
+				{
+					if (qualify_col)
+						ADD_REL_QUALIFIER(buf, varno);
+					appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+				}
+			else
+			{
+				ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+								errmsg("This PostGIS data type is supported by SpatiaLite, but FDW compiled without GIS data support"),
+								errhint("Data type: \"%s\"", pg_dataTypeName)));
+			}
+#endif
+		}
+		else if (!dml_context && listed_datatype_oid(pg_atttyp, -1, postGisSpecificTypes))
+		{
+			char	   *pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(pg_atttyp, -1));
+
+			ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+							errmsg("PostGIS specific value is not deparasble because of no similar SpatiaLite conception "),
+							errhint("Data type: \"%s\"", pg_dataTypeName)));
 		}
 		else
 		{
@@ -2857,41 +2890,31 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 	  			appendStringInfo(buf, "\'");
 			}
 			break;
-		default:
+		case BPCHAROID:
+		case VARCHAROID:
+		case CHAROID:
+		case TEXTOID:
+		case JSONOID:
+		case JSONBOID:
+		case NAMEOID:
+		case DATEOID:
+		case TIMEOID:
 			{
-				/*
-				 * PostGIS data types can be supported only by name
-				 * This is very rare and not fast algorythm branch
-				 */
-				if (listed_datatype_oid(node->consttype, node->consttypmod, postGisSpecificTypes))
-				{
-					const char *pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(node->consttype, node->consttypmod));
-					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-									errmsg("This data type is PostGIS specific and is not supported by SpatiaLite"),
-									errhint("Data type: \"%s\" ", pg_dataTypeName)));
-					break;
-				}
-
-				if (listed_datatype_oid(node->consttype, node->consttypmod, postGisSQLiteCompatibleTypes))
-				{
-#ifdef SQLITE_FDW_GIS_ENABLE
-					extval = OidOutputFunctionCall(typoutput, node->constvalue);
-					sqlite_deparse_PostGIS_value(extval, context->buf);
-#else
-					const char *pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(node->consttype, node->consttypmod));
-
-					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-									errmsg("A constant of supported PostGIS data cannot be deparsed without GIS support in sqlite_fdw"),
-									errhint("Data type: \"%s\" ", pg_dataTypeName)));
-#endif
-					break;
-				}
-
-				/* common branch of unknown data type */
+				/* common branch of constants, deparsable as a text data */
 				extval = OidOutputFunctionCall(typoutput, node->constvalue);
 				sqlite_deparse_string_literal(buf, extval);
+				break;
 			}
-			break;
+		default:
+			{
+				const char *pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(node->consttype, -1));
+				extval = OidOutputFunctionCall(typoutput, node->constvalue);
+
+				ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+								errmsg("Unknown data type of a constant"),
+								errhint("Data type: \"%s\" ", pg_dataTypeName),
+								errcontext("Value: %s", extval)));
+			}
 	}
 }
 
