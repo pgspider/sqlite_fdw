@@ -2907,13 +2907,21 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 			}
 		default:
 			{
-				const char *pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(node->consttype, -1));
-				extval = OidOutputFunctionCall(typoutput, node->constvalue);
+				if (!listed_datatype_oid(node->consttype, -1, postGisSQLiteCompatibleTypes))
+				{
+					const char *pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(node->consttype, -1));
+					extval = OidOutputFunctionCall(typoutput, node->constvalue);
 
-				ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-								errmsg("Unknown data type of a constant"),
-								errhint("Data type: \"%s\" ", pg_dataTypeName),
-								errcontext("Value: %s", extval)));
+					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+									errmsg("Unknown data type of a constant"),
+									errhint("Data type: \"%s\" ", pg_dataTypeName),
+									errcontext("Value: %s", extval)));
+				}
+
+				/* common branch PostGIS constants, deparsable as a text data */
+				extval = OidOutputFunctionCall(typoutput, node->constvalue);
+				sqlite_deparse_string_literal(buf, extval);
+				break;
 			}
 	}
 }
