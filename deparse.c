@@ -2917,11 +2917,12 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 									errhint("Data type: \"%s\" ", pg_dataTypeName),
 									errcontext("Value: %s", extval)));
 				}
-
-				/* common branch PostGIS constants, deparsable as a text data */
-				extval = OidOutputFunctionCall(typoutput, node->constvalue);
-				sqlite_deparse_string_literal(buf, extval);
-				break;
+				else
+				{
+					/* common branch PostGIS constants, deparsable as a text data */
+					extval = OidOutputFunctionCall(typoutput, node->constvalue);
+					sqlite_deparse_string_literal(buf, extval);
+				}
 			}
 	}
 }
