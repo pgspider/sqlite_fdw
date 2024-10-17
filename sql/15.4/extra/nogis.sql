@@ -122,6 +122,7 @@ INSERT INTO "♁ FDW" (geom, osm_type, osm_id, ver, arr, t) VALUES('SRID=4326;MU
 --Testcase 57:
 SELECT * FROM "♁ FDW";
 
+-- PostGIS specific data types, but SpatiaLite or sqlite_fdw unsupported 
 --Testcase 58:
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE box2d;
 --Testcase 59: -- ERR
@@ -179,6 +180,7 @@ ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE validatetopology_returntype;
 --Testcase 85: -- ERR
 SELECT * FROM "♂";
 
+-- PostGIS specific data types, not bytea mode, hence error
 --Testcase 86:
 ALTER DOMAIN geometry RENAME TO geom0;
 --Testcase 87:

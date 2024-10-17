@@ -1,4 +1,4 @@
-/*-------------------------------------------------------------------------
+f/*-------------------------------------------------------------------------
  *
  * SQLite Foreign Data Wrapper for PostgreSQL
  *
@@ -2209,7 +2209,7 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 			char	   *pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(pg_atttyp, -1));
 
 			ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-							errmsg("PostGIS specific value is not deparasble because of no similar SpatiaLite conception "),
+							errmsg("PostGIS specific value is not deparsable because of no similar SpatiaLite conception "),
 							errhint("Data type: \"%s\"", pg_dataTypeName)));
 		}
 		else
@@ -2905,7 +2905,7 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 				sqlite_deparse_string_literal(buf, extval);
 				break;
 			}
-		default:
+default:
 			{
 				if (!listed_datatype_oid(node->consttype, -1, postGisSQLiteCompatibleTypes))
 				{

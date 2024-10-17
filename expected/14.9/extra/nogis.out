@@ -156,90 +156,92 @@ SELECT * FROM "♁ FDW";
  \x535249443d343332363b4d554c5449504f4c59474f4e2028282833302e343630313237382035392e363930353730392c2033302e343630313239312035392e363930353637362c2033302e343630313334382035392e363930353635362c2033302e343630313431352035392e363930353636332c2033302e343630313435332035392e363930353639312c2033302e3436303134342035392e363930353732352c2033302e343630313338332035392e363930353734352c2033302e343630313331362035392e363930353733382c2033302e343630313237382035392e36393035373039292929 | way      | 989184163 |   1 |     | {"building:colour":"white","building:part":"yes","height":"6","roof:shape":"flat"}
 (1 row)
 
+-- PostGIS specific data types, but SpatiaLite or sqlite_fdw unsupported 
 --Testcase 58:
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE box2d;
 --Testcase 59: -- ERR
 SELECT * FROM "♂";
-ERROR:  PostGIS specific value is not deparasble because of no similar SpatiaLite conception 
+ERROR:  PostGIS specific value is not deparsable because of no similar SpatiaLite conception 
 HINT:  Data type: "box2d"
 --Testcase 60:
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE box3d;
 --Testcase 61: -- ERR
 SELECT * FROM "♂";
-ERROR:  PostGIS specific value is not deparasble because of no similar SpatiaLite conception 
+ERROR:  PostGIS specific value is not deparsable because of no similar SpatiaLite conception 
 HINT:  Data type: "box3d"
 --Testcase 62:
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE geometry_dump;
 --Testcase 63: -- ERR
 SELECT * FROM "♂";
-ERROR:  PostGIS specific value is not deparasble because of no similar SpatiaLite conception 
+ERROR:  PostGIS specific value is not deparsable because of no similar SpatiaLite conception 
 HINT:  Data type: "geometry_dump"
 --Testcase 64:
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE geomval;
 --Testcase 65: -- ERR
 SELECT * FROM "♂";
-ERROR:  PostGIS specific value is not deparasble because of no similar SpatiaLite conception 
+ERROR:  PostGIS specific value is not deparsable because of no similar SpatiaLite conception 
 HINT:  Data type: "geomval"
 --Testcase 66:
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE getfaceedges_returntype;
 --Testcase 67: -- ERR
 SELECT * FROM "♂";
-ERROR:  PostGIS specific value is not deparasble because of no similar SpatiaLite conception 
+ERROR:  PostGIS specific value is not deparsable because of no similar SpatiaLite conception 
 HINT:  Data type: "getfaceedges_returntype"
 --Testcase 68:
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE rastbandarg;
 --Testcase 69: -- ERR
 SELECT * FROM "♂";
-ERROR:  PostGIS specific value is not deparasble because of no similar SpatiaLite conception 
+ERROR:  PostGIS specific value is not deparsable because of no similar SpatiaLite conception 
 HINT:  Data type: "rastbandarg"
 --Testcase 70:
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE raster;
 --Testcase 71: -- ERR
 SELECT * FROM "♂";
-ERROR:  PostGIS specific value is not deparasble because of no similar SpatiaLite conception 
+ERROR:  PostGIS specific value is not deparsable because of no similar SpatiaLite conception 
 HINT:  Data type: "raster"
 --Testcase 72:
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE reclassarg;
 --Testcase 73: -- ERR
 SELECT * FROM "♂";
-ERROR:  PostGIS specific value is not deparasble because of no similar SpatiaLite conception 
+ERROR:  PostGIS specific value is not deparsable because of no similar SpatiaLite conception 
 HINT:  Data type: "reclassarg"
 --Testcase 74:
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE summarystats;
 --Testcase 75: -- ERR
 SELECT * FROM "♂";
-ERROR:  PostGIS specific value is not deparasble because of no similar SpatiaLite conception 
+ERROR:  PostGIS specific value is not deparsable because of no similar SpatiaLite conception 
 HINT:  Data type: "summarystats"
 --Testcase 76:
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE topoelement;
 --Testcase 77: -- ERR
 SELECT * FROM "♂";
-ERROR:  PostGIS specific value is not deparasble because of no similar SpatiaLite conception 
+ERROR:  PostGIS specific value is not deparsable because of no similar SpatiaLite conception 
 HINT:  Data type: "topoelement"
 --Testcase 78:
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE topoelementarray;
 --Testcase 79: -- ERR
 SELECT * FROM "♂";
-ERROR:  PostGIS specific value is not deparasble because of no similar SpatiaLite conception 
+ERROR:  PostGIS specific value is not deparsable because of no similar SpatiaLite conception 
 HINT:  Data type: "topoelementarray"
 --Testcase 80:
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE topogeometry;
 --Testcase 81: -- ERR
 SELECT * FROM "♂";
-ERROR:  PostGIS specific value is not deparasble because of no similar SpatiaLite conception 
+ERROR:  PostGIS specific value is not deparsable because of no similar SpatiaLite conception 
 HINT:  Data type: "topogeometry"
 --Testcase 82:
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE unionarg;
 --Testcase 83: -- ERR
 SELECT * FROM "♂";
-ERROR:  PostGIS specific value is not deparasble because of no similar SpatiaLite conception 
+ERROR:  PostGIS specific value is not deparsable because of no similar SpatiaLite conception 
 HINT:  Data type: "unionarg"
 --Testcase 84:
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE validatetopology_returntype;
 --Testcase 85: -- ERR
 SELECT * FROM "♂";
-ERROR:  PostGIS specific value is not deparasble because of no similar SpatiaLite conception 
+ERROR:  PostGIS specific value is not deparsable because of no similar SpatiaLite conception 
 HINT:  Data type: "validatetopology_returntype"
+-- PostGIS specific data types, not bytea mode, hence error
 --Testcase 86:
 ALTER DOMAIN geometry RENAME TO geom0;
 --Testcase 87:
