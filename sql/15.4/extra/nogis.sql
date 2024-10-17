@@ -70,7 +70,7 @@ SELECT "i", gm, gg, t FROM "types_PostGIS" WHERE gm = '0001e6100000bf72ce99fe763
 SELECT "i", gm, gg, t FROM "types_PostGIS" WHERE gm = '0001e6100000bf72ce99fe763e40ed4960730ed84d40bf72ce99fe763e40ed4960730ed84d407c01000000bf72ce99fe763e40ed4960730ed84d40fe'::geometry;
 
 -- Insert PostGIS/GEOS BLOB, read SpatiaLite BLOB
---Testcase 41: ERR - no GIS data support
+--Testcase 41: no err, but no GIS data support
 INSERT INTO "types_PostGIS" ( "i", gm, gg, t ) VALUES (2, decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex'),  decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex'), '{"genus": "Rhododendron", "taxon": "Rhododendron ledebourii"}');
 --Testcase 42:
 ALTER FOREIGN TABLE "types_PostGIS" ALTER COLUMN "gm" TYPE bytea;
