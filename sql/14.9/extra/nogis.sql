@@ -65,9 +65,9 @@ EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm, gg, t FROM "types_PostGIS";
 --Testcase 39:
 EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm, gg, t FROM "types_PostGIS" WHERE gm = '0001e6100000bf72ce99fe763e40ed4960730ed84d40bf72ce99fe763e40ed4960730ed84d407c01000000bf72ce99fe763e40ed4960730ed84d40fe'::geometry;
+SELECT "i", gm, gg, t FROM "types_PostGIS" WHERE gm = '\x0001e6100000bf72ce99fe763e40ed4960730ed84d40bf72ce99fe763e40ed4960730ed84d407c01000000bf72ce99fe763e40ed4960730ed84d40fe'::geometry;
 --Testcase 40:
-SELECT "i", gm, gg, t FROM "types_PostGIS" WHERE gm = '0001e6100000bf72ce99fe763e40ed4960730ed84d40bf72ce99fe763e40ed4960730ed84d407c01000000bf72ce99fe763e40ed4960730ed84d40fe'::geometry;
+SELECT "i", gm, gg, t FROM "types_PostGIS" WHERE gm = '\x0001e6100000bf72ce99fe763e40ed4960730ed84d40bf72ce99fe763e40ed4960730ed84d407c01000000bf72ce99fe763e40ed4960730ed84d40fe'::geometry;
 
 -- Insert PostGIS/GEOS BLOB, read SpatiaLite BLOB
 --Testcase 41: no err, but no GIS data support
