@@ -1,5 +1,3 @@
---SET log_min_messages  TO DEBUG1;
---SET client_min_messages  TO DEBUG1;
 --Testcase 2:
 CREATE EXTENSION sqlite_fdw;
 --Testcase 3:
@@ -271,8 +269,12 @@ DROP SCHEMA "♂";
 
 -- Test ALL operators for pushing down by list of built-in geometry operators 
 -- Some operators doesn't implemented and doesn't exist in PostGIS
+-- SELECT
 -- geometry -> geometry + bytea const -> geography -> geography + bytea const
 -- TC 100   -> TC 150                 -> TC200     -> TC250
+-- WHERE
+-- geometry -> geometry + bytea const -> geography -> geography + bytea const
+-- TC 300   -> TC 350                 -> TC400     -> TC450
 
 --Testcase 100: ERR not implemented in PostGIS
 EXPLAIN (VERBOSE, COSTS OFF)
@@ -662,11 +664,399 @@ SELECT "i", gg = decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'h
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gg != decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
 
---Testcase 300:
+--Testcase 300: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm + gm1 IS NOT NULL;
+--Testcase 301: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm - gm1 IS NOT NULL;
+--Testcase 302: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm * gm1 IS NOT NULL;
+--Testcase 303: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm / gm1 IS NOT NULL;
+--Testcase 304: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm # gm1 IS NOT NULL;
+--Testcase 305: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm @-@ gm1 IS NOT NULL;
+--Testcase 306:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm @@ gm1 IS NOT NULL;
+--Testcase 307:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm ## gm1 IS NOT NULL;
+--Testcase 308: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm <-> gm1 IS NOT NULL;
+--Testcase 309:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm && gm1 IS NOT NULL;
+--Testcase 310:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm << gm1 IS NOT NULL;
+--Testcase 311:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm >> gm1 IS NOT NULL;
+--Testcase 312: ERR some candidates
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm <> gm1 IS NOT NULL;
+--Testcase 313:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm &< gm1 IS NOT NULL;
+--Testcase 314:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm &> gm1 IS NOT NULL;
+--Testcase 315:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm <<| gm1 IS NOT NULL;
+--Testcase 316:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm |>> gm1 IS NOT NULL;
+--Testcase 317: ERR some candidates
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm <> gm1 IS NOT NULL;
+--Testcase 318:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm &<| gm1 IS NOT NULL;
+--Testcase 319:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm |&> gm1 IS NOT NULL;
+--Testcase 320: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm <^ gm1 IS NOT NULL;
+--Testcase 321: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm >^ gm1 IS NOT NULL;
+--Testcase 322: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm ?# gm1 IS NOT NULL;
+--Testcase 323: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm ?- gm1 IS NOT NULL;
+--Testcase 324: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm ?| gm1 IS NOT NULL;
+--Testcase 325: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm ?-| gm1 IS NOT NULL;
+--Testcase 326: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm ?|| gm1 IS NOT NULL;
+--Testcase 327:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm ~= gm1 IS NOT NULL;
+--Testcase 328: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm @> gm1 IS NOT NULL;
+--Testcase 329: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm <@ gm1 IS NOT NULL;
+--Testcase 330:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm = gm1 IS NOT NULL;
+--Testcase 331: ERR some candidates
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm != gm1 IS NOT NULL;
+
+--Testcase 350: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm + decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 351: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm - decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 352: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm * decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 353: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm / decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 354: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm # decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 355: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm @-@ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 356:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm @@ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 357: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm ## decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 358:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm <-> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 359:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm && decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 360:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm << decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 361:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm >> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 362:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm <> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 363:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm &< decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 364:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm &> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 365:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm <<| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 366:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm |>> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 367:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm <> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 368:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm &<| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 369:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm |&> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 370: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm <^ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 371: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm >^ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 372: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm ?# decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 373: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm ?- decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 374: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm ?| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 375: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm ?-| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 376: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm ?|| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 377:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm ~= decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 378: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm @> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 379: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm <@ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 380: ERR not unique
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm = decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 381:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gm != decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+
+--Testcase 400: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg + gg1 IS NOT NULL;
+--Testcase 401: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg - gg1 IS NOT NULL;
+--Testcase 402: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg * gg1 IS NOT NULL;
+--Testcase 403: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg / gg1 IS NOT NULL;
+--Testcase 404: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg # gg1 IS NOT NULL;
+--Testcase 405: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg @-@ gg1 IS NOT NULL;
+--Testcase 406: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg @@ gg1 IS NOT NULL;
+--Testcase 407: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg ## gg1 IS NOT NULL;
+--Testcase 408:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg <-> gg1 IS NOT NULL;
+--Testcase 409:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg && gg1 IS NOT NULL;
+--Testcase 410: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg << gg1 IS NOT NULL;
+--Testcase 411: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg >> gg1 IS NOT NULL;
+--Testcase 412:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg <> gg1 IS NOT NULL;
+--Testcase 413: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg &< gg1 IS NOT NULL;
+--Testcase 414: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg &> gg1 IS NOT NULL;
+--Testcase 415: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg <<| gg1 IS NOT NULL;
+--Testcase 416: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg |>> gg1 IS NOT NULL;
+--Testcase 417:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg <> gg1 IS NOT NULL;
+--Testcase 418: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg &<| gg1 IS NOT NULL;
+--Testcase 419: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg |&> gg1 IS NOT NULL;
+--Testcase 420: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg <^ gg1 IS NOT NULL;
+--Testcase 421: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg >^ gg1 IS NOT NULL;
+--Testcase 422: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg ?# gg1 IS NOT NULL;
+--Testcase 423:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg ?- gg1 IS NOT NULL;
+--Testcase 424: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg ?| gg1 IS NOT NULL;
+--Testcase 425: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg ?-| gg1 IS NOT NULL;
+--Testcase 426: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg ?|| gg1 IS NOT NULL;
+--Testcase 427: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg ~= gg1 IS NOT NULL;
+--Testcase 428: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg @> gg1 IS NOT NULL;
+--Testcase 429: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg <@ gg1 IS NOT NULL;
+--Testcase 430:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg = gg1 IS NOT NULL;
+--Testcase 431:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg != gg1 IS NOT NULL;
+
+--Testcase 450: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg + decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 451: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg - decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 452: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg * decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 453: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg / decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 454: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg # decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 455: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg @-@ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 456: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg @@ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 457: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg ## decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 458:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg <-> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 459:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg && decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 460: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg << decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 461: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg >> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 462:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg <> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 463: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg &< decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 464: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg &> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 465: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg <<| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 466: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg |>> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 467:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg <> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 468: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg &<| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 469: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg |&> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 470: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg <^ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 471: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg >^ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 472:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg ?# decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 473: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg ?- decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 474: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg ?| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 475: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg ?-| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 476: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg ?|| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 477: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg ~= decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 478: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg @> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 479: ERR not implemented in PostGIS
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg <@ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 480: ERR not unique
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg = decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+--Testcase 481:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "types_PostGIS" WHERE gg != decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+
+--Testcase 500:
 DROP FOREIGN TABLE "types_PostGIS";
---Testcase 301:
+--Testcase 501:
 DROP EXTENSION sqlite_fdw CASCADE;
---Testcase 302:
+--Testcase 502:
 DROP EXTENSION postgis CASCADE;
---Testcase 303: -- types for later types test
+--Testcase 503: -- types for later types test
 CREATE EXTENSION postgis;

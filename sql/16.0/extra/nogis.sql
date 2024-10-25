@@ -42,7 +42,7 @@ CREATE DOMAIN validatetopology_returntype AS bytea;
 --Testcase 40:
 CREATE FOREIGN TABLE "types_PostGIS"( "i" int OPTIONS (key 'true'), gm geometry, gg geography, r raster, t text) SERVER sqlite_svr;
 
---Testcase 41: ERR ubable to convert to unsupported PostGIS specific data type
+--Testcase 41: ERR unable to convert to unsupported PostGIS specific data type
 INSERT INTO "types_PostGIS" ( "i", gm, gg, r, t ) VALUES (1, decode('0101000020e6100000fd5aa846f9733e406c054d4bacd74d40', 'hex'),  decode('0101000020e6100000fd5aa846f9733e406c054d4bacd74d40', 'hex'),  decode('1223456890', 'hex'), '{"genus": "Rhododendron", "taxon": "Rhododendron ledebourii", "natural": "shrub", "genus:ru": "Рододендрон", "taxon:ru": "Рододендрон Ледебура", "source:taxon": "board"}');
 --Testcase 42:
 ALTER FOREIGN TABLE "types_PostGIS" ALTER COLUMN "gm" TYPE bytea;
