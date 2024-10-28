@@ -2903,39 +2903,31 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 			{
 				/* common branch of constants, deparsable as a text data */
 				extval = OidOutputFunctionCall(typoutput, node->constvalue);
-
-				if (context->complementarynode != NULL)
-				{
-					varnode = get_complementary_var_node(context->complementarynode);
-					if (varnode != NULL && listed_datatype_oid(varnode->vartype, varnode->vartypmod, postGisSQLiteCompatibleTypes))
-					{
-						/* common branch of PostGIS constants, deparsable as a text data */
-						elog(DEBUG1, "sqlite_fdw : %s deparse PostGIS constant", __func__);
-#ifdef SQLITE_FDW_GIS_ENABLE
-						sqlite_deparse_PostGIS_value(buf, extval);
-#else
-						sqlite_deparse_string_literal(buf, extval);
-#endif
-					}
-					else
-					{
-						sqlite_deparse_string_literal(buf, extval);
-					}
-				}
-				else
-				{
-					sqlite_deparse_string_literal(buf, extval);
-				}
+				sqlite_deparse_string_literal(buf, extval);
 				break;
 			}
 		default:
 			{
-				const char *pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(node->consttype, -1));
-				extval = OidOutputFunctionCall(typoutput, node->constvalue);
-				ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-								errmsg("Unknown data type of a constant"),
-								errhint("Data type: \"%s\" ", pg_dataTypeName),
-								errcontext("Value: %s", extval)));
+				if (listed_datatype_oid(node->consttype, -1, postGisSQLiteCompatibleTypes))
+				{
+					/* common branch of PostGIS constants, deparsable as a text data */
+					elog(DEBUG1, "sqlite_fdw : %s deparse PostGIS constant", __func__);
+#ifdef SQLITE_FDW_GIS_ENABLE
+					sqlite_deparse_PostGIS_value(buf, extval);
+#else
+					sqlite_deparse_string_literal(buf, extval);
+#endif
+				}
+				else
+				{
+					const char *pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(node->consttype, -1));
+
+					extval = OidOutputFunctionCall(typoutput, node->constvalue);
+					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+									errmsg("Unknown data type of a constant"),
+									errhint("Data type: \"%s\" ", pg_dataTypeName),
+									errcontext("Value: %s", extval)));
+				}
 			}
 	}
 }
