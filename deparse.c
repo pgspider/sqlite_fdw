@@ -2908,11 +2908,11 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 			}
 		default:
 			{
-				extval = OidOutputFunctionCall(typoutput, node->constvalue);
 				if (listed_datatype_oid(node->consttype, -1, postGisSQLiteCompatibleTypes))
 				{
 					/* common branch of PostGIS constants, deparsable as a text data */
-					elog(DEBUG1, "sqlite_fdw : %s deparse PostGIS constant", __func__);
+					elog(DEBUG2, "sqlite_fdw : %s deparse PostGIS constant", __func__);
+					extval = OidOutputFunctionCall(typoutput, node->constvalue);
 #ifdef SQLITE_FDW_GIS_ENABLE
 					sqlite_deparse_PostGIS_value(buf, extval);
 #else

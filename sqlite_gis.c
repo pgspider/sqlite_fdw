@@ -260,7 +260,7 @@ common_EWKB_error (Form_pg_attribute att, int len, const char* data, bool direct
  * text input converted to EWKB and than EWKB converted to hex code.
  */
 void
-sqlite_deparse_PostGIS_value(char *extval, StringInfo buf)
+sqlite_deparse_PostGIS_value(StringInfo buf, char *extval)
 {
 	blobOutput bO = EWKB2SpatiaLiteBlobImage (extval, NULL);
 	char* hexform = getHexFormOfBlob(bO);

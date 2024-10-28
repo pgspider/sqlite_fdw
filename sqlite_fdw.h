@@ -407,7 +407,7 @@ extern const char *postGisSQLiteCompatibleTypes[];
 #ifdef SQLITE_FDW_GIS_ENABLE
 char*		SpatiaLiteAsPostGISgeom (blobOutput spatiaLiteBlob, Form_pg_attribute att);
 blobOutput	PostGISgeomAsSpatiaLite (Datum value, Form_pg_attribute att);
-void		sqlite_deparse_PostGIS_value(char *extval, StringInfo buf);
+void		sqlite_deparse_PostGIS_value(StringInfo buf, char *extval);
 #endif
 
 #endif							/* SQLITE_FDW_H */
