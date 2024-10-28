@@ -185,25 +185,30 @@ EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm, gg, t FROM "types_PostGIS";
 --Testcase 49:
 EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm, gg, t FROM "types_PostGIS" WHERE gm = '0101000020e6100000bf72ce99fe763e40ed4960730ed84d40'::geometry;
+SELECT "i", gm, gg, t FROM "types_PostGIS" WHERE gm = ('POINT (30.4648224 59.687941)'::geometry);
 --Testcase 50:
-SELECT "i", gm, gg, t FROM "types_PostGIS" WHERE gm = '0101000020e6100000bf72ce99fe763e40ed4960730ed84d40'::geometry;
+SELECT "i", gm, gg, t FROM "types_PostGIS" WHERE gm = ('POINT (30.4648224 59.687941)'::geometry);
+--Testcase 51:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "i", gm, gg, t FROM "types_PostGIS" WHERE gm = ('SRID=4326;POINT (30.4648224 59.687941)'::geometry);
+--Testcase 52:
+SELECT "i", gm, gg, t FROM "types_PostGIS" WHERE gm = ('SRID=4326;POINT (30.4648224 59.687941)'::geometry);
 
 -- Insert PostGIS/GEOS BLOB, read SpatiaLite BLOB
---Testcase 51: OK
+--Testcase 53: OK
 INSERT INTO "types_PostGIS" ( "i", gm, gg, t ) VALUES (2, decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex'),  decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex'), '{"genus": "Rhododendron", "taxon": "Rhododendron ledebourii"}');
---Testcase 52:
+--Testcase 54:
 ALTER FOREIGN TABLE "types_PostGIS" ALTER COLUMN "gm" TYPE bytea;
---Testcase 53:
-ALTER FOREIGN TABLE "types_PostGIS" ALTER COLUMN "gg" TYPE bytea;
---Testcase 54: OK
-SELECT "i", gm, gg, t FROM "types_PostGIS";
 --Testcase 55:
+ALTER FOREIGN TABLE "types_PostGIS" ALTER COLUMN "gg" TYPE bytea;
+--Testcase 56: OK
+SELECT "i", gm, gg, t FROM "types_PostGIS";
+--Testcase 57:
 ALTER FOREIGN TABLE "types_PostGIS" ALTER COLUMN "gm" TYPE geometry;
---Testcase 56:
+--Testcase 58:
 ALTER FOREIGN TABLE "types_PostGIS" ALTER COLUMN "gg" TYPE geography;
 
---Testcase 57:
+--Testcase 59:
 CREATE FOREIGN TABLE "♂" (
 	id int4 OPTIONS (key 'true'),
 	"UAI" varchar(254),
@@ -214,22 +219,22 @@ CREATE FOREIGN TABLE "♂" (
 	"URL" varchar(80)
 ) SERVER sqlite_svr;
 
---Testcase 58:
-INSERT INTO "♂" SELECT * FROM "♂"."テスト";
---Testcase 59:
-ALTER FOREIGN TABLE "♂" ALTER COLUMN "⌖" TYPE bytea;
 --Testcase 60:
-ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE bytea;
+INSERT INTO "♂" SELECT * FROM "♂"."テスト";
 --Testcase 61:
-SELECT * FROM "♂";
+ALTER FOREIGN TABLE "♂" ALTER COLUMN "⌖" TYPE bytea;
 --Testcase 62:
-ALTER FOREIGN TABLE "♂" ALTER COLUMN "⌖" TYPE geometry;
+ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE bytea;
 --Testcase 63:
-ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE geometry;
+SELECT * FROM "♂";
 --Testcase 64:
+ALTER FOREIGN TABLE "♂" ALTER COLUMN "⌖" TYPE geometry;
+--Testcase 65:
+ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE geometry;
+--Testcase 66:
 SELECT * FROM "♂";
 
---Testcase 65:
+--Testcase 67:
 CREATE FOREIGN TABLE "♁ FDW"(
 	geom geometry NOT NULL,
 	osm_type varchar(16) OPTIONS (key 'true') NOT NULL ,
@@ -239,32 +244,32 @@ CREATE FOREIGN TABLE "♁ FDW"(
 	t text
 ) SERVER sqlite_svr OPTIONS (table '♁');
 
---Testcase 66: ERR - No SRID
+--Testcase 68: ERR - No SRID
 INSERT INTO "♁ FDW" SELECT * FROM "♁";
---Testcase 67: OK
+--Testcase 69: OK
 SELECT * FROM "♁" WHERE ST_SRID(geom) IS NOT NULL;
---Testcase 68:
-UPDATE "♁" SET geom = ST_SetSRID(geom, 4326);
---Testcase 69:
-INSERT INTO "♁ FDW" SELECT * FROM "♁" WHERE ST_SRID(geom) IS NOT NULL;
 --Testcase 70:
-ALTER FOREIGN TABLE "♁ FDW" ALTER COLUMN "geom" TYPE bytea;
+UPDATE "♁" SET geom = ST_SetSRID(geom, 4326);
 --Testcase 71:
-SELECT * FROM "♁ FDW";
+INSERT INTO "♁ FDW" SELECT * FROM "♁" WHERE ST_SRID(geom) IS NOT NULL;
 --Testcase 72:
-ALTER FOREIGN TABLE "♁ FDW" ALTER COLUMN "geom" TYPE geometry;
+ALTER FOREIGN TABLE "♁ FDW" ALTER COLUMN "geom" TYPE bytea;
 --Testcase 73:
 SELECT * FROM "♁ FDW";
-
 --Testcase 74:
-DROP FOREIGN TABLE "♂";
+ALTER FOREIGN TABLE "♁ FDW" ALTER COLUMN "geom" TYPE geometry;
 --Testcase 75:
-DROP FOREIGN TABLE "♁ FDW";
+SELECT * FROM "♁ FDW";
+
 --Testcase 76:
-DROP TABLE "♁";
+DROP FOREIGN TABLE "♂";
 --Testcase 77:
-DROP TABLE "♂"."テスト";
+DROP FOREIGN TABLE "♁ FDW";
 --Testcase 78:
+DROP TABLE "♁";
+--Testcase 79:
+DROP TABLE "♂"."テスト";
+--Testcase 80:
 DROP SCHEMA "♂";
 
 -- Test ALL operators for pushing down by list of built-in geometry operators 
@@ -293,7 +298,7 @@ EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm # gm1 g FROM "types_PostGIS";
 --Testcase 105: ERR not implemented in PostGIS
 EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm @-@ gm1 g FROM "types_PostGIS";
+SELECT "i", @-@ gm g FROM "types_PostGIS";
 --Testcase 106:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm @@ gm1 g FROM "types_PostGIS";
@@ -372,6 +377,21 @@ SELECT "i", gm = gm1 g FROM "types_PostGIS";
 --Testcase 131: ERR some candidates
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm != gm1 g FROM "types_PostGIS";
+--Testcase 132:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "i", gm &&& gm1 g FROM "types_PostGIS";
+--Testcase 133:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "i", gm &&& gm1 g FROM "types_PostGIS";
+--Testcase 134:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "i", gm |=| gm1 g FROM "types_PostGIS";
+--Testcase 135:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "i", gm <#> gm1 g FROM "types_PostGIS";
+--Testcase 136:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "i", gm <<->> gm1 g FROM "types_PostGIS";
 
 --Testcase 150: ERR not implemented in PostGIS
 EXPLAIN (VERBOSE, COSTS OFF)
@@ -388,9 +408,6 @@ SELECT "i", gm / decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'h
 --Testcase 154: ERR not implemented in PostGIS
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm # decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
---Testcase 155: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm @-@ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
 --Testcase 156:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm @@ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
@@ -469,6 +486,18 @@ SELECT "i", gm = decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'h
 --Testcase 181:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm != decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
+--Testcase 182:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "i", gm &&& decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
+--Testcase 183:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "i", gm |=| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
+--Testcase 184:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "i", gm <#> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
+--Testcase 185:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "i", gm <<->> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
 
 --Testcase 200: ERR not implemented in PostGIS
 EXPLAIN (VERBOSE, COSTS OFF)
@@ -487,7 +516,7 @@ EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gg # gg1 g FROM "types_PostGIS";
 --Testcase 205: ERR not implemented in PostGIS
 EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg @-@ gg1 g FROM "types_PostGIS";
+SELECT "i", @-@ gg g FROM "types_PostGIS";
 --Testcase 206: ERR not implemented in PostGIS
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gg @@ gg1 g FROM "types_PostGIS";
@@ -566,6 +595,18 @@ SELECT "i", gg = gg1 g FROM "types_PostGIS";
 --Testcase 231:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gg != gg1 g FROM "types_PostGIS";
+--Testcase 232:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "i", gg &&& gg1 g FROM "types_PostGIS";
+--Testcase 233:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "i", gg |=| gg1 g FROM "types_PostGIS";
+--Testcase 234:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "i", gg <#> gg1 g FROM "types_PostGIS";
+--Testcase 235:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "i", gg <<->> gg1 g FROM "types_PostGIS";
 
 --Testcase 250: ERR not implemented in PostGIS
 EXPLAIN (VERBOSE, COSTS OFF)
@@ -582,9 +623,6 @@ SELECT "i", gg / decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'h
 --Testcase 254: ERR not implemented in PostGIS
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gg # decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
---Testcase 255: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg @-@ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
 --Testcase 256: ERR not implemented in PostGIS
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gg @@ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
@@ -663,6 +701,18 @@ SELECT "i", gg = decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'h
 --Testcase 281:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gg != decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
+--Testcase 282:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "i", gg &&& decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
+--Testcase 283:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "i", gg |=| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
+--Testcase 284:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "i", gg <#> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
+--Testcase 255:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "i", gg <<->> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
 
 --Testcase 300: ERR not implemented in PostGIS
 EXPLAIN (VERBOSE, COSTS OFF)
