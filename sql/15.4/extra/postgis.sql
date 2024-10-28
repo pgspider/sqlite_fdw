@@ -213,7 +213,7 @@ ALTER FOREIGN TABLE "types_PostGIS" ALTER COLUMN "gg" TYPE geography;
 --Testcase 60:  ERR damaged geometry, but there is SRID
 INSERT INTO "types_PostGIS" ( "i", gm, gg, t ) VALUES (3, decode('0101000020e6100000bf72ce99fe76', 'hex'),  NULL, '{"genus": "Rhododendron", "taxon": "Rhododendron ledebourii"}');
 --Testcase 61:  ERR damaged geography, but there is SRID
-INSERT INTO "types_PostGIS" ( "i", gm, gg, t ) VALUES (4, NULL, decode('0101000020e6100000bf72ce99fe76', 'hex'),  NULL, '{"genus": "Rhododendron", "taxon": "Rhododendron ledebourii"}');
+INSERT INTO "types_PostGIS" ( "i", gm, gg, t ) VALUES (4, NULL, decode('0101000020e6100000bf72ce99fe76', 'hex'), '{"genus": "Rhododendron", "taxon": "Rhododendron ledebourii"}');
 
 --Testcase 62:
 CREATE FOREIGN TABLE "♂" (
