@@ -697,48 +697,6 @@ DROP SCHEMA "♂";
 -- WHERE
 -- geometry -> geometry + bytea const -> geography -> geography + bytea const
 -- TC 300   -> TC 350                 -> TC400     -> TC450
---Testcase 100: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm + gm1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geometry + geometry
-LINE 2: SELECT "i", gm + gm1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 101: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm - gm1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geometry - geometry
-LINE 2: SELECT "i", gm - gm1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 102: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm * gm1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geometry * geometry
-LINE 2: SELECT "i", gm * gm1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 103: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm / gm1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geometry / geometry
-LINE 2: SELECT "i", gm / gm1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 104: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm # gm1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geometry # geometry
-LINE 2: SELECT "i", gm # gm1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 105: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", @-@ gm g FROM "types_PostGIS";
-ERROR:  operator does not exist: @-@ geometry
-LINE 2: SELECT "i", @-@ gm g FROM "types_PostGIS";
-                    ^
-HINT:  No operator matches the given name and argument type. You might need to add an explicit type cast.
 --Testcase 106:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm @@ gm1 g FROM "types_PostGIS";
@@ -756,16 +714,6 @@ ERROR:  operator does not exist: geometry ## geometry
 LINE 2: SELECT "i", gm ## gm1 g FROM "types_PostGIS";
                        ^
 HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 108: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm <-> gm1 g FROM "types_PostGIS";
-                            QUERY PLAN                             
--------------------------------------------------------------------
- Foreign Scan on public."types_PostGIS"
-   Output: i, (gm <-> gm1)
-   SQLite query: SELECT `i`, `gm`, `gm1` FROM main."types_PostGIS"
-(3 rows)
-
 --Testcase 109:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm && gm1 g FROM "types_PostGIS";
@@ -870,55 +818,6 @@ SELECT "i", gm |&> gm1 g FROM "types_PostGIS";
    SQLite query: SELECT `i`, `gm`, `gm1` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 120: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm <^ gm1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geometry <^ geometry
-LINE 2: SELECT "i", gm <^ gm1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 121: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm >^ gm1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geometry >^ geometry
-LINE 2: SELECT "i", gm >^ gm1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 122: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm ?# gm1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geometry ?# geometry
-LINE 2: SELECT "i", gm ?# gm1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 123: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm ?- gm1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geometry ?- geometry
-LINE 2: SELECT "i", gm ?- gm1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 124: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm ?| gm1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geometry ?| geometry
-LINE 2: SELECT "i", gm ?| gm1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 125: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm ?-| gm1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geometry ?-| geometry
-LINE 2: SELECT "i", gm ?-| gm1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 126: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm ?|| gm1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geometry ?|| geometry
-LINE 2: SELECT "i", gm ?|| gm1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 127:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm ~= gm1 g FROM "types_PostGIS";
@@ -929,20 +828,6 @@ SELECT "i", gm ~= gm1 g FROM "types_PostGIS";
    SQLite query: SELECT `i`, `gm`, `gm1` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 128: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm @> gm1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geometry @> geometry
-LINE 2: SELECT "i", gm @> gm1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 129: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm <@ gm1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geometry <@ geometry
-LINE 2: SELECT "i", gm <@ gm1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 130:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm = gm1 g FROM "types_PostGIS";
@@ -1010,41 +895,6 @@ SELECT "i", gm <<->> gm1 g FROM "types_PostGIS";
    SQLite query: SELECT `i`, `gm`, `gm1` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 150: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm + decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geometry + bytea
-LINE 2: SELECT "i", gm + decode('0101000020e6100000bf72ce99fe763e40e...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 151: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm - decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geometry - bytea
-LINE 2: SELECT "i", gm - decode('0101000020e6100000bf72ce99fe763e40e...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 152: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm * decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geometry * bytea
-LINE 2: SELECT "i", gm * decode('0101000020e6100000bf72ce99fe763e40e...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 153: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm / decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geometry / bytea
-LINE 2: SELECT "i", gm / decode('0101000020e6100000bf72ce99fe763e40e...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 154: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm # decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geometry # bytea
-LINE 2: SELECT "i", gm # decode('0101000020e6100000bf72ce99fe763e40e...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 156:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm @@ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
@@ -1055,13 +905,6 @@ SELECT "i", gm @@ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', '
    SQLite query: SELECT `i`, `gm` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 157: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm ## decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geometry ## bytea
-LINE 2: SELECT "i", gm ## decode('0101000020e6100000bf72ce99fe763e40...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 158:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm <-> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
@@ -1182,55 +1025,6 @@ SELECT "i", gm |&> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 
    SQLite query: SELECT `i`, `gm` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 170: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm <^ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geometry <^ bytea
-LINE 2: SELECT "i", gm <^ decode('0101000020e6100000bf72ce99fe763e40...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 171: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm >^ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geometry >^ bytea
-LINE 2: SELECT "i", gm >^ decode('0101000020e6100000bf72ce99fe763e40...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 172: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm ?# decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geometry ?# bytea
-LINE 2: SELECT "i", gm ?# decode('0101000020e6100000bf72ce99fe763e40...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 173: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm ?- decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geometry ?- bytea
-LINE 2: SELECT "i", gm ?- decode('0101000020e6100000bf72ce99fe763e40...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 174: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm ?| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geometry ?| bytea
-LINE 2: SELECT "i", gm ?| decode('0101000020e6100000bf72ce99fe763e40...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 175: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm ?-| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geometry ?-| bytea
-LINE 2: SELECT "i", gm ?-| decode('0101000020e6100000bf72ce99fe763e4...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 176: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm ?|| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geometry ?|| bytea
-LINE 2: SELECT "i", gm ?|| decode('0101000020e6100000bf72ce99fe763e4...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 177:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm ~= decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
@@ -1241,20 +1035,6 @@ SELECT "i", gm ~= decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', '
    SQLite query: SELECT `i`, `gm` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 178: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm @> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geometry @> bytea
-LINE 2: SELECT "i", gm @> decode('0101000020e6100000bf72ce99fe763e40...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 179: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm <@ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geometry <@ bytea
-LINE 2: SELECT "i", gm <@ decode('0101000020e6100000bf72ce99fe763e40...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 180: ERR not unique
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm = decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
@@ -1312,62 +1092,6 @@ SELECT "i", gm <<->> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40'
    SQLite query: SELECT `i`, `gm` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 200: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg + gg1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography + geography
-LINE 2: SELECT "i", gg + gg1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 201: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg - gg1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography - geography
-LINE 2: SELECT "i", gg - gg1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 202: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg * gg1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography * geography
-LINE 2: SELECT "i", gg * gg1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 203: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg / gg1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography / geography
-LINE 2: SELECT "i", gg / gg1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 204: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg # gg1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography # geography
-LINE 2: SELECT "i", gg # gg1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 205: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", @-@ gg g FROM "types_PostGIS";
-ERROR:  operator does not exist: @-@ geography
-LINE 2: SELECT "i", @-@ gg g FROM "types_PostGIS";
-                    ^
-HINT:  No operator matches the given name and argument type. You might need to add an explicit type cast.
---Testcase 206: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg @@ gg1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography @@ geography
-LINE 2: SELECT "i", gg @@ gg1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 207: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg ## gg1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography ## geography
-LINE 2: SELECT "i", gg ## gg1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 208:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gg <-> gg1 g FROM "types_PostGIS";
@@ -1388,20 +1112,6 @@ SELECT "i", gg && gg1 g FROM "types_PostGIS";
    SQLite query: SELECT `i`, `gg`, `gg1` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 210: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg << gg1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography << geography
-LINE 2: SELECT "i", gg << gg1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 211: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg >> gg1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography >> geography
-LINE 2: SELECT "i", gg >> gg1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 212:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gg <> gg1 g FROM "types_PostGIS";
@@ -1412,138 +1122,14 @@ SELECT "i", gg <> gg1 g FROM "types_PostGIS";
    SQLite query: SELECT `i`, `gg`, `gg1` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 213: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg &< gg1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography &< geography
-LINE 2: SELECT "i", gg &< gg1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 214: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg &> gg1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography &> geography
-LINE 2: SELECT "i", gg &> gg1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 215: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg <<| gg1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography <<| geography
-LINE 2: SELECT "i", gg <<| gg1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 216: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg |>> gg1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography |>> geography
-LINE 2: SELECT "i", gg |>> gg1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 217:
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg <> gg1 g FROM "types_PostGIS";
-                            QUERY PLAN                             
--------------------------------------------------------------------
- Foreign Scan on public."types_PostGIS"
-   Output: i, ((gg)::bytea <> (gg1)::bytea)
-   SQLite query: SELECT `i`, `gg`, `gg1` FROM main."types_PostGIS"
-(3 rows)
-
---Testcase 218: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg &<| gg1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography &<| geography
-LINE 2: SELECT "i", gg &<| gg1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 219: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg |&> gg1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography |&> geography
-LINE 2: SELECT "i", gg |&> gg1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 220: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg <^ gg1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography <^ geography
-LINE 2: SELECT "i", gg <^ gg1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 221: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg >^ gg1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography >^ geography
-LINE 2: SELECT "i", gg >^ gg1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 222: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg ?# gg1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography ?# geography
-LINE 2: SELECT "i", gg ?# gg1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 223:
 EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg ?- gg1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography ?- geography
-LINE 2: SELECT "i", gg ?- gg1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 224: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg ?| gg1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography ?| geography
-LINE 2: SELECT "i", gg ?| gg1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 225: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg ?-| gg1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography ?-| geography
-LINE 2: SELECT "i", gg ?-| gg1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 226: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg ?|| gg1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography ?|| geography
-LINE 2: SELECT "i", gg ?|| gg1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 227: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg ~= gg1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography ~= geography
-LINE 2: SELECT "i", gg ~= gg1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 228: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg @> gg1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography @> geography
-LINE 2: SELECT "i", gg @> gg1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 229: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg <@ gg1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography <@ geography
-LINE 2: SELECT "i", gg <@ gg1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 230:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gg = gg1 g FROM "types_PostGIS";
-                            QUERY PLAN                             
--------------------------------------------------------------------
- Foreign Scan on public."types_PostGIS"
-   Output: i, (gg = gg1)
-   SQLite query: SELECT `i`, `gg`, `gg1` FROM main."types_PostGIS"
-(3 rows)
-
+ERROR:  syntax error at or near "EXPLAIN"
+LINE 3: EXPLAIN (VERBOSE, COSTS OFF)
+        ^
 --Testcase 231:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gg != gg1 g FROM "types_PostGIS";
@@ -1582,55 +1168,6 @@ ERROR:  operator does not exist: geography <<->> geography
 LINE 2: SELECT "i", gg <<->> gg1 g FROM "types_PostGIS";
                        ^
 HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 250: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg + decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography + bytea
-LINE 2: SELECT "i", gg + decode('0101000020e6100000bf72ce99fe763e40e...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 251: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg - decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography - bytea
-LINE 2: SELECT "i", gg - decode('0101000020e6100000bf72ce99fe763e40e...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 252: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg * decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography * bytea
-LINE 2: SELECT "i", gg * decode('0101000020e6100000bf72ce99fe763e40e...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 253: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg / decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography / bytea
-LINE 2: SELECT "i", gg / decode('0101000020e6100000bf72ce99fe763e40e...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 254: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg # decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography # bytea
-LINE 2: SELECT "i", gg # decode('0101000020e6100000bf72ce99fe763e40e...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 256: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg @@ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography @@ bytea
-LINE 2: SELECT "i", gg @@ decode('0101000020e6100000bf72ce99fe763e40...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 257: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg ## decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography ## bytea
-LINE 2: SELECT "i", gg ## decode('0101000020e6100000bf72ce99fe763e40...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 258:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gg <-> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
@@ -1651,58 +1188,6 @@ SELECT "i", gg && decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', '
    SQLite query: SELECT `i`, `gg` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 260: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg << decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography << bytea
-LINE 2: SELECT "i", gg << decode('0101000020e6100000bf72ce99fe763e40...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 261: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg >> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography >> bytea
-LINE 2: SELECT "i", gg >> decode('0101000020e6100000bf72ce99fe763e40...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 262:
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg <> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-                                         QUERY PLAN                                          
----------------------------------------------------------------------------------------------
- Foreign Scan on public."types_PostGIS"
-   Output: i, ((gg)::bytea <> '\x0101000020e6100000bf72ce99fe763e40ed4960730ed84d40'::bytea)
-   SQLite query: SELECT `i`, `gg` FROM main."types_PostGIS"
-(3 rows)
-
---Testcase 263: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg &< decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography &< bytea
-LINE 2: SELECT "i", gg &< decode('0101000020e6100000bf72ce99fe763e40...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 264: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg &> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography &> bytea
-LINE 2: SELECT "i", gg &> decode('0101000020e6100000bf72ce99fe763e40...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 265: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg <<| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography <<| bytea
-LINE 2: SELECT "i", gg <<| decode('0101000020e6100000bf72ce99fe763e4...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 266: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg |>> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography |>> bytea
-LINE 2: SELECT "i", gg |>> decode('0101000020e6100000bf72ce99fe763e4...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 267:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gg <> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
@@ -1713,88 +1198,11 @@ SELECT "i", gg <> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', '
    SQLite query: SELECT `i`, `gg` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 268: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg &<| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography &<| bytea
-LINE 2: SELECT "i", gg &<| decode('0101000020e6100000bf72ce99fe763e4...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 269: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg |&> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography |&> bytea
-LINE 2: SELECT "i", gg |&> decode('0101000020e6100000bf72ce99fe763e4...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 270: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg <^ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography <^ bytea
-LINE 2: SELECT "i", gg <^ decode('0101000020e6100000bf72ce99fe763e40...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 271: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg >^ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography >^ bytea
-LINE 2: SELECT "i", gg >^ decode('0101000020e6100000bf72ce99fe763e40...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 272:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gg ?# decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
 ERROR:  operator does not exist: geography ?# bytea
 LINE 2: SELECT "i", gg ?# decode('0101000020e6100000bf72ce99fe763e40...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 273: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg ?- decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography ?- bytea
-LINE 2: SELECT "i", gg ?- decode('0101000020e6100000bf72ce99fe763e40...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 274: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg ?| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography ?| bytea
-LINE 2: SELECT "i", gg ?| decode('0101000020e6100000bf72ce99fe763e40...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 275: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg ?-| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography ?-| bytea
-LINE 2: SELECT "i", gg ?-| decode('0101000020e6100000bf72ce99fe763e4...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 276: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg ?|| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography ?|| bytea
-LINE 2: SELECT "i", gg ?|| decode('0101000020e6100000bf72ce99fe763e4...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 277: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg ~= decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography ~= bytea
-LINE 2: SELECT "i", gg ~= decode('0101000020e6100000bf72ce99fe763e40...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 278: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg @> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography @> bytea
-LINE 2: SELECT "i", gg @> decode('0101000020e6100000bf72ce99fe763e40...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 279: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg <@ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography <@ bytea
-LINE 2: SELECT "i", gg <@ decode('0101000020e6100000bf72ce99fe763e40...
                        ^
 HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 280: ERR not unique
@@ -1842,48 +1250,6 @@ ERROR:  operator does not exist: geography <<->> bytea
 LINE 2: SELECT "i", gg <<->> decode('0101000020e6100000bf72ce99fe763...
                        ^
 HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 300: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm + gm1 IS NOT NULL;
-ERROR:  operator does not exist: geometry + geometry
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm + gm1 IS NOT NU...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 301: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm - gm1 IS NOT NULL;
-ERROR:  operator does not exist: geometry - geometry
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm - gm1 IS NOT NU...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 302: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm * gm1 IS NOT NULL;
-ERROR:  operator does not exist: geometry * geometry
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm * gm1 IS NOT NU...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 303: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm / gm1 IS NOT NULL;
-ERROR:  operator does not exist: geometry / geometry
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm / gm1 IS NOT NU...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 304: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm # gm1 IS NOT NULL;
-ERROR:  operator does not exist: geometry # geometry
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm # gm1 IS NOT NU...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 305: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm @-@ gm1 IS NOT NULL;
-ERROR:  operator does not exist: geometry @-@ geometry
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm @-@ gm1 IS NOT ...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 306:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm @@ gm1 IS NOT NULL;
@@ -1902,17 +1268,6 @@ ERROR:  operator does not exist: geometry ## geometry
 LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ## gm1 IS NOT N...
                                                      ^
 HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 308: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm <-> gm1 IS NOT NULL;
-                              QUERY PLAN                              
-----------------------------------------------------------------------
- Foreign Scan on public."types_PostGIS"
-   Output: gm, gm1
-   Filter: (("types_PostGIS".gm <-> "types_PostGIS".gm1) IS NOT NULL)
-   SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
-(4 rows)
-
 --Testcase 309:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm && gm1 IS NOT NULL;
@@ -2026,55 +1381,6 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm |&> gm1 IS NOT NULL;
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 320: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm <^ gm1 IS NOT NULL;
-ERROR:  operator does not exist: geometry <^ geometry
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm <^ gm1 IS NOT N...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 321: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm >^ gm1 IS NOT NULL;
-ERROR:  operator does not exist: geometry >^ geometry
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm >^ gm1 IS NOT N...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 322: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ?# gm1 IS NOT NULL;
-ERROR:  operator does not exist: geometry ?# geometry
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ?# gm1 IS NOT N...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 323: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ?- gm1 IS NOT NULL;
-ERROR:  operator does not exist: geometry ?- geometry
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ?- gm1 IS NOT N...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 324: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ?| gm1 IS NOT NULL;
-ERROR:  operator does not exist: geometry ?| geometry
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ?| gm1 IS NOT N...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 325: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ?-| gm1 IS NOT NULL;
-ERROR:  operator does not exist: geometry ?-| geometry
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ?-| gm1 IS NOT ...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 326: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ?|| gm1 IS NOT NULL;
-ERROR:  operator does not exist: geometry ?|| geometry
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ?|| gm1 IS NOT ...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 327:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ~= gm1 IS NOT NULL;
@@ -2086,20 +1392,6 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ~= gm1 IS NOT NULL;
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 328: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm @> gm1 IS NOT NULL;
-ERROR:  operator does not exist: geometry @> geometry
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm @> gm1 IS NOT N...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 329: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm <@ gm1 IS NOT NULL;
-ERROR:  operator does not exist: geometry <@ geometry
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm <@ gm1 IS NOT N...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 330:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm = gm1 IS NOT NULL;
@@ -2117,48 +1409,6 @@ ERROR:  operator is not unique: geometry <> geometry
 LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm != gm1 IS NOT N...
                                                      ^
 HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
---Testcase 350: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm + decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geometry + bytea
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm + decode('01010...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 351: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm - decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geometry - bytea
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm - decode('01010...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 352: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm * decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geometry * bytea
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm * decode('01010...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 353: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm / decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geometry / bytea
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm / decode('01010...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 354: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm # decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geometry # bytea
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm # decode('01010...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 355: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm @-@ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geometry @-@ bytea
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm @-@ decode('010...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 356:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm @@ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
@@ -2170,13 +1420,6 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm @@ decode('0101000020e6100000bf72ce
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 357: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ## decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geometry ## bytea
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ## decode('0101...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 358:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm <-> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
@@ -2309,55 +1552,6 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm |&> decode('0101000020e6100000bf72c
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 370: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm <^ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geometry <^ bytea
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm <^ decode('0101...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 371: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm >^ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geometry >^ bytea
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm >^ decode('0101...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 372: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ?# decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geometry ?# bytea
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ?# decode('0101...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 373: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ?- decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geometry ?- bytea
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ?- decode('0101...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 374: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ?| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geometry ?| bytea
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ?| decode('0101...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 375: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ?-| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geometry ?-| bytea
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ?-| decode('010...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 376: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ?|| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geometry ?|| bytea
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ?|| decode('010...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 377:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ~= decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
@@ -2369,20 +1563,6 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ~= decode('0101000020e6100000bf72ce
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 378: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm @> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geometry @> bytea
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm @> decode('0101...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 379: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm <@ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geometry <@ bytea
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm <@ decode('0101...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 380: ERR not unique
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm = decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
@@ -2401,62 +1581,6 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm != decode('0101000020e6100000bf72ce
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 400: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg + gg1 IS NOT NULL;
-ERROR:  operator does not exist: geography + geography
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg + gg1 IS NOT NU...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 401: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg - gg1 IS NOT NULL;
-ERROR:  operator does not exist: geography - geography
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg - gg1 IS NOT NU...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 402: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg * gg1 IS NOT NULL;
-ERROR:  operator does not exist: geography * geography
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg * gg1 IS NOT NU...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 403: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg / gg1 IS NOT NULL;
-ERROR:  operator does not exist: geography / geography
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg / gg1 IS NOT NU...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 404: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg # gg1 IS NOT NULL;
-ERROR:  operator does not exist: geography # geography
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg # gg1 IS NOT NU...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 405: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg @-@ gg1 IS NOT NULL;
-ERROR:  operator does not exist: geography @-@ geography
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg @-@ gg1 IS NOT ...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 406: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg @@ gg1 IS NOT NULL;
-ERROR:  operator does not exist: geography @@ geography
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg @@ gg1 IS NOT N...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 407: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ## gg1 IS NOT NULL;
-ERROR:  operator does not exist: geography ## geography
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ## gg1 IS NOT N...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 408:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <-> gg1 IS NOT NULL;
@@ -2479,20 +1603,6 @@ SELECT gg, gg1 FROM "types_PostGIS" WHERE gg && gg1 IS NOT NULL;
    SQLite query: SELECT `gg`, `gg1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 410: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg << gg1 IS NOT NULL;
-ERROR:  operator does not exist: geography << geography
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg << gg1 IS NOT N...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 411: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg >> gg1 IS NOT NULL;
-ERROR:  operator does not exist: geography >> geography
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg >> gg1 IS NOT N...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 412:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <> gg1 IS NOT NULL;
@@ -2504,34 +1614,6 @@ SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <> gg1 IS NOT NULL;
    SQLite query: SELECT `gg`, `gg1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 413: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg &< gg1 IS NOT NULL;
-ERROR:  operator does not exist: geography &< geography
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg &< gg1 IS NOT N...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 414: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg &> gg1 IS NOT NULL;
-ERROR:  operator does not exist: geography &> geography
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg &> gg1 IS NOT N...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 415: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <<| gg1 IS NOT NULL;
-ERROR:  operator does not exist: geography <<| geography
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <<| gg1 IS NOT ...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 416: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg |>> gg1 IS NOT NULL;
-ERROR:  operator does not exist: geography |>> geography
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg |>> gg1 IS NOT ...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 417:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <> gg1 IS NOT NULL;
@@ -2543,88 +1625,11 @@ SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <> gg1 IS NOT NULL;
    SQLite query: SELECT `gg`, `gg1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 418: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg &<| gg1 IS NOT NULL;
-ERROR:  operator does not exist: geography &<| geography
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg &<| gg1 IS NOT ...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 419: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg |&> gg1 IS NOT NULL;
-ERROR:  operator does not exist: geography |&> geography
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg |&> gg1 IS NOT ...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 420: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <^ gg1 IS NOT NULL;
-ERROR:  operator does not exist: geography <^ geography
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <^ gg1 IS NOT N...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 421: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg >^ gg1 IS NOT NULL;
-ERROR:  operator does not exist: geography >^ geography
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg >^ gg1 IS NOT N...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 422: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ?# gg1 IS NOT NULL;
-ERROR:  operator does not exist: geography ?# geography
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ?# gg1 IS NOT N...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 423:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ?- gg1 IS NOT NULL;
 ERROR:  operator does not exist: geography ?- geography
 LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ?- gg1 IS NOT N...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 424: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ?| gg1 IS NOT NULL;
-ERROR:  operator does not exist: geography ?| geography
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ?| gg1 IS NOT N...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 425: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ?-| gg1 IS NOT NULL;
-ERROR:  operator does not exist: geography ?-| geography
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ?-| gg1 IS NOT ...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 426: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ?|| gg1 IS NOT NULL;
-ERROR:  operator does not exist: geography ?|| geography
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ?|| gg1 IS NOT ...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 427: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ~= gg1 IS NOT NULL;
-ERROR:  operator does not exist: geography ~= geography
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ~= gg1 IS NOT N...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 428: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg @> gg1 IS NOT NULL;
-ERROR:  operator does not exist: geography @> geography
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg @> gg1 IS NOT N...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 429: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <@ gg1 IS NOT NULL;
-ERROR:  operator does not exist: geography <@ geography
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <@ gg1 IS NOT N...
                                                      ^
 HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 430:
@@ -2648,62 +1653,6 @@ SELECT gg, gg1 FROM "types_PostGIS" WHERE gg != gg1 IS NOT NULL;
    SQLite query: SELECT `gg`, `gg1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 450: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg + decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geography + bytea
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg + decode('01010...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 451: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg - decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geography - bytea
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg - decode('01010...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 452: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg * decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geography * bytea
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg * decode('01010...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 453: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg / decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geography / bytea
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg / decode('01010...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 454: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg # decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geography # bytea
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg # decode('01010...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 455: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg @-@ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geography @-@ bytea
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg @-@ decode('010...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 456: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg @@ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geography @@ bytea
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg @@ decode('0101...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 457: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ## decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geography ## bytea
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ## decode('0101...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 458:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <-> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
@@ -2726,20 +1675,6 @@ SELECT gg, gg1 FROM "types_PostGIS" WHERE gg && decode('0101000020e6100000bf72ce
    SQLite query: SELECT `gg`, `gg1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 460: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg << decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geography << bytea
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg << decode('0101...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 461: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg >> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geography >> bytea
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg >> decode('0101...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 462:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
@@ -2751,34 +1686,6 @@ SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <> decode('0101000020e6100000bf72ce
    SQLite query: SELECT `gg`, `gg1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 463: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg &< decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geography &< bytea
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg &< decode('0101...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 464: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg &> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geography &> bytea
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg &> decode('0101...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 465: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <<| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geography <<| bytea
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <<| decode('010...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 466: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg |>> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geography |>> bytea
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg |>> decode('010...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 467:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
@@ -2790,88 +1697,11 @@ SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <> decode('0101000020e6100000bf72ce
    SQLite query: SELECT `gg`, `gg1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 468: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg &<| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geography &<| bytea
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg &<| decode('010...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 469: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg |&> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geography |&> bytea
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg |&> decode('010...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 470: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <^ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geography <^ bytea
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <^ decode('0101...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 471: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg >^ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geography >^ bytea
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg >^ decode('0101...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 472:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ?# decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
 ERROR:  operator does not exist: geography ?# bytea
 LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ?# decode('0101...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 473: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ?- decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geography ?- bytea
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ?- decode('0101...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 474: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ?| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geography ?| bytea
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ?| decode('0101...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 475: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ?-| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geography ?-| bytea
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ?-| decode('010...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 476: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ?|| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geography ?|| bytea
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ?|| decode('010...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 477: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ~= decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geography ~= bytea
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ~= decode('0101...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 478: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg @> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geography @> bytea
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg @> decode('0101...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 479: ERR not implemented in PostGIS
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <@ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geography <@ bytea
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <@ decode('0101...
                                                      ^
 HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 480: ERR not unique
