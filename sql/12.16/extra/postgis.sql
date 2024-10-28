@@ -183,32 +183,39 @@ SELECT "i", gm, gg, t FROM "types_PostGIS";
 --Testcase 48:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm, gg, t FROM "types_PostGIS";
---Testcase 49:
+--Testcase 49: ERR, no SRID
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm, gg, t FROM "types_PostGIS" WHERE gm = ('POINT (30.4648224 59.687941)'::geometry);
---Testcase 50:
+--Testcase 50: ERR, no SRID
 SELECT "i", gm, gg, t FROM "types_PostGIS" WHERE gm = ('POINT (30.4648224 59.687941)'::geometry);
 --Testcase 51:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm, gg, t FROM "types_PostGIS" WHERE gm = ('SRID=4326;POINT (30.4648224 59.687941)'::geometry);
 --Testcase 52:
 SELECT "i", gm, gg, t FROM "types_PostGIS" WHERE gm = ('SRID=4326;POINT (30.4648224 59.687941)'::geometry);
+--Testcase 53: ERR damaged, but there is SRID
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "i", gm, gg, t FROM "types_PostGIS" WHERE gm = (decode('0101000020e6100000bf72ce99fe76', 'hex')::geometry);
 
 -- Insert PostGIS/GEOS BLOB, read SpatiaLite BLOB
---Testcase 53: OK
+--Testcase 54: OK
 INSERT INTO "types_PostGIS" ( "i", gm, gg, t ) VALUES (2, decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex'),  decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex'), '{"genus": "Rhododendron", "taxon": "Rhododendron ledebourii"}');
---Testcase 54:
-ALTER FOREIGN TABLE "types_PostGIS" ALTER COLUMN "gm" TYPE bytea;
 --Testcase 55:
+ALTER FOREIGN TABLE "types_PostGIS" ALTER COLUMN "gm" TYPE bytea;
+--Testcase 56:
 ALTER FOREIGN TABLE "types_PostGIS" ALTER COLUMN "gg" TYPE bytea;
---Testcase 56: OK
+--Testcase 57: OK
 SELECT "i", gm, gg, t FROM "types_PostGIS";
---Testcase 57:
-ALTER FOREIGN TABLE "types_PostGIS" ALTER COLUMN "gm" TYPE geometry;
 --Testcase 58:
-ALTER FOREIGN TABLE "types_PostGIS" ALTER COLUMN "gg" TYPE geography;
-
+ALTER FOREIGN TABLE "types_PostGIS" ALTER COLUMN "gm" TYPE geometry;
 --Testcase 59:
+ALTER FOREIGN TABLE "types_PostGIS" ALTER COLUMN "gg" TYPE geography;
+--Testcase 60:  ERR damaged geometry, but there is SRID
+INSERT INTO "types_PostGIS" ( "i", gm, gg, t ) VALUES (3, decode('0101000020e6100000bf72ce99fe76', 'hex'),  NULL, '{"genus": "Rhododendron", "taxon": "Rhododendron ledebourii"}');
+--Testcase 61:  ERR damaged geography, but there is SRID
+INSERT INTO "types_PostGIS" ( "i", gm, gg, t ) VALUES (4, NULL, decode('0101000020e6100000bf72ce99fe76', 'hex'),  NULL, '{"genus": "Rhododendron", "taxon": "Rhododendron ledebourii"}');
+
+--Testcase 62:
 CREATE FOREIGN TABLE "♂" (
 	id int4 OPTIONS (key 'true'),
 	"UAI" varchar(254),
@@ -219,22 +226,22 @@ CREATE FOREIGN TABLE "♂" (
 	"URL" varchar(80)
 ) SERVER sqlite_svr;
 
---Testcase 60:
-INSERT INTO "♂" SELECT * FROM "♂"."テスト";
---Testcase 61:
-ALTER FOREIGN TABLE "♂" ALTER COLUMN "⌖" TYPE bytea;
---Testcase 62:
-ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE bytea;
 --Testcase 63:
-SELECT * FROM "♂";
+INSERT INTO "♂" SELECT * FROM "♂"."テスト";
 --Testcase 64:
-ALTER FOREIGN TABLE "♂" ALTER COLUMN "⌖" TYPE geometry;
+ALTER FOREIGN TABLE "♂" ALTER COLUMN "⌖" TYPE bytea;
 --Testcase 65:
-ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE geometry;
+ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE bytea;
 --Testcase 66:
 SELECT * FROM "♂";
-
 --Testcase 67:
+ALTER FOREIGN TABLE "♂" ALTER COLUMN "⌖" TYPE geometry;
+--Testcase 68:
+ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE geometry;
+--Testcase 69:
+SELECT * FROM "♂";
+
+--Testcase 70:
 CREATE FOREIGN TABLE "♁ FDW"(
 	geom geometry NOT NULL,
 	osm_type varchar(16) OPTIONS (key 'true') NOT NULL ,
@@ -244,32 +251,32 @@ CREATE FOREIGN TABLE "♁ FDW"(
 	t text
 ) SERVER sqlite_svr OPTIONS (table '♁');
 
---Testcase 68: ERR - No SRID
+--Testcase 71: ERR - No SRID
 INSERT INTO "♁ FDW" SELECT * FROM "♁";
---Testcase 69: OK
+--Testcase 72: OK
 SELECT * FROM "♁" WHERE ST_SRID(geom) IS NOT NULL;
---Testcase 70:
-UPDATE "♁" SET geom = ST_SetSRID(geom, 4326);
---Testcase 71:
-INSERT INTO "♁ FDW" SELECT * FROM "♁" WHERE ST_SRID(geom) IS NOT NULL;
---Testcase 72:
-ALTER FOREIGN TABLE "♁ FDW" ALTER COLUMN "geom" TYPE bytea;
 --Testcase 73:
-SELECT * FROM "♁ FDW";
+UPDATE "♁" SET geom = ST_SetSRID(geom, 4326);
 --Testcase 74:
-ALTER FOREIGN TABLE "♁ FDW" ALTER COLUMN "geom" TYPE geometry;
+INSERT INTO "♁ FDW" SELECT * FROM "♁" WHERE ST_SRID(geom) IS NOT NULL;
 --Testcase 75:
+ALTER FOREIGN TABLE "♁ FDW" ALTER COLUMN "geom" TYPE bytea;
+--Testcase 76:
+SELECT * FROM "♁ FDW";
+--Testcase 77:
+ALTER FOREIGN TABLE "♁ FDW" ALTER COLUMN "geom" TYPE geometry;
+--Testcase 78:
 SELECT * FROM "♁ FDW";
 
---Testcase 76:
-DROP FOREIGN TABLE "♂";
---Testcase 77:
-DROP FOREIGN TABLE "♁ FDW";
---Testcase 78:
-DROP TABLE "♁";
 --Testcase 79:
-DROP TABLE "♂"."テスト";
+DROP FOREIGN TABLE "♂";
 --Testcase 80:
+DROP FOREIGN TABLE "♁ FDW";
+--Testcase 81:
+DROP TABLE "♁";
+--Testcase 82:
+DROP TABLE "♂"."テスト";
+--Testcase 83:
 DROP SCHEMA "♂";
 
 -- Test ALL operators for pushing down by list of built-in geometry operators 
