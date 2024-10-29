@@ -279,12 +279,11 @@ DROP TABLE "♂"."テスト";
 --Testcase 83:
 DROP SCHEMA "♂";
 
--- Test ALL operators for pushing down by list of built-in geometry operators 
--- Some operators doesn't implemented and doesn't exist in PostGIS
--- SELECT
+-- Test operators implemented in PostGIS 3.4.2, other are not tested
+-- SELECT testing group
 -- geometry -> geometry + bytea const -> geography -> geography + bytea const
 -- TC 100   -> TC 150                 -> TC200     -> TC250
--- WHERE
+-- WHERE testing group
 -- geometry -> geometry + bytea const -> geography -> geography + bytea const
 -- TC 300   -> TC 350                 -> TC400     -> TC450
 
@@ -573,11 +572,8 @@ EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <> gg1 IS NOT NULL;
 --Testcase 404:
 EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ?- gg1 IS NOT NULL;
---Testcase 405:
-EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gg, gg1 FROM "types_PostGIS" WHERE gg = gg1 IS NOT NULL;
---Testcase 406:
+--Testcase 405:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gg, gg1 FROM "types_PostGIS" WHERE gg != gg1 IS NOT NULL;
 
