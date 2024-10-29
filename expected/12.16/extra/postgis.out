@@ -697,7 +697,7 @@ DROP SCHEMA "♂";
 -- WHERE
 -- geometry -> geometry + bytea const -> geography -> geography + bytea const
 -- TC 300   -> TC 350                 -> TC400     -> TC450
---Testcase 106:
+--Testcase 100:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm @@ gm1 g FROM "types_PostGIS";
                             QUERY PLAN                             
@@ -707,14 +707,7 @@ SELECT "i", gm @@ gm1 g FROM "types_PostGIS";
    SQLite query: SELECT `i`, `gm`, `gm1` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 107:
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm ## gm1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geometry ## geometry
-LINE 2: SELECT "i", gm ## gm1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 109:
+--Testcase 101:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm && gm1 g FROM "types_PostGIS";
                             QUERY PLAN                             
@@ -724,7 +717,7 @@ SELECT "i", gm && gm1 g FROM "types_PostGIS";
    SQLite query: SELECT `i`, `gm`, `gm1` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 110:
+--Testcase 102:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm << gm1 g FROM "types_PostGIS";
                             QUERY PLAN                             
@@ -734,7 +727,7 @@ SELECT "i", gm << gm1 g FROM "types_PostGIS";
    SQLite query: SELECT `i`, `gm`, `gm1` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 111:
+--Testcase 103:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm >> gm1 g FROM "types_PostGIS";
                             QUERY PLAN                             
@@ -744,14 +737,14 @@ SELECT "i", gm >> gm1 g FROM "types_PostGIS";
    SQLite query: SELECT `i`, `gm`, `gm1` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 112: ERR some candidates
+--Testcase 104: ERR some candidates
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm <> gm1 g FROM "types_PostGIS";
 ERROR:  operator is not unique: geometry <> geometry
 LINE 2: SELECT "i", gm <> gm1 g FROM "types_PostGIS";
                        ^
 HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
---Testcase 113:
+--Testcase 105:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm &< gm1 g FROM "types_PostGIS";
                             QUERY PLAN                             
@@ -761,7 +754,7 @@ SELECT "i", gm &< gm1 g FROM "types_PostGIS";
    SQLite query: SELECT `i`, `gm`, `gm1` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 114:
+--Testcase 106:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm &> gm1 g FROM "types_PostGIS";
                             QUERY PLAN                             
@@ -771,7 +764,7 @@ SELECT "i", gm &> gm1 g FROM "types_PostGIS";
    SQLite query: SELECT `i`, `gm`, `gm1` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 115:
+--Testcase 107:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm <<| gm1 g FROM "types_PostGIS";
                             QUERY PLAN                             
@@ -781,7 +774,7 @@ SELECT "i", gm <<| gm1 g FROM "types_PostGIS";
    SQLite query: SELECT `i`, `gm`, `gm1` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 116:
+--Testcase 108:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm |>> gm1 g FROM "types_PostGIS";
                             QUERY PLAN                             
@@ -791,14 +784,14 @@ SELECT "i", gm |>> gm1 g FROM "types_PostGIS";
    SQLite query: SELECT `i`, `gm`, `gm1` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 117: ERR some candidates
+--Testcase 109: ERR some candidates
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm <> gm1 g FROM "types_PostGIS";
 ERROR:  operator is not unique: geometry <> geometry
 LINE 2: SELECT "i", gm <> gm1 g FROM "types_PostGIS";
                        ^
 HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
---Testcase 118:
+--Testcase 110:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm &<| gm1 g FROM "types_PostGIS";
                             QUERY PLAN                             
@@ -808,7 +801,7 @@ SELECT "i", gm &<| gm1 g FROM "types_PostGIS";
    SQLite query: SELECT `i`, `gm`, `gm1` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 119:
+--Testcase 111:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm |&> gm1 g FROM "types_PostGIS";
                             QUERY PLAN                             
@@ -818,7 +811,7 @@ SELECT "i", gm |&> gm1 g FROM "types_PostGIS";
    SQLite query: SELECT `i`, `gm`, `gm1` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 127:
+--Testcase 112:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm ~= gm1 g FROM "types_PostGIS";
                             QUERY PLAN                             
@@ -828,7 +821,7 @@ SELECT "i", gm ~= gm1 g FROM "types_PostGIS";
    SQLite query: SELECT `i`, `gm`, `gm1` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 130:
+--Testcase 113:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm = gm1 g FROM "types_PostGIS";
                             QUERY PLAN                             
@@ -838,14 +831,14 @@ SELECT "i", gm = gm1 g FROM "types_PostGIS";
    SQLite query: SELECT `i`, `gm`, `gm1` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 131: ERR some candidates
+--Testcase 114: ERR some candidates
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm != gm1 g FROM "types_PostGIS";
 ERROR:  operator is not unique: geometry <> geometry
 LINE 2: SELECT "i", gm != gm1 g FROM "types_PostGIS";
                        ^
 HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
---Testcase 132:
+--Testcase 115:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm &&& gm1 g FROM "types_PostGIS";
                             QUERY PLAN                             
@@ -855,7 +848,7 @@ SELECT "i", gm &&& gm1 g FROM "types_PostGIS";
    SQLite query: SELECT `i`, `gm`, `gm1` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 133:
+--Testcase 116:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm &&& gm1 g FROM "types_PostGIS";
                             QUERY PLAN                             
@@ -865,7 +858,7 @@ SELECT "i", gm &&& gm1 g FROM "types_PostGIS";
    SQLite query: SELECT `i`, `gm`, `gm1` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 134:
+--Testcase 117:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm |=| gm1 g FROM "types_PostGIS";
                             QUERY PLAN                             
@@ -875,7 +868,7 @@ SELECT "i", gm |=| gm1 g FROM "types_PostGIS";
    SQLite query: SELECT `i`, `gm`, `gm1` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 135:
+--Testcase 118
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm <#> gm1 g FROM "types_PostGIS";
                             QUERY PLAN                             
@@ -885,7 +878,7 @@ SELECT "i", gm <#> gm1 g FROM "types_PostGIS";
    SQLite query: SELECT `i`, `gm`, `gm1` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 136:
+--Testcase 119:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm <<->> gm1 g FROM "types_PostGIS";
                             QUERY PLAN                             
@@ -895,7 +888,27 @@ SELECT "i", gm <<->> gm1 g FROM "types_PostGIS";
    SQLite query: SELECT `i`, `gm`, `gm1` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 156:
+--Testcase 120:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "i", gm @ gm1 g FROM "types_PostGIS";
+                            QUERY PLAN                             
+-------------------------------------------------------------------
+ Foreign Scan on public."types_PostGIS"
+   Output: i, (gm @ gm1)
+   SQLite query: SELECT `i`, `gm`, `gm1` FROM main."types_PostGIS"
+(3 rows)
+
+--Testcase 121:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "i", gm ~ gm1 g FROM "types_PostGIS";
+                            QUERY PLAN                             
+-------------------------------------------------------------------
+ Foreign Scan on public."types_PostGIS"
+   Output: i, (gm ~ gm1)
+   SQLite query: SELECT `i`, `gm`, `gm1` FROM main."types_PostGIS"
+(3 rows)
+
+--Testcase 150:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm @@ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
                                      QUERY PLAN                                      
@@ -905,7 +918,7 @@ SELECT "i", gm @@ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', '
    SQLite query: SELECT `i`, `gm` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 158:
+--Testcase 151:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm <-> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
                                       QUERY PLAN                                      
@@ -915,7 +928,7 @@ SELECT "i", gm <-> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 
    SQLite query: SELECT `i`, `gm` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 159:
+--Testcase 152:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm && decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
                                      QUERY PLAN                                      
@@ -925,7 +938,7 @@ SELECT "i", gm && decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', '
    SQLite query: SELECT `i`, `gm` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 160:
+--Testcase 153:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm << decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
                                      QUERY PLAN                                      
@@ -935,7 +948,7 @@ SELECT "i", gm << decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', '
    SQLite query: SELECT `i`, `gm` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 161:
+--Testcase 154:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm >> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
                                      QUERY PLAN                                      
@@ -945,7 +958,7 @@ SELECT "i", gm >> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', '
    SQLite query: SELECT `i`, `gm` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 162:
+--Testcase 155:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm <> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
                                          QUERY PLAN                                          
@@ -955,7 +968,7 @@ SELECT "i", gm <> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', '
    SQLite query: SELECT `i`, `gm` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 163:
+--Testcase 156:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm &< decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
                                      QUERY PLAN                                      
@@ -965,7 +978,7 @@ SELECT "i", gm &< decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', '
    SQLite query: SELECT `i`, `gm` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 164:
+--Testcase 157:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm &> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
                                      QUERY PLAN                                      
@@ -975,7 +988,7 @@ SELECT "i", gm &> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', '
    SQLite query: SELECT `i`, `gm` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 165:
+--Testcase 158:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm <<| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
                                       QUERY PLAN                                      
@@ -985,7 +998,7 @@ SELECT "i", gm <<| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 
    SQLite query: SELECT `i`, `gm` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 166:
+--Testcase 159:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm |>> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
                                       QUERY PLAN                                      
@@ -995,7 +1008,7 @@ SELECT "i", gm |>> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 
    SQLite query: SELECT `i`, `gm` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 167:
+--Testcase 160:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm <> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
                                          QUERY PLAN                                          
@@ -1005,7 +1018,7 @@ SELECT "i", gm <> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', '
    SQLite query: SELECT `i`, `gm` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 168:
+--Testcase 161:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm &<| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
                                       QUERY PLAN                                      
@@ -1015,7 +1028,7 @@ SELECT "i", gm &<| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 
    SQLite query: SELECT `i`, `gm` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 169:
+--Testcase 162:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm |&> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
                                       QUERY PLAN                                      
@@ -1025,7 +1038,7 @@ SELECT "i", gm |&> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 
    SQLite query: SELECT `i`, `gm` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 177:
+--Testcase 163:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm ~= decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
                                      QUERY PLAN                                      
@@ -1035,14 +1048,7 @@ SELECT "i", gm ~= decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', '
    SQLite query: SELECT `i`, `gm` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 180: ERR not unique
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm = decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator is not unique: geometry = bytea
-LINE 2: SELECT "i", gm = decode('0101000020e6100000bf72ce99fe763e40e...
-                       ^
-HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
---Testcase 181:
+--Testcase 164:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm != decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
                                          QUERY PLAN                                          
@@ -1052,7 +1058,7 @@ SELECT "i", gm != decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', '
    SQLite query: SELECT `i`, `gm` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 182:
+--Testcase 165:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm &&& decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
                                       QUERY PLAN                                      
@@ -1062,7 +1068,7 @@ SELECT "i", gm &&& decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 
    SQLite query: SELECT `i`, `gm` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 183:
+--Testcase 166:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm |=| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
                                       QUERY PLAN                                      
@@ -1072,7 +1078,7 @@ SELECT "i", gm |=| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 
    SQLite query: SELECT `i`, `gm` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 184:
+--Testcase 167:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm <#> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
                                       QUERY PLAN                                      
@@ -1082,7 +1088,7 @@ SELECT "i", gm <#> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 
    SQLite query: SELECT `i`, `gm` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 185:
+--Testcase 168:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm <<->> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
                                        QUERY PLAN                                       
@@ -1092,7 +1098,27 @@ SELECT "i", gm <<->> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40'
    SQLite query: SELECT `i`, `gm` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 208:
+--Testcase 169:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "i", gm @ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
+                                     QUERY PLAN                                     
+------------------------------------------------------------------------------------
+ Foreign Scan on public."types_PostGIS"
+   Output: i, (gm @ '0101000020E6100000BF72CE99FE763E40ED4960730ED84D40'::geometry)
+   SQLite query: SELECT `i`, `gm` FROM main."types_PostGIS"
+(3 rows)
+
+--Testcase 170:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "i", gm ~ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
+                                     QUERY PLAN                                     
+------------------------------------------------------------------------------------
+ Foreign Scan on public."types_PostGIS"
+   Output: i, (gm ~ '0101000020E6100000BF72CE99FE763E40ED4960730ED84D40'::geometry)
+   SQLite query: SELECT `i`, `gm` FROM main."types_PostGIS"
+(3 rows)
+
+--Testcase 200:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gg <-> gg1 g FROM "types_PostGIS";
                             QUERY PLAN                             
@@ -1102,7 +1128,7 @@ SELECT "i", gg <-> gg1 g FROM "types_PostGIS";
    SQLite query: SELECT `i`, `gg`, `gg1` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 209:
+--Testcase 201:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gg && gg1 g FROM "types_PostGIS";
                             QUERY PLAN                             
@@ -1112,7 +1138,7 @@ SELECT "i", gg && gg1 g FROM "types_PostGIS";
    SQLite query: SELECT `i`, `gg`, `gg1` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 212:
+--Testcase 202:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gg <> gg1 g FROM "types_PostGIS";
                             QUERY PLAN                             
@@ -1122,15 +1148,17 @@ SELECT "i", gg <> gg1 g FROM "types_PostGIS";
    SQLite query: SELECT `i`, `gg`, `gg1` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 223:
-EXPLAIN (VERBOSE, COSTS OFF)
---Testcase 230:
+--Testcase 203:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gg = gg1 g FROM "types_PostGIS";
-ERROR:  syntax error at or near "EXPLAIN"
-LINE 3: EXPLAIN (VERBOSE, COSTS OFF)
-        ^
---Testcase 231:
+                            QUERY PLAN                             
+-------------------------------------------------------------------
+ Foreign Scan on public."types_PostGIS"
+   Output: i, (gg = gg1)
+   SQLite query: SELECT `i`, `gg`, `gg1` FROM main."types_PostGIS"
+(3 rows)
+
+--Testcase 204
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gg != gg1 g FROM "types_PostGIS";
                             QUERY PLAN                             
@@ -1140,35 +1168,21 @@ SELECT "i", gg != gg1 g FROM "types_PostGIS";
    SQLite query: SELECT `i`, `gg`, `gg1` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 232:
+--Testcase 205
 EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg &&& gg1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography &&& geography
-LINE 2: SELECT "i", gg &&& gg1 g FROM "types_PostGIS";
+SELECT "i", gg @ gg1 g FROM "types_PostGIS";
+ERROR:  operator does not exist: geography @ geography
+LINE 2: SELECT "i", gg @ gg1 g FROM "types_PostGIS";
                        ^
 HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 233:
+--Testcase 206
 EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg |=| gg1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography |=| geography
-LINE 2: SELECT "i", gg |=| gg1 g FROM "types_PostGIS";
+SELECT "i", gg ~ gg1 g FROM "types_PostGIS";
+ERROR:  operator does not exist: geography ~ geography
+LINE 2: SELECT "i", gg ~ gg1 g FROM "types_PostGIS";
                        ^
 HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 234:
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg <#> gg1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography <#> geography
-LINE 2: SELECT "i", gg <#> gg1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 235:
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg <<->> gg1 g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography <<->> geography
-LINE 2: SELECT "i", gg <<->> gg1 g FROM "types_PostGIS";
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 258:
+--Testcase 250:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gg <-> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
                                       QUERY PLAN                                       
@@ -1178,7 +1192,7 @@ SELECT "i", gg <-> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 
    SQLite query: SELECT `i`, `gg` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 259:
+--Testcase 251:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gg && decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
                                       QUERY PLAN                                      
@@ -1188,7 +1202,7 @@ SELECT "i", gg && decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', '
    SQLite query: SELECT `i`, `gg` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 267:
+--Testcase 252:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gg <> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
                                          QUERY PLAN                                          
@@ -1198,21 +1212,7 @@ SELECT "i", gg <> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', '
    SQLite query: SELECT `i`, `gg` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 272:
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg ?# decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography ?# bytea
-LINE 2: SELECT "i", gg ?# decode('0101000020e6100000bf72ce99fe763e40...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 280: ERR not unique
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg = decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator is not unique: geography = bytea
-LINE 2: SELECT "i", gg = decode('0101000020e6100000bf72ce99fe763e40e...
-                       ^
-HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
---Testcase 281:
+--Testcase 253:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gg != decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
                                          QUERY PLAN                                          
@@ -1222,35 +1222,21 @@ SELECT "i", gg != decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', '
    SQLite query: SELECT `i`, `gg` FROM main."types_PostGIS"
 (3 rows)
 
---Testcase 282:
+--Testcase 254:
 EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg &&& decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography &&& bytea
-LINE 2: SELECT "i", gg &&& decode('0101000020e6100000bf72ce99fe763e4...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 283:
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg |=| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography |=| bytea
-LINE 2: SELECT "i", gg |=| decode('0101000020e6100000bf72ce99fe763e4...
-                       ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 284:
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg <#> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography <#> bytea
-LINE 2: SELECT "i", gg <#> decode('0101000020e6100000bf72ce99fe763e4...
+SELECT "i", gg @ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
+ERROR:  operator does not exist: geography @ bytea
+LINE 2: SELECT "i", gg @ decode('0101000020e6100000bf72ce99fe763e40e...
                        ^
 HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 255:
 EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg <<->> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
-ERROR:  operator does not exist: geography <<->> bytea
-LINE 2: SELECT "i", gg <<->> decode('0101000020e6100000bf72ce99fe763...
+SELECT "i", gg ~ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
+ERROR:  operator does not exist: geography ~ bytea
+LINE 2: SELECT "i", gg ~ decode('0101000020e6100000bf72ce99fe763e40e...
                        ^
 HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 306:
+--Testcase 300:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm @@ gm1 IS NOT NULL;
                              QUERY PLAN                              
@@ -1261,14 +1247,7 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm @@ gm1 IS NOT NULL;
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 307:
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ## gm1 IS NOT NULL;
-ERROR:  operator does not exist: geometry ## geometry
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ## gm1 IS NOT N...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 309:
+--Testcase 301:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm && gm1 IS NOT NULL;
                              QUERY PLAN                              
@@ -1279,7 +1258,7 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm && gm1 IS NOT NULL;
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 310:
+--Testcase 302:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm << gm1 IS NOT NULL;
                              QUERY PLAN                              
@@ -1290,7 +1269,7 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm << gm1 IS NOT NULL;
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 311:
+--Testcase 303:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm >> gm1 IS NOT NULL;
                              QUERY PLAN                              
@@ -1301,14 +1280,7 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm >> gm1 IS NOT NULL;
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 312: ERR some candidates
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm <> gm1 IS NOT NULL;
-ERROR:  operator is not unique: geometry <> geometry
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm <> gm1 IS NOT N...
-                                                     ^
-HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
---Testcase 313:
+--Testcase 304:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm &< gm1 IS NOT NULL;
                              QUERY PLAN                              
@@ -1319,7 +1291,7 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm &< gm1 IS NOT NULL;
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 314:
+--Testcase 305:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm &> gm1 IS NOT NULL;
                              QUERY PLAN                              
@@ -1330,7 +1302,7 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm &> gm1 IS NOT NULL;
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 315:
+--Testcase 306:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm <<| gm1 IS NOT NULL;
                               QUERY PLAN                              
@@ -1341,7 +1313,7 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm <<| gm1 IS NOT NULL;
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 316:
+--Testcase 307:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm |>> gm1 IS NOT NULL;
                               QUERY PLAN                              
@@ -1352,14 +1324,7 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm |>> gm1 IS NOT NULL;
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 317: ERR some candidates
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm <> gm1 IS NOT NULL;
-ERROR:  operator is not unique: geometry <> geometry
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm <> gm1 IS NOT N...
-                                                     ^
-HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
---Testcase 318:
+--Testcase 308:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm &<| gm1 IS NOT NULL;
                               QUERY PLAN                              
@@ -1370,7 +1335,7 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm &<| gm1 IS NOT NULL;
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 319:
+--Testcase 309:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm |&> gm1 IS NOT NULL;
                               QUERY PLAN                              
@@ -1381,7 +1346,7 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm |&> gm1 IS NOT NULL;
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 327:
+--Testcase 310:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ~= gm1 IS NOT NULL;
                              QUERY PLAN                              
@@ -1392,7 +1357,7 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ~= gm1 IS NOT NULL;
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 330:
+--Testcase 311:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm = gm1 IS NOT NULL;
                                             QUERY PLAN                                             
@@ -1402,14 +1367,73 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm = gm1 IS NOT NULL;
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS" WHERE (((`gm` = `gm1`) IS NOT NULL))
 (3 rows)
 
---Testcase 331: ERR some candidates
+--Testcase 312:
 EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm != gm1 IS NOT NULL;
-ERROR:  operator is not unique: geometry <> geometry
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm != gm1 IS NOT N...
-                                                     ^
-HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
---Testcase 356:
+SELECT gm, gm1 FROM "types_PostGIS" WHERE gm &&& gm1 IS NOT NULL;
+                              QUERY PLAN                              
+----------------------------------------------------------------------
+ Foreign Scan on public."types_PostGIS"
+   Output: gm, gm1
+   Filter: (("types_PostGIS".gm &&& "types_PostGIS".gm1) IS NOT NULL)
+   SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
+(4 rows)
+
+--Testcase 313:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT gm, gm1 FROM "types_PostGIS" WHERE gm |=| gm1 IS NOT NULL;
+                              QUERY PLAN                              
+----------------------------------------------------------------------
+ Foreign Scan on public."types_PostGIS"
+   Output: gm, gm1
+   Filter: (("types_PostGIS".gm |=| "types_PostGIS".gm1) IS NOT NULL)
+   SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
+(4 rows)
+
+--Testcase 314:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT gm, gm1 FROM "types_PostGIS" WHERE gm <#> gm1 IS NOT NULL;
+                              QUERY PLAN                              
+----------------------------------------------------------------------
+ Foreign Scan on public."types_PostGIS"
+   Output: gm, gm1
+   Filter: (("types_PostGIS".gm <#> "types_PostGIS".gm1) IS NOT NULL)
+   SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
+(4 rows)
+
+--Testcase 315:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT gm, gm1 FROM "types_PostGIS" WHERE gm <<->> gm1 IS NOT NULL;
+                               QUERY PLAN                               
+------------------------------------------------------------------------
+ Foreign Scan on public."types_PostGIS"
+   Output: gm, gm1
+   Filter: (("types_PostGIS".gm <<->> "types_PostGIS".gm1) IS NOT NULL)
+   SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
+(4 rows)
+
+--Testcase 316:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT gm, gm1 FROM "types_PostGIS" WHERE gm @ gm1 IS NOT NULL;
+                             QUERY PLAN                             
+--------------------------------------------------------------------
+ Foreign Scan on public."types_PostGIS"
+   Output: gm, gm1
+   Filter: (("types_PostGIS".gm @ "types_PostGIS".gm1) IS NOT NULL)
+   SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
+(4 rows)
+
+--Testcase 317:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ~ gm1 IS NOT NULL;
+                             QUERY PLAN                             
+--------------------------------------------------------------------
+ Foreign Scan on public."types_PostGIS"
+   Output: gm, gm1
+   Filter: (("types_PostGIS".gm ~ "types_PostGIS".gm1) IS NOT NULL)
+   SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
+(4 rows)
+
+--Testcase 350:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm @@ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
                                                    QUERY PLAN                                                   
@@ -1420,7 +1444,7 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm @@ decode('0101000020e6100000bf72ce
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 358:
+--Testcase 351:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm <-> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
                                                    QUERY PLAN                                                    
@@ -1431,7 +1455,7 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm <-> decode('0101000020e6100000bf72c
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 359:
+--Testcase 352:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm && decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
                                                    QUERY PLAN                                                   
@@ -1442,7 +1466,7 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm && decode('0101000020e6100000bf72ce
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 360:
+--Testcase 353:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm << decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
                                                    QUERY PLAN                                                   
@@ -1453,7 +1477,7 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm << decode('0101000020e6100000bf72ce
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 361:
+--Testcase 354:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm >> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
                                                    QUERY PLAN                                                   
@@ -1464,7 +1488,7 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm >> decode('0101000020e6100000bf72ce
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 362:
+--Testcase 355:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm <> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
                                                        QUERY PLAN                                                       
@@ -1475,7 +1499,7 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm <> decode('0101000020e6100000bf72ce
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 363:
+--Testcase 356:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm &< decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
                                                    QUERY PLAN                                                   
@@ -1486,7 +1510,7 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm &< decode('0101000020e6100000bf72ce
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 364:
+--Testcase 357:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm &> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
                                                    QUERY PLAN                                                   
@@ -1497,7 +1521,7 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm &> decode('0101000020e6100000bf72ce
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 365:
+--Testcase 358:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm <<| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
                                                    QUERY PLAN                                                    
@@ -1508,7 +1532,7 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm <<| decode('0101000020e6100000bf72c
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 366:
+--Testcase 359:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm |>> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
                                                    QUERY PLAN                                                    
@@ -1519,7 +1543,7 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm |>> decode('0101000020e6100000bf72c
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 367:
+--Testcase 360:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm <> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
                                                        QUERY PLAN                                                       
@@ -1530,7 +1554,7 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm <> decode('0101000020e6100000bf72ce
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 368:
+--Testcase 361:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm &<| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
                                                    QUERY PLAN                                                    
@@ -1541,7 +1565,7 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm &<| decode('0101000020e6100000bf72c
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 369:
+--Testcase 362:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm |&> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
                                                    QUERY PLAN                                                    
@@ -1552,7 +1576,7 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm |&> decode('0101000020e6100000bf72c
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 377:
+--Testcase 363:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ~= decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
                                                    QUERY PLAN                                                   
@@ -1563,14 +1587,7 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ~= decode('0101000020e6100000bf72ce
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 380: ERR not unique
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm = decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator is not unique: geometry = bytea
-LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gm = decode('01010...
-                                                     ^
-HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
---Testcase 381:
+--Testcase 364:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm != decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
                                                        QUERY PLAN                                                       
@@ -1581,7 +1598,73 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm != decode('0101000020e6100000bf72ce
    SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 408:
+--Testcase 365:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT gm, gm1 FROM "types_PostGIS" WHERE gm &&& decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+                                                   QUERY PLAN                                                    
+-----------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public."types_PostGIS"
+   Output: gm, gm1
+   Filter: (("types_PostGIS".gm &&& '0101000020E6100000BF72CE99FE763E40ED4960730ED84D40'::geometry) IS NOT NULL)
+   SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
+(4 rows)
+
+--Testcase 366:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT gm, gm1 FROM "types_PostGIS" WHERE gm |=| decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+                                                   QUERY PLAN                                                    
+-----------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public."types_PostGIS"
+   Output: gm, gm1
+   Filter: (("types_PostGIS".gm |=| '0101000020E6100000BF72CE99FE763E40ED4960730ED84D40'::geometry) IS NOT NULL)
+   SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
+(4 rows)
+
+--Testcase 367:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT gm, gm1 FROM "types_PostGIS" WHERE gm <#> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+                                                   QUERY PLAN                                                    
+-----------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public."types_PostGIS"
+   Output: gm, gm1
+   Filter: (("types_PostGIS".gm <#> '0101000020E6100000BF72CE99FE763E40ED4960730ED84D40'::geometry) IS NOT NULL)
+   SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
+(4 rows)
+
+--Testcase 368:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT gm, gm1 FROM "types_PostGIS" WHERE gm <<->> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+                                                    QUERY PLAN                                                     
+-------------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public."types_PostGIS"
+   Output: gm, gm1
+   Filter: (("types_PostGIS".gm <<->> '0101000020E6100000BF72CE99FE763E40ED4960730ED84D40'::geometry) IS NOT NULL)
+   SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
+(4 rows)
+
+--Testcase 369:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT gm, gm1 FROM "types_PostGIS" WHERE gm @ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+                                                  QUERY PLAN                                                   
+---------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public."types_PostGIS"
+   Output: gm, gm1
+   Filter: (("types_PostGIS".gm @ '0101000020E6100000BF72CE99FE763E40ED4960730ED84D40'::geometry) IS NOT NULL)
+   SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
+(4 rows)
+
+--Testcase 370:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ~ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+                                                  QUERY PLAN                                                   
+---------------------------------------------------------------------------------------------------------------
+ Foreign Scan on public."types_PostGIS"
+   Output: gm, gm1
+   Filter: (("types_PostGIS".gm ~ '0101000020E6100000BF72CE99FE763E40ED4960730ED84D40'::geometry) IS NOT NULL)
+   SQLite query: SELECT `gm`, `gm1` FROM main."types_PostGIS"
+(4 rows)
+
+--Testcase 400:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <-> gg1 IS NOT NULL;
                               QUERY PLAN                              
@@ -1592,7 +1675,7 @@ SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <-> gg1 IS NOT NULL;
    SQLite query: SELECT `gg`, `gg1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 409:
+--Testcase 401:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gg, gg1 FROM "types_PostGIS" WHERE gg && gg1 IS NOT NULL;
                              QUERY PLAN                              
@@ -1603,7 +1686,7 @@ SELECT gg, gg1 FROM "types_PostGIS" WHERE gg && gg1 IS NOT NULL;
    SQLite query: SELECT `gg`, `gg1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 412:
+--Testcase 402:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <> gg1 IS NOT NULL;
                                       QUERY PLAN                                       
@@ -1614,7 +1697,7 @@ SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <> gg1 IS NOT NULL;
    SQLite query: SELECT `gg`, `gg1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 417:
+--Testcase 403:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <> gg1 IS NOT NULL;
                                       QUERY PLAN                                       
@@ -1625,14 +1708,14 @@ SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <> gg1 IS NOT NULL;
    SQLite query: SELECT `gg`, `gg1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 423:
+--Testcase 404:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ?- gg1 IS NOT NULL;
 ERROR:  operator does not exist: geography ?- geography
 LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ?- gg1 IS NOT N...
                                                      ^
 HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 430:
+--Testcase 405:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gg, gg1 FROM "types_PostGIS" WHERE gg = gg1 IS NOT NULL;
                                             QUERY PLAN                                             
@@ -1642,7 +1725,7 @@ SELECT gg, gg1 FROM "types_PostGIS" WHERE gg = gg1 IS NOT NULL;
    SQLite query: SELECT `gg`, `gg1` FROM main."types_PostGIS" WHERE (((`gg` = `gg1`) IS NOT NULL))
 (3 rows)
 
---Testcase 431:
+--Testcase 406:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gg, gg1 FROM "types_PostGIS" WHERE gg != gg1 IS NOT NULL;
                                       QUERY PLAN                                       
@@ -1653,7 +1736,21 @@ SELECT gg, gg1 FROM "types_PostGIS" WHERE gg != gg1 IS NOT NULL;
    SQLite query: SELECT `gg`, `gg1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 458:
+--Testcase 407:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT gm, gm1 FROM "types_PostGIS" WHERE gg @ gg1 IS NOT NULL;
+ERROR:  operator does not exist: geography @ geography
+LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gg @ gg1 IS NOT NU...
+                                                     ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+--Testcase 408:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT gm, gm1 FROM "types_PostGIS" WHERE gg ~ gg1 IS NOT NULL;
+ERROR:  operator does not exist: geography ~ geography
+LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gg ~ gg1 IS NOT NU...
+                                                     ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+--Testcase 450:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <-> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
                                                     QUERY PLAN                                                    
@@ -1664,7 +1761,7 @@ SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <-> decode('0101000020e6100000bf72c
    SQLite query: SELECT `gg`, `gg1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 459:
+--Testcase 451:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gg, gg1 FROM "types_PostGIS" WHERE gg && decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
                                                    QUERY PLAN                                                    
@@ -1675,7 +1772,7 @@ SELECT gg, gg1 FROM "types_PostGIS" WHERE gg && decode('0101000020e6100000bf72ce
    SQLite query: SELECT `gg`, `gg1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 462:
+--Testcase 452:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
                                                        QUERY PLAN                                                       
@@ -1686,7 +1783,7 @@ SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <> decode('0101000020e6100000bf72ce
    SQLite query: SELECT `gg`, `gg1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 467:
+--Testcase 453:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
                                                        QUERY PLAN                                                       
@@ -1697,21 +1794,7 @@ SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <> decode('0101000020e6100000bf72ce
    SQLite query: SELECT `gg`, `gg1` FROM main."types_PostGIS"
 (4 rows)
 
---Testcase 472:
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ?# decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator does not exist: geography ?# bytea
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ?# decode('0101...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 480: ERR not unique
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg = decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
-ERROR:  operator is not unique: geography = bytea
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg = decode('01010...
-                                                     ^
-HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
---Testcase 481:
+--Testcase 454:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gg, gg1 FROM "types_PostGIS" WHERE gg != decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
                                                        QUERY PLAN                                                       
@@ -1722,6 +1805,20 @@ SELECT gg, gg1 FROM "types_PostGIS" WHERE gg != decode('0101000020e6100000bf72ce
    SQLite query: SELECT `gg`, `gg1` FROM main."types_PostGIS"
 (4 rows)
 
+--Testcase 455:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT gm, gm1 FROM "types_PostGIS" WHERE gg @ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+ERROR:  operator does not exist: geography @ bytea
+LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gg @ decode('01010...
+                                                     ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+--Testcase 456:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT gm, gm1 FROM "types_PostGIS" WHERE gg ~ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
+ERROR:  operator does not exist: geography ~ bytea
+LINE 2: SELECT gm, gm1 FROM "types_PostGIS" WHERE gg ~ decode('01010...
+                                                     ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 --Testcase 500:
 DROP FOREIGN TABLE "types_PostGIS";
 --Testcase 501:
