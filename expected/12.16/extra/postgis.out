@@ -689,12 +689,11 @@ DROP TABLE "♁";
 DROP TABLE "♂"."テスト";
 --Testcase 83:
 DROP SCHEMA "♂";
--- Test ALL operators for pushing down by list of built-in geometry operators 
--- Some operators doesn't implemented and doesn't exist in PostGIS
--- SELECT
+-- Test operators implemented in PostGIS 3.4.2, other are not tested
+-- SELECT testing group
 -- geometry -> geometry + bytea const -> geography -> geography + bytea const
 -- TC 100   -> TC 150                 -> TC200     -> TC250
--- WHERE
+-- WHERE testing group
 -- geometry -> geometry + bytea const -> geography -> geography + bytea const
 -- TC 300   -> TC 350                 -> TC400     -> TC450
 --Testcase 100:
@@ -1661,13 +1660,6 @@ SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <> gg1 IS NOT NULL;
 
 --Testcase 404:
 EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ?- gg1 IS NOT NULL;
-ERROR:  operator does not exist: geography ?- geography
-LINE 2: SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ?- gg1 IS NOT N...
-                                                     ^
-HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
---Testcase 405:
-EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gg, gg1 FROM "types_PostGIS" WHERE gg = gg1 IS NOT NULL;
                                             QUERY PLAN                                             
 ---------------------------------------------------------------------------------------------------
@@ -1676,7 +1668,7 @@ SELECT gg, gg1 FROM "types_PostGIS" WHERE gg = gg1 IS NOT NULL;
    SQLite query: SELECT `gg`, `gg1` FROM main."types_PostGIS" WHERE (((`gg` = `gg1`) IS NOT NULL))
 (3 rows)
 
---Testcase 406:
+--Testcase 405:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gg, gg1 FROM "types_PostGIS" WHERE gg != gg1 IS NOT NULL;
                                       QUERY PLAN                                       
