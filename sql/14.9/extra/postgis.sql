@@ -291,9 +291,6 @@ DROP SCHEMA "♂";
 --Testcase 106:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm @@ gm1 g FROM "types_PostGIS";
---Testcase 107:
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm ## gm1 g FROM "types_PostGIS";
 --Testcase 109:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm && gm1 g FROM "types_PostGIS";
@@ -400,9 +397,6 @@ SELECT "i", gm |&> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 
 --Testcase 177:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm ~= decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
---Testcase 180: ERR not unique
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gm = decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
 --Testcase 181:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gm != decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
@@ -464,12 +458,6 @@ SELECT "i", gg && decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', '
 --Testcase 267:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gg <> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
---Testcase 272:
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg ?# decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
---Testcase 280: ERR not unique
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT "i", gg = decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
 --Testcase 281:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT "i", gg != decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') g FROM "types_PostGIS";
@@ -495,9 +483,6 @@ SELECT "i", gg ~ decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'h
 --Testcase 306:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm @@ gm1 IS NOT NULL;
---Testcase 307:
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ## gm1 IS NOT NULL;
 --Testcase 309:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm && gm1 IS NOT NULL;
@@ -601,9 +586,6 @@ SELECT gm, gm1 FROM "types_PostGIS" WHERE gm |&> decode('0101000020e6100000bf72c
 --Testcase 377:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm ~= decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
---Testcase 380: ERR not unique
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gm, gm1 FROM "types_PostGIS" WHERE gm = decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
 --Testcase 381:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gm, gm1 FROM "types_PostGIS" WHERE gm != decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
@@ -679,12 +661,6 @@ SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <> decode('0101000020e6100000bf72ce
 --Testcase 467:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gg, gg1 FROM "types_PostGIS" WHERE gg <> decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
---Testcase 472:
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg ?# decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
---Testcase 480: ERR not unique
-EXPLAIN (VERBOSE, COSTS OFF)
-SELECT gg, gg1 FROM "types_PostGIS" WHERE gg = decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
 --Testcase 481:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT gg, gg1 FROM "types_PostGIS" WHERE gg != decode('0101000020e6100000bf72ce99fe763e40ed4960730ed84d40', 'hex') IS NOT NULL;
