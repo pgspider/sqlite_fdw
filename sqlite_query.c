@@ -787,15 +787,14 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 #endif
 					break;
 				}
-
-				if (listed_datatype(pg_dataTypeName, postGisSpecificTypes))
+				else if (listed_datatype(pg_dataTypeName, postGisSpecificTypes))
 					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
 									errmsg("This data type is PostGIS specific and have not any SpatiaLite value"),
 									errhint("Data type: \"%s\" in column \"%.*s\"", pg_dataTypeName, (int)sizeof(pgColND.data), pgColND.data)));
-
-				ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-								errmsg("cannot convert constant value to SQLite value"),
-								errhint("Constant value data type: \"%s\" in column \"%.*s\"", pg_dataTypeName, (int)sizeof(pgColND.data), pgColND.data)));
+				else
+					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+									errmsg("cannot convert constant value to SQLite value"),
+									errhint("Constant value data type: \"%s\" in column \"%.*s\"", pg_dataTypeName, (int)sizeof(pgColND.data), pgColND.data)));
 				break;
 			}
 	}
