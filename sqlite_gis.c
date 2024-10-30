@@ -140,7 +140,7 @@ static inline bool hasSRID (char *hexEWKB)
 	int				endian;
 	int				endian_arch = gaiaEndianArch ();
 	int				srid;
-	char			hexPrefix[EWKT_SRID_TEST_PREFIX_LEN];
+	char			hexPrefix[EWKT_SRID_TEST_PREFIX_LEN + 1]; /* also reserved for \0 */
 	int				i;
 
 	/* Copy only some initial hex byte images to get SRID flag and SRID */
