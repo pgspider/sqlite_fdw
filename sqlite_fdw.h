@@ -398,7 +398,7 @@ void sqlite_fdw_data_norm_functs_init(sqlite3* db);
 sqlite3_int64 binstr2int64(const char *s);
 bool		listed_datatype (const char * tn, const char ** arr);
 blobOutput	sqlite_datum_to_blob (Datum value);
-bool		listed_datatype_oid (Oid atttypid, Oid atttypmod, const char **arr);
+bool		listed_datatype_oid (Oid atttypid, int32 atttypmod, const char **arr);
 
 /* sqlite_gis.c headers */
 extern const char *postGisSpecificTypes[];

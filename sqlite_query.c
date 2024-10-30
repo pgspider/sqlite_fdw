@@ -909,7 +909,7 @@ listed_datatype (const char * tn, const char ** arr)
  * listed in given array.
  */
 bool
-listed_datatype_oid(Oid atttypid, Oid atttypmod, const char** arr)
+listed_datatype_oid(Oid atttypid, int32 atttypmod, const char** arr)
 {
 	const char *pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(atttypid, atttypmod));
 	bool		listed = listed_datatype(pg_dataTypeName, arr);
