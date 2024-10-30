@@ -54,7 +54,7 @@ data storage format is a standard of [Open Geospatial Consortium (OGC)](https://
 and supported by [GEOS library](https://libgeos.org). PostGIS internal GIS data
 storage format based on WKB with [SRID](https://en.wikipedia.org/wiki/Spatial_reference_system#Identifiers)
 additions. This format is known as [EWKB](https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry#Format_variations) and supported by
-[GEOS library](https://libgeos.org) and SpatiaLite input/otput functions.
+[GEOS library](https://libgeos.org) and SpatiaLite input/output functions.
 
 Hexadecimal text representation of EWKB data is a transport form for `geography`
 and `geometry` GIS data between PostgreSQL and *SpatiLite input/output functions*.
