@@ -8,6 +8,8 @@ OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 
 --Testcase 46:
 CREATE SERVER sqlite2 FOREIGN DATA WRAPPER sqlite_fdw;
+--Testcase 47:
+CREATE EXTENSION postgis;
 
 IMPORT FOREIGN SCHEMA main FROM SERVER sqlite_svr INTO public;
 
