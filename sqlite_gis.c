@@ -171,7 +171,7 @@ EWKB2SpatiaLiteBlobImage (char *hexEWKB, Form_pg_attribute att)
 	int				gpkg_mode = 0;
 	int				tiny_point = 0;
 	unsigned char  *spatialite_blob = NULL;
-	int				len = 0;
+	int				len = strlen(hexEWKB);
 	char 		   *src = NULL;
 	int				shift = 0;
 
@@ -182,7 +182,6 @@ EWKB2SpatiaLiteBlobImage (char *hexEWKB, Form_pg_attribute att)
 
 	if (!hasSRID(src))
 	{
-		len = strlen(hexEWKB);
 		if (att != NULL)
 		{
 			char *pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(att->atttypid, att->atttypmod));
@@ -203,7 +202,7 @@ EWKB2SpatiaLiteBlobImage (char *hexEWKB, Form_pg_attribute att)
 	geo = gaiaFromEWKB ((const unsigned char *)src);
 	if (NULL == geo)
 	{
-		common_EWKB_error(att, strlen(hexEWKB)/2, hexEWKB, false);
+		common_EWKB_error(att, len/2, hexEWKB, false);
 	}
 	elog(DEBUG4, "sqlite_fdw : PostGIS -> SpatiaLite %s", hexEWKB);
 
