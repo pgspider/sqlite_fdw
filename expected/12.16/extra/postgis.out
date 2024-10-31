@@ -1744,5 +1744,3 @@ DROP EXTENSION postgis CASCADE;
 NOTICE:  drop cascades to 2 other objects
 DETAIL:  drop cascades to extension postgis_raster
 drop cascades to extension postgis_topology
---Testcase 503: -- types for later types test
-CREATE EXTENSION postgis;

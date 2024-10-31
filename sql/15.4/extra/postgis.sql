@@ -600,5 +600,3 @@ DROP FOREIGN TABLE "types_PostGIS";
 DROP EXTENSION sqlite_fdw CASCADE;
 --Testcase 502:
 DROP EXTENSION postgis CASCADE;
---Testcase 503: -- types for later types test
-CREATE EXTENSION postgis;

@@ -198,4 +198,45 @@ ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE geography;
 SELECT * FROM "♂";
 
 --Testcase 103:
+DROP DOMAIN geometry CASCADE;
+--Testcase 104:
+DROP DOMAIN geography CASCADE;
+--Testcase 105:
+DROP DOMAIN addbandarg;
+--Testcase 106:
+DROP DOMAIN box2d;
+--Testcase 107:
+DROP DOMAIN box3d;
+--Testcase 108:
+DROP DOMAIN geometry_dump;
+--Testcase 109:
+DROP DOMAIN geomval;
+--Testcase 110:
+DROP DOMAIN getfaceedges_returntype;
+--Testcase 111:
+DROP DOMAIN rastbandarg;
+--Testcase 112:
+DROP DOMAIN raster CASCADE;
+--Testcase 113:
+DROP DOMAIN reclassarg;
+--Testcase 114:
+DROP DOMAIN summarystats;
+--Testcase 115:
+DROP DOMAIN topoelement;
+--Testcase 116:
+DROP DOMAIN topoelementarray;
+--Testcase 117:
+DROP DOMAIN topogeometry;
+--Testcase 118:
+DROP DOMAIN unionarg;
+--Testcase 119:
+DROP DOMAIN validatetopology_returntype;
+--Testcase 120:
+DROP DOMAIN geom0 CASCADE;
+--Testcase 121:
+DROP DOMAIN geog0 CASCADE;
+
+--Testcase 122:
+DROP SERVER sqlite_svr CASCADE;
+--Testcase 123:
 DROP EXTENSION sqlite_fdw CASCADE;
