@@ -85,7 +85,8 @@ SpatiaLiteAsPostGISgeom (blobOutput spatiaLiteBlob, Form_pg_attribute att)
 	gaiaToEWKB (&out_buf, geo);
 	if (out_buf.Error || out_buf.Buffer == NULL)
 	{
-		gaiaOutBufferReset (&out_buf);
+		if (out_buf.Error)
+			gaiaOutBufferReset (&out_buf);
 		common_EWKB_error (att,
 						   spatiaLiteBlob.len,
 						   getHexFormOfBlob(spatiaLiteBlob),
