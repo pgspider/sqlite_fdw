@@ -105,7 +105,7 @@ SpatiaLiteAsPostGISgeom (blobOutput spatiaLiteBlob, Form_pg_attribute att)
  *
  * Return normal ASCII hex string for a bytes from given BLOB
  */
-char*
+static char*
 getHexFormOfBlob(blobOutput b)
 {
 	const char hex[] = "0123456789abcdef";
