@@ -73,7 +73,7 @@ SpatiaLiteAsPostGISgeom (blobOutput spatiaLiteBlob, Form_pg_attribute att)
 										gpkg_mode,
 										gpkg_amphibious);
 
-	if (!geo)
+	if (geo == NULL)
 	{
 		common_EWKB_error (att,
 						   spatiaLiteBlob.len,
@@ -83,6 +83,7 @@ SpatiaLiteAsPostGISgeom (blobOutput spatiaLiteBlob, Form_pg_attribute att)
 
 	gaiaOutBufferInitialize (&out_buf);
 	gaiaToEWKB (&out_buf, geo);
+	gaiaFreeGeomColl (geo);
 	if (out_buf.Error || out_buf.Buffer == NULL)
 	{
 		if (out_buf.Error)
