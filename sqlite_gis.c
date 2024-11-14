@@ -175,6 +175,7 @@ EWKB2SpatiaLiteBlobImage (char *hexEWKB, Form_pg_attribute att)
 	int				len = strlen(hexEWKB);
 	char 		   *src = NULL;
 	int				shift = 0;
+	struct splite_internal_cache *cache = sqlite3_user_data (context);
 
 	/* Ignore leading '\x' in hex data */
 	if (hexEWKB[0] == '\\' && hexEWKB[1] == 'x')
@@ -199,6 +200,12 @@ EWKB2SpatiaLiteBlobImage (char *hexEWKB, Form_pg_attribute att)
 		pfree(hexEWKB);
 		return (struct blobOutput){NULL, 0};
 	}
+
+    if (cache != NULL)
+    {
+    	gpkg_mode = cache->gpkg_mode;
+    	tiny_point = cache->tinyPointEnabled;
+    }
 
 	geo = gaiaFromEWKB ((const unsigned char *)src);
 	if (NULL == geo)
