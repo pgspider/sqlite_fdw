@@ -17,6 +17,7 @@
 
 #ifdef SQLITE_FDW_GIS_ENABLE
 #include <spatialite.h>
+#include <spatialite_private.h>
 #endif
 
 #include <sqlite3.h>
