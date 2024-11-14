@@ -8,7 +8,7 @@
  * 		sqlite_gis.c
  *
  * Routines that convert between SpatiaLite BLOB storage form and PostGIS EWKB
- * and some functions about detecting data type names from PostGIS set
+ * and constants for detecting data type names from PostGIS set
  *-------------------------------------------------------------------------
  */
 
@@ -80,25 +80,29 @@ SpatiaLiteAsPostGISgeom (blobOutput spatiaLiteBlob, Form_pg_attribute att)
 						   getHexFormOfBlob(spatiaLiteBlob),
 						   true);
 	}
-
-	gaiaOutBufferInitialize (&out_buf);
-	gaiaToEWKB (&out_buf, geo);
-	gaiaFreeGeomColl (geo);
-	if (out_buf.Error || out_buf.Buffer == NULL)
+	else
 	{
-		if (out_buf.Error)
+		gaiaOutBufferInitialize (&out_buf);
+		gaiaToEWKB (&out_buf, geo);
+		gaiaFreeGeomColl (geo);
+		if (out_buf.Error || out_buf.Buffer == NULL)
+		{
 			gaiaOutBufferReset (&out_buf);
-		common_EWKB_error (att,
-						   spatiaLiteBlob.len,
-						   getHexFormOfBlob(spatiaLiteBlob),
-						   true);
+			common_EWKB_error (att,
+							   spatiaLiteBlob.len,
+							   getHexFormOfBlob(spatiaLiteBlob),
+							   true);
+		}
+		else
+		{
+			res_len = out_buf.WriteOffset + 1; /* Include \0 on the end */
+			res = (char*) palloc(res_len*sizeof(char));
+			strcpy(res, out_buf.Buffer);
+			gaiaOutBufferReset (&out_buf);
+			return res;
+		}
 	}
-
-	res_len = strlen(out_buf.Buffer) + 1; /* Include \0 on the end */
-	res = (char*) palloc(res_len*sizeof(char));
-	strcpy(res, out_buf.Buffer);
-	gaiaOutBufferReset (&out_buf);
-	return res;
+	return NULL;
 }
 
 /*
