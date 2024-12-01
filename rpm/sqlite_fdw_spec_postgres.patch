@@ -1,0 +1,33 @@
+--- sqlite_fdw.spec.old	2024-10-08 19:18:56.243296632 +0700
++++ sqlite_fdw.spec	2024-10-08 19:18:56.243296632 +0700
+@@ -15,13 +15,14 @@
+ 
+ Summary:	SQLite Foreign Data Wrapper for PostgreSQL
+ Name:		%{sname}_%{pgmajorversion}
+-Version:	2.4.0
+-Release:	1PGDG%{?dist}
++Version:	%{?release_version}
++Release:	%{?package_release_version}.%{?dist}
+ License:	PostgreSQL
+ URL:		https://github.com/pgspider/%{sname}
+-Source0:	https://github.com/pgspider/%{sname}/archive/v%{version}.tar.gz
++Source0:	sqlite_fdw.tar.bz2
+ BuildRequires:	postgresql%{pgmajorversion}-devel pgdg-srpm-macros
+-BuildRequires:	postgresql%{pgmajorversion}-server sqlite-devel
++BuildRequires:	postgresql%{pgmajorversion}-server
++BuildRequires:	sqlite >= 3.42.0
+ Requires:	postgresql%{pgmajorversion}-server
+ %if 0%{?fedora} >= 27
+ Requires:	sqlite-libs
+@@ -89,6 +90,11 @@
+ %endif
+ 
+ %changelog
++* Tue Oct 2 2024 toshiba-corporation - 2.4.0-1
++- Version and Release will be set as parameters.
++- Source0 will change to the current source code.
++- Add required build for sqlite server version >= 3.42.0 because sqlite_fdw support SQLITE_INNOCUOUS flag.
++
+ * Wed Sep 27 2023 Devrim Gündüz <devrim@gunduz.org> - 2.4.0-1PGDG
+ - Update to 2.4.0
+ - Add PGDG branding

@@ -46,7 +46,6 @@ typedef struct ConnCacheEntry
 	Oid			serverid;		/* foreign server OID used to get server name */
 	List	   *stmtList;		/* list stmt associated with conn */
 	uint32		server_hashvalue;	/* hash value of foreign server OID */
-	uint32		mapping_hashvalue;	/* hash value of user mapping OID */
 } ConnCacheEntry;
 
 /*

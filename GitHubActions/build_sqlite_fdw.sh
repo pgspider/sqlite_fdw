@@ -5,7 +5,7 @@
 # This script builds sqlite_fdw in PostgreSQL source tree.
 #
 # Usage: ./build_sqlite_fdw.sh pg_version mode
-#     pg_version is a PostgreSQL version like 16.0 to be built in.
+#     pg_version is a PostgreSQL version like 17.0 to be built in.
 #     mode is flag for sqlite_fdw compiler.
 #
 # Requirements
