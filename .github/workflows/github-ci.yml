@@ -11,8 +11,8 @@ env:
   PGSPIDER_RELEASE_PACKAGE_VERSION: "4.0.0"      # Release package version of PGSPider. For example: 4.0.0
   PGSPIDER_BASE_POSTGRESQL_VERSION: "16"         # Main version of postgresql that pgspider based on it. For example: 16.
   SQLITE_FDW_RELEASE_VERSION: "2.4.0"
-  SQLITE_VERSION: "3.42.0"
-  SQLITE_YEAR: "2023"
+  SQLITE_VERSION: "3.46.0"
+  SQLITE_YEAR: "2024"
   PACKAGE_RELEASE_VERSION: "1"
   
 
