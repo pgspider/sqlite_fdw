@@ -58,7 +58,6 @@ CREATE FOREIGN TABLE tenk2 (
 ) SERVER sqlite_svr;
 --Testcase 366:
 CREATE FOREIGN TABLE INT4_TBL(f1 int4 OPTIONS (key 'true')) SERVER sqlite_svr;
-<<<<<<<< HEAD:expected/17.0/extra/join.out
 --Testcase 641:
 INSERT INTO INT4_TBL(f1) VALUES ('   0  ');
 --Testcase 642:
@@ -80,36 +79,12 @@ INSERT INTO FLOAT8_TBL(f1) VALUES ('   -34.84');
 --Testcase 649:
 INSERT INTO FLOAT8_TBL(f1) VALUES ('1.2345678901234e+200');
 --Testcase 650:
-========
---Testcase 545:
-INSERT INTO INT4_TBL(f1) VALUES ('   0  ');
---Testcase 546:
-INSERT INTO INT4_TBL(f1) VALUES ('123456     ');
---Testcase 547:
-INSERT INTO INT4_TBL(f1) VALUES ('    -123456');
---Testcase 548:
-INSERT INTO INT4_TBL(f1) VALUES ('2147483647');
---Testcase 549:
-INSERT INTO INT4_TBL(f1) VALUES ('-2147483647');
---Testcase 367:
-CREATE FOREIGN TABLE FLOAT8_TBL(f1 float8 OPTIONS (key 'true')) SERVER sqlite_svr;
---Testcase 550:
-INSERT INTO FLOAT8_TBL(f1) VALUES ('    0.0   ');
---Testcase 551:
-INSERT INTO FLOAT8_TBL(f1) VALUES ('1004.30  ');
---Testcase 552:
-INSERT INTO FLOAT8_TBL(f1) VALUES ('   -34.84');
---Testcase 553:
-INSERT INTO FLOAT8_TBL(f1) VALUES ('1.2345678901234e+200');
---Testcase 554:
->>>>>>>> origin/master:expected/15.7/extra/join.out
 INSERT INTO FLOAT8_TBL(f1) VALUES ('1.2345678901234e-200');
 --Testcase 368:
 CREATE FOREIGN TABLE INT8_TBL(
   q1 int8 OPTIONS (key 'true'),
   q2 int8 OPTIONS (key 'true')
 ) SERVER sqlite_svr;
-<<<<<<<< HEAD:expected/17.0/extra/join.out
 --Testcase 651:
 INSERT INTO INT8_TBL VALUES('  123   ','  456');
 --Testcase 652:
@@ -119,17 +94,6 @@ INSERT INTO INT8_TBL VALUES('4567890123456789','123');
 --Testcase 654:
 INSERT INTO INT8_TBL VALUES(+4567890123456789,'4567890123456789');
 --Testcase 655:
-========
---Testcase 555:
-INSERT INTO INT8_TBL VALUES('  123   ','  456');
---Testcase 556:
-INSERT INTO INT8_TBL VALUES('123   ','4567890123456789');
---Testcase 557:
-INSERT INTO INT8_TBL VALUES('4567890123456789','123');
---Testcase 558:
-INSERT INTO INT8_TBL VALUES(+4567890123456789,'4567890123456789');
---Testcase 559:
->>>>>>>> origin/master:expected/15.7/extra/join.out
 INSERT INTO INT8_TBL VALUES('+4567890123456789','-4567890123456789');
 --Testcase 369:
 CREATE FOREIGN TABLE INT2_TBL(f1 int2 OPTIONS (key 'true')) SERVER sqlite_svr;
@@ -8860,7 +8824,6 @@ where exists (select 1 from j3
 
 --Testcase 486:
 drop table j3;
-<<<<<<<< HEAD:expected/17.0/extra/join.out
 -- sqlite_fdw is not supported WITH fillfactor, INDEX, VACUM, ANALYZE with foreign table.
 -- Exercise the "skip fetch" Bitmap Heap Scan optimization when candidate
 -- tuples are discarded. This may occur when:
@@ -8889,14 +8852,6 @@ DELETE FROM INT4_TBL;
 DELETE FROM FLOAT8_TBL;
 --Testcase 658:
 DELETE FROM INT8_TBL;
-========
---Testcase 560:
-DELETE FROM INT4_TBL;
---Testcase 561:
-DELETE FROM INT8_TBL;
---Testcase 562:
-DELETE FROM FLOAT8_TBL;
->>>>>>>> origin/master:expected/15.7/extra/join.out
 DO $d$
 declare
   l_rec record;
