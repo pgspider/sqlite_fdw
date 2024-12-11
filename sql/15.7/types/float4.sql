@@ -68,15 +68,6 @@ INSERT INTO FLOAT4_TBL(f1) VALUES ('     - 3.0');
 --Testcase 17:
 INSERT INTO FLOAT4_TBL(f1) VALUES ('123            5');
 
--- Also try it with non-error-throwing API
-CREATE FOREIGN TABLE NON_ERROR_THROWING_API_FLOAT4(f1 text, id serial OPTIONS (key 'true')) SERVER sqlite_svr;
-INSERT INTO NON_ERROR_THROWING_API_FLOAT4 VALUES ('34.5', 1), ('xyz', 2), ('1e400', 3);
-SELECT pg_input_is_valid(f1, 'float4') FROM NON_ERROR_THROWING_API_FLOAT4 WHERE id = 1;
-SELECT pg_input_is_valid(f1, 'float4') FROM NON_ERROR_THROWING_API_FLOAT4 WHERE id = 2;
-SELECT pg_input_is_valid(f1, 'float4') FROM NON_ERROR_THROWING_API_FLOAT4 WHERE id = 3;
-SELECT * FROM pg_input_error_info((SELECT f1 FROM NON_ERROR_THROWING_API_FLOAT4 WHERE id = 3), 'float4');
-
-
 -- special inputs
 --Testcase 18:
 DELETE FROM FLOAT4_TMP;
@@ -141,23 +132,11 @@ DELETE FROM FLOAT4_TMP;
 INSERT INTO FLOAT4_TMP VALUES ('Infinity'::float4 / 'Infinity'::float4);
 --Testcase 77:
 SELECT f1 FROM FLOAT4_TMP;
---Testcase 185:
-DELETE FROM FLOAT4_TMP;
---Testcase 186:
-INSERT INTO FLOAT4_TMP VALUES ('42'::float4 / 'Infinity'::float4);
---Testcase 187:
-SELECT f1 FROM FLOAT4_TMP;
 --Testcase 31:
 DELETE FROM FLOAT4_TMP;
 --Testcase 78:
 INSERT INTO FLOAT4_TMP VALUES ('nan'::float4 / 'nan'::float4);
 --Testcase 79:
-SELECT f1 FROM FLOAT4_TMP;
---Testcase 188:
-DELETE FROM FLOAT4_TMP;
---Testcase 189:
-INSERT INTO FLOAT4_TMP VALUES ('nan'::float4 / '0'::float4);
---Testcase 190:
 SELECT f1 FROM FLOAT4_TMP;
 --Testcase 32:
 DELETE FROM FLOAT4_TMP;
@@ -167,7 +146,7 @@ INSERT INTO FLOAT4_TMP VALUES ('nan'::numeric::float4);
 SELECT f1 FROM FLOAT4_TMP;
 
 --Testcase 34:
-SELECT * FROM FLOAT4_TBL;
+SELECT '' AS five, * FROM FLOAT4_TBL;
 
 --SELECT '' AS four, f.* FROM FLOAT4_TBL f WHERE f.f1 <> '1004.3';
 
@@ -178,37 +157,37 @@ SELECT * FROM FLOAT4_TBL;
 --SELECT '' AS three, f.* FROM FLOAT4_TBL f WHERE  f.f1 < '1004.3';
 
 --Testcase 35:
-SELECT f.* FROM FLOAT4_TBL f WHERE '1004.3' >= f.f1;
+SELECT '' AS four, f.* FROM FLOAT4_TBL f WHERE '1004.3' >= f.f1;
 
 --Testcase 36:
-SELECT f.* FROM FLOAT4_TBL f WHERE  f.f1 <= '1004.3';
+SELECT '' AS four, f.* FROM FLOAT4_TBL f WHERE  f.f1 <= '1004.3';
 
 --Testcase 37:
-SELECT f.f1, f.f1 * '-10' AS x FROM FLOAT4_TBL f
+SELECT '' AS three, f.f1, f.f1 * '-10' AS x FROM FLOAT4_TBL f
    WHERE f.f1 > '0.0';
 
 --Testcase 38:
-SELECT f.f1, f.f1 + '-10' AS x FROM FLOAT4_TBL f
+SELECT '' AS three, f.f1, f.f1 + '-10' AS x FROM FLOAT4_TBL f
    WHERE f.f1 > '0.0';
 
 --Testcase 39:
-SELECT f.f1, f.f1 / '-10' AS x FROM FLOAT4_TBL f
+SELECT '' AS three, f.f1, f.f1 / '-10' AS x FROM FLOAT4_TBL f
    WHERE f.f1 > '0.0';
 
 --Testcase 40:
-SELECT f.f1, f.f1 - '-10' AS x FROM FLOAT4_TBL f
+SELECT '' AS three, f.f1, f.f1 - '-10' AS x FROM FLOAT4_TBL f
    WHERE f.f1 > '0.0';
 
 -- test divide by zero
 --Testcase 41:
-SELECT f.f1 / '0.0' from FLOAT4_TBL f;
+SELECT '' AS bad, f.f1 / '0.0' from FLOAT4_TBL f;
 
 --Testcase 42:
-SELECT * FROM FLOAT4_TBL;
+SELECT '' AS five, * FROM FLOAT4_TBL;
 
 -- test the unary float4abs operator
 --Testcase 43:
-SELECT f.f1, @f.f1 AS abs_f1 FROM FLOAT4_TBL f;
+SELECT '' AS five, f.f1, @f.f1 AS abs_f1 FROM FLOAT4_TBL f;
 
 --Testcase 44:
 UPDATE FLOAT4_TBL
@@ -216,7 +195,7 @@ UPDATE FLOAT4_TBL
    WHERE FLOAT4_TBL.f1 > '0.0';
 
 --Testcase 45:
-SELECT * FROM FLOAT4_TBL;
+SELECT '' AS five, * FROM FLOAT4_TBL;
 
 -- test edge-case coercions to integer
 --Testcase 82:
