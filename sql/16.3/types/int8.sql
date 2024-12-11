@@ -277,13 +277,6 @@ INSERT INTO INT8_TMP VALUES (-('-9223372036854775808'::int8));
 --Testcase 155:
 SELECT q1 FROM INT8_TMP;
 
---Testcase 257:
-DELETE FROM INT8_TMP;
---Testcase 258:
-INSERT INTO INT8_TMP VALUES (0::int8 , '-9223372036854775808'::int8);
---Testcase 259:
-SELECT q1 - q2 FROM INT8_TMP;
-
 --Testcase 87:
 DELETE FROM INT8_TMP;
 --Testcase 156:
@@ -638,192 +631,192 @@ SELECT lcm(q1, q2) FROM INT8_TMP; -- overflow
 
 -- non-decimal literals
 
---Testcase 260:
+--Testcase 257:
 CREATE FOREIGN TABLE special_case_int8 (f1 text, id int OPTIONS (key 'true')) SERVER sqlite_svr;
---Testcase 261:
+--Testcase 258:
 INSERT INTO special_case_int8 VALUES ('0b100101'::int8);
+--Testcase 259:
+SELECT f1 FROM special_case_int8;
+
+--Testcase 260:
+DELETE FROM special_case_int8;
+--Testcase 261:
+INSERT INTO special_case_int8 VALUES ('0o273'::int8);
 --Testcase 262:
 SELECT f1 FROM special_case_int8;
 
 --Testcase 263:
 DELETE FROM special_case_int8;
 --Testcase 264:
-INSERT INTO special_case_int8 VALUES ('0o273'::int8);
+INSERT INTO special_case_int8 VALUES ('0x42F'::int8);
 --Testcase 265:
 SELECT f1 FROM special_case_int8;
 
 --Testcase 266:
 DELETE FROM special_case_int8;
 --Testcase 267:
-INSERT INTO special_case_int8 VALUES ('0x42F'::int8);
+INSERT INTO special_case_int8 VALUES ('0b'::int8);
 --Testcase 268:
 SELECT f1 FROM special_case_int8;
 
 --Testcase 269:
 DELETE FROM special_case_int8;
 --Testcase 270:
-INSERT INTO special_case_int8 VALUES ('0b'::int8);
+INSERT INTO special_case_int8 VALUES ('0o'::int8);
 --Testcase 271:
 SELECT f1 FROM special_case_int8;
 
 --Testcase 272:
 DELETE FROM special_case_int8;
 --Testcase 273:
-INSERT INTO special_case_int8 VALUES ('0o'::int8);
+INSERT INTO special_case_int8 VALUES ('0x'::int8);
 --Testcase 274:
 SELECT f1 FROM special_case_int8;
 
+-- cases near overflow
 --Testcase 275:
 DELETE FROM special_case_int8;
 --Testcase 276:
-INSERT INTO special_case_int8 VALUES ('0x'::int8);
+INSERT INTO special_case_int8 VALUES ('0b111111111111111111111111111111111111111111111111111111111111111'::int8);
 --Testcase 277:
 SELECT f1 FROM special_case_int8;
 
--- cases near overflow
 --Testcase 278:
 DELETE FROM special_case_int8;
 --Testcase 279:
-INSERT INTO special_case_int8 VALUES ('0b111111111111111111111111111111111111111111111111111111111111111'::int8);
+INSERT INTO special_case_int8 VALUES ('0b1000000000000000000000000000000000000000000000000000000000000000'::int8);
 --Testcase 280:
 SELECT f1 FROM special_case_int8;
 
 --Testcase 281:
 DELETE FROM special_case_int8;
 --Testcase 282:
-INSERT INTO special_case_int8 VALUES ('0b1000000000000000000000000000000000000000000000000000000000000000'::int8);
+INSERT INTO special_case_int8 VALUES ('0o777777777777777777777'::int8);
 --Testcase 283:
 SELECT f1 FROM special_case_int8;
 
 --Testcase 284:
 DELETE FROM special_case_int8;
 --Testcase 285:
-INSERT INTO special_case_int8 VALUES ('0o777777777777777777777'::int8);
+INSERT INTO special_case_int8 VALUES ('0o1000000000000000000000'::int8);
 --Testcase 286:
 SELECT f1 FROM special_case_int8;
 
 --Testcase 287:
 DELETE FROM special_case_int8;
 --Testcase 288:
-INSERT INTO special_case_int8 VALUES ('0o1000000000000000000000'::int8);
+INSERT INTO special_case_int8 VALUES ('0x7FFFFFFFFFFFFFFF'::int8);
 --Testcase 289:
 SELECT f1 FROM special_case_int8;
 
 --Testcase 290:
 DELETE FROM special_case_int8;
 --Testcase 291:
-INSERT INTO special_case_int8 VALUES ('0x7FFFFFFFFFFFFFFF'::int8);
+INSERT INTO special_case_int8 VALUES ('0x8000000000000000'::int8);
 --Testcase 292:
 SELECT f1 FROM special_case_int8;
 
 --Testcase 293:
 DELETE FROM special_case_int8;
 --Testcase 294:
-INSERT INTO special_case_int8 VALUES ('0x8000000000000000'::int8);
+INSERT INTO special_case_int8 VALUES ('-0b1000000000000000000000000000000000000000000000000000000000000000'::int8);
 --Testcase 295:
 SELECT f1 FROM special_case_int8;
 
 --Testcase 296:
 DELETE FROM special_case_int8;
 --Testcase 297:
-INSERT INTO special_case_int8 VALUES ('-0b1000000000000000000000000000000000000000000000000000000000000000'::int8);
+INSERT INTO special_case_int8 VALUES ('-0b1000000000000000000000000000000000000000000000000000000000000001'::int8);
 --Testcase 298:
 SELECT f1 FROM special_case_int8;
 
 --Testcase 299:
 DELETE FROM special_case_int8;
 --Testcase 300:
-INSERT INTO special_case_int8 VALUES ('-0b1000000000000000000000000000000000000000000000000000000000000001'::int8);
+INSERT INTO special_case_int8 VALUES ('-0o1000000000000000000000'::int8);
 --Testcase 301:
 SELECT f1 FROM special_case_int8;
 
 --Testcase 302:
 DELETE FROM special_case_int8;
 --Testcase 303:
-INSERT INTO special_case_int8 VALUES ('-0o1000000000000000000000'::int8);
+INSERT INTO special_case_int8 VALUES ('-0o1000000000000000000001'::int8);
 --Testcase 304:
 SELECT f1 FROM special_case_int8;
 
 --Testcase 305:
 DELETE FROM special_case_int8;
 --Testcase 306:
-INSERT INTO special_case_int8 VALUES ('-0o1000000000000000000001'::int8);
+INSERT INTO special_case_int8 VALUES ('-0x8000000000000000'::int8);
 --Testcase 307:
 SELECT f1 FROM special_case_int8;
 
 --Testcase 308:
 DELETE FROM special_case_int8;
 --Testcase 309:
-INSERT INTO special_case_int8 VALUES ('-0x8000000000000000'::int8);
+INSERT INTO special_case_int8 VALUES ('-0x8000000000000001'::int8);
 --Testcase 310:
 SELECT f1 FROM special_case_int8;
 
+-- underscores
 --Testcase 311:
 DELETE FROM special_case_int8;
 --Testcase 312:
-INSERT INTO special_case_int8 VALUES ('-0x8000000000000001'::int8);
+INSERT INTO special_case_int8 VALUES ('1_000_000'::int8);
 --Testcase 313:
 SELECT f1 FROM special_case_int8;
 
--- underscores
 --Testcase 314:
 DELETE FROM special_case_int8;
 --Testcase 315:
-INSERT INTO special_case_int8 VALUES ('1_000_000'::int8);
+INSERT INTO special_case_int8 VALUES ('1_2_3'::int8);
 --Testcase 316:
 SELECT f1 FROM special_case_int8;
 
 --Testcase 317:
 DELETE FROM special_case_int8;
 --Testcase 318:
-INSERT INTO special_case_int8 VALUES ('1_2_3'::int8);
+INSERT INTO special_case_int8 VALUES ('0x1EEE_FFFF'::int8);
 --Testcase 319:
 SELECT f1 FROM special_case_int8;
 
 --Testcase 320:
 DELETE FROM special_case_int8;
 --Testcase 321:
-INSERT INTO special_case_int8 VALUES ('0x1EEE_FFFF'::int8);
+INSERT INTO special_case_int8 VALUES ('0o2_73'::int8);
 --Testcase 322:
 SELECT f1 FROM special_case_int8;
 
 --Testcase 323:
 DELETE FROM special_case_int8;
 --Testcase 324:
-INSERT INTO special_case_int8 VALUES ('0o2_73'::int8);
+INSERT INTO special_case_int8 VALUES ('0b_10_0101'::int8);
 --Testcase 325:
 SELECT f1 FROM special_case_int8;
 
+-- error cases
 --Testcase 326:
 DELETE FROM special_case_int8;
 --Testcase 327:
-INSERT INTO special_case_int8 VALUES ('0b_10_0101'::int8);
+INSERT INTO special_case_int8 VALUES ('_100'::int8);
 --Testcase 328:
 SELECT f1 FROM special_case_int8;
 
--- error cases
 --Testcase 329:
 DELETE FROM special_case_int8;
 --Testcase 330:
-INSERT INTO special_case_int8 VALUES ('_100'::int8);
+INSERT INTO special_case_int8 VALUES ('100_'::int8);
 --Testcase 331:
 SELECT f1 FROM special_case_int8;
 
 --Testcase 332:
 DELETE FROM special_case_int8;
 --Testcase 333:
-INSERT INTO special_case_int8 VALUES ('100_'::int8);
+INSERT INTO special_case_int8 VALUES ('100__000'::int8);
 --Testcase 334:
 SELECT f1 FROM special_case_int8;
 
 --Testcase 335:
-DELETE FROM special_case_int8;
---Testcase 336:
-INSERT INTO special_case_int8 VALUES ('100__000'::int8);
---Testcase 337:
-SELECT f1 FROM special_case_int8;
-
---Testcase 338:
 DELETE FROM INT8_TBL;
 
 -- Clean up

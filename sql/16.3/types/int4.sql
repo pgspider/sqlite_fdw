@@ -558,6 +558,7 @@ SELECT f1 FROM special_case_int4;
 
 --Testcase 221:
 DELETE FROM INT4_TBL;
+
 -- Clean up
 DO $d$
 declare

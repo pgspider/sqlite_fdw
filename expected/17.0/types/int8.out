@@ -1346,9 +1346,6 @@ INSERT INTO INT8_TMP VALUES ((9223372036854775807)::int8, (9223372036854775806):
 --Testcase 248:
 SELECT lcm(q1, q2) FROM INT8_TMP; -- overflow
 ERROR:  bigint out of range
-<<<<<<<< HEAD:expected/15.7/extra/int8.out
---Testcase 251:
-========
 -- non-decimal literals
 --Testcase 260:
 CREATE FOREIGN TABLE special_case_int8 (f1 text, id int OPTIONS (key 'true')) SERVER sqlite_svr;
@@ -1664,7 +1661,6 @@ SELECT f1 FROM special_case_int8;
 (0 rows)
 
 --Testcase 338:
->>>>>>>> origin/master:expected/17.0/extra/int8.out
 DELETE FROM INT8_TBL;
 -- Clean up
 DO $d$
