@@ -578,6 +578,20 @@ EXPLAIN (VERBOSE, COSTS OFF) SELECT * FROM ft_empty ORDER BY c1;
    SQLite query: SELECT `c1`, `c2` FROM main."loct_empty" ORDER BY `c1` ASC NULLS LAST
 (3 rows)
 
+-- test restriction on non-system foreign tables.
+SET restrict_nonsystem_relation_kind TO 'foreign-table';
+--Testcase 1029:
+SELECT * from ft1 where c1 < 1; -- ERROR
+ERROR:  access to non-system foreign table is restricted
+--Testcase 1030:
+INSERT INTO ft1 (c1) VALUES (1); -- ERROR
+ERROR:  access to non-system foreign table is restricted
+--Testcase 1031:
+DELETE FROM ft1 WHERE c1 = 1; -- ERROR
+ERROR:  access to non-system foreign table is restricted
+TRUNCATE ft1; -- ERROR
+ERROR:  access to non-system foreign table is restricted
+RESET restrict_nonsystem_relation_kind;
 -- ===================================================================
 -- WHERE with remotely-executable conditions
 -- ===================================================================
@@ -600,21 +614,21 @@ EXPLAIN (VERBOSE, COSTS OFF) SELECT * FROM ft1 t1 WHERE t1.c1 = 100 AND t1.c2 = 
 (3 rows)
 
 --Testcase 39:
-EXPLAIN (VERBOSE, COSTS OFF) SELECT * FROM ft1 t1 WHERE c1 IS NULL;        -- NullTest
-                                                   QUERY PLAN                                                   
-----------------------------------------------------------------------------------------------------------------
+EXPLAIN (VERBOSE, COSTS OFF) SELECT * FROM ft1 t1 WHERE c3 IS NULL;        -- NullTest
+                                                  QUERY PLAN                                                   
+---------------------------------------------------------------------------------------------------------------
  Foreign Scan on public.ft1 t1
    Output: c1, c2, c3, c4, c5, c6, c7, c8
-   SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1" WHERE ((`C 1` IS NULL))
+   SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1" WHERE ((`c3` IS NULL))
 (3 rows)
 
 --Testcase 40:
-EXPLAIN (VERBOSE, COSTS OFF) SELECT * FROM ft1 t1 WHERE c1 IS NOT NULL;    -- NullTest
-                                                     QUERY PLAN                                                     
---------------------------------------------------------------------------------------------------------------------
+EXPLAIN (VERBOSE, COSTS OFF) SELECT * FROM ft1 t1 WHERE c3 IS NOT NULL;    -- NullTest
+                                                    QUERY PLAN                                                     
+-------------------------------------------------------------------------------------------------------------------
  Foreign Scan on public.ft1 t1
    Output: c1, c2, c3, c4, c5, c6, c7, c8
-   SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1" WHERE ((`C 1` IS NOT NULL))
+   SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1" WHERE ((`c3` IS NOT NULL))
 (3 rows)
 
 --Testcase 41:
@@ -695,10 +709,10 @@ EXPLAIN (VERBOSE, COSTS OFF)
 (3 rows)
 
 --Testcase 50:
-SELECT * FROM ft2 a, ft2 b WHERE a.c1 = 47 AND b.c1 = a.c2;
- c1 | c2 |  c3   |              c4              |            c5            | c6 |     c7     | c8  | c1 | c2 |  c3   |              c4              |            c5            | c6 |     c7     | c8  
-----+----+-------+------------------------------+--------------------------+----+------------+-----+----+----+-------+------------------------------+--------------------------+----+------------+-----
- 47 |  7 | 00047 | Tue Feb 17 00:00:00 1970 PST | Tue Feb 17 00:00:00 1970 | 7  | 7          | foo |  7 |  7 | 00007 | Thu Jan 08 00:00:00 1970 PST | Thu Jan 08 00:00:00 1970 | 7  | 7          | foo
+SELECT * FROM "S 1"."T 1" a, ft2 b WHERE a."C 1" = 47 AND b.c1 = a.c2;
+ C 1 | c2 |  c3   |              c4              |            c5            | c6 |     c7     | c8  | c1 | c2 |  c3   |              c4              |            c5            | c6 |     c7     | c8  
+-----+----+-------+------------------------------+--------------------------+----+------------+-----+----+----+-------+------------------------------+--------------------------+----+------------+-----
+  47 |  7 | 00047 | Tue Feb 17 00:00:00 1970 PST | Tue Feb 17 00:00:00 1970 | 7  | 7          | foo |  7 |  7 | 00007 | Thu Jan 08 00:00:00 1970 PST | Thu Jan 08 00:00:00 1970 | 7  | 7          | foo
 (1 row)
 
 -- check both safe and unsafe join conditions
@@ -841,34 +855,6 @@ SELECT * FROM ft2 WHERE c1 = ANY (ARRAY(SELECT c1 FROM ft1 WHERE c1 < 5));
   3 |  3 | 00003 | Sun Jan 04 00:00:00 1970 PST | Sun Jan 04 00:00:00 1970 | 3  | 3          | foo
   4 |  4 | 00004 | Mon Jan 05 00:00:00 1970 PST | Mon Jan 05 00:00:00 1970 | 4  | 4          | foo
 (4 rows)
-
--- we should not push order by clause with volatile expressions or unsafe
--- collations
---Testcase 55:
-EXPLAIN (VERBOSE, COSTS OFF)
-	SELECT * FROM ft2 ORDER BY ft2.c1, random();
-                                          QUERY PLAN                                          
-----------------------------------------------------------------------------------------------
- Sort
-   Output: c1, c2, c3, c4, c5, c6, c7, c8, (random())
-   Sort Key: ft2.c1, (random())
-   ->  Foreign Scan on public.ft2
-         Output: c1, c2, c3, c4, c5, c6, c7, c8, random()
-         SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
-(6 rows)
-
---Testcase 56:
-EXPLAIN (VERBOSE, COSTS OFF)
-	SELECT * FROM ft2 ORDER BY ft2.c1, ft2.c3 collate "C";
-                                          QUERY PLAN                                          
-----------------------------------------------------------------------------------------------
- Sort
-   Output: c1, c2, c3, c4, c5, c6, c7, c8, ((c3)::text)
-   Sort Key: ft2.c1, ft2.c3 COLLATE "C"
-   ->  Foreign Scan on public.ft2
-         Output: c1, c2, c3, c4, c5, c6, c7, c8, c3
-         SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
-(6 rows)
 
 -- user-defined operator/function
 --Testcase 494:
@@ -1049,6 +1035,32 @@ SELECT * FROM ft1 t1 WHERE t1.c1 === t1.c2 order by t1.c2 limit 1;
   1 |  1 | 00001 | Fri Jan 02 00:00:00 1970 PST | Fri Jan 02 00:00:00 1970 | 1  | 1          | foo
 (1 row)
 
+<<<<<<<< HEAD:expected/15.7/extra/sqlite_fdw_post.out
+========
+-- Ensure we don't ship FETCH FIRST .. WITH TIES
+--Testcase 1027:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT t1.c2 FROM ft1 t1 WHERE t1.c1 > 960 ORDER BY t1.c2 FETCH FIRST 2 ROWS WITH TIES;
+                                              QUERY PLAN                                              
+------------------------------------------------------------------------------------------------------
+ Limit
+   Output: c2
+   ->  Foreign Scan on public.ft1 t1
+         Output: c2
+         SQLite query: SELECT `c2` FROM main."T 1" WHERE ((`C 1` > 960)) ORDER BY `c2` ASC NULLS LAST
+(5 rows)
+
+--Testcase 1028:
+SELECT t1.c2 FROM ft1 t1 WHERE t1.c1 > 960 ORDER BY t1.c2 FETCH FIRST 2 ROWS WITH TIES;
+ c2 
+----
+  0
+  0
+  0
+  0
+(4 rows)
+
+>>>>>>>> origin/master:expected/17.0/extra/sqlite_fdw_post.out
 -- Test CASE pushdown
 --Testcase 957:
 EXPLAIN (VERBOSE, COSTS OFF)
@@ -1148,8 +1160,13 @@ SELECT * FROM ft1 WHERE CASE c3 COLLATE "C" WHEN c6 THEN true ELSE c3 < 'bar' EN
    SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
 (4 rows)
 
+<<<<<<<< HEAD:expected/15.7/extra/sqlite_fdw_post.out
 -- check schema-qualification of regconfig constant
 --Testcase 984:
+========
+-- a regconfig constant referring to this text search configuration
+-- is initially unshippable--Testcase 984:
+>>>>>>>> origin/master:expected/17.0/extra/sqlite_fdw_post.out
 CREATE TEXT SEARCH CONFIGURATION public.custom_search
   (COPY = pg_catalog.english);
 --Testcase 985:
@@ -1172,6 +1189,104 @@ WHERE c1 = 642 AND length(to_tsvector('custom_search'::regconfig, c3)) > 0;
  642 | '00642':1
 (1 row)
 
+<<<<<<<< HEAD:expected/15.7/extra/sqlite_fdw_post.out
+========
+-- but if it's in a shippable extension, it can be shipped
+ALTER EXTENSION sqlite_fdw ADD TEXT SEARCH CONFIGURATION public.custom_search;
+-- however, that doesn't flush the shippability cache, so do a quick reconnect
+\c -
+--Testcase 995:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT c1, to_tsvector('custom_search'::regconfig, c3) FROM ft1
+WHERE c1 = 642 AND length(to_tsvector('custom_search'::regconfig, c3)) > 0;
+                                QUERY PLAN                                
+--------------------------------------------------------------------------
+ Foreign Scan on public.ft1
+   Output: c1, to_tsvector('custom_search'::regconfig, c3)
+   Filter: (length(to_tsvector('custom_search'::regconfig, ft1.c3)) > 0)
+   SQLite query: SELECT `C 1`, `c3` FROM main."T 1" WHERE ((`C 1` = 642))
+(4 rows)
+
+--Testcase 996:
+SELECT c1, to_tsvector('custom_search'::regconfig, c3) FROM ft1
+WHERE c1 = 642 AND length(to_tsvector('custom_search'::regconfig, c3)) > 0;
+ c1  | to_tsvector 
+-----+-------------
+ 642 | '00642':1
+(1 row)
+
+-- ===================================================================
+-- ORDER BY queries
+-- ===================================================================
+-- we should not push order by clause with volatile expressions or unsafe
+-- collations
+--Testcase 1006:
+EXPLAIN (VERBOSE, COSTS OFF)
+	SELECT * FROM ft2 ORDER BY ft2.c1, random();
+                                          QUERY PLAN                                          
+----------------------------------------------------------------------------------------------
+ Sort
+   Output: c1, c2, c3, c4, c5, c6, c7, c8, (random())
+   Sort Key: ft2.c1, (random())
+   ->  Foreign Scan on public.ft2
+         Output: c1, c2, c3, c4, c5, c6, c7, c8, random()
+         SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
+(6 rows)
+
+--Testcase 1007:
+EXPLAIN (VERBOSE, COSTS OFF)
+	SELECT * FROM ft2 ORDER BY ft2.c1, ft2.c3 collate "C";
+                                          QUERY PLAN                                          
+----------------------------------------------------------------------------------------------
+ Sort
+   Output: c1, c2, c3, c4, c5, c6, c7, c8, ((c3)::text)
+   Sort Key: ft2.c1, ft2.c3 COLLATE "C"
+   ->  Foreign Scan on public.ft2
+         Output: c1, c2, c3, c4, c5, c6, c7, c8, c3
+         SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
+(6 rows)
+
+-- Ensure we don't push ORDER BY expressions which are Consts at the UNION
+-- child level to the foreign server.
+--Testcase 1008:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM (
+    SELECT 1 AS type,c1 FROM ft1
+    UNION ALL
+    SELECT 2 AS type,c1 FROM ft2
+) a ORDER BY type,c1;
+                                    QUERY PLAN                                    
+----------------------------------------------------------------------------------
+ Merge Append
+   Sort Key: (1), ft1.c1
+   ->  Foreign Scan on public.ft1
+         Output: 1, ft1.c1
+         SQLite query: SELECT `C 1` FROM main."T 1" ORDER BY `C 1` ASC NULLS LAST
+   ->  Foreign Scan on public.ft2
+         Output: 2, ft2.c1
+         SQLite query: SELECT `C 1` FROM main."T 1" ORDER BY `C 1` ASC NULLS LAST
+(8 rows)
+
+--Testcase 1009:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM (
+    SELECT 1 AS type,c1 FROM ft1
+    UNION ALL
+    SELECT 2 AS type,c1 FROM ft2
+) a ORDER BY type;
+                     QUERY PLAN                     
+----------------------------------------------------
+ Merge Append
+   Sort Key: (1)
+   ->  Foreign Scan on public.ft1
+         Output: 1, ft1.c1
+         SQLite query: SELECT `C 1` FROM main."T 1"
+   ->  Foreign Scan on public.ft2
+         Output: 2, ft2.c1
+         SQLite query: SELECT `C 1` FROM main."T 1"
+(8 rows)
+
+>>>>>>>> origin/master:expected/17.0/extra/sqlite_fdw_post.out
 -- ===================================================================
 -- JOIN queries
 -- ===================================================================
@@ -2285,24 +2400,16 @@ SELECT t1.ctid, t1, t2, t1.c1 FROM ft1 t1 JOIN ft2 t2 ON (t1.c1 = t2.c1) ORDER B
    SQLite query: SELECT r1.`ctid`, CASE WHEN ( r1.`C 1` IS NOT NULL) OR ( r1.`c2` IS NOT NULL) OR ( r1.`c3` IS NOT NULL) OR ( r1.`c4` IS NOT NULL) OR ( r1.`c5` IS NOT NULL) OR ( r1.`c6` IS NOT NULL) OR ( r1.`c7` IS NOT NULL) OR ( r1.`c8` IS NOT NULL) THEN ("(" || COALESCE(r1.`C 1`, '') || "," || COALESCE(r1.`c2`, '') || "," || COALESCE(r1.`c3`, '') || "," || COALESCE(r1.`c4`, '') || "," || COALESCE(r1.`c5`, '') || "," || COALESCE(r1.`c6`, '') || "," || COALESCE(r1.`c7`, '') || "," || COALESCE(r1.`c8`, '')|| ")") END, CASE WHEN ( r2.`C 1` IS NOT NULL) OR ( r2.`c2` IS NOT NULL) OR ( r2.`c3` IS NOT NULL) OR ( r2.`c4` IS NOT NULL) OR ( r2.`c5` IS NOT NULL) OR ( r2.`c6` IS NOT NULL) OR ( r2.`c7` IS NOT NULL) OR ( r2.`c8` IS NOT NULL) THEN ("(" || COALESCE(r2.`C 1`, '') || "," || COALESCE(r2.`c2`, '') || "," || COALESCE(r2.`c3`, '') || "," || COALESCE(r2.`c4`, '') || "," || COALESCE(r2.`c5`, '') || "," || COALESCE(r2.`c6`, '') || "," || COALESCE(r2.`c7`, '') || "," || COALESCE(r2.`c8`, '')|| ")") END, r1.`C 1`, r1.`c3` FROM (main."T 1" r1 INNER JOIN main."T 1" r2 ON (((r1.`C 1` = r2.`C 1`)))) ORDER BY r1.`c3` ASC NULLS LAST, r1.`C 1` ASC NULLS LAST LIMIT 10 OFFSET 100
 (3 rows)
 
--- SEMI JOIN, not pushed down
+-- SEMI JOIN
 --Testcase 122:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT t1.c1 FROM ft1 t1 WHERE EXISTS (SELECT 1 FROM ft2 t2 WHERE t1.c1 = t2.c1) ORDER BY t1.c1 OFFSET 100 LIMIT 10;
-                                       QUERY PLAN                                       
-----------------------------------------------------------------------------------------
- Limit
+                                                                                     QUERY PLAN                                                                                      
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan
    Output: t1.c1
-   ->  Merge Semi Join
-         Output: t1.c1
-         Merge Cond: (t1.c1 = t2.c1)
-         ->  Foreign Scan on public.ft1 t1
-               Output: t1.c1
-               SQLite query: SELECT `C 1` FROM main."T 1" ORDER BY `C 1` ASC NULLS LAST
-         ->  Foreign Scan on public.ft2 t2
-               Output: t2.c1
-               SQLite query: SELECT `C 1` FROM main."T 1" ORDER BY `C 1` ASC NULLS LAST
-(11 rows)
+   SQLite query: SELECT r1.`C 1` FROM main."T 1" r1 WHERE EXISTS (SELECT NULL FROM main."T 1" r2 WHERE ((r1.`C 1` = r2.`C 1`))) ORDER BY r1.`C 1` ASC NULLS LAST LIMIT 10 OFFSET 100
+(3 rows)
 
 --Testcase 123:
 SELECT t1.c1 FROM ft1 t1 WHERE EXISTS (SELECT 1 FROM ft2 t2 WHERE t1.c1 = t2.c1) ORDER BY t1.c1 OFFSET 100 LIMIT 10;
@@ -2500,51 +2607,26 @@ SELECT t1.c1, t2.c1 FROM ft1 t1 JOIN ft2 t2 ON (t1.c1 = t2.c1) WHERE t1.c8 = t2.
 --Testcase 136:
 EXPLAIN (VERBOSE, COSTS OFF)
 SELECT t1c1, avg(t1c1 + t2c1) FROM (SELECT t1.c1, t2.c1 FROM ft1 t1 JOIN ft2 t2 ON (t1.c1 = t2.c1) UNION SELECT t1.c1, t2.c1 FROM ft1 t1 JOIN ft2 t2 ON (t1.c1 = t2.c1)) AS t (t1c1, t2c1) GROUP BY t1c1 ORDER BY t1c1 OFFSET 100 LIMIT 10;
-                                       QUERY PLAN                                       
-----------------------------------------------------------------------------------------
+                                                                                     QUERY PLAN                                                                                      
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Limit
    Output: t1.c1, (avg((t1.c1 + t2.c1)))
-   ->  Sort
-         Output: t1.c1, (avg((t1.c1 + t2.c1)))
-         Sort Key: t1.c1
-         ->  HashAggregate
-               Output: t1.c1, avg((t1.c1 + t2.c1))
-               Group Key: t1.c1
-               ->  HashAggregate
+   ->  GroupAggregate
+         Output: t1.c1, avg((t1.c1 + t2.c1))
+         Group Key: t1.c1
+         ->  Unique
+               Output: t1.c1, t2.c1
+               ->  Sort
                      Output: t1.c1, t2.c1
-                     Group Key: t1.c1, t2.c1
+                     Sort Key: t1.c1, t2.c1
                      ->  Append
-                           ->  Merge Join
+                           ->  Foreign Scan
                                  Output: t1.c1, t2.c1
-                                 Merge Cond: (t1.c1 = t2.c1)
-                                 ->  Sort
-                                       Output: t1.c1
-                                       Sort Key: t1.c1
-                                       ->  Foreign Scan on public.ft1 t1
-                                             Output: t1.c1
-                                             SQLite query: SELECT `C 1` FROM main."T 1"
-                                 ->  Sort
-                                       Output: t2.c1
-                                       Sort Key: t2.c1
-                                       ->  Foreign Scan on public.ft2 t2
-                                             Output: t2.c1
-                                             SQLite query: SELECT `C 1` FROM main."T 1"
-                           ->  Merge Join
+                                 SQLite query: SELECT r1.`C 1`, r2.`C 1` FROM (main."T 1" r1 INNER JOIN main."T 1" r2 ON (((r1.`C 1` = r2.`C 1`)))) ORDER BY r1.`C 1` ASC NULLS LAST
+                           ->  Foreign Scan
                                  Output: t1_1.c1, t2_1.c1
-                                 Merge Cond: (t1_1.c1 = t2_1.c1)
-                                 ->  Sort
-                                       Output: t1_1.c1
-                                       Sort Key: t1_1.c1
-                                       ->  Foreign Scan on public.ft1 t1_1
-                                             Output: t1_1.c1
-                                             SQLite query: SELECT `C 1` FROM main."T 1"
-                                 ->  Sort
-                                       Output: t2_1.c1
-                                       Sort Key: t2_1.c1
-                                       ->  Foreign Scan on public.ft2 t2_1
-                                             Output: t2_1.c1
-                                             SQLite query: SELECT `C 1` FROM main."T 1"
-(42 rows)
+                                 SQLite query: SELECT r1.`C 1`, r2.`C 1` FROM (main."T 1" r1 INNER JOIN main."T 1" r2 ON (((r1.`C 1` = r2.`C 1`)))) ORDER BY r1.`C 1` ASC NULLS LAST
+(17 rows)
 
 --Testcase 137:
 SELECT t1c1, avg(t1c1 + t2c1) FROM (SELECT t1.c1, t2.c1 FROM ft1 t1 JOIN ft2 t2 ON (t1.c1 = t2.c1) UNION SELECT t1.c1, t2.c1 FROM ft1 t1 JOIN ft2 t2 ON (t1.c1 = t2.c1)) AS t (t1c1, t2c1) GROUP BY t1c1 ORDER BY t1c1 OFFSET 100 LIMIT 10;
@@ -2597,6 +2679,22 @@ SELECT t1."C 1" FROM "S 1"."T 1" t1, LATERAL (SELECT DISTINCT t2.c1, t3.c1 FROM 
    1
    1
 (10 rows)
+
+-- join with pseudoconstant quals
+--Testcase 997:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT t1.c1, t2.c1 FROM ft1 t1 JOIN ft2 t2 ON (t1.c1 = t2.c1 AND CURRENT_USER = SESSION_USER) ORDER BY t1.c3, t1.c1 OFFSET 100 LIMIT 10;
+                                                                                             QUERY PLAN                                                                                             
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit
+   Output: t1.c1, t2.c1, t1.c3
+   ->  Result
+         Output: t1.c1, t2.c1, t1.c3
+         One-Time Filter: (CURRENT_USER = SESSION_USER)
+         ->  Foreign Scan
+               Output: t1.c1, t1.c3, t2.c1
+               SQLite query: SELECT r1.`C 1`, r2.`C 1`, r1.`c3` FROM (main."T 1" r1 INNER JOIN main."T 1" r2 ON (((r1.`C 1` = r2.`C 1`)))) ORDER BY r1.`c3` ASC NULLS LAST, r1.`C 1` ASC NULLS LAST
+(8 rows)
 
 -- non-Var items in targetlist of the nullable rel of a join preventing
 -- push-down in some cases
@@ -2819,7 +2917,11 @@ SELECT * FROM local_tbl LEFT JOIN (SELECT ft1.*, COALESCE(ft1.c3 || ft2.c3, 'foo
 -- ALTER SERVER loopback OPTIONS (ADD fdw_startup_cost '10000.0');
 --Testcase 988:
 EXPLAIN (VERBOSE, COSTS OFF)
+<<<<<<<< HEAD:expected/15.7/extra/sqlite_fdw_post.out
 SELECT * FROM local_tbl LEFT JOIN (SELECT ft1.* FROM ft1 INNER JOIN ft2 ON (ft1.c1 = ft2.c1 AND ft1.c1 < 100 AND ft1.c1 = sqlite_fdw_abs(ft2.c2))) ss ON (local_tbl.c3 = ss.c3) ORDER BY local_tbl.c1 FOR UPDATE OF local_tbl;
+========
+SELECT * FROM local_tbl LEFT JOIN (SELECT ft1.* FROM ft1 INNER JOIN ft2 ON (ft1.c1 = ft2.c1 AND ft1.c1 < 100 AND (ft1.c1 - sqlite_fdw_abs(ft2.c2)) = 0)) ss ON (local_tbl.c3 = ss.c3) ORDER BY local_tbl.c1 FOR UPDATE OF local_tbl;
+>>>>>>>> origin/master:expected/17.0/extra/sqlite_fdw_post.out
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  QUERY PLAN                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  LockRows
@@ -2833,6 +2935,7 @@ SELECT * FROM local_tbl LEFT JOIN (SELECT ft1.* FROM ft1 INNER JOIN ft2 ON (ft1.
                Output: ft1.c1, ft1.c2, ft1.c3, ft1.c4, ft1.c5, ft1.c6, ft1.c7, ft1.c8, ft1.*, ft2.*
                ->  Foreign Scan
                      Output: ft1.c1, ft1.c2, ft1.c3, ft1.c4, ft1.c5, ft1.c6, ft1.c7, ft1.c8, ft1.*, ft2.*
+<<<<<<<< HEAD:expected/15.7/extra/sqlite_fdw_post.out
                      Filter: (ft1.c1 = sqlite_fdw_abs(ft2.c2))
                      SQLite query: SELECT r4.`C 1`, r4.`c2`, r4.`c3`, r4.`c4`, r4.`c5`, r4.`c6`, r4.`c7`, r4.`c8`, CASE WHEN ( r4.`C 1` IS NOT NULL) OR ( r4.`c2` IS NOT NULL) OR ( r4.`c3` IS NOT NULL) OR ( r4.`c4` IS NOT NULL) OR ( r4.`c5` IS NOT NULL) OR ( r4.`c6` IS NOT NULL) OR ( r4.`c7` IS NOT NULL) OR ( r4.`c8` IS NOT NULL) THEN ("(" || COALESCE(r4.`C 1`, '') || "," || COALESCE(r4.`c2`, '') || "," || COALESCE(r4.`c3`, '') || "," || COALESCE(r4.`c4`, '') || "," || COALESCE(r4.`c5`, '') || "," || COALESCE(r4.`c6`, '') || "," || COALESCE(r4.`c7`, '') || "," || COALESCE(r4.`c8`, '')|| ")") END, CASE WHEN ( r5.`C 1` IS NOT NULL) OR ( r5.`c2` IS NOT NULL) OR ( r5.`c3` IS NOT NULL) OR ( r5.`c4` IS NOT NULL) OR ( r5.`c5` IS NOT NULL) OR ( r5.`c6` IS NOT NULL) OR ( r5.`c7` IS NOT NULL) OR ( r5.`c8` IS NOT NULL) THEN ("(" || COALESCE(r5.`C 1`, '') || "," || COALESCE(r5.`c2`, '') || "," || COALESCE(r5.`c3`, '') || "," || COALESCE(r5.`c4`, '') || "," || COALESCE(r5.`c5`, '') || "," || COALESCE(r5.`c6`, '') || "," || COALESCE(r5.`c7`, '') || "," || COALESCE(r5.`c8`, '')|| ")") END, r5.`c2` FROM (main."T 1" r4 INNER JOIN main."T 1" r5 ON (((r4.`C 1` = r5.`C 1`)) AND ((r4.`C 1` < 100))))
                      ->  Merge Join
@@ -2851,6 +2954,22 @@ SELECT * FROM local_tbl LEFT JOIN (SELECT ft1.* FROM ft1 INNER JOIN ft2 ON (ft1.
                                        Output: ft2.*, ft2.c1, ft2.c2, sqlite_fdw_abs(ft2.c2)
                                        SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
 (28 rows)
+========
+                     Filter: ((ft1.c1 - sqlite_fdw_abs(ft2.c2)) = 0)
+                     SQLite query: SELECT r4.`C 1`, r4.`c2`, r4.`c3`, r4.`c4`, r4.`c5`, r4.`c6`, r4.`c7`, r4.`c8`, CASE WHEN ( r4.`C 1` IS NOT NULL) OR ( r4.`c2` IS NOT NULL) OR ( r4.`c3` IS NOT NULL) OR ( r4.`c4` IS NOT NULL) OR ( r4.`c5` IS NOT NULL) OR ( r4.`c6` IS NOT NULL) OR ( r4.`c7` IS NOT NULL) OR ( r4.`c8` IS NOT NULL) THEN ("(" || COALESCE(r4.`C 1`, '') || "," || COALESCE(r4.`c2`, '') || "," || COALESCE(r4.`c3`, '') || "," || COALESCE(r4.`c4`, '') || "," || COALESCE(r4.`c5`, '') || "," || COALESCE(r4.`c6`, '') || "," || COALESCE(r4.`c7`, '') || "," || COALESCE(r4.`c8`, '')|| ")") END, CASE WHEN ( r5.`C 1` IS NOT NULL) OR ( r5.`c2` IS NOT NULL) OR ( r5.`c3` IS NOT NULL) OR ( r5.`c4` IS NOT NULL) OR ( r5.`c5` IS NOT NULL) OR ( r5.`c6` IS NOT NULL) OR ( r5.`c7` IS NOT NULL) OR ( r5.`c8` IS NOT NULL) THEN ("(" || COALESCE(r5.`C 1`, '') || "," || COALESCE(r5.`c2`, '') || "," || COALESCE(r5.`c3`, '') || "," || COALESCE(r5.`c4`, '') || "," || COALESCE(r5.`c5`, '') || "," || COALESCE(r5.`c6`, '') || "," || COALESCE(r5.`c7`, '') || "," || COALESCE(r5.`c8`, '')|| ")") END, r5.`c2` FROM (main."T 1" r4 INNER JOIN main."T 1" r5 ON (((r4.`C 1` = r5.`C 1`)) AND ((r4.`C 1` < 100))))
+                     ->  Hash Join
+                           Output: ft1.c1, ft1.c2, ft1.c3, ft1.c4, ft1.c5, ft1.c6, ft1.c7, ft1.c8, ft1.*, ft2.*, ft2.c2
+                           Hash Cond: (ft1.c1 = ft2.c1)
+                           ->  Foreign Scan on public.ft1
+                                 Output: ft1.c1, ft1.c2, ft1.c3, ft1.c4, ft1.c5, ft1.c6, ft1.c7, ft1.c8, ft1.*
+                                 SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1" WHERE ((`C 1` < 100))
+                           ->  Hash
+                                 Output: ft2.*, ft2.c1, ft2.c2
+                                 ->  Foreign Scan on public.ft2
+                                       Output: ft2.*, ft2.c1, ft2.c2
+                                       SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
+(24 rows)
+>>>>>>>> origin/master:expected/17.0/extra/sqlite_fdw_post.out
 
 -- ALTER SERVER loopback OPTIONS (DROP fdw_startup_cost);
 -- ALTER SERVER loopback OPTIONS (ADD extensions 'postgres_fdw');
@@ -2930,7 +3049,7 @@ SELECT t1.c1, t2.c2 FROM v4 t1 LEFT JOIN v5 t2 ON (t1.c1 = t2.c1) ORDER BY t1.c1
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Foreign Scan
    Output: ft4.c1, ft5.c2, ft5.c1
-   SQLite query: SELECT r6.`c1`, r9.`c2`, r9.`c1` FROM (main."T 3" r6 LEFT JOIN main."T 4" r9 ON (((r6.`c1` = r9.`c1`)))) ORDER BY r6.`c1` ASC NULLS LAST, r9.`c1` ASC NULLS LAST LIMIT 10 OFFSET 10
+   SQLite query: SELECT r4.`c1`, r5.`c2`, r5.`c1` FROM (main."T 3" r4 LEFT JOIN main."T 4" r5 ON (((r4.`c1` = r5.`c1`)))) ORDER BY r4.`c1` ASC NULLS LAST, r5.`c1` ASC NULLS LAST LIMIT 10 OFFSET 10
 (3 rows)
 
 --Testcase 152:
@@ -3002,7 +3121,7 @@ SELECT t1.c1, t2.c2 FROM v4 t1 LEFT JOIN ft5 t2 ON (t1.c1 = t2.c1) ORDER BY t1.c
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Foreign Scan
    Output: ft4.c1, t2.c2, t2.c1
-   SQLite query: SELECT r6.`c1`, r2.`c2`, r2.`c1` FROM (main."T 3" r6 LEFT JOIN main."T 4" r2 ON (((r6.`c1` = r2.`c1`)))) ORDER BY r6.`c1` ASC NULLS LAST, r2.`c1` ASC NULLS LAST LIMIT 10 OFFSET 10
+   SQLite query: SELECT r4.`c1`, r2.`c2`, r2.`c1` FROM (main."T 3" r4 LEFT JOIN main."T 4" r2 ON (((r4.`c1` = r2.`c1`)))) ORDER BY r4.`c1` ASC NULLS LAST, r2.`c1` ASC NULLS LAST LIMIT 10 OFFSET 10
 (3 rows)
 
 --Testcase 156:
@@ -3023,6 +3142,31 @@ SELECT t1.c1, t2.c2 FROM v4 t1 LEFT JOIN ft5 t2 ON (t1.c1 = t2.c1) ORDER BY t1.c
 
 --Testcase 785:
 ALTER VIEW v4 OWNER TO regress_view_owner;
+-- Comment out these test cases.
+-- sqlite_fdw does not need to getUserMapping in planning phase,
+-- so it is unable to check userid to use when querying the remote table is correctly propagated into foreign rels.
+-- -- ====================================================================
+-- -- Check that userid to use when querying the remote table is correctly
+-- -- propagated into foreign rels present in subqueries under an UNION ALL
+-- -- ====================================================================
+-- CREATE ROLE regress_view_owner_another;
+-- ALTER VIEW v4 OWNER TO regress_view_owner_another;
+-- GRANT SELECT ON ft4 TO regress_view_owner_another;
+-- ALTER FOREIGN TABLE ft4 OPTIONS (ADD use_remote_estimate 'true');
+-- -- The following should query the remote backing table of ft4 as user
+-- -- regress_view_owner_another, the view owner, though it fails as expected
+-- -- due to the lack of a user mapping for that user.
+-- EXPLAIN (VERBOSE, COSTS OFF) SELECT * FROM v4;
+-- -- Likewise, but with the query under an UNION ALL
+-- EXPLAIN (VERBOSE, COSTS OFF) SELECT * FROM (SELECT * FROM v4 UNION ALL SELECT * FROM v4);
+-- -- Should not get that error once a user mapping is created
+-- CREATE USER MAPPING FOR regress_view_owner_another SERVER loopback OPTIONS (password_required 'false');
+-- EXPLAIN (VERBOSE, COSTS OFF) SELECT * FROM v4;
+-- EXPLAIN (VERBOSE, COSTS OFF) SELECT * FROM (SELECT * FROM v4 UNION ALL SELECT * FROM v4);
+-- DROP USER MAPPING FOR regress_view_owner_another SERVER loopback;
+-- DROP OWNED BY regress_view_owner_another;
+-- DROP ROLE regress_view_owner_another;
+-- ALTER FOREIGN TABLE ft4 OPTIONS (SET use_remote_estimate 'false');
 -- cleanup
 --Testcase 512:
 DROP OWNED BY regress_view_owner;
@@ -3168,6 +3312,7 @@ select c2/2, sum(c2) * (c2/2) from ft1 group by c2/2 order by c2/2;
 (5 rows)
 
 -- Aggregates in subquery are pushed down.
+set enable_incremental_sort = off;
 --Testcase 165:
 explain (verbose, costs off)
 select count(x.a), sum(x.a) from (select c2 a, sum(c1) b from ft1 group by c2, sqrt(c1) order by 1, 2) x;
@@ -3193,6 +3338,7 @@ select count(x.a), sum(x.a) from (select c2 a, sum(c1) b from ft1 group by c2, s
   1000 | 4500
 (1 row)
 
+reset enable_incremental_sort;
 -- Aggregate is still pushed down by taking unshippable expression out
 --Testcase 167:
 explain (verbose, costs off)
@@ -3358,9 +3504,9 @@ select exists(select 1 from pg_enum), sum(c1) from ft1;
                     QUERY PLAN                     
 ---------------------------------------------------
  Foreign Scan
-   Output: $0, (sum(ft1.c1))
+   Output: (InitPlan 1).col1, (sum(ft1.c1))
    SQLite query: SELECT sum(`C 1`) FROM main."T 1"
-   InitPlan 1 (returns $0)
+   InitPlan 1
      ->  Seq Scan on pg_catalog.pg_enum
 (5 rows)
 
@@ -3377,14 +3523,13 @@ select exists(select 1 from pg_enum), sum(c1) from ft1 group by 1;
                      QUERY PLAN                     
 ----------------------------------------------------
  GroupAggregate
-   Output: ($0), sum(ft1.c1)
-   Group Key: $0
-   InitPlan 1 (returns $0)
+   Output: (InitPlan 1).col1, sum(ft1.c1)
+   InitPlan 1
      ->  Seq Scan on pg_catalog.pg_enum
    ->  Foreign Scan on public.ft1
-         Output: $0, ft1.c1
+         Output: ft1.c1
          SQLite query: SELECT `C 1` FROM main."T 1"
-(8 rows)
+(7 rows)
 
 --Testcase 521:
 select exists(select 1 from pg_enum), sum(c1) from ft1 group by 1;
@@ -3398,8 +3543,8 @@ select exists(select 1 from pg_enum), sum(c1) from ft1 group by 1;
 --Testcase 177:
 explain (verbose, costs off)
 select array_agg(c1 order by c1) from ft1 where c1 < 100 group by c2 order by 1;
-                                                    QUERY PLAN                                                     
--------------------------------------------------------------------------------------------------------------------
+                                                               QUERY PLAN                                                                
+-----------------------------------------------------------------------------------------------------------------------------------------
  Sort
    Output: (array_agg(c1 ORDER BY c1)), c2
    Sort Key: (array_agg(ft1.c1 ORDER BY ft1.c1))
@@ -3408,7 +3553,7 @@ select array_agg(c1 order by c1) from ft1 where c1 < 100 group by c2 order by 1;
          Group Key: ft1.c2
          ->  Foreign Scan on public.ft1
                Output: c1, c2
-               SQLite query: SELECT `C 1`, `c2` FROM main."T 1" WHERE ((`C 1` < 100)) ORDER BY `c2` ASC NULLS LAST
+               SQLite query: SELECT `C 1`, `c2` FROM main."T 1" WHERE ((`C 1` < 100)) ORDER BY `c2` ASC NULLS LAST, `C 1` ASC NULLS LAST
 (9 rows)
 
 --Testcase 178:
@@ -3431,14 +3576,17 @@ select array_agg(c1 order by c1) from ft1 where c1 < 100 group by c2 order by 1;
 --Testcase 179:
 explain (verbose, costs off)
 select array_agg(c5 order by c1 desc) from ft2 where c2 = 6 and c1 < 50;
-                                           QUERY PLAN                                           
-------------------------------------------------------------------------------------------------
+                                              QUERY PLAN                                              
+------------------------------------------------------------------------------------------------------
  Aggregate
    Output: array_agg(c5 ORDER BY c1 DESC)
-   ->  Foreign Scan on public.ft2
+   ->  Sort
          Output: c5, c1
-         SQLite query: SELECT `C 1`, `c5` FROM main."T 1" WHERE ((`C 1` < 50)) AND ((`c2` = 6))
-(5 rows)
+         Sort Key: ft2.c1 DESC
+         ->  Foreign Scan on public.ft2
+               Output: c5, c1
+               SQLite query: SELECT `C 1`, `c5` FROM main."T 1" WHERE ((`C 1` < 50)) AND ((`c2` = 6))
+(8 rows)
 
 --Testcase 180:
 select array_agg(c5 order by c1 desc) from ft2 where c2 = 6 and c1 < 50;
@@ -3451,30 +3599,34 @@ select array_agg(c5 order by c1 desc) from ft2 where c2 = 6 and c1 < 50;
 --Testcase 181:
 explain (verbose, costs off)
 select array_agg(distinct (t1.c1)%5) from ft4 t1 full join ft5 t2 on (t1.c1 = t2.c1) where t1.c1 < 20 or (t1.c1 is null and t2.c1 < 5) group by (t2.c1)%3 order by 1;
-                                                  QUERY PLAN                                                  
---------------------------------------------------------------------------------------------------------------
+                                   QUERY PLAN                                    
+---------------------------------------------------------------------------------
  Sort
-   Output: (array_agg(DISTINCT (t1.c1 % 5))), ((t2.c1 % 3))
-   Sort Key: (array_agg(DISTINCT (t1.c1 % 5)))
+   Output: (array_agg(DISTINCT ((t1.c1 % 5)))), ((t2.c1 % 3))
+   Sort Key: (array_agg(DISTINCT ((t1.c1 % 5))))
    ->  GroupAggregate
-         Output: array_agg(DISTINCT (t1.c1 % 5)), ((t2.c1 % 3))
+         Output: array_agg(DISTINCT ((t1.c1 % 5))), ((t2.c1 % 3))
          Group Key: ((t2.c1 % 3))
          ->  Sort
-               Output: ((t2.c1 % 3)), t1.c1
-               Sort Key: ((t2.c1 % 3))
-               ->  Hash Full Join
-                     Output: (t2.c1 % 3), t1.c1
-                     Hash Cond: (t1.c1 = t2.c1)
+               Output: ((t2.c1 % 3)), t1.c1, ((t1.c1 % 5))
+               Sort Key: ((t2.c1 % 3)), ((t1.c1 % 5))
+               ->  Merge Full Join
+                     Output: (t2.c1 % 3), t1.c1, (t1.c1 % 5)
+                     Merge Cond: (t1.c1 = t2.c1)
                      Filter: ((t1.c1 < 20) OR ((t1.c1 IS NULL) AND (t2.c1 < 5)))
-                     ->  Foreign Scan on public.ft4 t1
-                           Output: t1.c1, t1.c2, t1.c3
-                           SQLite query: SELECT `c1` FROM main."T 3"
-                     ->  Hash
+                     ->  Sort
+                           Output: t1.c1
+                           Sort Key: t1.c1
+                           ->  Foreign Scan on public.ft4 t1
+                                 Output: t1.c1
+                                 SQLite query: SELECT `c1` FROM main."T 3"
+                     ->  Sort
                            Output: t2.c1
+                           Sort Key: t2.c1
                            ->  Foreign Scan on public.ft5 t2
                                  Output: t2.c1
-                                 SQLite query: SELECT `c1` FROM main."T 4" ORDER BY (`c1` % 3) ASC NULLS LAST
-(21 rows)
+                                 SQLite query: SELECT `c1` FROM main."T 4"
+(25 rows)
 
 --Testcase 182:
 select array_agg(distinct (t1.c1)%5) from ft4 t1 full join ft5 t2 on (t1.c1 = t2.c1) where t1.c1 < 20 or (t1.c1 is null and t2.c1 < 5) group by (t2.c1)%3 order by 1;
@@ -3488,30 +3640,34 @@ select array_agg(distinct (t1.c1)%5) from ft4 t1 full join ft5 t2 on (t1.c1 = t2
 --Testcase 183:
 explain (verbose, costs off)
 select array_agg(distinct (t1.c1)%5 order by (t1.c1)%5) from ft4 t1 full join ft5 t2 on (t1.c1 = t2.c1) where t1.c1 < 20 or (t1.c1 is null and t2.c1 < 5) group by (t2.c1)%3 order by 1;
-                                                  QUERY PLAN                                                  
---------------------------------------------------------------------------------------------------------------
+                                       QUERY PLAN                                        
+-----------------------------------------------------------------------------------------
  Sort
-   Output: (array_agg(DISTINCT (t1.c1 % 5) ORDER BY (t1.c1 % 5))), ((t2.c1 % 3))
-   Sort Key: (array_agg(DISTINCT (t1.c1 % 5) ORDER BY (t1.c1 % 5)))
+   Output: (array_agg(DISTINCT ((t1.c1 % 5)) ORDER BY ((t1.c1 % 5)))), ((t2.c1 % 3))
+   Sort Key: (array_agg(DISTINCT ((t1.c1 % 5)) ORDER BY ((t1.c1 % 5))))
    ->  GroupAggregate
-         Output: array_agg(DISTINCT (t1.c1 % 5) ORDER BY (t1.c1 % 5)), ((t2.c1 % 3))
+         Output: array_agg(DISTINCT ((t1.c1 % 5)) ORDER BY ((t1.c1 % 5))), ((t2.c1 % 3))
          Group Key: ((t2.c1 % 3))
          ->  Sort
-               Output: ((t2.c1 % 3)), t1.c1
-               Sort Key: ((t2.c1 % 3))
-               ->  Hash Full Join
-                     Output: (t2.c1 % 3), t1.c1
-                     Hash Cond: (t1.c1 = t2.c1)
+               Output: ((t2.c1 % 3)), t1.c1, ((t1.c1 % 5))
+               Sort Key: ((t2.c1 % 3)), ((t1.c1 % 5))
+               ->  Merge Full Join
+                     Output: (t2.c1 % 3), t1.c1, (t1.c1 % 5)
+                     Merge Cond: (t1.c1 = t2.c1)
                      Filter: ((t1.c1 < 20) OR ((t1.c1 IS NULL) AND (t2.c1 < 5)))
-                     ->  Foreign Scan on public.ft4 t1
-                           Output: t1.c1, t1.c2, t1.c3
-                           SQLite query: SELECT `c1` FROM main."T 3"
-                     ->  Hash
+                     ->  Sort
+                           Output: t1.c1
+                           Sort Key: t1.c1
+                           ->  Foreign Scan on public.ft4 t1
+                                 Output: t1.c1
+                                 SQLite query: SELECT `c1` FROM main."T 3"
+                     ->  Sort
                            Output: t2.c1
+                           Sort Key: t2.c1
                            ->  Foreign Scan on public.ft5 t2
                                  Output: t2.c1
-                                 SQLite query: SELECT `c1` FROM main."T 4" ORDER BY (`c1` % 3) ASC NULLS LAST
-(21 rows)
+                                 SQLite query: SELECT `c1` FROM main."T 4"
+(25 rows)
 
 --Testcase 184:
 select array_agg(distinct (t1.c1)%5 order by (t1.c1)%5) from ft4 t1 full join ft5 t2 on (t1.c1 = t2.c1) where t1.c1 < 20 or (t1.c1 is null and t2.c1 < 5) group by (t2.c1)%3 order by 1;
@@ -3524,30 +3680,34 @@ select array_agg(distinct (t1.c1)%5 order by (t1.c1)%5) from ft4 t1 full join ft
 --Testcase 185:
 explain (verbose, costs off)
 select array_agg(distinct (t1.c1)%5 order by (t1.c1)%5 desc nulls last) from ft4 t1 full join ft5 t2 on (t1.c1 = t2.c1) where t1.c1 < 20 or (t1.c1 is null and t2.c1 < 5) group by (t2.c1)%3 order by 1;
-                                                  QUERY PLAN                                                  
---------------------------------------------------------------------------------------------------------------
+                                               QUERY PLAN                                                
+---------------------------------------------------------------------------------------------------------
  Sort
-   Output: (array_agg(DISTINCT (t1.c1 % 5) ORDER BY (t1.c1 % 5) DESC NULLS LAST)), ((t2.c1 % 3))
-   Sort Key: (array_agg(DISTINCT (t1.c1 % 5) ORDER BY (t1.c1 % 5) DESC NULLS LAST))
+   Output: (array_agg(DISTINCT ((t1.c1 % 5)) ORDER BY ((t1.c1 % 5)) DESC NULLS LAST)), ((t2.c1 % 3))
+   Sort Key: (array_agg(DISTINCT ((t1.c1 % 5)) ORDER BY ((t1.c1 % 5)) DESC NULLS LAST))
    ->  GroupAggregate
-         Output: array_agg(DISTINCT (t1.c1 % 5) ORDER BY (t1.c1 % 5) DESC NULLS LAST), ((t2.c1 % 3))
+         Output: array_agg(DISTINCT ((t1.c1 % 5)) ORDER BY ((t1.c1 % 5)) DESC NULLS LAST), ((t2.c1 % 3))
          Group Key: ((t2.c1 % 3))
          ->  Sort
-               Output: ((t2.c1 % 3)), t1.c1
-               Sort Key: ((t2.c1 % 3))
-               ->  Hash Full Join
-                     Output: (t2.c1 % 3), t1.c1
-                     Hash Cond: (t1.c1 = t2.c1)
+               Output: ((t2.c1 % 3)), t1.c1, ((t1.c1 % 5))
+               Sort Key: ((t2.c1 % 3)), ((t1.c1 % 5)) DESC NULLS LAST
+               ->  Merge Full Join
+                     Output: (t2.c1 % 3), t1.c1, (t1.c1 % 5)
+                     Merge Cond: (t1.c1 = t2.c1)
                      Filter: ((t1.c1 < 20) OR ((t1.c1 IS NULL) AND (t2.c1 < 5)))
-                     ->  Foreign Scan on public.ft4 t1
-                           Output: t1.c1, t1.c2, t1.c3
-                           SQLite query: SELECT `c1` FROM main."T 3"
-                     ->  Hash
+                     ->  Sort
+                           Output: t1.c1
+                           Sort Key: t1.c1
+                           ->  Foreign Scan on public.ft4 t1
+                                 Output: t1.c1
+                                 SQLite query: SELECT `c1` FROM main."T 3"
+                     ->  Sort
                            Output: t2.c1
+                           Sort Key: t2.c1
                            ->  Foreign Scan on public.ft5 t2
                                  Output: t2.c1
-                                 SQLite query: SELECT `c1` FROM main."T 4" ORDER BY (`c1` % 3) ASC NULLS LAST
-(21 rows)
+                                 SQLite query: SELECT `c1` FROM main."T 4"
+(25 rows)
 
 --Testcase 186:
 select array_agg(distinct (t1.c1)%5 order by (t1.c1)%5 desc nulls last) from ft4 t1 full join ft5 t2 on (t1.c1 = t2.c1) where t1.c1 < 20 or (t1.c1 is null and t2.c1 < 5) group by (t2.c1)%3 order by 1;
@@ -3594,15 +3754,14 @@ select sum(c1) filter (where c1 < 100 and c2 > 5) from ft1 group by c2 order by 
 --Testcase 189:
 explain (verbose, costs off)
 select sum(c1%3), sum(distinct c1%3 order by c1%3) filter (where c1%3 < 2), c2 from ft1 where c2 = 6 group by c2;
-                                             QUERY PLAN                                              
------------------------------------------------------------------------------------------------------
+                                                   QUERY PLAN                                                    
+-----------------------------------------------------------------------------------------------------------------
  GroupAggregate
    Output: sum((c1 % 3)), sum(DISTINCT (c1 % 3) ORDER BY (c1 % 3)) FILTER (WHERE ((c1 % 3) < 2)), c2
-   Group Key: ft1.c2
    ->  Foreign Scan on public.ft1
          Output: c1, c2
-         SQLite query: SELECT `C 1`, `c2` FROM main."T 1" WHERE ((`c2` = 6))
-(6 rows)
+         SQLite query: SELECT `C 1`, `c2` FROM main."T 1" WHERE ((`c2` = 6)) ORDER BY (`C 1` % 3) ASC NULLS LAST
+(5 rows)
 
 --Testcase 190:
 select sum(c1%3), sum(distinct c1%3 order by c1%3) filter (where c1%3 < 2), c2 from ft1 where c2 = 6 group by c2;
@@ -3690,10 +3849,10 @@ select sum(c1) filter (where (c1 / c1) * random() <= 1) from ft1 group by c2 ord
 --Testcase 196:
 explain (verbose, costs off)
 select sum(c2) filter (where c2 in (select c2 from ft1 where c2 < 5)) from ft1;
-                               QUERY PLAN                               
-------------------------------------------------------------------------
+                                  QUERY PLAN                                   
+-------------------------------------------------------------------------------
  Aggregate
-   Output: sum(ft1.c2) FILTER (WHERE (hashed SubPlan 1))
+   Output: sum(ft1.c2) FILTER (WHERE (ANY (ft1.c2 = (hashed SubPlan 1).col1)))
    ->  Foreign Scan on public.ft1
          Output: ft1.c2
          SQLite query: SELECT `c2` FROM main."T 1"
@@ -3737,7 +3896,7 @@ select c1, rank(c1, c2) within group (order by c1, c2) from ft1 group by c1, c2 
 -----------------------------------------------------------------------------------------------------------
  GroupAggregate
    Output: c1, rank(c1, c2) WITHIN GROUP (ORDER BY c1, c2), c2
-   Group Key: ft1.c1, ft1.c2
+   Group Key: ft1.c2
    ->  Foreign Scan on public.ft1
          Output: c1, c2
          SQLite query: SELECT `C 1`, `c2` FROM main."T 1" WHERE ((`C 1` = 6)) ORDER BY `c2` ASC NULLS LAST
@@ -3874,14 +4033,30 @@ create operator class my_op_class for type int using btree family my_op_family a
 --Testcase 536:
 explain (verbose, costs off)
 select array_agg(c1 order by c1 using operator(public.<^)) from ft2 where c2 = 6 and c1 < 100 group by c2;
-                                           QUERY PLAN                                            
--------------------------------------------------------------------------------------------------
+                                              QUERY PLAN                                               
+-------------------------------------------------------------------------------------------------------
  GroupAggregate
    Output: array_agg(c1 ORDER BY c1 USING <^ NULLS LAST), c2
-   Group Key: ft2.c2
-   ->  Foreign Scan on public.ft2
+   ->  Sort
          Output: c1, c2
-         SQLite query: SELECT `C 1`, `c2` FROM main."T 1" WHERE ((`C 1` < 100)) AND ((`c2` = 6))
+         Sort Key: ft2.c1 USING <^
+         ->  Foreign Scan on public.ft2
+               Output: c1, c2
+               SQLite query: SELECT `C 1`, `c2` FROM main."T 1" WHERE ((`C 1` < 100)) AND ((`c2` = 6))
+(8 rows)
+
+-- This should not be pushed either.
+--Testcase 967:
+explain (verbose, costs off)
+select * from ft2 order by c1 using operator(public.<^);
+                                          QUERY PLAN                                          
+----------------------------------------------------------------------------------------------
+ Sort
+   Output: c1, c2, c3, c4, c5, c6, c7, c8
+   Sort Key: ft2.c1 USING <^
+   ->  Foreign Scan on public.ft2
+         Output: c1, c2, c3, c4, c5, c6, c7, c8
+         SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1"
 (6 rows)
 
 -- This should not be pushed either.
@@ -3914,19 +4089,22 @@ alter extension sqlite_fdw add operator public.=^(int, int);
 --Testcase 793:
 alter extension sqlite_fdw add operator public.>^(int, int);
 --alter server loopback options (set extensions 'postgres_fdw');
+--alter server loopback options (add fdw_tuple_cost '0.5');
 -- Now this will be pushed as sort operator is part of the extension.
 --Testcase 537:
 explain (verbose, costs off)
 select array_agg(c1 order by c1 using operator(public.<^)) from ft2 where c2 = 6 and c1 < 100 group by c2;
-                                           QUERY PLAN                                            
--------------------------------------------------------------------------------------------------
+                                              QUERY PLAN                                               
+-------------------------------------------------------------------------------------------------------
  GroupAggregate
    Output: array_agg(c1 ORDER BY c1 USING <^ NULLS LAST), c2
-   Group Key: ft2.c2
-   ->  Foreign Scan on public.ft2
+   ->  Sort
          Output: c1, c2
-         SQLite query: SELECT `C 1`, `c2` FROM main."T 1" WHERE ((`C 1` < 100)) AND ((`c2` = 6))
-(6 rows)
+         Sort Key: ft2.c1 USING <^
+         ->  Foreign Scan on public.ft2
+               Output: c1, c2
+               SQLite query: SELECT `C 1`, `c2` FROM main."T 1" WHERE ((`C 1` < 100)) AND ((`c2` = 6))
+(8 rows)
 
 --Testcase 538:
 select array_agg(c1 order by c1 using operator(public.<^)) from ft2 where c2 = 6 and c1 < 100 group by c2;
@@ -3935,6 +4113,10 @@ select array_agg(c1 order by c1 using operator(public.<^)) from ft2 where c2 = 6
  {6,16,26,36,46,56,66,76,86,96}
 (1 row)
 
+<<<<<<<< HEAD:expected/15.7/extra/sqlite_fdw_post.out
+========
+--alter server loopback options (drop fdw_tuple_cost);
+>>>>>>>> origin/master:expected/17.0/extra/sqlite_fdw_post.out
 -- This should be pushed too.
 -- Sqlite not support pushdown user defined operators 
 --Testcase 968:
@@ -3968,15 +4150,17 @@ alter extension sqlite_fdw drop operator public.>^(int, int);
 --Testcase 539:
 explain (verbose, costs off)
 select array_agg(c1 order by c1 using operator(public.<^)) from ft2 where c2 = 6 and c1 < 100 group by c2;
-                                           QUERY PLAN                                            
--------------------------------------------------------------------------------------------------
+                                              QUERY PLAN                                               
+-------------------------------------------------------------------------------------------------------
  GroupAggregate
    Output: array_agg(c1 ORDER BY c1 USING <^ NULLS LAST), c2
-   Group Key: ft2.c2
-   ->  Foreign Scan on public.ft2
+   ->  Sort
          Output: c1, c2
-         SQLite query: SELECT `C 1`, `c2` FROM main."T 1" WHERE ((`C 1` < 100)) AND ((`c2` = 6))
-(6 rows)
+         Sort Key: ft2.c1 USING <^
+         ->  Foreign Scan on public.ft2
+               Output: c1, c2
+               SQLite query: SELECT `C 1`, `c2` FROM main."T 1" WHERE ((`C 1` < 100)) AND ((`c2` = 6))
+(8 rows)
 
 -- Cleanup
 --Testcase 540:
@@ -4064,8 +4248,8 @@ select count(*), x.b from ft1, (select c2 a, sum(c1) b from ft1 group by c2) x w
 --Testcase 204:
 explain (verbose, costs off)
 select avg(t1.c1), sum(t2.c1) from ft4 t1 full join ft5 t2 on (t1.c1 = t2.c1) group by t2.c1 having (avg(t1.c1) is null and sum(t2.c1) < 10) or sum(t2.c1) is null order by 1 nulls last, 2;
-                                            QUERY PLAN                                            
---------------------------------------------------------------------------------------------------
+                                       QUERY PLAN                                       
+----------------------------------------------------------------------------------------
  Sort
    Output: (avg(t1.c1)), (sum(t2.c1)), t2.c1
    Sort Key: (avg(t1.c1)), (sum(t2.c1))
@@ -4073,18 +4257,22 @@ select avg(t1.c1), sum(t2.c1) from ft4 t1 full join ft5 t2 on (t1.c1 = t2.c1) gr
          Output: avg(t1.c1), sum(t2.c1), t2.c1
          Group Key: t2.c1
          Filter: (((avg(t1.c1) IS NULL) AND (sum(t2.c1) < 10)) OR (sum(t2.c1) IS NULL))
-         ->  Hash Full Join
+         ->  Merge Full Join
                Output: t2.c1, t1.c1
-               Hash Cond: (t1.c1 = t2.c1)
-               ->  Foreign Scan on public.ft4 t1
-                     Output: t1.c1, t1.c2, t1.c3
-                     SQLite query: SELECT `c1` FROM main."T 3"
-               ->  Hash
+               Merge Cond: (t1.c1 = t2.c1)
+               ->  Sort
+                     Output: t1.c1
+                     Sort Key: t1.c1
+                     ->  Foreign Scan on public.ft4 t1
+                           Output: t1.c1
+                           SQLite query: SELECT `c1` FROM main."T 3"
+               ->  Sort
                      Output: t2.c1
+                     Sort Key: t2.c1
                      ->  Foreign Scan on public.ft5 t2
                            Output: t2.c1
-                           SQLite query: SELECT `c1` FROM main."T 4" ORDER BY `c1` ASC NULLS LAST
-(18 rows)
+                           SQLite query: SELECT `c1` FROM main."T 4"
+(22 rows)
 
 --Testcase 205:
 select avg(t1.c1), sum(t2.c1) from ft4 t1 full join ft5 t2 on (t1.c1 = t2.c1) group by t2.c1 having (avg(t1.c1) is null and sum(t2.c1) < 10) or sum(t2.c1) is null order by 1 nulls last, 2;
@@ -4530,29 +4718,28 @@ EXECUTE st1(101, 101);
  00101 | 00101
 (1 row)
 
+SET enable_hashjoin TO off;
+SET enable_sort TO off;
 -- subquery using stable function (can't be sent to remote)
 --Testcase 234:
 PREPARE st2(int) AS SELECT * FROM ft1 t1 WHERE t1.c1 < $2 AND t1.c3 IN (SELECT c3 FROM ft2 t2 WHERE c1 > $1 AND date(c4) = '1970-01-17'::date) ORDER BY c1;
 --Testcase 235:
 EXPLAIN (VERBOSE, COSTS OFF) EXECUTE st2(10, 20);
-                                                                      QUERY PLAN                                                                       
--------------------------------------------------------------------------------------------------------------------------------------------------------
- Sort
+                                                                   QUERY PLAN                                                                    
+-------------------------------------------------------------------------------------------------------------------------------------------------
+ Nested Loop Semi Join
    Output: t1.c1, t1.c2, t1.c3, t1.c4, t1.c5, t1.c6, t1.c7, t1.c8
-   Sort Key: t1.c1
-   ->  Hash Semi Join
+   Join Filter: (t1.c3 = t2.c3)
+   ->  Foreign Scan on public.ft1 t1
          Output: t1.c1, t1.c2, t1.c3, t1.c4, t1.c5, t1.c6, t1.c7, t1.c8
-         Hash Cond: (t1.c3 = t2.c3)
-         ->  Foreign Scan on public.ft1 t1
-               Output: t1.c1, t1.c2, t1.c3, t1.c4, t1.c5, t1.c6, t1.c7, t1.c8
-               SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1" WHERE ((`C 1` < 20)) ORDER BY `C 1` ASC NULLS LAST
-         ->  Hash
+         SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1" WHERE ((`C 1` < 20)) ORDER BY `C 1` ASC NULLS LAST
+   ->  Materialize
+         Output: t2.c3
+         ->  Foreign Scan on public.ft2 t2
                Output: t2.c3
-               ->  Foreign Scan on public.ft2 t2
-                     Output: t2.c3
-                     Filter: (date(t2.c4) = '01-17-1970'::date)
-                     SQLite query: SELECT `c3`, `c4` FROM main."T 1" WHERE ((`C 1` > 10))
-(15 rows)
+               Filter: (date(t2.c4) = '01-17-1970'::date)
+               SQLite query: SELECT `c3`, `c4` FROM main."T 1" WHERE ((`C 1` > 10))
+(12 rows)
 
 --Testcase 236:
 EXECUTE st2(10, 20);
@@ -4568,6 +4755,8 @@ EXECUTE st2(101, 121);
  116 |  6 | 00116 | Sat Jan 17 00:00:00 1970 PST | Sat Jan 17 00:00:00 1970 | 6  | 6          | foo
 (1 row)
 
+RESET enable_hashjoin;
+RESET enable_sort;
 -- subquery using immutable function (can be sent to remote)
 --Testcase 238:
 PREPARE st3(int) AS SELECT * FROM ft1 t1 WHERE t1.c1 < $2 AND t1.c3 IN (SELECT c3 FROM ft2 t2 WHERE c1 > $1 AND date(c5) = '1970-01-17'::date) ORDER BY c1;
@@ -5189,6 +5378,289 @@ explain (verbose, costs off) select * from ft3 f, loct3 l
 ERROR:  relation "loct3" does not exist
 LINE 1: explain (verbose, costs off) select * from ft3 f, loct3 l
                                                           ^
+-- ===================================================================
+-- test SEMI-JOIN pushdown
+-- ===================================================================
+--Testcase 1012:
+EXPLAIN (verbose, costs off)
+SELECT ft2.*, ft4.* FROM ft2 INNER JOIN ft4 ON ft2.c2 = ft4.c1
+  WHERE ft2.c1 > 900
+  AND EXISTS (SELECT 1 FROM ft5 WHERE ft4.c1 = ft5.c1)
+  ORDER BY ft2.c1;
+                                                                                                                                                              QUERY PLAN                                                                                                                                                              
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan
+   Output: ft2.c1, ft2.c2, ft2.c3, ft2.c4, ft2.c5, ft2.c6, ft2.c7, ft2.c8, ft4.c1, ft4.c2, ft4.c3
+   SQLite query: SELECT r1.`C 1`, r1.`c2`, r1.`c3`, r1.`c4`, r1.`c5`, r1.`c6`, r1.`c7`, r1.`c8`, r2.`c1`, r2.`c2`, r2.`c3` FROM (main."T 1" r1 INNER JOIN main."T 3" r2 ON (((r1.`c2` = r2.`c1`)) AND ((r1.`C 1` > 900)))) WHERE EXISTS (SELECT NULL FROM main."T 4" r4 WHERE ((r1.`c2` = r4.`c1`))) ORDER BY r1.`C 1` ASC NULLS LAST
+(3 rows)
+
+--Testcase 1013:
+SELECT ft2.*, ft4.* FROM ft2 INNER JOIN ft4 ON ft2.c2 = ft4.c1
+  WHERE ft2.c1 > 900
+  AND EXISTS (SELECT 1 FROM ft5 WHERE ft4.c1 = ft5.c1)
+  ORDER BY ft2.c1;
+ c1  | c2 |  c3   |              c4              |            c5            | c6 |     c7     | c8  | c1 | c2 |   c3   
+-----+----+-------+------------------------------+--------------------------+----+------------+-----+----+----+--------
+ 906 |  6 | 00906 | Wed Jan 07 00:00:00 1970 PST | Wed Jan 07 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+ 916 |  6 | 00916 | Sat Jan 17 00:00:00 1970 PST | Sat Jan 17 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+ 926 |  6 | 00926 | Tue Jan 27 00:00:00 1970 PST | Tue Jan 27 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+ 936 |  6 | 00936 | Fri Feb 06 00:00:00 1970 PST | Fri Feb 06 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+ 946 |  6 | 00946 | Mon Feb 16 00:00:00 1970 PST | Mon Feb 16 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+ 956 |  6 | 00956 | Thu Feb 26 00:00:00 1970 PST | Thu Feb 26 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+ 966 |  6 | 00966 | Sun Mar 08 00:00:00 1970 PST | Sun Mar 08 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+ 976 |  6 | 00976 | Wed Mar 18 00:00:00 1970 PST | Wed Mar 18 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+ 986 |  6 | 00986 | Sat Mar 28 00:00:00 1970 PST | Sat Mar 28 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+ 996 |  6 | 00996 | Tue Apr 07 00:00:00 1970 PST | Tue Apr 07 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+(10 rows)
+
+-- The same query, different join order
+--Testcase 1014:
+EXPLAIN (verbose, costs off)
+SELECT ft2.*, ft4.* FROM ft2 INNER JOIN
+  (SELECT * FROM ft4 WHERE
+  EXISTS (SELECT 1 FROM ft5 WHERE ft4.c1 = ft5.c1)) ft4
+  ON ft2.c2 = ft4.c1
+  WHERE ft2.c1 > 900
+  ORDER BY ft2.c1;
+                                                                                                                                                              QUERY PLAN                                                                                                                                                              
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan
+   Output: ft2.c1, ft2.c2, ft2.c3, ft2.c4, ft2.c5, ft2.c6, ft2.c7, ft2.c8, ft4.c1, ft4.c2, ft4.c3
+   SQLite query: SELECT r1.`C 1`, r1.`c2`, r1.`c3`, r1.`c4`, r1.`c5`, r1.`c6`, r1.`c7`, r1.`c8`, r4.`c1`, r4.`c2`, r4.`c3` FROM (main."T 1" r1 INNER JOIN main."T 3" r4 ON (((r1.`c2` = r4.`c1`)) AND ((r1.`C 1` > 900)))) WHERE EXISTS (SELECT NULL FROM main."T 4" r5 WHERE ((r4.`c1` = r5.`c1`))) ORDER BY r1.`C 1` ASC NULLS LAST
+(3 rows)
+
+--Testcase 1015:
+SELECT ft2.*, ft4.* FROM ft2 INNER JOIN
+  (SELECT * FROM ft4 WHERE
+  EXISTS (SELECT 1 FROM ft5 WHERE ft4.c1 = ft5.c1)) ft4
+  ON ft2.c2 = ft4.c1
+  WHERE ft2.c1 > 900
+  ORDER BY ft2.c1;
+ c1  | c2 |  c3   |              c4              |            c5            | c6 |     c7     | c8  | c1 | c2 |   c3   
+-----+----+-------+------------------------------+--------------------------+----+------------+-----+----+----+--------
+ 906 |  6 | 00906 | Wed Jan 07 00:00:00 1970 PST | Wed Jan 07 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+ 916 |  6 | 00916 | Sat Jan 17 00:00:00 1970 PST | Sat Jan 17 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+ 926 |  6 | 00926 | Tue Jan 27 00:00:00 1970 PST | Tue Jan 27 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+ 936 |  6 | 00936 | Fri Feb 06 00:00:00 1970 PST | Fri Feb 06 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+ 946 |  6 | 00946 | Mon Feb 16 00:00:00 1970 PST | Mon Feb 16 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+ 956 |  6 | 00956 | Thu Feb 26 00:00:00 1970 PST | Thu Feb 26 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+ 966 |  6 | 00966 | Sun Mar 08 00:00:00 1970 PST | Sun Mar 08 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+ 976 |  6 | 00976 | Wed Mar 18 00:00:00 1970 PST | Wed Mar 18 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+ 986 |  6 | 00986 | Sat Mar 28 00:00:00 1970 PST | Sat Mar 28 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+ 996 |  6 | 00996 | Tue Apr 07 00:00:00 1970 PST | Tue Apr 07 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+(10 rows)
+
+-- Left join
+--Testcase 1016:
+EXPLAIN (verbose, costs off)
+SELECT ft2.*, ft4.* FROM ft2 LEFT JOIN
+  (SELECT * FROM ft4 WHERE
+  EXISTS (SELECT 1 FROM ft5 WHERE ft4.c1 = ft5.c1)) ft4
+  ON ft2.c2 = ft4.c1
+  WHERE ft2.c1 > 900
+  ORDER BY ft2.c1 LIMIT 10;
+                                                                                                                                                                                             QUERY PLAN                                                                                                                                                                                              
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan
+   Output: ft2.c1, ft2.c2, ft2.c3, ft2.c4, ft2.c5, ft2.c6, ft2.c7, ft2.c8, ft4.c1, ft4.c2, ft4.c3
+   SQLite query: SELECT r1.`C 1`, r1.`c2`, r1.`c3`, r1.`c4`, r1.`c5`, r1.`c6`, r1.`c7`, r1.`c8`, s6.c1, s6.c2, s6.c3 FROM (main."T 1" r1 LEFT JOIN (SELECT r4.`c1` AS c1, r4.`c2` AS c2, r4.`c3` AS c3 FROM main."T 3" r4 WHERE EXISTS (SELECT NULL FROM main."T 4" r5 WHERE ((r4.`c1` = r5.`c1`)))) s6 ON (((r1.`c2` = s6.c1)))) WHERE ((r1.`C 1` > 900)) ORDER BY r1.`C 1` ASC NULLS LAST LIMIT 10
+(3 rows)
+
+--Testcase 1017:
+SELECT ft2.*, ft4.* FROM ft2 LEFT JOIN
+  (SELECT * FROM ft4 WHERE
+  EXISTS (SELECT 1 FROM ft5 WHERE ft4.c1 = ft5.c1)) ft4
+  ON ft2.c2 = ft4.c1
+  WHERE ft2.c1 > 900
+  ORDER BY ft2.c1 LIMIT 10;
+ c1  | c2 |  c3   |              c4              |            c5            | c6 |     c7     | c8  | c1 | c2 |   c3   
+-----+----+-------+------------------------------+--------------------------+----+------------+-----+----+----+--------
+ 901 |  1 | 00901 | Fri Jan 02 00:00:00 1970 PST | Fri Jan 02 00:00:00 1970 | 1  | 1          | foo |    |    | 
+ 902 |  2 | 00902 | Sat Jan 03 00:00:00 1970 PST | Sat Jan 03 00:00:00 1970 | 2  | 2          | foo |    |    | 
+ 903 |  3 | 00903 | Sun Jan 04 00:00:00 1970 PST | Sun Jan 04 00:00:00 1970 | 3  | 3          | foo |    |    | 
+ 904 |  4 | 00904 | Mon Jan 05 00:00:00 1970 PST | Mon Jan 05 00:00:00 1970 | 4  | 4          | foo |    |    | 
+ 905 |  5 | 00905 | Tue Jan 06 00:00:00 1970 PST | Tue Jan 06 00:00:00 1970 | 5  | 5          | foo |    |    | 
+ 906 |  6 | 00906 | Wed Jan 07 00:00:00 1970 PST | Wed Jan 07 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+ 907 |  7 | 00907 | Thu Jan 08 00:00:00 1970 PST | Thu Jan 08 00:00:00 1970 | 7  | 7          | foo |    |    | 
+ 908 |  8 | 00908 | Fri Jan 09 00:00:00 1970 PST | Fri Jan 09 00:00:00 1970 | 8  | 8          | foo |    |    | 
+ 909 |  9 | 00909 | Sat Jan 10 00:00:00 1970 PST | Sat Jan 10 00:00:00 1970 | 9  | 9          | foo |    |    | 
+ 910 |  0 | 00910 | Sun Jan 11 00:00:00 1970 PST | Sun Jan 11 00:00:00 1970 | 0  | 0          | foo |    |    | 
+(10 rows)
+
+-- Several semi-joins per upper level join
+--Testcase 1018:
+EXPLAIN (verbose, costs off)
+SELECT ft2.*, ft4.* FROM ft2 INNER JOIN
+  (SELECT * FROM ft4 WHERE
+  EXISTS (SELECT 1 FROM ft5 WHERE ft4.c1 = ft5.c1)) ft4
+  ON ft2.c2 = ft4.c1
+  INNER JOIN (SELECT * FROM ft5 WHERE
+  EXISTS (SELECT 1 FROM ft4 WHERE ft4.c1 = ft5.c1)) ft5
+  ON ft2.c2 <= ft5.c1
+  WHERE ft2.c1 > 900
+  ORDER BY ft2.c1 LIMIT 10;
+                                                                                                                                                                                                                                  QUERY PLAN                                                                                                                                                                                                                                  
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan
+   Output: ft2.c1, ft2.c2, ft2.c3, ft2.c4, ft2.c5, ft2.c6, ft2.c7, ft2.c8, ft4.c1, ft4.c2, ft4.c3
+   SQLite query: SELECT r1.`C 1`, r1.`c2`, r1.`c3`, r1.`c4`, r1.`c5`, r1.`c6`, r1.`c7`, r1.`c8`, r6.`c1`, r6.`c2`, r6.`c3` FROM ((main."T 1" r1 INNER JOIN main."T 3" r6 ON (((r1.`c2` = r6.`c1`)) AND ((r1.`C 1` > 900)))) INNER JOIN main."T 4" r8 ON (((r1.`c2` <= r8.`c1`)))) WHERE EXISTS (SELECT NULL FROM main."T 3" r9 WHERE ((r8.`c1` = r9.`c1`))) AND EXISTS (SELECT NULL FROM main."T 4" r7 WHERE ((r6.`c1` = r7.`c1`))) ORDER BY r1.`C 1` ASC NULLS LAST LIMIT 10
+(3 rows)
+
+--Testcase 1019:
+SELECT ft2.*, ft4.* FROM ft2 INNER JOIN
+  (SELECT * FROM ft4 WHERE
+  EXISTS (SELECT 1 FROM ft5 WHERE ft4.c1 = ft5.c1)) ft4
+  ON ft2.c2 = ft4.c1
+  INNER JOIN (SELECT * FROM ft5 WHERE
+  EXISTS (SELECT 1 FROM ft4 WHERE ft4.c1 = ft5.c1)) ft5
+  ON ft2.c2 <= ft5.c1
+  WHERE ft2.c1 > 900
+  ORDER BY ft2.c1 LIMIT 10;
+ c1  | c2 |  c3   |              c4              |            c5            | c6 |     c7     | c8  | c1 | c2 |   c3   
+-----+----+-------+------------------------------+--------------------------+----+------------+-----+----+----+--------
+ 906 |  6 | 00906 | Wed Jan 07 00:00:00 1970 PST | Wed Jan 07 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+ 906 |  6 | 00906 | Wed Jan 07 00:00:00 1970 PST | Wed Jan 07 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+ 906 |  6 | 00906 | Wed Jan 07 00:00:00 1970 PST | Wed Jan 07 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+ 906 |  6 | 00906 | Wed Jan 07 00:00:00 1970 PST | Wed Jan 07 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+ 906 |  6 | 00906 | Wed Jan 07 00:00:00 1970 PST | Wed Jan 07 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+ 906 |  6 | 00906 | Wed Jan 07 00:00:00 1970 PST | Wed Jan 07 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+ 906 |  6 | 00906 | Wed Jan 07 00:00:00 1970 PST | Wed Jan 07 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+ 906 |  6 | 00906 | Wed Jan 07 00:00:00 1970 PST | Wed Jan 07 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+ 906 |  6 | 00906 | Wed Jan 07 00:00:00 1970 PST | Wed Jan 07 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+ 906 |  6 | 00906 | Wed Jan 07 00:00:00 1970 PST | Wed Jan 07 00:00:00 1970 | 6  | 6          | foo |  6 |  7 | AAA006
+(10 rows)
+
+-- Semi-join below Semi-join
+--Testcase 1020:
+EXPLAIN (verbose, costs off)
+SELECT ft2.* FROM ft2 WHERE
+  c1 = ANY (
+	SELECT c1 FROM ft2 WHERE
+	  EXISTS (SELECT 1 FROM ft4 WHERE ft4.c2 = ft2.c2))
+  AND ft2.c1 > 900
+  ORDER BY ft2.c1 LIMIT 10;
+                                                                                                                                                               QUERY PLAN                                                                                                                                                               
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan
+   Output: ft2.c1, ft2.c2, ft2.c3, ft2.c4, ft2.c5, ft2.c6, ft2.c7, ft2.c8
+   SQLite query: SELECT r1.`C 1`, r1.`c2`, r1.`c3`, r1.`c4`, r1.`c5`, r1.`c6`, r1.`c7`, r1.`c8` FROM main."T 1" r1 WHERE ((r1.`C 1` > 900)) AND EXISTS (SELECT NULL FROM main."T 1" r3 WHERE ((r1.`C 1` = r3.`C 1`)) AND EXISTS (SELECT NULL FROM main."T 3" r4 WHERE ((r3.`c2` = r4.`c2`)))) ORDER BY r1.`C 1` ASC NULLS LAST LIMIT 10
+(3 rows)
+
+--Testcase 1021:
+SELECT ft2.* FROM ft2 WHERE
+  c1 = ANY (
+	SELECT c1 FROM ft2 WHERE
+	  EXISTS (SELECT 1 FROM ft4 WHERE ft4.c2 = ft2.c2))
+  AND ft2.c1 > 900
+  ORDER BY ft2.c1 LIMIT 10;
+ c1  | c2 |  c3   |              c4              |            c5            | c6 |     c7     | c8  
+-----+----+-------+------------------------------+--------------------------+----+------------+-----
+ 903 |  3 | 00903 | Sun Jan 04 00:00:00 1970 PST | Sun Jan 04 00:00:00 1970 | 3  | 3          | foo
+ 905 |  5 | 00905 | Tue Jan 06 00:00:00 1970 PST | Tue Jan 06 00:00:00 1970 | 5  | 5          | foo
+ 907 |  7 | 00907 | Thu Jan 08 00:00:00 1970 PST | Thu Jan 08 00:00:00 1970 | 7  | 7          | foo
+ 909 |  9 | 00909 | Sat Jan 10 00:00:00 1970 PST | Sat Jan 10 00:00:00 1970 | 9  | 9          | foo
+ 913 |  3 | 00913 | Wed Jan 14 00:00:00 1970 PST | Wed Jan 14 00:00:00 1970 | 3  | 3          | foo
+ 915 |  5 | 00915 | Fri Jan 16 00:00:00 1970 PST | Fri Jan 16 00:00:00 1970 | 5  | 5          | foo
+ 917 |  7 | 00917 | Sun Jan 18 00:00:00 1970 PST | Sun Jan 18 00:00:00 1970 | 7  | 7          | foo
+ 919 |  9 | 00919 | Tue Jan 20 00:00:00 1970 PST | Tue Jan 20 00:00:00 1970 | 9  | 9          | foo
+ 923 |  3 | 00923 | Sat Jan 24 00:00:00 1970 PST | Sat Jan 24 00:00:00 1970 | 3  | 3          | foo
+ 925 |  5 | 00925 | Mon Jan 26 00:00:00 1970 PST | Mon Jan 26 00:00:00 1970 | 5  | 5          | foo
+(10 rows)
+
+-- Upper level relations shouldn't refer EXISTS() subqueries
+--Testcase 1022:
+EXPLAIN (verbose, costs off)
+SELECT * FROM ft2 ftupper WHERE
+   EXISTS (
+	SELECT c1 FROM ft2 WHERE
+	  EXISTS (SELECT 1 FROM ft4 WHERE ft4.c2 = ft2.c2) AND c1 = ftupper.c1 )
+  AND ftupper.c1 > 900
+  ORDER BY ftupper.c1 LIMIT 10;
+                                                                                                                                                               QUERY PLAN                                                                                                                                                               
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan
+   Output: ftupper.c1, ftupper.c2, ftupper.c3, ftupper.c4, ftupper.c5, ftupper.c6, ftupper.c7, ftupper.c8
+   SQLite query: SELECT r1.`C 1`, r1.`c2`, r1.`c3`, r1.`c4`, r1.`c5`, r1.`c6`, r1.`c7`, r1.`c8` FROM main."T 1" r1 WHERE ((r1.`C 1` > 900)) AND EXISTS (SELECT NULL FROM main."T 1" r2 WHERE ((r1.`C 1` = r2.`C 1`)) AND EXISTS (SELECT NULL FROM main."T 3" r3 WHERE ((r2.`c2` = r3.`c2`)))) ORDER BY r1.`C 1` ASC NULLS LAST LIMIT 10
+(3 rows)
+
+--Testcase 1023:
+SELECT * FROM ft2 ftupper WHERE
+   EXISTS (
+	SELECT c1 FROM ft2 WHERE
+	  EXISTS (SELECT 1 FROM ft4 WHERE ft4.c2 = ft2.c2) AND c1 = ftupper.c1 )
+  AND ftupper.c1 > 900
+  ORDER BY ftupper.c1 LIMIT 10;
+ c1  | c2 |  c3   |              c4              |            c5            | c6 |     c7     | c8  
+-----+----+-------+------------------------------+--------------------------+----+------------+-----
+ 903 |  3 | 00903 | Sun Jan 04 00:00:00 1970 PST | Sun Jan 04 00:00:00 1970 | 3  | 3          | foo
+ 905 |  5 | 00905 | Tue Jan 06 00:00:00 1970 PST | Tue Jan 06 00:00:00 1970 | 5  | 5          | foo
+ 907 |  7 | 00907 | Thu Jan 08 00:00:00 1970 PST | Thu Jan 08 00:00:00 1970 | 7  | 7          | foo
+ 909 |  9 | 00909 | Sat Jan 10 00:00:00 1970 PST | Sat Jan 10 00:00:00 1970 | 9  | 9          | foo
+ 913 |  3 | 00913 | Wed Jan 14 00:00:00 1970 PST | Wed Jan 14 00:00:00 1970 | 3  | 3          | foo
+ 915 |  5 | 00915 | Fri Jan 16 00:00:00 1970 PST | Fri Jan 16 00:00:00 1970 | 5  | 5          | foo
+ 917 |  7 | 00917 | Sun Jan 18 00:00:00 1970 PST | Sun Jan 18 00:00:00 1970 | 7  | 7          | foo
+ 919 |  9 | 00919 | Tue Jan 20 00:00:00 1970 PST | Tue Jan 20 00:00:00 1970 | 9  | 9          | foo
+ 923 |  3 | 00923 | Sat Jan 24 00:00:00 1970 PST | Sat Jan 24 00:00:00 1970 | 3  | 3          | foo
+ 925 |  5 | 00925 | Mon Jan 26 00:00:00 1970 PST | Mon Jan 26 00:00:00 1970 | 5  | 5          | foo
+(10 rows)
+
+-- EXISTS should be propagated to the highest upper inner join
+--Testcase 1024:
+EXPLAIN (verbose, costs off)
+	SELECT ft2.*, ft4.* FROM ft2 INNER JOIN
+	(SELECT * FROM ft4 WHERE EXISTS (
+		SELECT 1 FROM ft2 WHERE ft2.c2 = ft4.c2)) ft4
+	ON ft2.c2 = ft4.c1
+	INNER JOIN
+	(SELECT * FROM ft2 WHERE EXISTS (
+		SELECT 1 FROM ft4 WHERE ft2.c2 = ft4.c2)) ft21
+	ON ft2.c2 = ft21.c2
+	WHERE ft2.c1 > 900
+	ORDER BY ft2.c1 LIMIT 10;
+                                                                                                                                                                                                                                 QUERY PLAN                                                                                                                                                                                                                                  
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Foreign Scan
+   Output: ft2.c1, ft2.c2, ft2.c3, ft2.c4, ft2.c5, ft2.c6, ft2.c7, ft2.c8, ft4.c1, ft4.c2, ft4.c3
+   SQLite query: SELECT r1.`C 1`, r1.`c2`, r1.`c3`, r1.`c4`, r1.`c5`, r1.`c6`, r1.`c7`, r1.`c8`, r6.`c1`, r6.`c2`, r6.`c3` FROM ((main."T 1" r1 INNER JOIN main."T 3" r6 ON (((r1.`c2` = r6.`c1`)) AND ((r1.`C 1` > 900)))) INNER JOIN main."T 1" r8 ON (((r1.`c2` = r8.`c2`)))) WHERE EXISTS (SELECT NULL FROM main."T 3" r9 WHERE ((r1.`c2` = r9.`c2`))) AND EXISTS (SELECT NULL FROM main."T 1" r7 WHERE ((r6.`c2` = r7.`c2`))) ORDER BY r1.`C 1` ASC NULLS LAST LIMIT 10
+(3 rows)
+
+--Testcase 1025:
+SELECT ft2.*, ft4.* FROM ft2 INNER JOIN
+	(SELECT * FROM ft4 WHERE EXISTS (
+		SELECT 1 FROM ft2 WHERE ft2.c2 = ft4.c2)) ft4
+	ON ft2.c2 = ft4.c1
+	INNER JOIN
+	(SELECT * FROM ft2 WHERE EXISTS (
+		SELECT 1 FROM ft4 WHERE ft2.c2 = ft4.c2)) ft21
+	ON ft2.c2 = ft21.c2
+	WHERE ft2.c1 > 900
+	ORDER BY ft2.c1 LIMIT 10;
+ c1 | c2 | c3 | c4 | c5 | c6 | c7 | c8 | c1 | c2 | c3 
+----+----+----+----+----+----+----+----+----+----+----
+(0 rows)
+
+-- Can't push down semi-join with inner rel vars in targetlist
+--Testcase 1026:
+EXPLAIN (verbose, costs off)
+SELECT ft1.c1 FROM ft1 JOIN ft2 on ft1.c1 = ft2.c1 WHERE
+	ft1.c1 IN (
+		SELECT ft2.c1 FROM ft2 JOIN ft4 ON ft2.c1 = ft4.c1)
+	ORDER BY ft1.c1 LIMIT 5;
+                                                                            QUERY PLAN                                                                             
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit
+   Output: ft1.c1
+   ->  Merge Semi Join
+         Output: ft1.c1
+         Merge Cond: (ft1.c1 = ft2_1.c1)
+         ->  Foreign Scan
+               Output: ft1.c1, ft2.c1
+               SQLite query: SELECT r1.`C 1`, r2.`C 1` FROM (main."T 1" r1 INNER JOIN main."T 1" r2 ON (((r1.`C 1` = r2.`C 1`)))) ORDER BY r1.`C 1` ASC NULLS LAST
+         ->  Foreign Scan
+               Output: ft2_1.c1, ft4.c1
+               SQLite query: SELECT r5.`C 1`, r6.`c1` FROM (main."T 1" r5 INNER JOIN main."T 3" r6 ON (((r5.`C 1` = r6.`c1`)))) ORDER BY r5.`C 1` ASC NULLS LAST
+(11 rows)
+
 -- ===================================================================
 -- test writable foreign table stuff
 -- ===================================================================
@@ -6518,9 +6990,9 @@ UPDATE ft2 AS target SET (c2, c7) = (
 ---------------------------------------------------------------------------------------------------------------------
  Update on public.ft2 target
    ->  Foreign Scan on public.ft2 target
-         Output: $1, $2, (SubPlan 1 (returns $1,$2)), target.c1, target.*
+         Output: (SubPlan 1).col1, (SubPlan 1).col2, (rescan SubPlan 1), target.c1, target.*
          SQLite query: SELECT `C 1`, `c2`, `c3`, `c4`, `c5`, `c6`, `c7`, `c8` FROM main."T 1" WHERE ((`C 1` > 1100))
-         SubPlan 1 (returns $1,$2)
+         SubPlan 1
            ->  Foreign Scan on public.ft2 src
                  Output: (src.c2 * 10), src.c7
                  SQLite query: SELECT `c2`, `c7` FROM main."T 1" WHERE ((? = `C 1`))
@@ -7229,6 +7701,68 @@ SELECT * FROM ft1 ORDER BY c6 ASC NULLS FIRST, c1 OFFSET 15 LIMIT 10;
    40 |  42 | 00040_trig_update | Tue Feb 10 00:00:00 1970 PST | Tue Feb 10 00:00:00 1970 | 0    | 0          | foo
 (10 rows)
 
+-- Test ReScan code path that recreates the cursor even when no parameters
+-- change (bug #17889)
+--Testcase 1032:
+CREATE FOREIGN TABLE loct1_rescan (c1 int OPTIONS (key 'true')) SERVER sqlite_svr OPTIONS (table 'loct1_rescan');
+--Testcase 1033:
+CREATE FOREIGN TABLE loct2_rescan (c1 int OPTIONS (key 'true'), c2 text) SERVER sqlite_svr OPTIONS (table 'loct2_rescan');
+--Testcase 1034:
+INSERT INTO loct1_rescan VALUES (1001);
+--Testcase 1035:
+INSERT INTO loct1_rescan VALUES (1002);
+--Testcase 1036:
+INSERT INTO loct2_rescan SELECT id, to_char(id, 'FM0000') FROM generate_series(1, 1000) id;
+--Testcase 1037:
+INSERT INTO loct2_rescan VALUES (1001, 'foo');
+--Testcase 1038:
+INSERT INTO loct2_rescan VALUES (1002, 'bar');
+--Testcase 1039:
+CREATE FOREIGN TABLE remt2_rescan (c1 int OPTIONS (key 'true'), c2 text) SERVER sqlite_svr OPTIONS (table 'loct2_rescan');
+-- ANALYZE loct1_rescan;
+-- ANALYZE remt2_rescan;
+SET enable_mergejoin TO false;
+SET enable_hashjoin TO false;
+SET enable_material TO false;
+--Testcase 1040:
+EXPLAIN (VERBOSE, COSTS OFF)
+UPDATE remt2_rescan SET c2 = remt2_rescan.c2 || remt2_rescan.c2 FROM loct1_rescan WHERE loct1_rescan.c1 = remt2_rescan.c1;
+                                                                                                                                                                             QUERY PLAN                                                                                                                                                                             
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Update on public.remt2_rescan
+   ->  Foreign Scan
+         Output: (remt2_rescan.c2 || remt2_rescan.c2), remt2_rescan.c1, remt2_rescan.*, loct1_rescan.*
+         SQLite query: SELECT r1.`c2`, r1.`c1`, CASE WHEN ( r1.`c1` IS NOT NULL) OR ( r1.`c2` IS NOT NULL) THEN ("(" || COALESCE(r1.`c1`, '') || "," || COALESCE(r1.`c2`, '')|| ")") END, CASE WHEN ( r2.`c1` IS NOT NULL) THEN ("(" || COALESCE(r2.`c1`, '')|| ")") END FROM (main."loct2_rescan" r1 INNER JOIN main."loct1_rescan" r2 ON (((r1.`c1` = r2.`c1`))))
+         ->  Nested Loop
+               Output: remt2_rescan.c2, remt2_rescan.c1, remt2_rescan.*, loct1_rescan.*
+               Join Filter: (remt2_rescan.c1 = loct1_rescan.c1)
+               ->  Foreign Scan on public.remt2_rescan
+                     Output: remt2_rescan.c2, remt2_rescan.c1, remt2_rescan.*
+                     SQLite query: SELECT `c1`, `c2` FROM main."loct2_rescan"
+               ->  Foreign Scan on public.loct1_rescan
+                     Output: loct1_rescan.*, loct1_rescan.c1
+                     SQLite query: SELECT `c1` FROM main."loct1_rescan"
+(13 rows)
+
+--Testcase 1041:
+UPDATE remt2_rescan SET c2 = remt2_rescan.c2 || remt2_rescan.c2 FROM loct1_rescan WHERE loct1_rescan.c1 = remt2_rescan.c1;
+--Testcase 1042:
+SELECT remt2_rescan.* FROM loct1_rescan, remt2_rescan WHERE loct1_rescan.c1 = remt2_rescan.c1;
+  c1  |   c2   
+------+--------
+ 1001 | foofoo
+ 1002 | barbar
+(2 rows)
+
+RESET enable_mergejoin;
+RESET enable_hashjoin;
+RESET enable_material;
+--Testcase 1043:
+DROP FOREIGN TABLE loct1_rescan;
+--Testcase 1044:
+DROP FOREIGN TABLE loct2_rescan;
+--Testcase 1045:
+DROP FOREIGN TABLE remt2_rescan;
 -- ===================================================================
 -- test check constraints
 -- ===================================================================
@@ -7357,10 +7891,10 @@ CREATE VIEW rw_view AS SELECT * FROM foreign_tbl
  a      | integer |           |          |         | plain   | 
  b      | integer |           |          |         | plain   | 
 View definition:
- SELECT foreign_tbl.a,
-    foreign_tbl.b
+ SELECT a,
+    b
    FROM foreign_tbl
-  WHERE foreign_tbl.a < foreign_tbl.b;
+  WHERE a < b;
 Options: check_option=cascaded
 
 --Testcase 345:
@@ -7490,10 +8024,10 @@ CREATE VIEW rw_view AS SELECT * FROM parent_tbl
  a      | integer |           |          |         | plain   | 
  b      | integer |           |          |         | plain   | 
 View definition:
- SELECT parent_tbl.a,
-    parent_tbl.b
+ SELECT a,
+    b
    FROM parent_tbl
-  WHERE parent_tbl.a < parent_tbl.b;
+  WHERE a < b;
 Options: check_option=cascaded
 
 --Testcase 618:
@@ -7596,6 +8130,26 @@ DROP TABLE parent_tbl CASCADE;
 NOTICE:  drop cascades to view rw_view
 --Testcase 631:
 DROP FUNCTION row_before_insupd_trigfunc;
+-- -- Try a more complex permutation of WCO where there are multiple levels of
+-- -- partitioned tables with columns not all in the same order
+-- CREATE TABLE parent_tbl (a int, b text, c numeric) PARTITION BY RANGE(a);
+-- CREATE TABLE sub_parent (c numeric, a int, b text) PARTITION BY RANGE(a);
+-- ALTER TABLE parent_tbl ATTACH PARTITION sub_parent FOR VALUES FROM (1) TO (10);
+-- CREATE TABLE child_local (b text, c numeric, a int);
+-- CREATE FOREIGN TABLE child_foreign (b text, c numeric, a int)
+--   SERVER loopback OPTIONS (table_name 'child_local');
+-- ALTER TABLE sub_parent ATTACH PARTITION child_foreign FOR VALUES FROM (1) TO (10);
+-- CREATE VIEW rw_view AS SELECT * FROM parent_tbl WHERE a < 5 WITH CHECK OPTION;
+-- INSERT INTO parent_tbl (a) VALUES(1),(5);
+-- EXPLAIN (VERBOSE, COSTS OFF)
+-- UPDATE rw_view SET b = 'text', c = 123.456;
+-- UPDATE rw_view SET b = 'text', c = 123.456;
+-- SELECT * FROM parent_tbl ORDER BY a;
+-- DROP VIEW rw_view;
+-- DROP TABLE child_local;
+-- DROP FOREIGN TABLE child_foreign;
+-- DROP TABLE sub_parent;
+-- DROP TABLE parent_tbl;
 -- ===================================================================
 -- test serial columns (ie, sequence-based defaults)
 -- ===================================================================
@@ -7717,6 +8271,23 @@ select * from grem1;
 
 --Testcase 830:
 delete from grem1;
+-- -- batch insert with foreign partitions.
+-- -- This schema uses two partitions, one local and one remote with a modulo
+-- -- to loop across all of them in batches.
+-- create table tab_batch_local (id int, data text);
+-- insert into tab_batch_local select i, 'test'|| i from generate_series(1, 45) i;
+-- create table tab_batch_sharded (id int, data text) partition by hash(id);
+-- create table tab_batch_sharded_p0 partition of tab_batch_sharded
+--   for values with (modulus 2, remainder 0);
+-- create table tab_batch_sharded_p1_remote (id int, data text);
+-- create foreign table tab_batch_sharded_p1 partition of tab_batch_sharded
+--   for values with (modulus 2, remainder 1)
+--   server loopback options (table_name 'tab_batch_sharded_p1_remote');
+-- insert into tab_batch_sharded select * from tab_batch_local;
+-- select count(*) from tab_batch_sharded;
+-- drop table tab_batch_local;
+-- drop table tab_batch_sharded;
+-- drop table tab_batch_sharded_p1_remote;
 --Testcase 831:
 alter server sqlite_svr options (drop batch_size);
 -- ===================================================================
@@ -7731,10 +8302,10 @@ BEGIN
 	RETURN NULL;
 END;$$;
 --Testcase 642:
-CREATE TRIGGER trig_stmt_before BEFORE DELETE OR INSERT OR UPDATE ON rem1
+CREATE TRIGGER trig_stmt_before BEFORE DELETE OR INSERT OR UPDATE OR TRUNCATE ON rem1
 	FOR EACH STATEMENT EXECUTE PROCEDURE trigger_func();
---Testcase 643:
-CREATE TRIGGER trig_stmt_after AFTER DELETE OR INSERT OR UPDATE ON rem1
+--Testcase 1005:
+CREATE TRIGGER trig_stmt_after AFTER DELETE OR INSERT OR UPDATE OR TRUNCATE ON rem1
 	FOR EACH STATEMENT EXECUTE PROCEDURE trigger_func();
 --Testcase 644:
 CREATE OR REPLACE FUNCTION trigger_data()  RETURNS trigger
@@ -7828,6 +8399,9 @@ NOTICE:  OLD: (1,update,5),NEW: (1,updateupdate,5)
 NOTICE:  trig_row_after(23, skidoo) AFTER ROW UPDATE ON rem1
 NOTICE:  OLD: (1,update,5),NEW: (1,updateupdate,5)
 NOTICE:  trigger_func(<NULL>) called: action = UPDATE, when = AFTER, level = STATEMENT
+truncate rem1;
+NOTICE:  trigger_func(<NULL>) called: action = TRUNCATE, when = BEFORE, level = STATEMENT
+NOTICE:  trigger_func(<NULL>) called: action = TRUNCATE, when = AFTER, level = STATEMENT
 -- cleanup
 --Testcase 647:
 DROP TRIGGER trig_row_before ON rem1;
@@ -8901,12 +9475,13 @@ explain (verbose, costs off)
          ->  Merge Join
                Output: foo.f1, foo2.f1, foo.f2
                Merge Cond: (foo.f1 = foo2.f1)
-               ->  Sort
-                     Output: foo.f1, foo.f2
+               ->  Merge Append
                      Sort Key: foo.f1
-                     ->  Append
-                           ->  Seq Scan on public.foo foo_1
-                                 Output: foo_1.f1, foo_1.f2
+                     ->  Index Scan using i_foo_f1 on public.foo foo_1
+                           Output: foo_1.f1, foo_1.f2
+                     ->  Sort
+                           Output: foo_2.f1, foo_2.f2
+                           Sort Key: foo_2.f1
                            ->  Foreign Scan on public.foo2 foo_2
                                  Output: foo_2.f1, foo_2.f2
                                  SQLite query: SELECT `f1`, `f2` FROM main."loct1" ORDER BY `f2` ASC NULLS LAST
@@ -8916,7 +9491,7 @@ explain (verbose, costs off)
                      ->  Foreign Scan on public.foo2
                            Output: foo2.f1
                            SQLite query: SELECT `f1` FROM main."loct1"
-(23 rows)
+(24 rows)
 
 --Testcase 715:
 select foo.f1, foo2.f1 from foo join foo2 on (foo.f1 = foo2.f1) order by foo.f2 offset 10 limit 10;
@@ -8949,12 +9524,13 @@ explain (verbose, costs off)
          ->  Merge Left Join
                Output: foo.f1, foo2.f1, foo.f2
                Merge Cond: (foo.f1 = foo2.f1)
-               ->  Sort
-                     Output: foo.f1, foo.f2
+               ->  Merge Append
                      Sort Key: foo.f1
-                     ->  Append
-                           ->  Seq Scan on public.foo foo_1
-                                 Output: foo_1.f1, foo_1.f2
+                     ->  Index Scan using i_foo_f1 on public.foo foo_1
+                           Output: foo_1.f1, foo_1.f2
+                     ->  Sort
+                           Output: foo_2.f1, foo_2.f2
+                           Sort Key: foo_2.f1
                            ->  Foreign Scan on public.foo2 foo_2
                                  Output: foo_2.f1, foo_2.f2
                                  SQLite query: SELECT `f1`, `f2` FROM main."loct1" ORDER BY `f2` ASC NULLS LAST
@@ -8964,7 +9540,7 @@ explain (verbose, costs off)
                      ->  Foreign Scan on public.foo2
                            Output: foo2.f1
                            SQLite query: SELECT `f1` FROM main."loct1"
-(23 rows)
+(24 rows)
 
 --Testcase 717:
 select foo.f1, foo2.f1 from foo left join foo2 on (foo.f1 = foo2.f1) order by foo.f2 offset 10 limit 10;
@@ -9237,6 +9813,10 @@ select tableoid::regclass, * FROM remp2;
 
 delete from itrtest;
 
+-- MERGE ought to fail cleanly
+merge into itrtest using (select 1, 'foo') as source on (true)
+  when matched then do nothing;
+
 create unique index loct1_idx on loct1 (a);
 
 -- DO NOTHING without an inference specification is supported
@@ -9403,6 +9983,29 @@ copy remp1 from stdin;
 
 select tableoid::regclass, * FROM remp1;
 
+delete from ctrtest;
+
+-- Test copy tuple routing with the batch_size option enabled
+alter server loopback options (add batch_size '2');
+
+copy ctrtest from stdin;
+1	foo
+1	bar
+2	baz
+2	qux
+1	test1
+2	test2
+\.
+
+select tableoid::regclass, * FROM ctrtest;
+select tableoid::regclass, * FROM remp1;
+select tableoid::regclass, * FROM remp2;
+
+delete from ctrtest;
+
+alter server loopback options (drop batch_size);
+
+
 drop table ctrtest;
 drop table loct1;
 drop table loct2;
@@ -9557,6 +10160,64 @@ select * from rem3;
 drop foreign table rem3;
 drop table loc3;
 */
+-- Test COPY FROM with the batch_size option enabled
+-- alter server loopback options (add batch_size '2');
+-- -- Test basic functionality
+-- copy rem2 from stdin;
+-- 1	foo
+-- 2	bar
+-- 3	baz
+-- \.
+-- select * from rem2;
+-- delete from rem2;
+-- -- Test check constraints
+-- alter table loc2 add constraint loc2_f1positive check (f1 >= 0);
+-- alter foreign table rem2 add constraint rem2_f1positive check (f1 >= 0);
+-- -- check constraint is enforced on the remote side, not locally
+-- copy rem2 from stdin;
+-- 1	foo
+-- 2	bar
+-- 3	baz
+-- \.
+-- copy rem2 from stdin; -- ERROR
+-- -1	xyzzy
+-- \.
+-- select * from rem2;
+-- alter foreign table rem2 drop constraint rem2_f1positive;
+-- alter table loc2 drop constraint loc2_f1positive;
+-- delete from rem2;
+-- -- Test remote triggers
+-- create trigger trig_row_before_insert before insert on loc2
+-- 	for each row execute procedure trig_row_before_insupdate();
+-- -- The new values are concatenated with ' triggered !'
+-- copy rem2 from stdin;
+-- 1	foo
+-- 2	bar
+-- 3	baz
+-- \.
+-- select * from rem2;
+-- drop trigger trig_row_before_insert on loc2;
+-- delete from rem2;
+-- create trigger trig_null before insert on loc2
+-- 	for each row execute procedure trig_null();
+-- -- Nothing happens
+-- copy rem2 from stdin;
+-- 1	foo
+-- 2	bar
+-- 3	baz
+-- \.
+-- select * from rem2;
+-- drop trigger trig_null on loc2;
+-- delete from rem2;
+-- -- Check with zero-column foreign table; batch insert will be disabled
+-- alter table loc2 drop column f1;
+-- alter table loc2 drop column f2;
+-- alter table rem2 drop column f1;
+-- alter table rem2 drop column f2;
+-- copy rem2 from stdin;
+-- select * from rem2;
+-- delete from rem2;
+-- alter server loopback options (drop batch_size);
 -- ===================================================================
 -- test for TRUNCATE
 -- ===================================================================
@@ -10644,11 +11305,8 @@ SELECT 1 FROM ft1_nopw LIMIT 1;
 -- If we add a password to the connstr it'll fail, because we don't allow passwords
 -- in connstrs only in user mappings.
 
-DO $d$
-    BEGIN
-        EXECUTE $$ALTER SERVER sqlite_nopw OPTIONS (ADD password 'dummypw')$$;
-    END;
-$d$;
+ALTER SERVER loopback_nopw OPTIONS (ADD password 'dummypw');
+
 
 -- If we add a password for our user mapping instead, we should get a different
 -- error because the password wasn't actually *used* when we run with trust auth.
@@ -10726,16 +11384,15 @@ WARNING:  there is no transaction in progress
 -- -- Change application_name of remote connection to special one
 -- -- so that we can easily terminate the connection later.
 -- ALTER SERVER sqlite_svr OPTIONS (application_name 'fdw_retry_check');
--- -- If debug_discard_caches is active, it results in
--- -- dropping remote connections after every transaction, making it
--- -- impossible to test termination meaningfully.  So turn that off
--- -- for this test.
--- SET debug_discard_caches = 0;
 -- -- Make sure we have a remote connection.
 -- SELECT 1 FROM ft1 LIMIT 1;
 -- -- Terminate the remote connection and wait for the termination to complete.
--- SELECT pg_terminate_backend(pid, 180000) FROM pg_stat_activity
+-- (If a cache flush happens, the remote connection might have already been
+-- dropped; so code this step in a way that doesn't fail if no connection.)
+-- DO $$ BEGIN
+-- PERFORM pg_terminate_backend(pid, 180000) FROM pg_stat_activity
 -- 	WHERE application_name = 'fdw_retry_check';
+-- END $$;
 -- -- This query should detect the broken connection when starting new remote
 -- -- transaction, reestablish new connection, and then succeed.
 -- BEGIN;
@@ -10743,15 +11400,16 @@ WARNING:  there is no transaction in progress
 -- -- If we detect the broken connection when starting a new remote
 -- -- subtransaction, we should fail instead of establishing a new connection.
 -- -- Terminate the remote connection and wait for the termination to complete.
--- SELECT pg_terminate_backend(pid, 180000) FROM pg_stat_activity
+-- DO $$ BEGIN
+-- PERFORM pg_terminate_backend(pid, 180000) FROM pg_stat_activity
 -- 	WHERE application_name = 'fdw_retry_check';
+-- END $$;
 -- SAVEPOINT s;
 -- -- The text of the error might vary across platforms, so only show SQLSTATE.
 -- \set VERBOSITY sqlstate
 -- SELECT 1 FROM ft1 LIMIT 1;    -- should fail
 -- \set VERBOSITY default
 -- COMMIT;
--- RESET debug_discard_caches;
 -- =============================================================================
 -- test connection invalidation cases and sqlite_fdw_get_connections function
 -- =============================================================================
@@ -11126,27 +11784,11 @@ INSERT INTO ftable SELECT * FROM generate_series(11, 31) i;
 INSERT INTO ftable VALUES (32);
 --Testcase 940:
 INSERT INTO ftable VALUES (33), (34);
---Testcase 941:
-SELECT COUNT(*) FROM ftable;
- count 
--------
-    34
-(1 row)
-
---Testcase 942:
-DELETE FROM ftable;
---Testcase 943:
-DROP FOREIGN TABLE ftable;
--- try if large batches exceed max number of bind parameters
---Testcase 944:
-CREATE FOREIGN TABLE ftable ( x int OPTIONS (key 'true') ) SERVER sqlite_svr OPTIONS ( table 'batch_table', batch_size '100000' );
---Testcase 945:
-INSERT INTO ftable SELECT * FROM generate_series(1, 70000) i;
 --Testcase 946:
 SELECT COUNT(*) FROM ftable;
  count 
 -------
- 70000
+    34
 (1 row)
 
 --Testcase 947:
@@ -11230,8 +11872,12 @@ DROP FOREIGN TABLE ftable;
 -- 	FOR VALUES WITH (MODULUS 3, REMAINDER 2);
 -- INSERT INTO "S 1".batch_table SELECT * FROM generate_series(1, 66) i;
 -- SELECT COUNT(*) FROM "S 1".batch_table;
--- -- Check that enabling batched inserts doesn't interfere with cross-partition
--- -- updates
+-- -- Clean up
+-- DROP TABLE batch_table;
+-- DROP TABLE batch_table_p0;
+-- DROP TABLE batch_table_p1;
+-- Check that batched mode also works for some inserts made during
+-- cross-partition updates
 -- CREATE TABLE batch_cp_upd_test (a int) PARTITION BY LIST (a);
 -- CREATE TABLE batch_cp_upd_test1 (LIKE batch_cp_upd_test);
 -- CREATE FOREIGN TABLE batch_cp_upd_test1_f
@@ -11239,14 +11885,44 @@ DROP FOREIGN TABLE ftable;
 -- 	FOR VALUES IN (1)
 -- 	SERVER sqlite_svr
 -- 	OPTIONS (table_name 'batch_cp_upd_test1', batch_size '10');
--- CREATE TABLE batch_cp_up_test1 PARTITION OF batch_cp_upd_test
+-- CREATE TABLE batch_cp_upd_test2 PARTITION OF batch_cp_upd_test
 -- 	FOR VALUES IN (2);
--- INSERT INTO batch_cp_upd_test VALUES (1), (2);
--- -- The following moves a row from the local partition to the foreign one
--- UPDATE batch_cp_upd_test t SET a = 1 FROM (VALUES (1), (2)) s(a) WHERE t.a = s.a;
--- SELECT tableoid::regclass, * FROM batch_cp_upd_test;
+-- CREATE TABLE batch_cp_upd_test3 (LIKE batch_cp_upd_test);
+-- CREATE FOREIGN TABLE batch_cp_upd_test3_f
+-- 	PARTITION OF batch_cp_upd_test
+-- 	FOR VALUES IN (3)
+-- 	SERVER loopback
+-- 	OPTIONS (table_name 'batch_cp_upd_test3', batch_size '1');
+-- -- Create statement triggers on remote tables that "log" any INSERTs
+-- -- performed on them.
+-- CREATE TABLE cmdlog (cmd text);
+-- CREATE FUNCTION log_stmt() RETURNS TRIGGER LANGUAGE plpgsql AS $$
+-- 	BEGIN INSERT INTO public.cmdlog VALUES (TG_OP || ' on ' || TG_RELNAME); RETURN NULL; END;
+-- $$;
+-- CREATE TRIGGER stmt_trig AFTER INSERT ON batch_cp_upd_test1
+-- 	FOR EACH STATEMENT EXECUTE FUNCTION log_stmt();
+-- CREATE TRIGGER stmt_trig AFTER INSERT ON batch_cp_upd_test3
+-- 	FOR EACH STATEMENT EXECUTE FUNCTION log_stmt();
+-- -- This update moves rows from the local partition 'batch_cp_upd_test2' to the
+-- -- foreign partition 'batch_cp_upd_test1', one that has insert batching
+-- -- enabled, so a single INSERT for both rows.
+-- INSERT INTO batch_cp_upd_test VALUES (2), (2);
+-- UPDATE batch_cp_upd_test t SET a = 1 FROM (VALUES (1), (2)) s(a) WHERE t.a = s.a AND s.a = 2;
+-- -- This one moves rows from the local partition 'batch_cp_upd_test2' to the
+-- -- foreign partition 'batch_cp_upd_test2', one that has insert batching
+-- -- disabled, so separate INSERTs for the two rows.
+-- INSERT INTO batch_cp_upd_test VALUES (2), (2);
+-- UPDATE batch_cp_upd_test t SET a = 3 FROM (VALUES (1), (2)) s(a) WHERE t.a = s.a AND s.a = 2;
+-- SELECT tableoid::regclass, * FROM batch_cp_upd_test ORDER BY 1;
+-- -- Should see 1 INSERT on batch_cp_upd_test1 and 2 on batch_cp_upd_test3 as
+-- -- described above.
+-- SELECT * FROM cmdlog ORDER BY 1;
 -- -- Clean up
--- DROP TABLE batch_table, batch_cp_upd_test, batch_table_p0, batch_table_p1 CASCADE;
+-- DROP TABLE batch_cp_upd_test;
+-- DROP TABLE batch_cp_upd_test1;
+-- DROP TABLE batch_cp_upd_test3;
+-- DROP TABLE cmdlog;
+-- DROP FUNCTION log_stmt();
 -- -- Use partitioning
 -- ALTER SERVER loopback OPTIONS (ADD batch_size '10');
 -- CREATE TABLE batch_table ( x int, field1 text, field2 text) PARTITION BY HASH (x);
@@ -11267,7 +11943,80 @@ DROP FOREIGN TABLE ftable;
 -- INSERT INTO batch_table SELECT i, 'test'||i, 'test'|| i FROM generate_series(1, 50) i;
 -- SELECT COUNT(*) FROM batch_table;
 -- SELECT * FROM batch_table ORDER BY x;
+-- -- Clean up
+-- DROP TABLE batch_table;
+-- DROP TABLE batch_table_p0;
+-- DROP TABLE batch_table_p1;
 -- ALTER SERVER loopback OPTIONS (DROP batch_size);
+-- Test that pending inserts are handled properly when needed
+-- CREATE TABLE batch_table (a text, b int);
+-- CREATE FOREIGN TABLE ftable (a text, b int)
+-- 	SERVER loopback
+-- 	OPTIONS (table_name 'batch_table', batch_size '2');
+-- CREATE TABLE ltable (a text, b int);
+-- CREATE FUNCTION ftable_rowcount_trigf() RETURNS trigger LANGUAGE plpgsql AS
+-- $$
+-- begin
+-- 	raise notice '%: there are % rows in ftable',
+-- 		TG_NAME, (SELECT count(*) FROM ftable);
+-- 	if TG_OP = 'DELETE' then
+-- 		return OLD;
+-- 	else
+-- 		return NEW;
+-- 	end if;
+-- end;
+-- $$;
+-- CREATE TRIGGER ftable_rowcount_trigger
+-- BEFORE INSERT OR UPDATE OR DELETE ON ltable
+-- FOR EACH ROW EXECUTE PROCEDURE ftable_rowcount_trigf();
+-- WITH t AS (
+-- 	INSERT INTO ltable VALUES ('AAA', 42), ('BBB', 42) RETURNING *
+-- )
+-- INSERT INTO ftable SELECT * FROM t;
+-- SELECT * FROM ltable;
+-- SELECT * FROM ftable;
+-- DELETE FROM ftable;
+-- WITH t AS (
+-- 	UPDATE ltable SET b = b + 100 RETURNING *
+-- )
+-- INSERT INTO ftable SELECT * FROM t;
+-- SELECT * FROM ltable;
+-- SELECT * FROM ftable;
+-- DELETE FROM ftable;
+-- WITH t AS (
+-- 	DELETE FROM ltable RETURNING *
+-- )
+-- INSERT INTO ftable SELECT * FROM t;
+-- SELECT * FROM ltable;
+-- SELECT * FROM ftable;
+-- DELETE FROM ftable;
+-- -- Clean up
+-- DROP FOREIGN TABLE ftable;
+-- DROP TABLE batch_table;
+-- DROP TRIGGER ftable_rowcount_trigger ON ltable;
+-- DROP TABLE ltable;
+-- CREATE TABLE parent (a text, b int) PARTITION BY LIST (a);
+-- CREATE TABLE batch_table (a text, b int);
+-- CREATE FOREIGN TABLE ftable
+-- 	PARTITION OF parent
+-- 	FOR VALUES IN ('AAA')
+-- 	SERVER loopback
+-- 	OPTIONS (table_name 'batch_table', batch_size '2');
+-- CREATE TABLE ltable
+-- 	PARTITION OF parent
+-- 	FOR VALUES IN ('BBB');
+-- CREATE TRIGGER ftable_rowcount_trigger
+-- BEFORE INSERT ON ltable
+-- FOR EACH ROW EXECUTE PROCEDURE ftable_rowcount_trigf();
+-- INSERT INTO parent VALUES ('AAA', 42), ('BBB', 42), ('AAA', 42), ('BBB', 42);
+-- SELECT tableoid::regclass, * FROM parent;
+-- -- Clean up
+-- DROP FOREIGN TABLE ftable;
+-- DROP TABLE batch_table;
+-- DROP TRIGGER ftable_rowcount_trigger ON ltable;
+-- DROP TABLE ltable;
+-- DROP TABLE parent;
+-- DROP FUNCTION ftable_rowcount_trigf;
 -- ===================================================================
 -- test asynchronous execution
 -- ===================================================================
@@ -11296,6 +12045,11 @@ DROP FOREIGN TABLE ftable;
 -- INSERT INTO result_tbl SELECT * FROM async_pt WHERE b === 505;
 -- SELECT * FROM result_tbl ORDER BY a;
 -- DELETE FROM result_tbl;
+-- -- Test error handling, if accessing one of the foreign partitions errors out
+-- CREATE FOREIGN TABLE async_p_broken PARTITION OF async_pt FOR VALUES FROM (10000) TO (10001)
+--   SERVER loopback OPTIONS (table_name 'non_existent_table');
+-- SELECT * FROM async_pt;
+-- DROP FOREIGN TABLE async_p_broken;
 -- -- Check case where multiple partitions use the same connection
 -- CREATE TABLE base_tbl3 (a int, b int, c text);
 -- CREATE FOREIGN TABLE async_p3 PARTITION OF async_pt FOR VALUES FROM (3000) TO (4000)
@@ -11383,6 +12137,13 @@ DROP FOREIGN TABLE ftable;
 -- DROP INDEX base_tbl2_idx;
 -- DROP INDEX async_p3_idx;
 -- -- UNION queries
+<<<<<<<< HEAD:expected/15.7/extra/sqlite_fdw_post.out
+========
+-- SET enable_sort TO off;
+-- SET enable_incremental_sort TO off;
+-- -- Adjust fdw_startup_cost so that we get an unordered path in the Append.
+-- ALTER SERVER loopback2 OPTIONS (ADD fdw_startup_cost '0.00');
+>>>>>>>> origin/master:expected/17.0/extra/sqlite_fdw_post.out
 -- EXPLAIN (VERBOSE, COSTS OFF)
 -- INSERT INTO result_tbl
 -- (SELECT a, b, 'AAA' || c FROM async_p1 ORDER BY a LIMIT 10)
@@ -11405,6 +12166,12 @@ DROP FOREIGN TABLE ftable;
 -- (SELECT a, b, 'AAA' || c FROM async_p2 WHERE b < 10);
 -- SELECT * FROM result_tbl ORDER BY a;
 -- DELETE FROM result_tbl;
+<<<<<<<< HEAD:expected/15.7/extra/sqlite_fdw_post.out
+========
+-- RESET enable_incremental_sort;
+-- RESET enable_sort;
+-- ALTER SERVER loopback2 OPTIONS (DROP fdw_startup_cost);
+>>>>>>>> origin/master:expected/17.0/extra/sqlite_fdw_post.out
 -- -- Disable async execution if we use gating Result nodes for pseudoconstant
 -- -- quals
 -- EXPLAIN (VERBOSE, COSTS OFF)
@@ -11489,8 +12256,13 @@ DROP FOREIGN TABLE ftable;
 -- CREATE FOREIGN TABLE foreign_tbl2 () INHERITS (foreign_tbl)
 --   SERVER loopback OPTIONS (table_name 'base_tbl');
 -- EXPLAIN (VERBOSE, COSTS OFF)
+<<<<<<<< HEAD:expected/15.7/extra/sqlite_fdw_post.out
 -- SELECT a FROM base_tbl WHERE a IN (SELECT a FROM foreign_tbl);
 -- SELECT a FROM base_tbl WHERE a IN (SELECT a FROM foreign_tbl);
+========
+-- SELECT a FROM base_tbl WHERE (a, random() > 0) IN (SELECT a, random() > 0 FROM foreign_tbl);
+-- SELECT a FROM base_tbl WHERE (a, random() > 0) IN (SELECT a, random() > 0 FROM foreign_tbl);
+>>>>>>>> origin/master:expected/17.0/extra/sqlite_fdw_post.out
 -- -- Clean up
 -- DROP FOREIGN TABLE foreign_tbl CASCADE;
 -- DROP TABLE base_tbl;
@@ -11518,6 +12290,7 @@ ERROR:  invalid value for integer option "batch_size": 100$%$#$#
 -- -- ===================================================================
 -- -- test postgres_fdw.application_name GUC
 -- -- ===================================================================
+<<<<<<<< HEAD:expected/15.7/extra/sqlite_fdw_post.out
 -- --- Turn debug_discard_caches off for this test to make sure that
 -- --- the remote connection is alive when checking its application_name.
 -- SET debug_discard_caches = 0;
@@ -11525,18 +12298,37 @@ ERROR:  invalid value for integer option "batch_size": 100$%$#$#
 -- -- object so as to test that they are replaced with status information
 -- -- expectedly.
 -- --
+========
+-- To avoid race conditions in checking the remote session's application_name,
+-- use this view to make the remote session itself read its application_name.
+-- CREATE VIEW my_application_name AS
+--   SELECT application_name FROM pg_stat_activity WHERE pid = pg_backend_pid();
+-- CREATE FOREIGN TABLE remote_application_name (application_name text)
+--   SERVER loopback2
+--   OPTIONS (schema_name 'public', table_name 'my_application_name');
+-- SELECT count(*) FROM remote_application_name;
+-- Specify escape sequences in application_name option of a server
+-- object so as to test that they are replaced with status information
+-- expectedly.  Note that we are also relying on ALTER SERVER to force
+-- the remote session to be restarted with its new application name.
+>>>>>>>> origin/master:expected/17.0/extra/sqlite_fdw_post.out
 -- -- Since pg_stat_activity.application_name may be truncated to less than
 -- -- NAMEDATALEN characters, note that substring() needs to be used
 -- -- at the condition of test query to make sure that the string consisting
 -- -- of database name and process ID is also less than that.
 -- ALTER SERVER loopback2 OPTIONS (application_name 'fdw_%d%p');
+<<<<<<<< HEAD:expected/15.7/extra/sqlite_fdw_post.out
 -- SELECT 1 FROM ft6 LIMIT 1;
 -- SELECT pg_terminate_backend(pid, 180000) FROM pg_stat_activity
+========
+-- SELECT count(*) FROM remote_application_name
+>>>>>>>> origin/master:expected/17.0/extra/sqlite_fdw_post.out
 --   WHERE application_name =
 --     substring('fdw_' || current_database() || pg_backend_pid() for
 --       current_setting('max_identifier_length')::int);
 -- -- postgres_fdw.application_name overrides application_name option
 -- -- of a server object if both settings are present.
+<<<<<<<< HEAD:expected/15.7/extra/sqlite_fdw_post.out
 -- SET postgres_fdw.application_name TO 'fdw_%a%u%%';
 -- SELECT 1 FROM ft6 LIMIT 1;
 -- SELECT pg_terminate_backend(pid, 180000) FROM pg_stat_activity
@@ -11547,12 +12339,25 @@ ERROR:  invalid value for integer option "batch_size": 100$%$#$#
 -- SET postgres_fdw.application_name TO 'fdw_%C%c';
 -- SELECT 1 FROM ft6 LIMIT 1;
 -- SELECT pg_terminate_backend(pid, 180000) FROM pg_stat_activity
+========
+-- ALTER SERVER loopback2 OPTIONS (SET application_name 'fdw_wrong');
+-- SET postgres_fdw.application_name TO 'fdw_%a%u%%';
+-- SELECT count(*) FROM remote_application_name
+--   WHERE application_name =
+--     substring('fdw_' || current_setting('application_name') ||
+--       CURRENT_USER || '%' for current_setting('max_identifier_length')::int);
+-- RESET postgres_fdw.application_name;
+-- -- Test %c (session ID) and %C (cluster name) escape sequences.
+-- ALTER SERVER loopback2 OPTIONS (SET application_name 'fdw_%C%c');
+-- SELECT count(*) FROM remote_application_name
+>>>>>>>> origin/master:expected/17.0/extra/sqlite_fdw_post.out
 --   WHERE application_name =
 --     substring('fdw_' || current_setting('cluster_name') ||
 --       to_hex(trunc(EXTRACT(EPOCH FROM (SELECT backend_start FROM
 --       pg_stat_get_activity(pg_backend_pid()))))::integer) || '.' ||
 --       to_hex(pg_backend_pid())
 --       for current_setting('max_identifier_length')::int);
+<<<<<<<< HEAD:expected/15.7/extra/sqlite_fdw_post.out
 -- --Clean up
 -- RESET postgres_fdw.application_name;
 -- RESET debug_discard_caches;
@@ -11561,6 +12366,18 @@ ERROR:  invalid value for integer option "batch_size": 100$%$#$#
 -- -- ===================================================================
 -- ALTER SERVER loopback OPTIONS (ADD parallel_commit 'true');
 -- ALTER SERVER loopback2 OPTIONS (ADD parallel_commit 'true');
+========
+-- -- Clean up.
+-- DROP FOREIGN TABLE remote_application_name;
+-- DROP VIEW my_application_name;
+-- -- ===================================================================
+-- -- test parallel commit and parallel abort
+-- -- ===================================================================
+-- ALTER SERVER loopback OPTIONS (ADD parallel_commit 'true');
+-- ALTER SERVER loopback OPTIONS (ADD parallel_abort 'true');
+-- ALTER SERVER loopback2 OPTIONS (ADD parallel_commit 'true');
+-- ALTER SERVER loopback2 OPTIONS (ADD parallel_abort 'true');
+>>>>>>>> origin/master:expected/17.0/extra/sqlite_fdw_post.out
 -- CREATE TABLE ploc1 (f1 int, f2 text);
 -- CREATE FOREIGN TABLE prem1 (f1 int, f2 text)
 --   SERVER loopback OPTIONS (table_name 'ploc1');
@@ -11594,8 +12411,77 @@ ERROR:  invalid value for integer option "batch_size": 100$%$#$#
 -- COMMIT;
 -- SELECT * FROM prem1;
 -- SELECT * FROM prem2;
+<<<<<<<< HEAD:expected/15.7/extra/sqlite_fdw_post.out
 -- ALTER SERVER loopback OPTIONS (DROP parallel_commit);
 -- ALTER SERVER loopback2 OPTIONS (DROP parallel_commit);
+========
+-- BEGIN;
+-- INSERT INTO prem1 VALUES (105, 'test1');
+-- INSERT INTO prem2 VALUES (205, 'test2');
+-- ABORT;
+-- SELECT * FROM prem1;
+-- SELECT * FROM prem2;
+-- -- This tests executing DEALLOCATE ALL against foreign servers in parallel
+-- -- during post-abort
+-- BEGIN;
+-- SAVEPOINT s;
+-- INSERT INTO prem1 VALUES (105, 'test1');
+-- INSERT INTO prem2 VALUES (205, 'test2');
+-- ROLLBACK TO SAVEPOINT s;
+-- RELEASE SAVEPOINT s;
+-- INSERT INTO prem1 VALUES (105, 'test1');
+-- INSERT INTO prem2 VALUES (205, 'test2');
+-- ABORT;
+-- SELECT * FROM prem1;
+-- SELECT * FROM prem2;
+-- ALTER SERVER loopback OPTIONS (DROP parallel_commit);
+-- ALTER SERVER loopback OPTIONS (DROP parallel_abort);
+-- ALTER SERVER loopback2 OPTIONS (DROP parallel_commit);
+-- ALTER SERVER loopback2 OPTIONS (DROP parallel_abort);
+-- -- ===================================================================
+-- -- test for ANALYZE sampling
+-- -- ===================================================================
+-- CREATE TABLE analyze_table (id int, a text, b bigint);
+-- CREATE FOREIGN TABLE analyze_ftable (id int, a text, b bigint)
+--        SERVER loopback OPTIONS (table_name 'analyze_rtable1');
+-- INSERT INTO analyze_table (SELECT x FROM generate_series(1,1000) x);
+-- ANALYZE analyze_table;
+-- SET default_statistics_target = 10;
+-- ANALYZE analyze_table;
+-- ALTER SERVER loopback OPTIONS (analyze_sampling 'invalid');
+-- ALTER SERVER loopback OPTIONS (analyze_sampling 'auto');
+-- ANALYZE analyze_table;
+-- ALTER SERVER loopback OPTIONS (SET analyze_sampling 'system');
+-- ANALYZE analyze_table;
+-- ALTER SERVER loopback OPTIONS (SET analyze_sampling 'bernoulli');
+-- ANALYZE analyze_table;
+-- ALTER SERVER loopback OPTIONS (SET analyze_sampling 'random');
+-- ANALYZE analyze_table;
+-- ALTER SERVER loopback OPTIONS (SET analyze_sampling 'off');
+-- ANALYZE analyze_table;
+-- cleanup
+-- DROP FOREIGN TABLE analyze_ftable;
+-- DROP TABLE analyze_table;
+-- SQLite FDW does not support query cancel feature
+-- SELECT version() ~ 'cygwin' AS skip_test \gset
+-- \if :skip_test
+-- \quit
+-- \endif
+-- -- Let's test canceling a remote query.  Use a table that does not have
+-- -- remote_estimate enabled, else there will be multiple queries to the
+-- -- remote and we might unluckily send the cancel in between two of them.
+-- -- First let's confirm that the query is actually pushed down.
+-- EXPLAIN (VERBOSE, COSTS OFF)
+-- SELECT count(*) FROM ft1 a CROSS JOIN ft1 b CROSS JOIN ft1 c CROSS JOIN ft1 d;
+-- BEGIN;
+-- -- Make sure that connection is open and set up.
+-- SELECT count(*) FROM ft1 a;
+-- -- Timeout needs to be long enough to be sure that we've sent the slow query.
+-- SET LOCAL statement_timeout = '100ms';
+-- -- This would take very long if not canceled:
+-- SELECT count(*) FROM ft1 a CROSS JOIN ft1 b CROSS JOIN ft1 c CROSS JOIN ft1 d;
+-- COMMIT;
+>>>>>>>> origin/master:expected/17.0/extra/sqlite_fdw_post.out
 -- Clean-up
 --Testcase 733:
 -- DROP USER MAPPING FOR CURRENT_USER SERVER sqlite_svr;

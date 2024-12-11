@@ -134,9 +134,9 @@ static void sqlite_deparse_null_if_expr(NullIfExpr *node, deparse_expr_cxt *cont
 static void sqlite_deparse_coalesce_expr(CoalesceExpr *node, deparse_expr_cxt *context);
 static void sqlite_deparse_from_expr_for_rel(StringInfo buf, PlannerInfo *root, RelOptInfo *foreignrel,
 											 bool use_alias, Index ignore_rel, List **ignore_conds,
-#if PG_VERSION_NUM >= 170000											 
-											 List **additional_conds, 
-#endif											 
+#if PG_VERSION_NUM >= 170000
+											 List **additional_conds,
+#endif
 											 List **params_list);
 #if PG_VERSION_NUM >= 170000
 static void sqlite_append_where_clause(List *exprs, List *additional_conds,
@@ -146,7 +146,7 @@ static void sqlite_deparse_range_tbl_ref(StringInfo buf, PlannerInfo *root,
 										 RelOptInfo *foreignrel, bool make_subquery,
 										 Index ignore_rel, List **ignore_conds,
 #if PG_VERSION_NUM >= 170000
-										 List **additional_conds, 
+										 List **additional_conds,
 #endif
 										 List **params_list);
 static void sqlite_deparse_from_expr(List *quals, deparse_expr_cxt *context);
@@ -1353,7 +1353,7 @@ sqlite_deparse_from_expr(List *quals, deparse_expr_cxt *context)
 	appendStringInfoString(buf, " FROM ");
 	sqlite_deparse_from_expr_for_rel(buf, context->root, scanrel,
 									 (bms_num_members(scanrel->relids) == BMS_MULTIPLE),
-									 (Index) 0, NULL, 
+									 (Index) 0, NULL,
 #if PG_VERSION_NUM >= 170000
 									 &additional_conds,
 #endif
@@ -1429,7 +1429,7 @@ sqlite_get_jointype_name(JoinType jointype)
 
 		case JOIN_FULL:
 			return "FULL";
-#if PG_VERSION_NUM >= 170000	
+#if PG_VERSION_NUM >= 170000
 		case JOIN_SEMI:
 			return "SEMI";
 #endif
@@ -1520,7 +1520,7 @@ sqlite_deparse_subquery_target_list(deparse_expr_cxt *context)
  * The function constructs ... JOIN ... ON ... for join relation. For a base
  * relation it just returns schema-qualified tablename, with the appropriate
  * alias if so requested.
- * 
+ *
  * 'ignore_rel' is either zero or the RT index of a target relation.  In the
  * latter case the function constructs FROM clause of UPDATE or USING clause
  * of DELETE; it deparses the join relation as if the relation never contained
@@ -1534,7 +1534,7 @@ static void
 sqlite_deparse_from_expr_for_rel(StringInfo buf, PlannerInfo *root, RelOptInfo *foreignrel,
 								 bool use_alias, Index ignore_rel, List **ignore_conds,
 #if PG_VERSION_NUM >= 170000
-								 List **additional_conds, 
+								 List **additional_conds,
 #endif
 								 List **params_list)
 {
@@ -1547,7 +1547,7 @@ sqlite_deparse_from_expr_for_rel(StringInfo buf, PlannerInfo *root, RelOptInfo *
 		RelOptInfo *innerrel = fpinfo->innerrel;
 		bool		outerrel_is_target = false;
 		bool		innerrel_is_target = false;
-#if PG_VERSION_NUM >= 170000	
+#if PG_VERSION_NUM >= 170000
 		List	   *additional_conds_i = NIL;
 		List	   *additional_conds_o = NIL;
 #endif
@@ -1607,7 +1607,7 @@ sqlite_deparse_from_expr_for_rel(StringInfo buf, PlannerInfo *root, RelOptInfo *
 				Assert(fpinfo->jointype == JOIN_INNER);
 				Assert(fpinfo->joinclauses == NIL);
 				appendBinaryStringInfo(buf, join_sql_o.data, join_sql_o.len);
-#if PG_VERSION_NUM >= 170000	
+#if PG_VERSION_NUM >= 170000
 				/* Pass EXISTS conditions to upper level */
 				if (additional_conds_o != NIL)
 				{
@@ -1625,7 +1625,7 @@ sqlite_deparse_from_expr_for_rel(StringInfo buf, PlannerInfo *root, RelOptInfo *
 			initStringInfo(&join_sql_i);
 			sqlite_deparse_range_tbl_ref(&join_sql_i, root, innerrel,
 										 fpinfo->make_innerrel_subquery,
-										 ignore_rel, ignore_conds, 
+										 ignore_rel, ignore_conds,
 #if PG_VERSION_NUM >= 170000
 										 &additional_conds_i,
 #endif
@@ -1676,7 +1676,7 @@ sqlite_deparse_from_expr_for_rel(StringInfo buf, PlannerInfo *root, RelOptInfo *
 
 				*additional_conds = lappend(*additional_conds, str.data);
 			}
-#endif	
+#endif
 			/*
 			 * If outer relation is the target relation, skip deparsing it.
 			 * See the above note about safety.
@@ -1686,7 +1686,7 @@ sqlite_deparse_from_expr_for_rel(StringInfo buf, PlannerInfo *root, RelOptInfo *
 				Assert(fpinfo->jointype == JOIN_INNER);
 				Assert(fpinfo->joinclauses == NIL);
 				appendBinaryStringInfo(buf, join_sql_i.data, join_sql_i.len);
-#if PG_VERSION_NUM >= 170000				
+#if PG_VERSION_NUM >= 170000
 				/* Pass EXISTS conditions to the upper call */
 				if (additional_conds_i != NIL)
 				{
@@ -1734,9 +1734,9 @@ sqlite_deparse_from_expr_for_rel(StringInfo buf, PlannerInfo *root, RelOptInfo *
 				context.root = root;
 				context.params_list = params_list;
 
-				appendStringInfo(buf, "(");		
+				appendStringInfo(buf, "(");
 				sqlite_append_conditions(fpinfo->joinclauses, &context);
-				appendStringInfo(buf, ")");			
+				appendStringInfo(buf, ")");
 			}
 			else
 				appendStringInfoString(buf, "(TRUE)");
@@ -1838,7 +1838,7 @@ sqlite_deparse_range_tbl_ref(StringInfo buf, PlannerInfo *root, RelOptInfo *fore
 	}
 	else
 		sqlite_deparse_from_expr_for_rel(buf, root, foreignrel, true, ignore_rel,
-										 ignore_conds, 
+										 ignore_conds,
 #if PG_VERSION_NUM >= 170000
 										 additional_conds,
 #endif
@@ -2091,7 +2091,7 @@ sqlite_deparse_target_list(StringInfo buf,
  */
 void
 sqlite_append_where_clause(List *exprs, List *additional_conds, deparse_expr_cxt *context)
-{	
+{
 	StringInfo	buf = context->buf;
 	bool		need_and = false;
 	ListCell   *lc;
@@ -2663,20 +2663,20 @@ sqlite_deparse_direct_update_sql(StringInfo buf, PlannerInfo *root,
 
 		appendStringInfo(buf, " FROM ");
 		sqlite_deparse_from_expr_for_rel(buf, root, foreignrel, true, rtindex,
-										 &ignore_conds, 
-#if PG_VERSION_NUM >= 170000										 
+										 &ignore_conds,
+#if PG_VERSION_NUM >= 170000
 										 &additional_conds,
-#endif										 
+#endif
 										 params_list);
 		remote_conds = list_concat(remote_conds, ignore_conds);
 	}
-#if PG_VERSION_NUM >= 170000										 
+#if PG_VERSION_NUM >= 170000
 
 	sqlite_append_where_clause(remote_conds, additional_conds, &context);
 
 	if (additional_conds != NIL)
 		list_free_deep(additional_conds);
-#else	
+#else
 	if (remote_conds)
 	{
 		appendStringInfoString(buf, " WHERE ");
@@ -2736,7 +2736,7 @@ sqlite_deparse_direct_delete_sql(StringInfo buf, PlannerInfo *root,
 	deparse_expr_cxt context;
 #if PG_VERSION_NUM >= 170000
 	List	   *additional_conds = NIL;
-#endif	
+#endif
 	elog(DEBUG1, "sqlite_fdw : %s", __func__);
 
 	/* Set up context struct for recursion */
@@ -2758,9 +2758,9 @@ sqlite_deparse_direct_delete_sql(StringInfo buf, PlannerInfo *root,
 		appendStringInfo(buf, " USING ");
 		sqlite_deparse_from_expr_for_rel(buf, root, foreignrel, true, rtindex,
 										 &ignore_conds,
-#if PG_VERSION_NUM >= 170000										 
+#if PG_VERSION_NUM >= 170000
 										 &additional_conds,
-#endif										  
+#endif
 										 params_list);
 		remote_conds = list_concat(remote_conds, ignore_conds);
 	}

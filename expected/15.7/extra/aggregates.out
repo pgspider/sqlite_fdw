@@ -61,6 +61,7 @@ CREATE FOREIGN TABLE INT8_TBL(
   q1 int8 OPTIONS (key 'true'),
   q2 int8 OPTIONS (key 'true')
 ) SERVER sqlite_svr;
+<<<<<<<< HEAD:expected/15.7/extra/aggregates.out
 --Testcase 697:
 INSERT INTO INT8_TBL VALUES('  123   ','  456');
 --Testcase 698:
@@ -82,6 +83,29 @@ INSERT INTO INT4_TBL(f1) VALUES ('    -123456');
 --Testcase 705:
 INSERT INTO INT4_TBL(f1) VALUES ('2147483647');
 --Testcase 706:
+========
+--Testcase 782:
+INSERT INTO INT8_TBL VALUES('  123   ','  456');
+--Testcase 783:
+INSERT INTO INT8_TBL VALUES('123   ','4567890123456789');
+--Testcase 784:
+INSERT INTO INT8_TBL VALUES('4567890123456789','123');
+--Testcase 785:
+INSERT INTO INT8_TBL VALUES(+4567890123456789,'4567890123456789');
+--Testcase 786:
+INSERT INTO INT8_TBL VALUES('+4567890123456789','-4567890123456789');
+--Testcase 273:
+CREATE FOREIGN TABLE INT4_TBL(f1 int4 OPTIONS (key 'true')) SERVER sqlite_svr; 
+--Testcase 787:
+INSERT INTO INT4_TBL(f1) VALUES ('   0  ');
+--Testcase 788:
+INSERT INTO INT4_TBL(f1) VALUES ('123456     ');
+--Testcase 789:
+INSERT INTO INT4_TBL(f1) VALUES ('    -123456');
+--Testcase 790:
+INSERT INTO INT4_TBL(f1) VALUES ('2147483647');
+--Testcase 791:
+>>>>>>>> origin/master:expected/17.0/extra/aggregates.out
 INSERT INTO INT4_TBL(f1) VALUES ('-2147483647');
 --Testcase 274:
 CREATE FOREIGN TABLE multi_arg_agg (a int OPTIONS (key 'true'), b int, c text) SERVER sqlite_svr;
@@ -122,40 +146,44 @@ CREATE FOREIGN TABLE agg_tb(v int, id integer OPTIONS (key 'true')) SERVER sqlit
 INSERT INTO agg_tb(v) VALUES(1), (2), (3);
 --Testcase 699: -- Pg 16+
 SELECT any_value(v) FROM agg_tb;
-ERROR:  function any_value(integer) does not exist
-LINE 1: SELECT any_value(v) FROM agg_tb;
-               ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+ any_value 
+-----------
+         1
+(1 row)
+
 --Testcase 700:
 DELETE FROM agg_tb;
 --Testcase 701:
 INSERT INTO agg_tb(v) VALUES (NULL);
 --Testcase 702: -- Pg 16+
 SELECT any_value(v) FROM agg_tb;
-ERROR:  function any_value(integer) does not exist
-LINE 1: SELECT any_value(v) FROM agg_tb;
-               ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+ any_value 
+-----------
+          
+(1 row)
+
 --Testcase 703:
 DELETE FROM agg_tb;
 --Testcase 704:
 INSERT INTO agg_tb(v) VALUES (NULL), (1), (2);
 --Testcase 705: -- Pg 16+
 SELECT any_value(v) FROM agg_tb;
-ERROR:  function any_value(integer) does not exist
-LINE 1: SELECT any_value(v) FROM agg_tb;
-               ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+ any_value 
+-----------
+         1
+(1 row)
+
 --Testcase 706:
 CREATE FOREIGN TABLE agg_tb2(v text) SERVER sqlite_svr;
 --Testcase 707:
 INSERT INTO agg_tb2(v) VALUES (array['hello', 'world']);
 --Testcase 708: -- Pg 16+
 SELECT any_value(v) FROM agg_tb2;
-ERROR:  function any_value(text) does not exist
-LINE 1: SELECT any_value(v) FROM agg_tb2;
-               ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+   any_value   
+---------------
+ {hello,world}
+(1 row)
+
 -- In 7.1, avg(float4) is computed using float8 arithmetic.
 --Testcase 3:
 -- Round the result to limited digits to avoid platform-specific results.
@@ -1154,7 +1182,7 @@ select array(select sum(x+y) s
                             QUERY PLAN                             
 -------------------------------------------------------------------
  Function Scan on pg_catalog.generate_series x
-   Output: (SubPlan 1)
+   Output: ARRAY(SubPlan 1)
    Function Call: generate_series(1, 3)
    SubPlan 1
      ->  Sort
@@ -1678,7 +1706,7 @@ explain (costs off)
                                          QUERY PLAN                                          
 ---------------------------------------------------------------------------------------------
  Result
-   InitPlan 1 (returns $0)
+   InitPlan 1
      ->  Limit
            ->  Merge Append
                  Sort Key: minmaxtest.f1
@@ -1688,7 +1716,7 @@ explain (costs off)
                  ->  Index Only Scan Backward using minmaxtest2i on minmaxtest2 minmaxtest_3
                        Index Cond: (f1 IS NOT NULL)
                  ->  Index Only Scan using minmaxtest3i on minmaxtest3 minmaxtest_4
-   InitPlan 2 (returns $1)
+   InitPlan 2
      ->  Limit
            ->  Merge Append
                  Sort Key: minmaxtest_5.f1 DESC
@@ -1714,7 +1742,7 @@ explain (costs off)
                                          QUERY PLAN                                          
 ---------------------------------------------------------------------------------------------
  Unique
-   InitPlan 1 (returns $0)
+   InitPlan 1
      ->  Limit
            ->  Merge Append
                  Sort Key: minmaxtest.f1
@@ -1724,7 +1752,7 @@ explain (costs off)
                  ->  Index Only Scan Backward using minmaxtest2i on minmaxtest2 minmaxtest_3
                        Index Cond: (f1 IS NOT NULL)
                  ->  Index Only Scan using minmaxtest3i on minmaxtest3 minmaxtest_4
-   InitPlan 2 (returns $1)
+   InitPlan 2
      ->  Limit
            ->  Merge Append
                  Sort Key: minmaxtest_5.f1 DESC
@@ -1735,7 +1763,7 @@ explain (costs off)
                        Index Cond: (f1 IS NOT NULL)
                  ->  Index Only Scan Backward using minmaxtest3i on minmaxtest3 minmaxtest_9
    ->  Sort
-         Sort Key: ($0), ($1)
+         Sort Key: ((InitPlan 1).col1), ((InitPlan 2).col1)
          ->  Result
 (24 rows)
 
@@ -1746,6 +1774,35 @@ select distinct min(f1), max(f1) from minmaxtest;
   11 |  18
 (1 row)
 
+-- DISTINCT can also trigger wrong answers with hash aggregation (bug #18465)
+begin;
+set local enable_sort = off;
+--Testcase 709:
+explain (costs off)
+  select f1, (select distinct min(t1.f1) from int4_tbl t1 where t1.f1 = t0.f1)
+  from int4_tbl t0;
+            QUERY PLAN             
+-----------------------------------
+ Foreign Scan on int4_tbl t0
+   SubPlan 1
+     ->  HashAggregate
+           Group Key: (min(t1.f1))
+           ->  Foreign Scan
+(5 rows)
+
+--Testcase 710:
+select f1, (select distinct min(t1.f1) from int4_tbl t1 where t1.f1 = t0.f1)
+from int4_tbl t0;
+     f1      |     min     
+-------------+-------------
+           0 |           0
+      123456 |      123456
+     -123456 |     -123456
+  2147483647 |  2147483647
+ -2147483647 | -2147483647
+(5 rows)
+
+rollback;
 -- check for correct detection of nested-aggregate errors
 --Testcase 87:
 select max(min(unique1)) from tenk1;
@@ -1757,6 +1814,7 @@ select (select max(min(unique1)) from int8_tbl) from tenk1;
 ERROR:  aggregate function calls cannot be nested
 LINE 1: select (select max(min(unique1)) from int8_tbl) from tenk1;
                            ^
+--Testcase 711:
 select avg((select avg(a1.col1 order by (select avg(a2.col2) from tenk1 a3))
             from tenk1 a1(col1)))
 from tenk1 a2(col2);
@@ -1885,6 +1943,7 @@ ERROR:  column "t1.f1" must appear in the GROUP BY clause or be used in an aggre
 LINE 1: select t1.f1 from t1 left join t2 using (f1) group by f1;
                ^
 -- check case where we have to inject nullingrels into coerced join alias
+--Testcase 712:
 select f1, count(*) from
 t1 x(x0,x1) left join (t1 left join t2 using(f1)) on (x0 = 0)
 group by f1;
@@ -1893,6 +1952,7 @@ group by f1;
 (0 rows)
 
 -- same, for a RelabelType coercion
+--Testcase 713:
 select f2, count(*) from
 t1 x(x0,x1) left join (t1 left join t2 using(f2)) on (x0 = 0)
 group by f2;
@@ -1906,6 +1966,7 @@ drop foreign table t1, t2;
 -- Test planner's selection of pathkeys for ORDER BY aggregates
 --
 -- Ensure we order by four.  This suits the most aggregate functions.
+--Testcase 714:
 explain (costs off)
 select sum(two order by two),max(four order by four), min(four order by four)
 from tenk1;
@@ -1917,6 +1978,7 @@ from tenk1;
 
 -- Ensure we order by two.  It's a tie between ordering by two and four but
 -- we tiebreak on the aggregate's position.
+--Testcase 715:
 explain (costs off)
 select
   sum(two order by two), max(four order by four),
@@ -1929,6 +1991,7 @@ from tenk1;
 (2 rows)
 
 -- Similar to above, but tiebreak on ordering by four
+--Testcase 716:
 explain (costs off)
 select
   max(four order by four), sum(two order by two),
@@ -1942,6 +2005,7 @@ from tenk1;
 
 -- Ensure this one orders by ten since there are 3 aggregates that require ten
 -- vs two that suit two and four.
+--Testcase 717:
 explain (costs off)
 select
   max(four order by four), sum(two order by two),
@@ -1957,6 +2021,7 @@ from tenk1;
 -- Try a case involving a GROUP BY clause where the GROUP BY column is also
 -- part of an aggregate's ORDER BY clause.  We want a sort order that works
 -- for the GROUP BY along with the first and the last aggregate.
+--Testcase 718:
 explain (costs off)
 select
   sum(unique1 order by ten, two), sum(unique1 order by four),
@@ -1973,6 +2038,7 @@ group by ten;
 -- Ensure that we never choose to provide presorted input to an Aggref with
 -- a volatile function in the ORDER BY / DISTINCT clause.  We want to ensure
 -- these sorts are performed individually rather than at the query level.
+--Testcase 719:
 explain (costs off)
 select
   sum(unique1 order by two), sum(unique1 order by four),
@@ -1988,8 +2054,9 @@ group by ten;
 (3 rows)
 
 -- Ensure consecutive NULLs are properly treated as distinct from each other
+--Testcase 720:
 select array_agg(distinct val)
-from (select null as val from generate_series(1, 2)) g;
+from (select null as val from generate_series(1, 2));
  array_agg 
 -----------
  {NULL}
@@ -1997,7 +2064,7 @@ from (select null as val from generate_series(1, 2)) g;
 
 -- Ensure no ordering is requested when enable_presorted_aggregate is off
 set enable_presorted_aggregate to off;
-ERROR:  unrecognized configuration parameter "enable_presorted_aggregate"
+--Testcase 721:
 explain (costs off)
 select sum(two order by two) from tenk1;
          QUERY PLAN          
@@ -2007,7 +2074,6 @@ select sum(two order by two) from tenk1;
 (2 rows)
 
 reset enable_presorted_aggregate;
-ERROR:  unrecognized configuration parameter "enable_presorted_aggregate"
 --
 -- Test combinations of DISTINCT and/or ORDER BY
 --
@@ -2180,6 +2246,28 @@ select aggfns(distinct a,b,c order by a,c using ~<~,b) from multi_arg_agg, gener
  {"(0,,)","(1,3,foo)","(2,2,bar)","(3,1,baz)"}
 (1 row)
 
+-- test a more complex permutation that has previous caused issues
+--Testcase 761:
+create foreign table agg_t22 (c1 text, id int) server sqlite_svr;
+--Testcase 762:
+create foreign table agg_t23 (id int) server sqlite_svr;
+--Testcase 763:
+insert into agg_t22 values ('a', 1);
+--Testcase 764:
+insert into agg_t23 values (1);
+--Testcase 765:
+select
+    string_agg(distinct c1, ','),
+    sum((
+        select sum(b.id)
+        from agg_t23 b
+        where a.id = b.id
+)) from agg_t22 a;
+ string_agg | sum 
+------------+-----
+ a          |   1
+(1 row)
+
 -- check node I/O via view creation and usage, also deparsing logic
 --Testcase 438:
 create view agg_view1 as
@@ -2193,9 +2281,9 @@ select * from agg_view1;
 
 --Testcase 117:
 select pg_get_viewdef('agg_view1'::regclass);
-                               pg_get_viewdef                                
------------------------------------------------------------------------------
-  SELECT aggfns(multi_arg_agg.a, multi_arg_agg.b, multi_arg_agg.c) AS aggfns+
+          pg_get_viewdef           
+-----------------------------------
+  SELECT aggfns(a, b, c) AS aggfns+
     FROM multi_arg_agg;
 (1 row)
 
@@ -2249,9 +2337,9 @@ select * from agg_view1;
 
 --Testcase 123:
 select pg_get_viewdef('agg_view1'::regclass);
-                                               pg_get_viewdef                                               
-------------------------------------------------------------------------------------------------------------
-  SELECT aggfns(multi_arg_agg.a, multi_arg_agg.b, multi_arg_agg.c ORDER BY (multi_arg_agg.b + 1)) AS aggfns+
+                   pg_get_viewdef                   
+----------------------------------------------------
+  SELECT aggfns(a, b, c ORDER BY (b + 1)) AS aggfns+
     FROM multi_arg_agg;
 (1 row)
 
@@ -2267,9 +2355,9 @@ select * from agg_view1;
 
 --Testcase 125:
 select pg_get_viewdef('agg_view1'::regclass);
-                                            pg_get_viewdef                                            
-------------------------------------------------------------------------------------------------------
-  SELECT aggfns(multi_arg_agg.a, multi_arg_agg.a, multi_arg_agg.c ORDER BY multi_arg_agg.b) AS aggfns+
+                pg_get_viewdef                
+----------------------------------------------
+  SELECT aggfns(a, a, c ORDER BY b) AS aggfns+
     FROM multi_arg_agg;
 (1 row)
 
@@ -2285,9 +2373,9 @@ select * from agg_view1;
 
 --Testcase 127:
 select pg_get_viewdef('agg_view1'::regclass);
-                                                      pg_get_viewdef                                                       
----------------------------------------------------------------------------------------------------------------------------
-  SELECT aggfns(multi_arg_agg.a, multi_arg_agg.b, multi_arg_agg.c ORDER BY multi_arg_agg.c USING ~<~ NULLS LAST) AS aggfns+
+                          pg_get_viewdef                           
+-------------------------------------------------------------------
+  SELECT aggfns(a, b, c ORDER BY c USING ~<~ NULLS LAST) AS aggfns+
     FROM multi_arg_agg;
 (1 row)
 
@@ -2453,7 +2541,9 @@ select string_agg(v, decode('ee', 'hex')) from bytea_test_table;
 --Testcase 447:
 drop foreign table bytea_test_table;
 -- Test parallel string_agg and array_agg
+--Testcase 723:
 create foreign table pagg_test (x int, y int) server sqlite_svr;
+--Testcase 724:
 insert into pagg_test
 select (case x % 4 when 1 then null else x end), x % 10
 from generate_series(1,5000) x;
@@ -2464,6 +2554,7 @@ set min_parallel_table_scan_size = 0;
 set bytea_output = 'escape';
 set max_parallel_workers_per_gather = 2;
 -- create a view as we otherwise have to repeat this query a few times.
+--Testcase 725:
 create view v_pagg_test AS
 select
 	y,
@@ -2491,6 +2582,7 @@ from (
 ) a2
 group by y;
 -- Ensure results are correct.
+--Testcase 726:
 select * from v_pagg_test order by y;
  y | tmin | tmax | tndistinct | bmin | bmax | bndistinct | amin | amax | andistinct | aamin | aamax | aandistinct 
 ---+------+------+------------+------+------+------------+------+------+------------+-------+-------+-------------
@@ -2507,13 +2599,14 @@ select * from v_pagg_test order by y;
 (10 rows)
 
 -- Ensure parallel aggregation is actually being used.
+--Testcase 727:
 explain (costs off) select * from v_pagg_test order by y;
-                       QUERY PLAN                        
----------------------------------------------------------
+                                                              QUERY PLAN                                                              
+--------------------------------------------------------------------------------------------------------------------------------------
  GroupAggregate
    Group Key: pagg_test.y
    ->  Sort
-         Sort Key: pagg_test.y
+         Sort Key: pagg_test.y, (((unnest(regexp_split_to_array((string_agg((pagg_test.x)::text, ','::text)), ','::text))))::integer)
          ->  Result
                ->  ProjectSet
                      ->  GroupAggregate
@@ -2523,6 +2616,7 @@ explain (costs off) select * from v_pagg_test order by y;
 
 set max_parallel_workers_per_gather = 0;
 -- Ensure results are the same without parallel aggregation.
+--Testcase 728:
 select * from v_pagg_test order by y;
  y | tmin | tmax | tndistinct | bmin | bmax | bndistinct | amin | amax | andistinct | aamin | aamax | aandistinct 
 ---+------+------+------------+------+------+------------+------+------+------------+-------+-------+-------------
@@ -2545,7 +2639,9 @@ reset min_parallel_table_scan_size;
 reset parallel_leader_participation;
 reset parallel_tuple_cost;
 reset parallel_setup_cost;
+--Testcase 729:
 drop view v_pagg_test;
+--Testcase 730:
 drop foreign table pagg_test;
 -- FILTER tests
 --Testcase 158:
@@ -2604,13 +2700,17 @@ from agg_t17;
  a
 (1 row)
 
+--Testcase 731:
 create foreign table agg_t170(v int) server sqlite_svr;
+--Testcase 732:
 insert into agg_t170(v) values (1), (2), (3);
+--Testcase 733:
 select any_value(v) filter (where v > 2) from agg_t170;
-ERROR:  function any_value(integer) does not exist
-LINE 1: select any_value(v) filter (where v > 2) from agg_t170;
-               ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+ any_value 
+-----------
+         3
+(1 row)
+
 -- outer reference in FILTER (PostgreSQL extension)
 --Testcase 451:
 create foreign table agg_t18 (inner_c int) server sqlite_svr;
@@ -3092,15 +3192,15 @@ select ten,
  group by ten order by ten;
 --Testcase 196:
 select pg_get_viewdef('aggordview1');
-                                                        pg_get_viewdef                                                         
--------------------------------------------------------------------------------------------------------------------------------
-  SELECT tenk1.ten,                                                                                                           +
-     percentile_disc((0.5)::double precision) WITHIN GROUP (ORDER BY tenk1.thousand) AS p50,                                  +
-     percentile_disc((0.5)::double precision) WITHIN GROUP (ORDER BY tenk1.thousand) FILTER (WHERE (tenk1.hundred = 1)) AS px,+
-     rank(5, 'AZZZZ'::name, 50) WITHIN GROUP (ORDER BY tenk1.hundred, tenk1.string4 DESC, tenk1.hundred) AS rank              +
-    FROM tenk1                                                                                                                +
-   GROUP BY tenk1.ten                                                                                                         +
-   ORDER BY tenk1.ten;
+                                                  pg_get_viewdef                                                   
+-------------------------------------------------------------------------------------------------------------------
+  SELECT ten,                                                                                                     +
+     percentile_disc((0.5)::double precision) WITHIN GROUP (ORDER BY thousand) AS p50,                            +
+     percentile_disc((0.5)::double precision) WITHIN GROUP (ORDER BY thousand) FILTER (WHERE (hundred = 1)) AS px,+
+     rank(5, 'AZZZZ'::name, 50) WITHIN GROUP (ORDER BY hundred, string4 DESC, hundred) AS rank                    +
+    FROM tenk1                                                                                                    +
+   GROUP BY ten                                                                                                   +
+   ORDER BY ten;
 (1 row)
 
 --Testcase 197:
@@ -3293,8 +3393,8 @@ insert into agg_t10 values (1), (3);
 --Testcase 514:
 select my_avg(distinct one),my_sum(one) from agg_t10;
 NOTICE:  avg_transfn called with 1
-NOTICE:  avg_transfn called with 3
 NOTICE:  avg_transfn called with 1
+NOTICE:  avg_transfn called with 3
 NOTICE:  avg_transfn called with 3
  my_avg | my_sum 
 --------+--------
@@ -3511,6 +3611,185 @@ SELECT balk(hundred) FROM tenk1;
 (1 row)
 
 ROLLBACK;
+-- GROUP BY optimization by reordering GROUP BY clauses
+--Testcase 766:
+CREATE FOREIGN TABLE btg_groupby(x int, y int, z text, w int) SERVER sqlite_svr;
+--Testcase 767:
+INSERT INTO btg_groupby 
+  SELECT
+    i % 10 AS x,
+    i % 10 AS y,
+    'abc' || i % 10 AS z,
+    i AS w
+  FROM generate_series(1, 100) AS i;
+-- CREATE INDEX is not supported for foreign tables.
+-- CREATE INDEX btg_x_y_idx ON btg_groupby(x, y);
+-- ANALYZE btg_groupby;
+SET enable_hashagg = off;
+SET enable_seqscan = off;
+-- Because CREATE INDEX is not supported for foreign tables, 
+-- we cannot utilize the ordering of index scan to avoid a Sort operation
+-- Utilize the ordering of index scan to avoid a Sort operation
+--Testcase 768:
+EXPLAIN (COSTS OFF)
+SELECT count(*) FROM btg_groupby GROUP BY y, x;
+  QUERY PLAN  
+--------------
+ Foreign Scan
+(1 row)
+
+-- Engage incremental sort
+--Testcase 769:
+EXPLAIN (COSTS OFF)
+SELECT count(*) FROM btg_groupby GROUP BY z, y, w, x;
+  QUERY PLAN  
+--------------
+ Foreign Scan
+(1 row)
+
+-- Utilize the ordering of subquery scan to avoid a Sort operation
+--Testcase 770:
+EXPLAIN (COSTS OFF) SELECT count(*)
+FROM (SELECT * FROM btg_groupby ORDER BY x, y, w, z) AS q1
+GROUP BY w, x, z, y;
+                               QUERY PLAN                                
+-------------------------------------------------------------------------
+ GroupAggregate
+   Group Key: btg_groupby.x, btg_groupby.y, btg_groupby.w, btg_groupby.z
+   ->  Foreign Scan on btg_groupby
+(3 rows)
+
+-- Utilize the ordering of merge join to avoid a full Sort operation
+SET enable_hashjoin = off;
+SET enable_nestloop = off;
+--Testcase 771:
+EXPLAIN (COSTS OFF)
+SELECT count(*)
+  FROM btg_groupby t1 JOIN btg_groupby t2 ON t1.z = t2.z AND t1.w = t2.w AND t1.x = t2.x
+  GROUP BY t1.x, t1.y, t1.z, t1.w;
+  QUERY PLAN  
+--------------
+ Foreign Scan
+(1 row)
+
+RESET enable_nestloop;
+RESET enable_hashjoin;
+-- Should work with and without GROUP-BY optimization
+--Testcase 772:
+EXPLAIN (COSTS OFF)
+SELECT count(*) FROM btg_groupby GROUP BY w, x, z, y ORDER BY y, x, z, w;
+  QUERY PLAN  
+--------------
+ Foreign Scan
+(1 row)
+
+-- Utilize incremental sort to make the ORDER BY rule a bit cheaper
+--Testcase 773:
+EXPLAIN (COSTS OFF)
+SELECT count(*) FROM btg_groupby GROUP BY w, x, y, z ORDER BY x*x, z;
+  QUERY PLAN  
+--------------
+ Foreign Scan
+(1 row)
+
+-- Test the case where the number of incoming subtree path keys is more than
+-- the number of grouping keys.
+-- CREATE INDEX btg_y_x_w_idx ON btg_groupby(y, x, w);
+--Testcase 774:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT y, x, array_agg(distinct w)
+  FROM btg_groupby WHERE y < 0 GROUP BY x, y;
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ GroupAggregate
+   Output: y, x, array_agg(DISTINCT w)
+   Group Key: btg_groupby.x, btg_groupby.y
+   ->  Foreign Scan on public.btg_groupby
+         Output: x, y, z, w
+         SQLite query: SELECT `x`, `y`, `w` FROM main."btg_groupby" WHERE ((`y` < 0)) ORDER BY `x` ASC NULLS LAST, `y` ASC NULLS LAST, `w` ASC NULLS LAST
+(6 rows)
+
+-- Ensure that we do not select the aggregate pathkeys instead of the grouping
+-- pathkeys
+--Testcase 775:
+CREATE FOREIGN TABLE group_agg_pk(x int, y int, z int, w int, f int) SERVER sqlite_svr;
+--Testcase 776:
+INSERT INTO group_agg_pk SELECT
+  i % 10 AS x,
+  i % 2 AS y,
+  i % 2 AS z,
+  2 AS w,
+  i % 10 AS f
+FROM generate_series(1,100) AS i;
+-- ANALYZE group_agg_pk;
+SET enable_nestloop = off;
+SET enable_hashjoin = off;
+--Testcase 777:
+EXPLAIN (COSTS OFF)
+SELECT avg(c1.f ORDER BY c1.x, c1.y)
+FROM group_agg_pk c1 JOIN group_agg_pk c2 ON c1.x = c2.x
+GROUP BY c1.w, c1.z;
+       QUERY PLAN        
+-------------------------
+ GroupAggregate
+   Group Key: c1.w, c1.z
+   ->  Foreign Scan
+(3 rows)
+
+--Testcase 778:
+SELECT avg(c1.f ORDER BY c1.x, c1.y)
+FROM group_agg_pk c1 JOIN group_agg_pk c2 ON c1.x = c2.x
+GROUP BY c1.w, c1.z;
+        avg         
+--------------------
+ 4.0000000000000000
+ 5.0000000000000000
+(2 rows)
+
+-- Pathkeys, built in a subtree, can be used to optimize GROUP-BY clause
+-- ordering.  Also, here we check that it doesn't depend on the initial clause
+-- order in the GROUP-BY list.
+--Testcase 780:
+EXPLAIN (COSTS OFF)
+SELECT c1.y,c1.x FROM group_agg_pk c1
+  JOIN group_agg_pk c2
+  ON c1.x = c2.x
+GROUP BY c1.y,c1.x,c2.x;
+  QUERY PLAN  
+--------------
+ Foreign Scan
+(1 row)
+
+--Testcase 781:
+EXPLAIN (COSTS OFF)
+SELECT c1.y,c1.x FROM group_agg_pk c1
+  JOIN group_agg_pk c2
+  ON c1.x = c2.x
+GROUP BY c1.y,c2.x,c1.x;
+  QUERY PLAN  
+--------------
+ Foreign Scan
+(1 row)
+
+RESET enable_nestloop;
+RESET enable_hashjoin;
+--Testcase 779:
+DROP FOREIGN TABLE group_agg_pk;
+-- -- CREATE UNIQUE INDEX is not supported for foreign table
+-- -- Test the case where the ordering of the scan matches the ordering within the
+-- -- aggregate but cannot be found in the group-by list
+-- CREATE TABLE agg_sort_order (c1 int PRIMARY KEY, c2 int);
+-- CREATE UNIQUE INDEX agg_sort_order_c2_idx ON agg_sort_order(c2);
+-- INSERT INTO agg_sort_order SELECT i, i FROM generate_series(1,100)i;
+-- ANALYZE agg_sort_order;
+-- EXPLAIN (COSTS OFF)
+-- SELECT array_agg(c1 ORDER BY c2),c2
+-- FROM agg_sort_order WHERE c2 < 100 GROUP BY c1 ORDER BY 2;
+-- DROP TABLE agg_sort_order CASCADE;
+--Testcase 678:
+DROP FOREIGN TABLE btg_groupby;
+RESET enable_hashagg;
+RESET enable_seqscan;
 -- Secondly test the case of a parallel aggregate combiner function
 -- returning NULL. For that use normal transition function, but a
 -- combiner function returning NULL.
@@ -3546,12 +3825,14 @@ CREATE AGGREGATE balk(int4)
 ROLLBACK;
 -- test multiple usage of an aggregate whose finalfn returns a R/W datum
 BEGIN;
+--Testcase 754:
 CREATE FUNCTION rwagg_sfunc(x anyarray, y anyarray) RETURNS anyarray
 LANGUAGE plpgsql IMMUTABLE AS $$
 BEGIN
     RETURN array_fill(y[1], ARRAY[4]);
 END;
 $$;
+--Testcase 755:
 CREATE FUNCTION rwagg_finalfunc(x anyarray) RETURNS anyarray
 LANGUAGE plpgsql STRICT IMMUTABLE AS $$
 DECLARE
@@ -3562,11 +3843,13 @@ BEGIN
     RETURN res;
 END;
 $$;
+--Testcase 756:
 CREATE AGGREGATE rwagg(anyarray) (
     STYPE = anyarray,
     SFUNC = rwagg_sfunc,
     FINALFUNC = rwagg_finalfunc
 );
+--Testcase 757:
 CREATE FUNCTION eatarray(x real[]) RETURNS real[]
 LANGUAGE plpgsql STRICT IMMUTABLE AS $$
 BEGIN
@@ -3574,8 +3857,11 @@ BEGIN
     RETURN x;
 END;
 $$;
+--Testcase 758:
 CREATE FOREIGN TABLE float_tb(f real) SERVER sqlite_svr;
+--Testcase 759:
 INSERT INTO float_tb(f)  VALUES (1.0);
+--Testcase 760:
 SELECT eatarray(rwagg(ARRAY[f::real])), eatarray(rwagg(ARRAY[f::real])) FROM float_tb;
  eatarray  | eatarray  
 -----------+-----------
@@ -3750,16 +4036,10 @@ set enable_memoize to off;
 explain (costs off)
   select 1 from tenk1
    where (hundred, thousand) in (select twothousand, twothousand from onek);
-                      QUERY PLAN                       
--------------------------------------------------------
- Hash Join
-   Hash Cond: (onek.twothousand = tenk1.hundred)
-   ->  HashAggregate
-         Group Key: onek.twothousand, onek.twothousand
-         ->  Foreign Scan on onek
-   ->  Hash
-         ->  Foreign Scan on tenk1
-(7 rows)
+  QUERY PLAN  
+--------------
+ Foreign Scan
+(1 row)
 
 --Testcase 642:
 reset enable_memoize;
@@ -3984,12 +4264,19 @@ set work_mem to default;
 ----+----+----
 (0 rows)
 
+<<<<<<<< HEAD:expected/15.7/extra/aggregates.out
 --Testcase 712:
 DELETE FROM INT4_TBL;
 --Testcase 713:
 DELETE FROM INT8_TBL;
 --Testcase 714:
 DELETE FROM FLOAT8_TBL;
+========
+--Testcase 792:
+DELETE FROM INT4_TBL;
+--Testcase 793:
+DELETE FROM INT8_TBL;
+>>>>>>>> origin/master:expected/17.0/extra/aggregates.out
 -- Clean up
 DO $d$
 declare

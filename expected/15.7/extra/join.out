@@ -58,6 +58,7 @@ CREATE FOREIGN TABLE tenk2 (
 ) SERVER sqlite_svr;
 --Testcase 366:
 CREATE FOREIGN TABLE INT4_TBL(f1 int4 OPTIONS (key 'true')) SERVER sqlite_svr;
+<<<<<<<< HEAD:expected/15.7/extra/join.out
 --Testcase 545:
 INSERT INTO INT4_TBL(f1) VALUES ('   0  ');
 --Testcase 546:
@@ -79,12 +80,36 @@ INSERT INTO FLOAT8_TBL(f1) VALUES ('   -34.84');
 --Testcase 553:
 INSERT INTO FLOAT8_TBL(f1) VALUES ('1.2345678901234e+200');
 --Testcase 554:
+========
+--Testcase 641:
+INSERT INTO INT4_TBL(f1) VALUES ('   0  ');
+--Testcase 642:
+INSERT INTO INT4_TBL(f1) VALUES ('123456     ');
+--Testcase 643:
+INSERT INTO INT4_TBL(f1) VALUES ('    -123456');
+--Testcase 644:
+INSERT INTO INT4_TBL(f1) VALUES ('2147483647');
+--Testcase 645:
+INSERT INTO INT4_TBL(f1) VALUES ('-2147483647');
+--Testcase 367:
+CREATE FOREIGN TABLE FLOAT8_TBL(f1 float8 OPTIONS (key 'true')) SERVER sqlite_svr;
+--Testcase 646:
+INSERT INTO FLOAT8_TBL(f1) VALUES ('    0.0   ');
+--Testcase 647:
+INSERT INTO FLOAT8_TBL(f1) VALUES ('1004.30  ');
+--Testcase 648:
+INSERT INTO FLOAT8_TBL(f1) VALUES ('   -34.84');
+--Testcase 649:
+INSERT INTO FLOAT8_TBL(f1) VALUES ('1.2345678901234e+200');
+--Testcase 650:
+>>>>>>>> origin/master:expected/17.0/extra/join.out
 INSERT INTO FLOAT8_TBL(f1) VALUES ('1.2345678901234e-200');
 --Testcase 368:
 CREATE FOREIGN TABLE INT8_TBL(
   q1 int8 OPTIONS (key 'true'),
   q2 int8 OPTIONS (key 'true')
 ) SERVER sqlite_svr;
+<<<<<<<< HEAD:expected/15.7/extra/join.out
 --Testcase 555:
 INSERT INTO INT8_TBL VALUES('  123   ','  456');
 --Testcase 556:
@@ -94,6 +119,17 @@ INSERT INTO INT8_TBL VALUES('4567890123456789','123');
 --Testcase 558:
 INSERT INTO INT8_TBL VALUES(+4567890123456789,'4567890123456789');
 --Testcase 559:
+========
+--Testcase 651:
+INSERT INTO INT8_TBL VALUES('  123   ','  456');
+--Testcase 652:
+INSERT INTO INT8_TBL VALUES('123   ','4567890123456789');
+--Testcase 653:
+INSERT INTO INT8_TBL VALUES('4567890123456789','123');
+--Testcase 654:
+INSERT INTO INT8_TBL VALUES(+4567890123456789,'4567890123456789');
+--Testcase 655:
+>>>>>>>> origin/master:expected/17.0/extra/join.out
 INSERT INTO INT8_TBL VALUES('+4567890123456789','-4567890123456789');
 --Testcase 369:
 CREATE FOREIGN TABLE INT2_TBL(f1 int2 OPTIONS (key 'true')) SERVER sqlite_svr;
@@ -1768,7 +1804,7 @@ SELECT *
 ERROR:  invalid reference to FROM-clause entry for table "j1_tbl"
 LINE 2:   FROM (J1_TBL JOIN J2_TBL USING (i)) AS x WHERE J1_TBL.t = ...
                                                          ^
-HINT:  There is an entry for table "j1_tbl", but it cannot be referenced from this part of the query.
+DETAIL:  There is an entry for table "j1_tbl", but it cannot be referenced from this part of the query.
 --Testcase 492:
 SELECT *
   FROM J1_TBL JOIN J2_TBL USING (i) AS x WHERE x.i = 1;  -- ok
@@ -1911,12 +1947,12 @@ SELECT *
  i | j |   t   | i | k 
 ---+---+-------+---+---
  1 | 4 | one   | 2 | 2
- 1 | 4 | one   | 2 | 4
  2 | 3 | two   | 2 | 2
+ 0 |   | zero  | 2 | 2
+ 1 | 4 | one   | 2 | 4
  2 | 3 | two   | 2 | 4
  3 | 2 | three | 2 | 4
  4 | 1 | four  | 2 | 4
- 0 |   | zero  | 2 | 2
  0 |   | zero  | 2 | 4
  0 |   | zero  |   | 0
 (9 rows)
@@ -2069,15 +2105,19 @@ select * from int4_tbl i4, tenk1 a
 where exists(select * from tenk1 b
              where a.twothousand = b.twothousand and a.fivethous <> b.fivethous)
       and i4.f1 = a.tenthous;
-                  QUERY PLAN                  
-----------------------------------------------
- Hash Semi Join
-   Hash Cond: (a.twothousand = b.twothousand)
-   Join Filter: (a.fivethous <> b.fivethous)
-   ->  Foreign Scan
+                        QUERY PLAN                        
+----------------------------------------------------------
+ Hash Join
+   Hash Cond: (i4.f1 = a.tenthous)
+   ->  Foreign Scan on int4_tbl i4
    ->  Hash
-         ->  Foreign Scan on tenk1 b
-(6 rows)
+         ->  Hash Semi Join
+               Hash Cond: (a.twothousand = b.twothousand)
+               Join Filter: (a.fivethous <> b.fivethous)
+               ->  Foreign Scan on tenk1 a
+               ->  Hash
+                     ->  Foreign Scan on tenk1 b
+(10 rows)
 
 --
 -- More complicated constructs
@@ -2091,6 +2131,25 @@ CREATE FOREIGN TABLE t11 (name TEXT, n INTEGER) SERVER sqlite_svr;
 CREATE FOREIGN TABLE t21 (name TEXT, n INTEGER) SERVER sqlite_svr;
 --Testcase 374:
 CREATE FOREIGN TABLE t31 (name TEXT, n INTEGER) SERVER sqlite_svr;
+--Testcase 483:
+CREATE FOREIGN TABLE onek (
+  unique1   int4 OPTIONS (key 'true'),
+  unique2   int4,
+  two     int4,
+  four    int4,
+  ten     int4,
+  twenty    int4,
+  hundred   int4,
+  thousand  int4,
+  twothousand int4,
+  fivethous int4,
+  tenthous  int4,
+  odd     int4,
+  even    int4,
+  stringu1  name,
+  stringu2  name,
+  string4   name
+) SERVER sqlite_svr;
 --Testcase 53:
 INSERT INTO t11 VALUES ( 'bb', 11 );
 --Testcase 54:
@@ -2520,8 +2579,8 @@ order by 1, 2;
 (5 rows)
 
 --
--- regression test: check a case where join_clause_is_movable_into() gives
--- an imprecise result, causing an assertion failure
+-- regression test: check a case where join_clause_is_movable_into()
+-- used to give an imprecise result, causing an assertion failure
 --
 --Testcase 96:
 select count(*)
@@ -2572,6 +2631,317 @@ where b.f1 = t.thousand and a.f1 = b.f1 and (a.f1+b.f1+999) = t.tenthous;
  f1 | f1 | thousand | tenthous 
 ----+----+----------+----------
 (0 rows)
+
+--
+-- checks for correct handling of quals in multiway outer joins
+--
+--Testcase 545:
+explain (costs off)
+select t1.f1
+from int4_tbl t1, int4_tbl t2
+  left join int4_tbl t3 on t3.f1 > 0
+  left join int4_tbl t4 on t3.f1 > 1
+where t4.f1 is null;
+               QUERY PLAN                
+-----------------------------------------
+ Nested Loop
+   ->  Foreign Scan
+   ->  Materialize
+         ->  Foreign Scan on int4_tbl t1
+(4 rows)
+
+--Testcase 546:
+select t1.f1
+from int4_tbl t1, int4_tbl t2
+  left join int4_tbl t3 on t3.f1 > 0
+  left join int4_tbl t4 on t3.f1 > 1
+where t4.f1 is null;
+ f1 
+----
+(0 rows)
+
+--Testcase 547:
+explain (costs off)
+select *
+from int4_tbl t1 left join int4_tbl t2 on true
+  left join int4_tbl t3 on t2.f1 > 0
+  left join int4_tbl t4 on t3.f1 > 0;
+                        QUERY PLAN                         
+-----------------------------------------------------------
+ Nested Loop Left Join
+   ->  Foreign Scan on int4_tbl t1
+   ->  Materialize
+         ->  Nested Loop Left Join
+               Join Filter: (t3.f1 > 0)
+               ->  Nested Loop Left Join
+                     Join Filter: (t2.f1 > 0)
+                     ->  Foreign Scan on int4_tbl t2
+                     ->  Materialize
+                           ->  Foreign Scan on int4_tbl t3
+               ->  Materialize
+                     ->  Foreign Scan on int4_tbl t4
+(12 rows)
+
+--Testcase 548:
+explain (costs off)
+select * from onek t1
+  left join onek t2 on t1.unique1 = t2.unique1
+  left join onek t3 on t2.unique1 != t3.unique1
+  left join onek t4 on t3.unique1 = t4.unique1;
+                QUERY PLAN                 
+-------------------------------------------
+ Nested Loop Left Join
+   Join Filter: (t2.unique1 <> t3.unique1)
+   ->  Foreign Scan
+   ->  Materialize
+         ->  Foreign Scan
+(5 rows)
+
+--Testcase 549:
+explain (costs off)
+select * from int4_tbl t1
+  left join (select now() from int4_tbl t2
+             left join int4_tbl t3 on t2.f1 = t3.f1
+             left join int4_tbl t4 on t3.f1 = t4.f1) s on true
+  inner join int4_tbl t5 on true;
+                              QUERY PLAN                               
+-----------------------------------------------------------------------
+ Nested Loop
+   ->  Nested Loop Left Join
+         ->  Foreign Scan on int4_tbl t1
+         ->  Materialize
+               ->  Merge Left Join
+                     Merge Cond: (t2.f1 = t3.f1)
+                     ->  Sort
+                           Sort Key: t2.f1
+                           ->  Foreign Scan on int4_tbl t2
+                     ->  Materialize
+                           ->  Merge Left Join
+                                 Merge Cond: (t3.f1 = t4.f1)
+                                 ->  Sort
+                                       Sort Key: t3.f1
+                                       ->  Foreign Scan on int4_tbl t3
+                                 ->  Sort
+                                       Sort Key: t4.f1
+                                       ->  Foreign Scan on int4_tbl t4
+   ->  Materialize
+         ->  Foreign Scan on int4_tbl t5
+(20 rows)
+
+--Testcase 550:
+explain (costs off)
+select * from int4_tbl t1
+  left join int4_tbl t2 on true
+  left join int4_tbl t3 on true
+  left join int4_tbl t4 on t2.f1 = t3.f1;
+  QUERY PLAN  
+--------------
+ Foreign Scan
+(1 row)
+
+--Testcase 551:
+explain (costs off)
+select * from int4_tbl t1
+  left join int4_tbl t2 on true
+  left join int4_tbl t3 on t2.f1 = t3.f1
+  left join int4_tbl t4 on t3.f1 != t4.f1;
+                        QUERY PLAN                         
+-----------------------------------------------------------
+ Nested Loop Left Join
+   ->  Foreign Scan on int4_tbl t1
+   ->  Materialize
+         ->  Nested Loop Left Join
+               Join Filter: (t3.f1 <> t4.f1)
+               ->  Merge Left Join
+                     Merge Cond: (t2.f1 = t3.f1)
+                     ->  Sort
+                           Sort Key: t2.f1
+                           ->  Foreign Scan on int4_tbl t2
+                     ->  Sort
+                           Sort Key: t3.f1
+                           ->  Foreign Scan on int4_tbl t3
+               ->  Materialize
+                     ->  Foreign Scan on int4_tbl t4
+(15 rows)
+
+--Testcase 552:
+explain (costs off)
+select * from int4_tbl t1
+  left join (int4_tbl t2 left join int4_tbl t3 on t2.f1 > 0) on t2.f1 > 1
+  left join int4_tbl t4 on t2.f1 > 2 and t3.f1 > 3
+where t1.f1 = coalesce(t2.f1, 1);
+                  QUERY PLAN                   
+-----------------------------------------------
+ Nested Loop Left Join
+   Join Filter: ((t2.f1 > 2) AND (t3.f1 > 3))
+   ->  Nested Loop Left Join
+         Join Filter: (t2.f1 > 0)
+         ->  Foreign Scan
+         ->  Materialize
+               ->  Foreign Scan on int4_tbl t3
+   ->  Materialize
+         ->  Foreign Scan on int4_tbl t4
+(9 rows)
+
+--Testcase 553:
+explain (costs off)
+select * from int4_tbl t1
+  left join ((select t2.f1 from int4_tbl t2
+                left join int4_tbl t3 on t2.f1 > 0
+                where t3.f1 is null) s
+             left join tenk1 t4 on s.f1 > 1)
+    on s.f1 = t1.f1;
+                 QUERY PLAN                 
+--------------------------------------------
+ Hash Right Join
+   Hash Cond: (t2.f1 = t1.f1)
+   ->  Nested Loop Left Join
+         Join Filter: (t2.f1 > 1)
+         ->  Foreign Scan
+         ->  Materialize
+               ->  Foreign Scan on tenk1 t4
+   ->  Hash
+         ->  Foreign Scan on int4_tbl t1
+(9 rows)
+
+--Testcase 554:
+explain (costs off)
+select * from int4_tbl t1
+  left join ((select t2.f1 from int4_tbl t2
+                left join int4_tbl t3 on t2.f1 > 0
+                where t2.f1 <> coalesce(t3.f1, -1)) s
+             left join tenk1 t4 on s.f1 > 1)
+    on s.f1 = t1.f1;
+                           QUERY PLAN                            
+-----------------------------------------------------------------
+ Hash Right Join
+   Hash Cond: (t2.f1 = t1.f1)
+   ->  Nested Loop Left Join
+         Join Filter: (t2.f1 > 1)
+         ->  Nested Loop Left Join
+               Join Filter: (t2.f1 > 0)
+               Filter: (t2.f1 <> COALESCE(t3.f1, '-1'::integer))
+               ->  Foreign Scan on int4_tbl t2
+               ->  Materialize
+                     ->  Foreign Scan on int4_tbl t3
+         ->  Materialize
+               ->  Foreign Scan on tenk1 t4
+   ->  Hash
+         ->  Foreign Scan on int4_tbl t1
+(14 rows)
+
+--Testcase 555:
+explain (costs off)
+select * from onek t1
+    left join onek t2 on t1.unique1 = t2.unique1
+    left join onek t3 on t2.unique1 = t3.unique1
+    left join onek t4 on t3.unique1 = t4.unique1 and t2.unique2 = t4.unique2;
+                               QUERY PLAN                               
+------------------------------------------------------------------------
+ Hash Left Join
+   Hash Cond: ((t3.unique1 = t4.unique1) AND (t2.unique2 = t4.unique2))
+   ->  Hash Left Join
+         Hash Cond: (t2.unique1 = t3.unique1)
+         ->  Foreign Scan
+         ->  Hash
+               ->  Foreign Scan on onek t3
+   ->  Hash
+         ->  Foreign Scan on onek t4
+(9 rows)
+
+--Testcase 556:
+explain (costs off)
+select * from int8_tbl t1 left join
+    (int8_tbl t2 left join int8_tbl t3 full join int8_tbl t4 on false on false)
+    left join int8_tbl t5 on t2.q1 = t5.q1
+on t2.q2 = 123;
+                        QUERY PLAN                         
+-----------------------------------------------------------
+ Nested Loop Left Join
+   ->  Foreign Scan on int8_tbl t1
+   ->  Materialize
+         ->  Hash Right Join
+               Hash Cond: (t5.q1 = t2.q1)
+               ->  Foreign Scan on int8_tbl t5
+               ->  Hash
+                     ->  Nested Loop Left Join
+                           Join Filter: false
+                           ->  Foreign Scan on int8_tbl t2
+                           ->  Result
+                                 One-Time Filter: false
+(12 rows)
+
+--Testcase 557:
+explain (costs off)
+select * from int8_tbl t1
+    left join int8_tbl t2 on true
+    left join lateral
+      (select * from int8_tbl t3 where t3.q1 = t2.q1 offset 0) s
+      on t2.q1 = 1;
+                  QUERY PLAN                   
+-----------------------------------------------
+ Nested Loop Left Join
+   ->  Foreign Scan on int8_tbl t1
+   ->  Materialize
+         ->  Nested Loop Left Join
+               Join Filter: (t2.q1 = 1)
+               ->  Foreign Scan on int8_tbl t2
+               ->  Foreign Scan on int8_tbl t3
+(7 rows)
+
+--Testcase 558:
+explain (costs off)
+select * from int8_tbl t1
+    left join int8_tbl t2 on true
+    left join lateral
+      (select * from generate_series(t2.q1, 100)) s
+      on t2.q1 = 1;
+                     QUERY PLAN                     
+----------------------------------------------------
+ Nested Loop Left Join
+   ->  Foreign Scan on int8_tbl t1
+   ->  Materialize
+         ->  Nested Loop Left Join
+               Join Filter: (t2.q1 = 1)
+               ->  Foreign Scan on int8_tbl t2
+               ->  Function Scan on generate_series
+(7 rows)
+
+--Testcase 559:
+explain (costs off)
+select * from int8_tbl t1
+    left join int8_tbl t2 on true
+    left join lateral
+      (select t2.q1 from int8_tbl t3) s
+      on t2.q1 = 1;
+                  QUERY PLAN                   
+-----------------------------------------------
+ Nested Loop Left Join
+   ->  Foreign Scan on int8_tbl t1
+   ->  Materialize
+         ->  Nested Loop Left Join
+               Join Filter: (t2.q1 = 1)
+               ->  Foreign Scan on int8_tbl t2
+               ->  Foreign Scan on int8_tbl t3
+(7 rows)
+
+--Testcase 560:
+explain (costs off)
+select * from onek t1
+    left join onek t2 on true
+    left join lateral
+      (select * from onek t3 where t3.two = t2.two offset 0) s
+      on t2.unique1 = 1;
+                 QUERY PLAN                  
+---------------------------------------------
+ Nested Loop Left Join
+   ->  Foreign Scan on onek t1
+   ->  Materialize
+         ->  Nested Loop Left Join
+               Join Filter: (t2.unique1 = 1)
+               ->  Foreign Scan on onek t2
+               ->  Foreign Scan on onek t3
+(7 rows)
 
 --
 -- check a case where we formerly got confused by conflicting sort orders
@@ -2655,6 +3025,28 @@ select count(*) from
  10000
 (1 row)
 
+set enable_hashjoin = 0;
+set enable_nestloop = 0;
+set enable_hashagg = 0;
+--
+-- Check that we use the pathkeys from a prefix of the group by / order by
+-- clause for the join pathkeys when that prefix covers all join quals.  We
+-- expect this to lead to an incremental sort for the group by / order by.
+--
+--Testcase 561:
+explain (costs off)
+select x.thousand, x.twothousand, count(*)
+from tenk1 x inner join tenk1 y on x.thousand = y.thousand
+group by x.thousand, x.twothousand
+order by x.thousand desc, x.twothousand;
+  QUERY PLAN  
+--------------
+ Foreign Scan
+(1 row)
+
+reset enable_hashagg;
+reset enable_nestloop;
+reset enable_hashjoin;
 --
 -- Clean up
 --
@@ -2829,6 +3221,66 @@ reset enable_hashjoin;
 --Testcase 504:
 reset enable_nestloop;
 --
+-- regression test for bug #18522 (merge-right-anti-join in inner_unique cases)
+--
+--Testcase 637:
+create foreign table tbl_ra(a int options (key 'true'), b int) server sqlite_svr;
+--Testcase 638:
+insert into tbl_ra select i, i%100 from generate_series(1,1000)i;
+-- CREATE INDEX, ANALYZE are not supported for foreign tables.
+-- create index on tbl_ra (b);
+-- analyze tbl_ra;
+set enable_hashjoin to off;
+set enable_nestloop to off;
+-- Because CREATE INDEX is not supported for foreign tables, 
+-- we cannot use this index to create a merge right anti join plan
+-- ensure we get a merge right anti join
+--Testcase 639:
+explain (costs off)
+select * from tbl_ra t1
+where not exists (select 1 from tbl_ra t2 where t2.b = t1.a) and t1.b < 2;
+              QUERY PLAN               
+---------------------------------------
+ Merge Anti Join
+   Merge Cond: (t1.a = t2.b)
+   ->  Sort
+         Sort Key: t1.a
+         ->  Foreign Scan on tbl_ra t1
+   ->  Sort
+         Sort Key: t2.b
+         ->  Foreign Scan on tbl_ra t2
+(8 rows)
+
+-- and check we get the expected results
+--Testcase 640:
+select * from tbl_ra t1
+where not exists (select 1 from tbl_ra t2 where t2.b = t1.a) and t1.b < 2;
+  a   | b 
+------+---
+  100 | 0
+  101 | 1
+  200 | 0
+  201 | 1
+  300 | 0
+  301 | 1
+  400 | 0
+  401 | 1
+  500 | 0
+  501 | 1
+  600 | 0
+  601 | 1
+  700 | 0
+  701 | 1
+  800 | 0
+  801 | 1
+  900 | 0
+  901 | 1
+ 1000 | 0
+(19 rows)
+
+reset enable_hashjoin;
+reset enable_nestloop;
+--
 -- regression test for bug #13908 (hash join with skew tuples & nbatch increase)
 --
 --Testcase 505:
@@ -2871,21 +3323,100 @@ insert into tt3 select x, repeat('xyzzy', 100) from generate_series(1,10000) x;
 create foreign table tt4(f1 int) server sqlite_svr;
 --Testcase 130:
 insert into tt4 values (0),(1),(9999);
---Testcase 131:
+set enable_nestloop to off;
+--Testcase 562:
+EXPLAIN (COSTS OFF)
 SELECT a.f1
 FROM tt4 a
 LEFT JOIN (
         SELECT b.f1
         FROM tt3 b LEFT JOIN tt3 c ON (b.f1 = c.f1)
-        WHERE c.f1 IS NULL
+        WHERE COALESCE(c.f1, 0) = 0
 ) AS d ON (a.f1 = d.f1)
-WHERE d.f1 IS NULL;
+WHERE COALESCE(d.f1, 0) = 0
+ORDER BY 1;
+  QUERY PLAN  
+--------------
+ Foreign Scan
+(1 row)
+
+--Testcase 563:
+SELECT a.f1
+FROM tt4 a
+LEFT JOIN (
+        SELECT b.f1
+        FROM tt3 b LEFT JOIN tt3 c ON (b.f1 = c.f1)
+        WHERE COALESCE(c.f1, 0) = 0
+) AS d ON (a.f1 = d.f1)
+WHERE COALESCE(d.f1, 0) = 0
+ORDER BY 1;
   f1  
 ------
     0
     1
  9999
 (3 rows)
+
+reset enable_nestloop;
+--
+-- basic semijoin and antijoin recognition tests
+--
+--Testcase 564:
+explain (costs off)
+select a.* from tenk1 a
+where unique1 in (select unique2 from tenk1 b);
+  QUERY PLAN  
+--------------
+ Foreign Scan
+(1 row)
+
+-- sadly, this is not an antijoin
+--Testcase 565:
+explain (costs off)
+select a.* from tenk1 a
+where unique1 not in (select unique2 from tenk1 b);
+                        QUERY PLAN                         
+-----------------------------------------------------------
+ Foreign Scan on tenk1 a
+   Filter: (NOT (ANY (unique1 = (hashed SubPlan 1).col1)))
+   SubPlan 1
+     ->  Foreign Scan on tenk1 b
+(4 rows)
+
+--Testcase 566:
+explain (costs off)
+select a.* from tenk1 a
+where exists (select 1 from tenk1 b where a.unique1 = b.unique2);
+  QUERY PLAN  
+--------------
+ Foreign Scan
+(1 row)
+
+--Testcase 567:
+explain (costs off)
+select a.* from tenk1 a
+where not exists (select 1 from tenk1 b where a.unique1 = b.unique2);
+              QUERY PLAN              
+--------------------------------------
+ Hash Anti Join
+   Hash Cond: (a.unique1 = b.unique2)
+   ->  Foreign Scan on tenk1 a
+   ->  Hash
+         ->  Foreign Scan on tenk1 b
+(5 rows)
+
+--Testcase 568:
+explain (costs off)
+select a.* from tenk1 a left join tenk1 b on a.unique1 = b.unique2
+where b.unique2 is null;
+              QUERY PLAN              
+--------------------------------------
+ Hash Anti Join
+   Hash Cond: (a.unique1 = b.unique2)
+   ->  Foreign Scan on tenk1 a
+   ->  Hash
+         ->  Foreign Scan on tenk1 b
+(5 rows)
 
 --
 -- regression test for proper handling of outer joins within antijoins
@@ -3444,7 +3975,7 @@ where i41.f1 > 0;
    ->  Nested Loop
          ->  Foreign Scan on int4_tbl i41
          ->  Nested Loop
-               Join Filter: (i41.f1 = i42.f1)
+               Join Filter: (i42.f1 = i41.f1)
                ->  Foreign Scan on int8_tbl i81
                ->  Materialize
                      ->  Foreign Scan on int4_tbl i42
@@ -3619,19 +4150,19 @@ select t1.unique2, t1.stringu1, t2.unique1, t2.stringu2 from
   left join tenk1 t2
   on (subq1.y1 = t2.unique1)
 where t1.unique2 < 42 and t1.stringu1 > t2.stringu2;
-                     QUERY PLAN                      
------------------------------------------------------
- Hash Join
-   Hash Cond: (t2.unique1 = (3))
-   Join Filter: (t1.stringu1 > t2.stringu2)
-   ->  Foreign Scan
-   ->  Hash
+                                QUERY PLAN                                 
+---------------------------------------------------------------------------
+ Nested Loop
+   ->  Nested Loop
+         Join Filter: ((t1.stringu1 > t2.stringu2) AND ((3) = t2.unique1))
          ->  Nested Loop
                Join Filter: ((11) = t1.unique2)
                ->  Nested Loop
                      ->  Seq Scan on onerow
                      ->  Seq Scan on onerow onerow_1
                ->  Foreign Scan on tenk1 t1
+         ->  Foreign Scan on tenk1 t2
+   ->  Foreign Scan on int4_tbl i1
 (11 rows)
 
 --Testcase 188:
@@ -3794,7 +4325,67 @@ where b;
  0 | t | t
 (2 rows)
 
-  
+-- Test PHV in a semijoin qual, which confused useless-RTE removal (bug #17700)
+--Testcase 569:
+explain (verbose, costs off)
+with ctetable as not materialized ( select 1 as f1 )
+select * from ctetable c1
+where f1 in ( select c3.f1 from ctetable c2 full join ctetable c3 on true );
+         QUERY PLAN         
+----------------------------
+ Result
+   Output: 1
+   One-Time Filter: (1 = 1)
+(3 rows)
+
+--Testcase 570:
+with ctetable as not materialized ( select 1 as f1 )
+select * from ctetable c1
+where f1 in ( select c3.f1 from ctetable c2 full join ctetable c3 on true );
+ f1 
+----
+  1
+(1 row)
+
+-- Test PHV that winds up in a Result node, despite having nonempty nullingrels
+--Testcase 571:
+explain (verbose, costs off)
+select table_catalog, table_name
+from int4_tbl t1
+  inner join (int8_tbl t2
+              left join information_schema.column_udt_usage on null)
+  on null;
+                                                    QUERY PLAN                                                     
+-------------------------------------------------------------------------------------------------------------------
+ Result
+   Output: (current_database())::information_schema.sql_identifier, (c.relname)::information_schema.sql_identifier
+   One-Time Filter: false
+(3 rows)
+
+-- Test handling of qual pushdown to appendrel members with non-Var outputs
+--Testcase 572:
+explain (verbose, costs off)
+select * from int4_tbl left join (
+  select text 'foo' union all select text 'bar'
+) ss(x) on true
+where ss.x is null;
+                       QUERY PLAN                       
+--------------------------------------------------------
+ Nested Loop Left Join
+   Output: int4_tbl.f1, ('foo'::text)
+   Filter: (('foo'::text) IS NULL)
+   ->  Foreign Scan on public.int4_tbl
+         Output: int4_tbl.f1
+         SQLite query: SELECT `f1` FROM main."int4_tbl"
+   ->  Materialize
+         Output: ('foo'::text)
+         ->  Append
+               ->  Result
+                     Output: 'foo'::text
+               ->  Result
+                     Output: 'bar'::text
+(13 rows)
+
 --
 -- test inlining of immutable functions
 --
@@ -3982,6 +4573,42 @@ select * from mki4(42);
 drop function mki8(bigint, bigint);
 --Testcase 442:
 drop function mki4(int);
+-- test const-folding of a whole-row Var into a per-field Var
+-- (need to inline a function to reach this case, else parser does it)
+--Testcase 632:
+create function f_field_select(t onek) returns int4 as
+$$ select t.unique2; $$ language sql immutable;
+--Testcase 633:
+explain (verbose, costs off)
+select (t2.*).unique1, f_field_select(t2) from tenk1 t1
+    left join onek t2 on t1.unique1 = t2.unique1
+    left join int8_tbl t3 on true;
+                                   QUERY PLAN                                   
+--------------------------------------------------------------------------------
+ Nested Loop Left Join
+   Output: t2.unique1, t2.unique2
+   ->  Merge Right Join
+         Output: t2.unique1, t2.unique2
+         Merge Cond: (t2.unique1 = t1.unique1)
+         ->  Sort
+               Output: t2.unique1, t2.unique2
+               Sort Key: t2.unique1
+               ->  Foreign Scan on public.onek t2
+                     Output: t2.unique1, t2.unique2
+                     SQLite query: SELECT `unique1`, `unique2` FROM main."onek"
+         ->  Sort
+               Output: t1.unique1
+               Sort Key: t1.unique1
+               ->  Foreign Scan on public.tenk1 t1
+                     Output: t1.unique1
+                     SQLite query: SELECT `unique1` FROM main."tenk1"
+   ->  Materialize
+         ->  Foreign Scan on public.int8_tbl t3
+               SQLite query: SELECT NULL FROM main."int8_tbl"
+(20 rows)
+
+--Testcase 634:
+drop function f_field_select(t onek);
 --
 -- test extraction of restriction OR clauses from join OR clause
 -- (we used to only do this for indexable clauses)
@@ -4046,15 +4673,10 @@ select * from tenk1 t1 left join
   (tenk1 t2 join tenk1 t3 on t2.thousand = t3.unique2)
   on t1.hundred = t2.hundred and t1.ten + t2.ten = t3.ten
 where t1.unique1 = 1;
-                 QUERY PLAN                  
----------------------------------------------
- Hash Right Join
-   Hash Cond: (t2.hundred = t1.hundred)
-   Join Filter: ((t1.ten + t2.ten) = t3.ten)
-   ->  Foreign Scan
-   ->  Hash
-         ->  Foreign Scan on tenk1 t1
-(6 rows)
+  QUERY PLAN  
+--------------
+ Foreign Scan
+(1 row)
 
 --Testcase 195:
 explain (costs off)
@@ -4178,11 +4800,11 @@ explain (costs off)
 select q1, unique2, thousand, hundred
   from int8_tbl a left join tenk1 b on q1 = unique2
   where coalesce(thousand,123) = q1 and q1 = coalesce(hundred,123);
-                                      QUERY PLAN                                      
---------------------------------------------------------------------------------------
+                                                QUERY PLAN                                                
+----------------------------------------------------------------------------------------------------------
  Merge Right Join
    Merge Cond: (b.unique2 = a.q1)
-   Filter: ((COALESCE(b.thousand, 123) = a.q1) AND (a.q1 = COALESCE(b.hundred, 123)))
+   Filter: ((COALESCE(b.thousand, 123) = COALESCE(b.hundred, 123)) AND (a.q1 = COALESCE(b.hundred, 123)))
    ->  Sort
          Sort Key: b.unique2
          ->  Foreign Scan on tenk1 b
@@ -4234,10 +4856,9 @@ explain (costs off)
 select a.unique1, b.unique1, c.unique1, coalesce(b.twothousand, a.twothousand)
   from tenk1 a left join tenk1 b on b.thousand = a.unique1                        left join tenk1 c on c.unique2 = coalesce(b.twothousand, a.twothousand)
   where a.unique2 < 10 and coalesce(b.twothousand, a.twothousand) = 44;
-                            QUERY PLAN                             
--------------------------------------------------------------------
- Hash Left Join
-   Hash Cond: (COALESCE(b.twothousand, a.twothousand) = c.unique2)
+                          QUERY PLAN                           
+---------------------------------------------------------------
+ Nested Loop Left Join
    ->  Merge Left Join
          Merge Cond: (a.unique1 = b.thousand)
          Filter: (COALESCE(b.twothousand, a.twothousand) = 44)
@@ -4247,9 +4868,9 @@ select a.unique1, b.unique1, c.unique1, coalesce(b.twothousand, a.twothousand)
          ->  Sort
                Sort Key: b.thousand
                ->  Foreign Scan on tenk1 b
-   ->  Hash
+   ->  Materialize
          ->  Foreign Scan on tenk1 c
-(13 rows)
+(12 rows)
 
 --Testcase 208:
 select a.unique1, b.unique1, c.unique1, coalesce(b.twothousand, a.twothousand)
@@ -4258,6 +4879,44 @@ select a.unique1, b.unique1, c.unique1, coalesce(b.twothousand, a.twothousand)
  unique1 | unique1 | unique1 | coalesce 
 ---------+---------+---------+----------
 (0 rows)
+
+-- related case
+--Testcase 573:
+explain (costs off)
+select * from int8_tbl t1 left join int8_tbl t2 on t1.q2 = t2.q1,
+  lateral (select * from int8_tbl t3 where t2.q1 = t2.q2) ss;
+                     QUERY PLAN                      
+-----------------------------------------------------
+ Nested Loop
+   ->  Foreign Scan on int8_tbl t3
+   ->  Materialize
+         ->  Merge Left Join
+               Merge Cond: (t1.q2 = t2.q1)
+               Filter: (t2.q1 = t2.q2)
+               ->  Sort
+                     Sort Key: t1.q2
+                     ->  Foreign Scan on int8_tbl t1
+               ->  Sort
+                     Sort Key: t2.q1
+                     ->  Foreign Scan on int8_tbl t2
+(12 rows)
+
+--Testcase 574:
+select * from int8_tbl t1 left join int8_tbl t2 on t1.q2 = t2.q1,
+  lateral (select * from int8_tbl t3 where t2.q1 = t2.q2) ss;
+        q1        |        q2        |        q1        |        q2        |        q1        |        q2         
+------------------+------------------+------------------+------------------+------------------+-------------------
+              123 | 4567890123456789 | 4567890123456789 | 4567890123456789 |              123 |               456
+ 4567890123456789 | 4567890123456789 | 4567890123456789 | 4567890123456789 |              123 |               456
+              123 | 4567890123456789 | 4567890123456789 | 4567890123456789 |              123 |  4567890123456789
+ 4567890123456789 | 4567890123456789 | 4567890123456789 | 4567890123456789 |              123 |  4567890123456789
+              123 | 4567890123456789 | 4567890123456789 | 4567890123456789 | 4567890123456789 |               123
+ 4567890123456789 | 4567890123456789 | 4567890123456789 | 4567890123456789 | 4567890123456789 |               123
+              123 | 4567890123456789 | 4567890123456789 | 4567890123456789 | 4567890123456789 |  4567890123456789
+ 4567890123456789 | 4567890123456789 | 4567890123456789 | 4567890123456789 | 4567890123456789 |  4567890123456789
+              123 | 4567890123456789 | 4567890123456789 | 4567890123456789 | 4567890123456789 | -4567890123456789
+ 4567890123456789 | 4567890123456789 | 4567890123456789 | 4567890123456789 | 4567890123456789 | -4567890123456789
+(10 rows)
 
 --
 -- check handling of join aliases when flattening multiple levels of subquery
@@ -4321,6 +4980,69 @@ using (join_key);
        0 |       0 |       666
        1 |         |          
 (2 rows)
+
+--
+-- check handling of a variable-free join alias
+--
+--Testcase 575:
+explain (verbose, costs off)
+select * from
+int4_tbl i0 left join
+( (select *, 123 as x from int4_tbl i1) ss1
+  left join
+  (select *, q2 as x from int8_tbl i2) ss2
+  using (x)
+) ss0
+on (i0.f1 = ss0.f1)
+order by i0.f1, x;
+                                                QUERY PLAN                                                 
+-----------------------------------------------------------------------------------------------------------
+ Incremental Sort
+   Output: i0.f1, ('123'::bigint), i1.f1, i2.q1, i2.q2
+   Sort Key: i0.f1, ('123'::bigint)
+   Presorted Key: i0.f1
+   ->  Merge Left Join
+         Output: i0.f1, ('123'::bigint), i1.f1, i2.q1, i2.q2
+         Merge Cond: (i0.f1 = i1.f1)
+         ->  Sort
+               Output: i0.f1
+               Sort Key: i0.f1
+               ->  Foreign Scan on public.int4_tbl i0
+                     Output: i0.f1
+                     SQLite query: SELECT `f1` FROM main."int4_tbl"
+         ->  Sort
+               Output: i1.f1, i2.q1, i2.q2, ('123'::bigint)
+               Sort Key: i1.f1
+               ->  Nested Loop Left Join
+                     Output: i1.f1, i2.q1, i2.q2, '123'::bigint
+                     ->  Foreign Scan on public.int4_tbl i1
+                           Output: i1.f1
+                           SQLite query: SELECT `f1` FROM main."int4_tbl"
+                     ->  Materialize
+                           Output: i2.q1, i2.q2
+                           ->  Foreign Scan on public.int8_tbl i2
+                                 Output: i2.q1, i2.q2
+                                 SQLite query: SELECT `q1`, `q2` FROM main."int8_tbl" WHERE ((123 = `q2`))
+(26 rows)
+
+--Testcase 576:
+select * from
+int4_tbl i0 left join
+( (select *, 123 as x from int4_tbl i1) ss1
+  left join
+  (select *, q2 as x from int8_tbl i2) ss2
+  using (x)
+) ss0
+on (i0.f1 = ss0.f1)
+order by i0.f1, x;
+     f1      |  x  |     f1      |        q1        | q2  
+-------------+-----+-------------+------------------+-----
+ -2147483647 | 123 | -2147483647 | 4567890123456789 | 123
+     -123456 | 123 |     -123456 | 4567890123456789 | 123
+           0 | 123 |           0 | 4567890123456789 | 123
+      123456 | 123 |      123456 | 4567890123456789 | 123
+  2147483647 | 123 |  2147483647 | 4567890123456789 | 123
+(5 rows)
 
 --
 -- test successful handling of nested outer joins with degenerate join quals
@@ -4639,6 +5361,55 @@ select * from
  doh! | 123 | 456 | hi de ho neighbor |   
 (2 rows)
 
+-- check handling of a variable-free qual for a non-commutable outer join
+--Testcase 577:
+explain (costs off)
+select nspname
+from (select 1 as x) ss1
+left join
+( select n.nspname, c.relname
+  from pg_class c left join pg_namespace n on n.oid = c.relnamespace
+  where c.relkind = 'r'
+) ss2 on false;
+           QUERY PLAN           
+--------------------------------
+ Nested Loop Left Join
+   Join Filter: false
+   ->  Result
+   ->  Result
+         One-Time Filter: false
+(5 rows)
+
+-- check handling of apparently-commutable outer joins with non-commutable
+-- joins between them
+--Testcase 578:
+explain (costs off)
+select 1 from
+  int4_tbl i4
+  left join int8_tbl i8 on i4.f1 is not null
+  left join (select 1 as a) ss1 on null
+  join int4_tbl i42 on ss1.a is null or i8.q1 <> i8.q2
+  right join (select 2 as b) ss2
+  on ss2.b < i4.f1;
+                        QUERY PLAN                         
+-----------------------------------------------------------
+ Nested Loop Left Join
+   ->  Result
+   ->  Nested Loop
+         ->  Nested Loop Left Join
+               Join Filter: NULL::boolean
+               Filter: (((1) IS NULL) OR (i8.q1 <> i8.q2))
+               ->  Nested Loop Left Join
+                     Join Filter: (i4.f1 IS NOT NULL)
+                     ->  Foreign Scan on int4_tbl i4
+                     ->  Materialize
+                           ->  Foreign Scan on int8_tbl i8
+               ->  Result
+                     One-Time Filter: false
+         ->  Materialize
+               ->  Foreign Scan on int4_tbl i42
+(15 rows)
+
 --
 -- test for appropriate join order in the presence of lateral references
 --
@@ -4650,18 +5421,25 @@ select * from
   on i8.q2 = 123,
   lateral (select i8.q1, t2.f1 from text_tbl t2 limit 1) as ss
 where t1.f1 = ss.f1;
-                                                              QUERY PLAN                                                              
---------------------------------------------------------------------------------------------------------------------------------------
+                                          QUERY PLAN                                           
+-----------------------------------------------------------------------------------------------
  Nested Loop
    Output: t1.f1, i8.q1, i8.q2, (i8.q1), t2.f1
    Join Filter: (t1.f1 = t2.f1)
-   ->  Foreign Scan
+   ->  Nested Loop Left Join
          Output: t1.f1, i8.q1, i8.q2
-         SQLite query: SELECT r1.`f1`, r2.`q1`, r2.`q2` FROM (main."text_tbl" r1 LEFT JOIN main."int8_tbl" r2 ON (((r2.`q2` = 123))))
+         ->  Foreign Scan on public.text_tbl t1
+               Output: t1.f1
+               SQLite query: SELECT `f1` FROM main."text_tbl"
+         ->  Materialize
+               Output: i8.q1, i8.q2
+               ->  Foreign Scan on public.int8_tbl i8
+                     Output: i8.q1, i8.q2
+                     SQLite query: SELECT `q1`, `q2` FROM main."int8_tbl" WHERE ((`q2` = 123))
    ->  Foreign Scan on public.text_tbl t2
          Output: i8.q1, t2.f1
          SQLite query: SELECT `f1` FROM main."text_tbl" LIMIT 1
-(9 rows)
+(16 rows)
 
 --Testcase 220:
 select * from
@@ -4684,16 +5462,23 @@ select * from
   lateral (select i8.q1, t2.f1 from text_tbl t2 limit 1) as ss1,
   lateral (select ss1.* from text_tbl t3 limit 1) as ss2
 where t1.f1 = ss2.f1;
-                                                                 QUERY PLAN                                                                 
---------------------------------------------------------------------------------------------------------------------------------------------
+                                             QUERY PLAN                                              
+-----------------------------------------------------------------------------------------------------
  Nested Loop
    Output: t1.f1, i8.q1, i8.q2, (i8.q1), t2.f1, ((i8.q1)), (t2.f1)
    Join Filter: (t1.f1 = (t2.f1))
    ->  Nested Loop
          Output: t1.f1, i8.q1, i8.q2, (i8.q1), t2.f1
-         ->  Foreign Scan
+         ->  Nested Loop Left Join
                Output: t1.f1, i8.q1, i8.q2
-               SQLite query: SELECT r1.`f1`, r2.`q1`, r2.`q2` FROM (main."text_tbl" r1 LEFT JOIN main."int8_tbl" r2 ON (((r2.`q2` = 123))))
+               ->  Foreign Scan on public.text_tbl t1
+                     Output: t1.f1
+                     SQLite query: SELECT `f1` FROM main."text_tbl"
+               ->  Materialize
+                     Output: i8.q1, i8.q2
+                     ->  Foreign Scan on public.int8_tbl i8
+                           Output: i8.q1, i8.q2
+                           SQLite query: SELECT `q1`, `q2` FROM main."int8_tbl" WHERE ((`q2` = 123))
          ->  Foreign Scan on public.text_tbl t2
                Output: i8.q1, t2.f1
                SQLite query: SELECT `f1` FROM main."text_tbl" LIMIT 1
@@ -4704,7 +5489,7 @@ where t1.f1 = ss2.f1;
          ->  Foreign Scan on public.text_tbl t3
                Output: (i8.q1), t2.f1
                SQLite query: SELECT NULL FROM main."text_tbl" LIMIT 1
-(18 rows)
+(25 rows)
 
 --Testcase 222:
 select * from
@@ -4728,33 +5513,42 @@ select 1 from
   left join text_tbl as tt4 on (tt3.f1 = tt4.f1),
   lateral (select tt4.f1 as c0 from text_tbl as tt5 limit 1) as ss1
 where tt1.f1 = ss1.c0;
-                                                         QUERY PLAN                                                          
------------------------------------------------------------------------------------------------------------------------------
+                                              QUERY PLAN                                               
+-------------------------------------------------------------------------------------------------------
  Nested Loop
    Output: 1
-   ->  Nested Loop Left Join
+   ->  Hash Left Join
          Output: tt1.f1, tt4.f1
-         ->  Foreign Scan
-               Output: tt1.f1
-               SQLite query: SELECT r1.`f1` FROM (main."text_tbl" r1 INNER JOIN main."text_tbl" r2 ON (((r1.`f1` = 'foo'))))
-         ->  Hash Left Join
-               Output: tt4.f1
-               Hash Cond: (tt3.f1 = tt4.f1)
-               ->  Foreign Scan on public.text_tbl tt3
+         Hash Cond: (tt3.f1 = tt4.f1)
+         ->  Nested Loop Left Join
+               Output: tt1.f1, tt3.f1
+               ->  Nested Loop
+                     Output: tt1.f1
+                     ->  Foreign Scan on public.text_tbl tt2
+                           Output: tt2.f1
+                           SQLite query: SELECT NULL FROM main."text_tbl"
+                     ->  Materialize
+                           Output: tt1.f1
+                           ->  Foreign Scan on public.text_tbl tt1
+                                 Output: tt1.f1
+                                 SQLite query: SELECT `f1` FROM main."text_tbl" WHERE ((`f1` = 'foo'))
+               ->  Materialize
                      Output: tt3.f1
-                     SQLite query: SELECT `f1` FROM main."text_tbl" WHERE ((`f1` = 'foo'))
-               ->  Hash
-                     Output: tt4.f1
-                     ->  Foreign Scan on public.text_tbl tt4
-                           Output: tt4.f1
+                     ->  Foreign Scan on public.text_tbl tt3
+                           Output: tt3.f1
                            SQLite query: SELECT `f1` FROM main."text_tbl" WHERE ((`f1` = 'foo'))
+         ->  Hash
+               Output: tt4.f1
+               ->  Foreign Scan on public.text_tbl tt4
+                     Output: tt4.f1
+                     SQLite query: SELECT `f1` FROM main."text_tbl" WHERE ((`f1` = 'foo'))
    ->  Subquery Scan on ss1
          Output: ss1.c0
          Filter: (ss1.c0 = 'foo'::text)
          ->  Foreign Scan on public.text_tbl tt5
                Output: tt4.f1
                SQLite query: SELECT NULL FROM main."text_tbl" LIMIT 1
-(24 rows)
+(33 rows)
 
 --Testcase 224:
 select 1 from
@@ -4768,6 +5562,59 @@ where tt1.f1 = ss1.c0;
 ----------
 (0 rows)
 
+--Testcase 579:
+explain (verbose, costs off)
+select 1 from
+  int4_tbl as i4
+  inner join
+    ((select 42 as n from int4_tbl x1 left join int8_tbl x2 on f1 = q1) as ss1
+     right join (select 1 as z) as ss2 on true)
+  on false,
+  lateral (select i4.f1, ss1.n from int8_tbl as i8 limit 1) as ss3;
+        QUERY PLAN        
+--------------------------
+ Result
+   Output: 1
+   One-Time Filter: false
+(3 rows)
+
+--Testcase 580:
+select 1 from
+  int4_tbl as i4
+  inner join
+    ((select 42 as n from int4_tbl x1 left join int8_tbl x2 on f1 = q1) as ss1
+     right join (select 1 as z) as ss2 on true)
+  on false,
+  lateral (select i4.f1, ss1.n from int8_tbl as i8 limit 1) as ss3;
+ ?column? 
+----------
+(0 rows)
+
+--
+-- check a case where we formerly generated invalid parameterized paths
+--
+begin;
+--Testcase 630:
+CREATE FOREIGN TABLE t (a int options (key 'true')) SERVER sqlite_svr;
+--Testcase 631:
+explain (costs off)
+select 1 from t t1
+  join lateral (select t1.a from (select 1) foo offset 0) as s1 on true
+  join
+    (select 1 from t t2
+       inner join (t t3
+                   left join (t t4 left join t t5 on t4.a = 1)
+                   on t3.a = t4.a)
+       on false
+     where t3.a = coalesce(t5.a,1)) as s2
+  on true;
+        QUERY PLAN        
+--------------------------
+ Result
+   One-Time Filter: false
+(2 rows)
+
+rollback;
 --
 -- check a case in which a PlaceHolderVar forces join order
 --
@@ -4875,27 +5722,22 @@ explain (costs off)
   select * from int4_tbl a left join tenk1 b on f1 = unique2 where f1 = 0;
              QUERY PLAN              
 -------------------------------------
- Hash Left Join
-   Hash Cond: (a.f1 = b.unique2)
+ Nested Loop Left Join
    ->  Foreign Scan on int4_tbl a
-   ->  Hash
+   ->  Materialize
          ->  Foreign Scan on tenk1 b
-(5 rows)
+(4 rows)
 
 --Testcase 230:
 explain (costs off)
   select * from tenk1 a full join tenk1 b using(unique2) where unique2 = 42;
-              QUERY PLAN               
----------------------------------------
+             QUERY PLAN              
+-------------------------------------
  Merge Full Join
-   Merge Cond: (a.unique2 = b.unique2)
-   ->  Sort
-         Sort Key: a.unique2
-         ->  Foreign Scan on tenk1 a
-   ->  Sort
-         Sort Key: b.unique2
+   ->  Foreign Scan on tenk1 a
+   ->  Materialize
          ->  Foreign Scan on tenk1 b
-(8 rows)
+(4 rows)
 
 --
 -- test that quals attached to an outer join have correct semantics,
@@ -4953,6 +5795,136 @@ select a.q2, b.q1
 reset enable_hashjoin;
 --Testcase 521:
 reset enable_nestloop;
+--
+-- test join strength reduction with a SubPlan providing the proof
+--
+--Testcase 581:
+explain (costs off)
+select a.unique1, b.unique2
+  from onek a left join onek b on a.unique1 = b.unique2
+  where (b.unique2, random() > 0) = any (select q1, random() > 0 from int8_tbl c where c.q1 < b.unique1);
+                                                       QUERY PLAN                                                       
+------------------------------------------------------------------------------------------------------------------------
+ Merge Join
+   Merge Cond: (b.unique2 = a.unique1)
+   ->  Sort
+         Sort Key: b.unique2
+         ->  Foreign Scan on onek b
+               Filter: (ANY ((unique2 = (SubPlan 1).col1) AND ((random() > '0'::double precision) = (SubPlan 1).col2)))
+               SubPlan 1
+                 ->  Foreign Scan on int8_tbl c
+   ->  Sort
+         Sort Key: a.unique1
+         ->  Foreign Scan on onek a
+(11 rows)
+
+--Testcase 582:
+select a.unique1, b.unique2
+  from onek a left join onek b on a.unique1 = b.unique2
+  where (b.unique2, random() > 0) = any (select q1, random() > 0 from int8_tbl c where c.q1 < b.unique1);
+ unique1 | unique2 
+---------+---------
+     123 |     123
+(1 row)
+
+--
+-- test full-join strength reduction
+--
+--Testcase 583:
+explain (costs off)
+select a.unique1, b.unique2
+  from onek a full join onek b on a.unique1 = b.unique2
+  where a.unique1 = 42;
+             QUERY PLAN             
+------------------------------------
+ Nested Loop Left Join
+   ->  Foreign Scan on onek a
+   ->  Materialize
+         ->  Foreign Scan on onek b
+(4 rows)
+
+--Testcase 584:
+select a.unique1, b.unique2
+  from onek a full join onek b on a.unique1 = b.unique2
+  where a.unique1 = 42;
+ unique1 | unique2 
+---------+---------
+      42 |      42
+(1 row)
+
+--Testcase 585:
+explain (costs off)
+select a.unique1, b.unique2
+  from onek a full join onek b on a.unique1 = b.unique2
+  where b.unique2 = 43;
+             QUERY PLAN             
+------------------------------------
+ Nested Loop Left Join
+   ->  Foreign Scan on onek b
+   ->  Materialize
+         ->  Foreign Scan on onek a
+(4 rows)
+
+--Testcase 586:
+select a.unique1, b.unique2
+  from onek a full join onek b on a.unique1 = b.unique2
+  where b.unique2 = 43;
+ unique1 | unique2 
+---------+---------
+      43 |      43
+(1 row)
+
+--Testcase 587:
+explain (costs off)
+select a.unique1, b.unique2
+  from onek a full join onek b on a.unique1 = b.unique2
+  where a.unique1 = 42 and b.unique2 = 42;
+             QUERY PLAN             
+------------------------------------
+ Nested Loop
+   ->  Foreign Scan on onek a
+   ->  Materialize
+         ->  Foreign Scan on onek b
+(4 rows)
+
+--Testcase 588:
+select a.unique1, b.unique2
+  from onek a full join onek b on a.unique1 = b.unique2
+  where a.unique1 = 42 and b.unique2 = 42;
+ unique1 | unique2 
+---------+---------
+      42 |      42
+(1 row)
+
+--
+-- test result-RTE removal underneath a full join
+--
+--Testcase 589:
+explain (costs off)
+select * from
+  (select * from int8_tbl i81 join (values(123,2)) v(v1,v2) on q2=v1) ss1
+full join
+  (select * from (values(456,2)) w(v1,v2) join int8_tbl i82 on q2=v1) ss2
+on true;
+                QUERY PLAN                
+------------------------------------------
+ Merge Full Join
+   ->  Foreign Scan on int8_tbl i81
+   ->  Materialize
+         ->  Foreign Scan on int8_tbl i82
+(4 rows)
+
+--Testcase 590:
+select * from
+  (select * from int8_tbl i81 join (values(123,2)) v(v1,v2) on q2=v1) ss1
+full join
+  (select * from (values(456,2)) w(v1,v2) join int8_tbl i82 on q2=v1) ss2
+on true;
+        q1        | q2  | v1  | v2 | v1  | v2 | q1  | q2  
+------------------+-----+-----+----+-----+----+-----+-----
+ 4567890123456789 | 123 | 123 |  2 | 456 |  2 | 123 | 456
+(1 row)
+
 --
 -- test join removal
 --
@@ -5049,6 +6021,251 @@ select id from a3 where id in (
                            ->  Foreign Scan on c3
 (14 rows)
 
+-- check optimization with oddly-nested outer joins
+--Testcase 591:
+explain (costs off)
+select a31.id from
+  (a3 a31 left join a3 a32 on true)
+  left join
+  (a3 a33 left join a3 a34 on a33.id = a34.id)
+  on a32.id = a33.id;
+                         QUERY PLAN                         
+------------------------------------------------------------
+ Nested Loop Left Join
+   ->  Foreign Scan on a3 a31
+   ->  Materialize
+         ->  Merge Left Join
+               Merge Cond: (a32.id = a33.id)
+               ->  Sort
+                     Sort Key: a32.id
+                     ->  Foreign Scan on a3 a32
+               ->  Materialize
+                     ->  Merge Left Join
+                           Merge Cond: (a33.id = a34.id)
+                           ->  Sort
+                                 Sort Key: a33.id
+                                 ->  Foreign Scan on a3 a33
+                           ->  Sort
+                                 Sort Key: a34.id
+                                 ->  Foreign Scan on a3 a34
+(17 rows)
+
+--Testcase 592:
+explain (costs off)
+select a31.id from
+  (a3 a31 left join a3 a32 on a31.id = a32.id)
+  left join
+  (a3 a33 left join a3 a34 on a33.id = a34.id)
+  on a32.id = a33.id;
+                   QUERY PLAN                   
+------------------------------------------------
+ Merge Right Join
+   Merge Cond: (a33.id = a32.id)
+   ->  Merge Left Join
+         Merge Cond: (a33.id = a34.id)
+         ->  Sort
+               Sort Key: a33.id
+               ->  Foreign Scan on a3 a33
+         ->  Sort
+               Sort Key: a34.id
+               ->  Foreign Scan on a3 a34
+   ->  Sort
+         Sort Key: a32.id
+         ->  Merge Left Join
+               Merge Cond: (a31.id = a32.id)
+               ->  Sort
+                     Sort Key: a31.id
+                     ->  Foreign Scan on a3 a31
+               ->  Sort
+                     Sort Key: a32.id
+                     ->  Foreign Scan on a3 a32
+(20 rows)
+
+--Testcase 593:
+explain (costs off)
+select 1 from a3 t1
+    left join a3 t2 on true
+   inner join a3 t3 on true
+    left join a3 t4 on t2.id = t4.id and t2.id = t3.id;
+                     QUERY PLAN                      
+-----------------------------------------------------
+ Merge Left Join
+   Merge Cond: (t2.id = t4.id)
+   Join Filter: (t2.id = t3.id)
+   ->  Sort
+         Sort Key: t2.id
+         ->  Nested Loop
+               ->  Nested Loop Left Join
+                     ->  Foreign Scan on a3 t1
+                     ->  Materialize
+                           ->  Foreign Scan on a3 t2
+               ->  Materialize
+                     ->  Foreign Scan on a3 t3
+   ->  Sort
+         Sort Key: t4.id
+         ->  Foreign Scan on a3 t4
+(15 rows)
+
+-- another example (bug #17781)
+--Testcase 594:
+explain (costs off)
+select ss1.f1
+from int4_tbl as t1
+  left join (int4_tbl as t2
+             right join int4_tbl as t3 on null
+             left join (int4_tbl as t4
+                        right join int8_tbl as t5 on null)
+               on t2.f1 = t4.f1
+             left join ((select null as f1 from int4_tbl as t6) as ss1
+                        inner join int8_tbl as t7 on null)
+               on t5.q1 = t7.q2)
+    on false;
+            QUERY PLAN             
+-----------------------------------
+ Nested Loop Left Join
+   Join Filter: false
+   ->  Foreign Scan on int4_tbl t1
+   ->  Result
+         One-Time Filter: false
+(5 rows)
+
+-- variant with Var rather than PHV coming from t6
+--Testcase 595:
+explain (costs off)
+select ss1.f1
+from int4_tbl as t1
+  left join (int4_tbl as t2
+             right join int4_tbl as t3 on null
+             left join (int4_tbl as t4
+                        right join int8_tbl as t5 on null)
+               on t2.f1 = t4.f1
+             left join ((select f1 from int4_tbl as t6) as ss1
+                        inner join int8_tbl as t7 on null)
+               on t5.q1 = t7.q2)
+    on false;
+            QUERY PLAN             
+-----------------------------------
+ Nested Loop Left Join
+   Join Filter: false
+   ->  Foreign Scan on int4_tbl t1
+   ->  Result
+         One-Time Filter: false
+(5 rows)
+
+-- per further discussion of bug #17781
+--Testcase 596:
+explain (costs off)
+select ss1.x
+from (select f1/2 as x from int4_tbl i4 left join a3 on a3.id = i4.f1) ss1
+     right join int8_tbl i8 on true
+where current_user is not null;  -- this is to add a Result node
+                        QUERY PLAN                         
+-----------------------------------------------------------
+ Result
+   One-Time Filter: (CURRENT_USER IS NOT NULL)
+   ->  Nested Loop Left Join
+         ->  Foreign Scan on int8_tbl i8
+         ->  Materialize
+               ->  Merge Left Join
+                     Merge Cond: (i4.f1 = a3.id)
+                     ->  Sort
+                           Sort Key: i4.f1
+                           ->  Foreign Scan on int4_tbl i4
+                     ->  Sort
+                           Sort Key: a3.id
+                           ->  Foreign Scan on a3
+(13 rows)
+
+-- and further discussion of bug #17781
+--Testcase 597:
+explain (costs off)
+select *
+from int8_tbl t1
+  left join (int8_tbl t2 left join onek t3 on t2.q1 > t3.unique1)
+    on t1.q2 = t2.q2
+  left join onek t4
+    on t2.q2 < t3.unique2;
+                   QUERY PLAN                    
+-------------------------------------------------
+ Hash Right Join
+   Hash Cond: (t2.q2 = t1.q2)
+   ->  Nested Loop Left Join
+         Join Filter: (t2.q2 < t3.unique2)
+         ->  Nested Loop Left Join
+               Join Filter: (t2.q1 > t3.unique1)
+               ->  Foreign Scan on int8_tbl t2
+               ->  Materialize
+                     ->  Foreign Scan on onek t3
+         ->  Materialize
+               ->  Foreign Scan on onek t4
+   ->  Hash
+         ->  Foreign Scan on int8_tbl t1
+(13 rows)
+
+-- More tests of correct placement of pseudoconstant quals
+-- simple constant-false condition
+--Testcase 598:
+explain (costs off)
+select * from int8_tbl t1 left join
+  (int8_tbl t2 inner join int8_tbl t3 on false
+   left join int8_tbl t4 on t2.q2 = t4.q2)
+on t1.q1 = t2.q1;
+              QUERY PLAN              
+--------------------------------------
+ Hash Left Join
+   Hash Cond: (t1.q1 = q1)
+   ->  Foreign Scan on int8_tbl t1
+   ->  Hash
+         ->  Result
+               One-Time Filter: false
+(6 rows)
+
+-- deduce constant-false from an EquivalenceClass
+--Testcase 599:
+explain (costs off)
+select * from int8_tbl t1 left join
+  (int8_tbl t2 inner join int8_tbl t3 on (t2.q1-t3.q2) = 0 and (t2.q1-t3.q2) = 1
+   left join int8_tbl t4 on t2.q2 = t4.q2)
+on t1.q1 = t2.q1;
+              QUERY PLAN              
+--------------------------------------
+ Hash Left Join
+   Hash Cond: (t1.q1 = q1)
+   ->  Foreign Scan on int8_tbl t1
+   ->  Hash
+         ->  Result
+               One-Time Filter: false
+(6 rows)
+
+-- pseudoconstant based on an outer-level Param
+--Testcase 600:
+explain (costs off)
+select exists(
+  select * from int8_tbl t1 left join
+    (int8_tbl t2 inner join int8_tbl t3 on x0.f1 = 1
+     left join int8_tbl t4 on t2.q2 = t4.q2)
+  on t1.q1 = t2.q1
+) from int4_tbl x0;
+                               QUERY PLAN                                
+-------------------------------------------------------------------------
+ Foreign Scan on int4_tbl x0
+   SubPlan 1
+     ->  Nested Loop Left Join
+           Join Filter: (t2.q2 = t4.q2)
+           ->  Nested Loop Left Join
+                 Join Filter: (t1.q1 = t2.q1)
+                 ->  Foreign Scan on int8_tbl t1
+                 ->  Materialize
+                       ->  Result
+                             One-Time Filter: (x0.f1 = 1)
+                             ->  Nested Loop
+                                   ->  Foreign Scan on int8_tbl t3
+                                   ->  Materialize
+                                         ->  Foreign Scan on int8_tbl t2
+           ->  Materialize
+                 ->  Foreign Scan on int8_tbl t4
+(16 rows)
+
 -- check that join removal works for a left join when joining a subquery
 -- that is guaranteed to be unique by its GROUP BY clause
 --Testcase 241:
@@ -5104,6 +6321,19 @@ select d3.* from d3 left join (select distinct * from b3) s
                      ->  Foreign Scan on b3
 (7 rows)
 
+-- join removal is not possible here
+--Testcase 601:
+explain (costs off)
+select 1 from a3 t1
+  left join (a3 t2 left join a3 t3 on t2.id = 1) on t2.id = 1;
+         QUERY PLAN          
+-----------------------------
+ Nested Loop Left Join
+   ->  Foreign Scan on a3 t1
+   ->  Materialize
+         ->  Foreign Scan
+(4 rows)
+
 -- check join removal works when uniqueness of the join condition is enforced
 -- by a UNION
 --Testcase 245:
@@ -5144,6 +6374,45 @@ select 1 from (select a3.id FROM a3 left join b3 on a3.b_id = b3.id) q,
                ->  Function Scan on generate_series gs
                      Filter: (a3.id = i)
 (11 rows)
+
+-- check join removal within RHS of an outer join
+--Testcase 602:
+explain (costs off)
+select c3.id, ss.a from c3
+  left join (select d3.a from onerow, d3 left join b3 on d3.a = b3.id) ss
+  on c3.id = ss.a;
+                    QUERY PLAN                    
+--------------------------------------------------
+ Merge Left Join
+   Merge Cond: (c3.id = d3.a)
+   ->  Sort
+         Sort Key: c3.id
+         ->  Foreign Scan on c3
+   ->  Materialize
+         ->  Merge Left Join
+               Merge Cond: (d3.a = b3.id)
+               ->  Sort
+                     Sort Key: d3.a
+                     ->  Nested Loop
+                           ->  Seq Scan on onerow
+                           ->  Foreign Scan on d3
+               ->  Sort
+                     Sort Key: b3.id
+                     ->  Foreign Scan on b3
+(16 rows)
+
+--Testcase 603:
+CREATE TEMP TABLE parted_b (id int PRIMARY KEY) partition by range(id);
+--Testcase 604:
+CREATE TEMP TABLE parted_b1 partition of parted_b for values from (0) to (10);
+-- test join removals on a partitioned table
+--Testcase 605:
+explain (costs off)
+select a3.* from a3 left join parted_b pb on a3.b_id = pb.id;
+     QUERY PLAN     
+--------------------
+ Foreign Scan on a3
+(1 row)
 
 rollback;
 --Testcase 448:
@@ -5294,6 +6563,69 @@ SELECT * FROM
  1 | 4567890123456789 |  4567890123456789 | 4567890123456789
 (5 rows)
 
+-- join removal bug #17769: can't remove if there's a pushed-down reference
+--Testcase 606:
+EXPLAIN (COSTS OFF)
+SELECT q2 FROM
+  (SELECT *
+   FROM int8_tbl LEFT JOIN innertab ON q2 = id) ss
+ WHERE COALESCE(dat1, 0) = q1;
+                           QUERY PLAN                           
+----------------------------------------------------------------
+ Merge Left Join
+   Merge Cond: (int8_tbl.q2 = innertab.id)
+   Filter: (COALESCE(innertab.dat1, '0'::bigint) = int8_tbl.q1)
+   ->  Sort
+         Sort Key: int8_tbl.q2
+         ->  Foreign Scan on int8_tbl
+   ->  Sort
+         Sort Key: innertab.id
+         ->  Foreign Scan on innertab
+(9 rows)
+
+-- join removal bug #17773: otherwise-removable PHV appears in a qual condition
+--Testcase 607:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT q2 FROM
+  (SELECT q2, 'constant'::text AS x
+   FROM int8_tbl LEFT JOIN innertab ON q2 = id) ss
+  RIGHT JOIN int4_tbl ON NULL
+ WHERE x >= x;
+                       QUERY PLAN                       
+--------------------------------------------------------
+ Nested Loop Left Join
+   Output: q2
+   Join Filter: NULL::boolean
+   Filter: (('constant'::text) >= ('constant'::text))
+   ->  Foreign Scan on public.int4_tbl
+         Output: int4_tbl.f1
+         SQLite query: SELECT NULL FROM main."int4_tbl"
+   ->  Result
+         Output: q2, 'constant'::text
+         One-Time Filter: false
+(10 rows)
+
+-- join removal bug #17786: check that OR conditions are cleaned up
+--Testcase 608:
+EXPLAIN (COSTS OFF)
+SELECT f1, x
+FROM int4_tbl
+     JOIN ((SELECT 42 AS x FROM int8_tbl LEFT JOIN innertab ON q1 = id) AS ss1
+           RIGHT JOIN tenk1 ON NULL)
+        ON tenk1.unique1 = ss1.x OR tenk1.unique2 = ss1.x;
+                                QUERY PLAN                                
+--------------------------------------------------------------------------
+ Nested Loop
+   ->  Foreign Scan on int4_tbl
+   ->  Materialize
+         ->  Nested Loop Left Join
+               Join Filter: NULL::boolean
+               Filter: ((tenk1.unique1 = (42)) OR (tenk1.unique2 = (42)))
+               ->  Foreign Scan on tenk1
+               ->  Result
+                     One-Time Filter: false
+(9 rows)
+
 rollback;
 -- another join removal bug: we must clean up correctly when removing a PHV
 begin;
@@ -5381,6 +6713,103 @@ where ss.stringu2 !~* ss.case1;
 (1 row)
 
 rollback;
+-- another join removal bug: we must clean up EquivalenceClasses too
+begin;
+--Testcase 609:
+create temp table t (a int unique);
+--Testcase 610:
+insert into t values (1);
+--Testcase 611:
+explain (costs off)
+select 1
+from t t1
+  left join (select 2 as c
+             from t t2 left join t t3 on t2.a = t3.a) s
+    on true
+where t1.a = s.c;
+          QUERY PLAN          
+------------------------------
+ Nested Loop Left Join
+   Filter: (t1.a = (2))
+   ->  Seq Scan on t t1
+   ->  Materialize
+         ->  Seq Scan on t t2
+(5 rows)
+
+--Testcase 612:
+select 1
+from t t1
+  left join (select 2 as c
+             from t t2 left join t t3 on t2.a = t3.a) s
+    on true
+where t1.a = s.c;
+ ?column? 
+----------
+(0 rows)
+
+rollback;
+-- test cases where we can remove a join, but not a PHV computed at it
+begin;
+--Testcase 613:
+create temp table t (a int unique, b int);
+--Testcase 614:
+insert into t values (1,1), (2,2);
+--Testcase 615:
+explain (costs off)
+select 1
+from t t1
+  left join (select t2.a, 1 as c
+             from t t2 left join t t3 on t2.a = t3.a) s
+  on true
+  left join t t4 on true
+where s.a < s.c;
+             QUERY PLAN              
+-------------------------------------
+ Nested Loop Left Join
+   ->  Nested Loop
+         ->  Seq Scan on t t1
+         ->  Materialize
+               ->  Seq Scan on t t2
+                     Filter: (a < 1)
+   ->  Materialize
+         ->  Seq Scan on t t4
+(8 rows)
+
+--Testcase 616:
+explain (costs off)
+select t1.a, s.*
+from t t1
+  left join lateral (select t2.a, coalesce(t1.a, 1) as c
+                     from t t2 left join t t3 on t2.a = t3.a) s
+  on true
+  left join t t4 on true
+where s.a < s.c;
+                  QUERY PLAN                   
+-----------------------------------------------
+ Nested Loop Left Join
+   ->  Nested Loop
+         ->  Seq Scan on t t1
+         ->  Seq Scan on t t2
+               Filter: (a < COALESCE(t1.a, 1))
+   ->  Materialize
+         ->  Seq Scan on t t4
+(7 rows)
+
+--Testcase 617:
+select t1.a, s.*
+from t t1
+  left join lateral (select t2.a, coalesce(t1.a, 1) as c
+                     from t t2 left join t t3 on t2.a = t3.a) s
+  on true
+  left join t t4 on true
+where s.a < s.c;
+ a | a | c 
+---+---+---
+ 2 | 1 | 2
+ 2 | 1 | 2
+(2 rows)
+
+rollback;
 -- test case to expose miscomputation of required relid set for a PHV
 --Testcase 522:
 explain (verbose, costs off)
@@ -5451,7 +6880,7 @@ select * from
 ERROR:  invalid reference to FROM-clause entry for table "y"
 LINE 2: ...bl x join (int4_tbl x cross join int4_tbl y) j on q1 = y.f1;
                                                                   ^
-HINT:  There is an entry for table "y", but it cannot be referenced from this part of the query.
+DETAIL:  There is an entry for table "y", but it cannot be referenced from this part of the query.
 --Testcase 269:
 select * from
   int8_tbl x join (int4_tbl x cross join int4_tbl y(ff)) j on q1 = f1; -- ok
@@ -5483,6 +6912,14 @@ ERROR:  column "uunique1" does not exist
 LINE 1: select uunique1 from
                ^
 HINT:  Perhaps you meant to reference the column "t1.unique1" or the column "t2.unique1".
+--Testcase 618:
+select ctid from
+  tenk1 t1 join tenk2 t2 on t1.two = t2.two; -- error, need qualification
+ERROR:  column "ctid" does not exist
+LINE 1: select ctid from
+               ^
+DETAIL:  There are columns named "ctid", but they are in tables that cannot be referenced from this part of the query.
+HINT:  Try using a table-qualified name.
 --
 -- Take care to reference the correct RTE
 --
@@ -5495,6 +6932,19 @@ select atts.relid::regclass, s.* from pg_stats s join
 ERROR:  column atts.relid does not exist
 LINE 1: select atts.relid::regclass, s.* from pg_stats s join
                ^
+-- Test bug in rangetable flattening
+--Testcase 619:
+explain (verbose, costs off)
+select 1 from
+  (select * from int8_tbl where q1 <> (select 42) offset 0) ss
+where false;
+        QUERY PLAN        
+--------------------------
+ Result
+   Output: 1
+   One-Time Filter: false
+(3 rows)
+
 --
 -- Test LATERAL
 --
@@ -6335,10 +7785,10 @@ select * from
  Nested Loop
    Output: c.q1, c.q2, a.q1, a.q2, b.q1, (COALESCE(b.q2, '42'::bigint)), d.q1, (COALESCE((COALESCE(b.q2, '42'::bigint)), d.q2)), ((COALESCE((COALESCE(b.q2, '42'::bigint)), d.q2)))
    ->  Hash Right Join
-         Output: c.q1, c.q2, a.q1, a.q2, b.q1, d.q1, (COALESCE(b.q2, '42'::bigint)), (COALESCE((COALESCE(b.q2, '42'::bigint)), d.q2))
+         Output: c.q1, c.q2, a.q1, a.q2, b.q1, (COALESCE(b.q2, '42'::bigint)), d.q1, (COALESCE((COALESCE(b.q2, '42'::bigint)), d.q2))
          Hash Cond: (d.q1 = c.q2)
          ->  Nested Loop
-               Output: a.q1, a.q2, b.q1, d.q1, (COALESCE(b.q2, '42'::bigint)), (COALESCE((COALESCE(b.q2, '42'::bigint)), d.q2))
+               Output: a.q1, a.q2, b.q1, (COALESCE(b.q2, '42'::bigint)), d.q1, (COALESCE((COALESCE(b.q2, '42'::bigint)), d.q2))
                ->  Merge Left Join
                      Output: a.q1, a.q2, b.q1, (COALESCE(b.q2, '42'::bigint))
                      Merge Cond: (a.q2 = b.q1)
@@ -6366,6 +7816,41 @@ select * from
          Output: (COALESCE((COALESCE(b.q2, '42'::bigint)), d.q2))
 (32 rows)
 
+-- another case requiring nested PlaceHolderVars
+--Testcase 635:
+explain (verbose, costs off)
+select * from
+  (select 0 as val0 FROM int8_tbl LIMIT 1) as ss0
+  left join (select 1 as val FROM int8_tbl LIMIT 1) as ss1 on true
+  left join lateral (select ss1.val as val_filtered where false) as ss2 on true;
+                              QUERY PLAN                              
+----------------------------------------------------------------------
+ Nested Loop Left Join
+   Output: (0), (1), ((1))
+   Join Filter: false
+   ->  Nested Loop Left Join
+         Output: (0), (1)
+         ->  Foreign Scan on public.int8_tbl
+               Output: 0
+               SQLite query: SELECT NULL FROM main."int8_tbl" LIMIT 1
+         ->  Foreign Scan on public.int8_tbl int8_tbl_1
+               Output: 1
+               SQLite query: SELECT NULL FROM main."int8_tbl" LIMIT 1
+   ->  Result
+         Output: (1)
+         One-Time Filter: false
+(14 rows)
+
+--Testcase 636:
+select * from
+  (select 0 as val0 FROM int8_tbl LIMIT 1) as ss0
+  left join (select 1 as val FROM int8_tbl LIMIT 1) as ss1 on true
+  left join lateral (select ss1.val as val_filtered where false) as ss2 on true;
+ val0 | val | val_filtered 
+------+-----+--------------
+    0 |   1 |             
+(1 row)
+
 -- case that breaks the old ph_may_need optimization
 --Testcase 462:
 explain (verbose, costs off)
@@ -6379,8 +7864,8 @@ select c.*,a.*,ss1.q1,ss2.q1,ss3.* from
     lateral (select q1, coalesce(ss1.x,q2) as y from int8_tbl d) ss2
   ) on c.q2 = ss2.q1,
   lateral (select * from int4_tbl i where ss2.y > f1) ss3;
-                                                                                 QUERY PLAN                                                                                 
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                               QUERY PLAN                                                
+---------------------------------------------------------------------------------------------------------
  Nested Loop
    Output: c.q1, c.q2, a.q1, a.q2, b.q1, d.q1, i.f1
    Join Filter: ((COALESCE((COALESCE(b.q2, (b2.f1)::bigint)), d.q2)) > i.f1)
@@ -6403,9 +7888,17 @@ select c.*,a.*,ss1.q1,ss2.q1,ss3.* from
                            ->  Sort
                                  Output: b.q1, (COALESCE(b.q2, (b2.f1)::bigint))
                                  Sort Key: b.q1
-                                 ->  Foreign Scan
+                                 ->  Nested Loop
                                        Output: b.q1, COALESCE(b.q2, (b2.f1)::bigint)
-                                       SQLite query: SELECT r9.`q1`, r9.`q2`, r10.`f1` FROM (main."int8_tbl" r9 INNER JOIN main."int4_tbl" r10 ON (((r9.`q1` < r10.`f1`))))
+                                       Join Filter: (b.q1 < b2.f1)
+                                       ->  Foreign Scan on public.int4_tbl b2
+                                             Output: b2.f1
+                                             SQLite query: SELECT `f1` FROM main."int4_tbl"
+                                       ->  Materialize
+                                             Output: b.q1, b.q2
+                                             ->  Foreign Scan on public.int8_tbl b
+                                                   Output: b.q1, b.q2
+                                                   SQLite query: SELECT `q1`, `q2` FROM main."int8_tbl"
                ->  Foreign Scan on public.int8_tbl d
                      Output: d.q1, COALESCE((COALESCE(b.q2, (b2.f1)::bigint)), d.q2)
                      SQLite query: SELECT `q1`, `q2` FROM main."int8_tbl"
@@ -6419,7 +7912,7 @@ select c.*,a.*,ss1.q1,ss2.q1,ss3.* from
          ->  Foreign Scan on public.int4_tbl i
                Output: i.f1
                SQLite query: SELECT `f1` FROM main."int4_tbl"
-(38 rows)
+(46 rows)
 
 -- check processing of postponed quals (bug #9041)
 --Testcase 463:
@@ -6459,6 +7952,29 @@ select * from
                SQLite query: SELECT `key5` FROM main."sub_tbl"
 (22 rows)
 
+-- a new postponed-quals issue (bug #17768)
+--Testcase 620:
+explain (costs off)
+select * from int4_tbl t1,
+  lateral (select * from int4_tbl t2 inner join int4_tbl t3 on t1.f1 = 1
+           inner join (int4_tbl t4 left join int4_tbl t5 on true) on true) ss;
+                        QUERY PLAN                         
+-----------------------------------------------------------
+ Nested Loop Left Join
+   ->  Nested Loop
+         ->  Nested Loop
+               ->  Nested Loop
+                     ->  Foreign Scan on int4_tbl t2
+                     ->  Materialize
+                           ->  Foreign Scan on int4_tbl t1
+               ->  Materialize
+                     ->  Foreign Scan on int4_tbl t3
+         ->  Materialize
+               ->  Foreign Scan on int4_tbl t4
+   ->  Materialize
+         ->  Foreign Scan on int4_tbl t5
+(13 rows)
+
 -- check dummy rels with lateral references (bug #15694)
 --Testcase 466:
 explain (verbose, costs off)
@@ -6468,13 +7984,14 @@ select * from int8_tbl i8 left join lateral
 --------------------------------------------------------------
  Nested Loop Left Join
    Output: i8.q1, i8.q2, f1, (i8.q2)
+   Join Filter: false
    ->  Foreign Scan on public.int8_tbl i8
          Output: i8.q1, i8.q2
          SQLite query: SELECT `q1`, `q2` FROM main."int8_tbl"
    ->  Result
          Output: f1, i8.q2
          One-Time Filter: false
-(8 rows)
+(9 rows)
 
 --Testcase 467:
 explain (verbose, costs off)
@@ -6562,12 +8079,12 @@ select * from (values (0), (1)) v(id),
 lateral (select * from int8_tbl t1,
          lateral (select * from
                     (select * from int8_tbl t2
-                     where q1 = any (select q2 from int8_tbl t3
+                     where (q1, random() > 0) = any (select q2, random() > 0 from int8_tbl t3
                                      where q2 = (select greatest(t1.q1,t2.q2))
                                        and (select v.id=0)) offset 0) ss2) ss
          where t1.q1 = ss.q2) ss0;
-                                             QUERY PLAN                                              
------------------------------------------------------------------------------------------------------
+                                                         QUERY PLAN                                                         
+----------------------------------------------------------------------------------------------------------------------------
  Nested Loop
    Output: "*VALUES*".column1, t1.q1, t1.q2, ss2.q1, ss2.q2
    ->  Foreign Scan on public.int8_tbl t1
@@ -6582,18 +8099,18 @@ lateral (select * from int8_tbl t1,
                Filter: (t1.q1 = ss2.q2)
                ->  Foreign Scan on public.int8_tbl t2
                      Output: t2.q1, t2.q2
-                     Filter: (SubPlan 3)
+                     Filter: (ANY ((t2.q1 = (SubPlan 3).col1) AND ((random() > '0'::double precision) = (SubPlan 3).col2)))
                      SQLite query: SELECT `q1`, `q2` FROM main."int8_tbl"
                      SubPlan 3
                        ->  Result
-                             Output: t3.q2
-                             One-Time Filter: $4
-                             InitPlan 1 (returns $2)
+                             Output: t3.q2, (random() > '0'::double precision)
+                             One-Time Filter: (InitPlan 2).col1
+                             InitPlan 1
                                ->  Result
-                                     Output: GREATEST($0, t2.q2)
-                             InitPlan 2 (returns $4)
+                                     Output: GREATEST(t1.q1, t2.q2)
+                             InitPlan 2
                                ->  Result
-                                     Output: ($3 = 0)
+                                     Output: ("*VALUES*".column1 = 0)
                              ->  Foreign Scan on public.int8_tbl t3
                                    Output: t3.q1, t3.q2
                                    SQLite query: SELECT `q2` FROM main."int8_tbl" WHERE ((`q2` = ?))
@@ -6604,7 +8121,7 @@ select * from (values (0), (1)) v(id),
 lateral (select * from int8_tbl t1,
          lateral (select * from
                     (select * from int8_tbl t2
-                     where q1 = any (select q2 from int8_tbl t3
+                     where (q1, random() > 0) = any (select q2, random() > 0 from int8_tbl t3
                                      where q2 = (select greatest(t1.q1,t2.q2))
                                        and (select v.id=0)) offset 0) ss2) ss
          where t1.q1 = ss.q2) ss0;
@@ -6621,25 +8138,29 @@ select f1,g from int4_tbl a, (select f1 as g) ss;
 ERROR:  column "f1" does not exist
 LINE 1: select f1,g from int4_tbl a, (select f1 as g) ss;
                                              ^
-HINT:  There is a column named "f1" in table "a", but it cannot be referenced from this part of the query.
+DETAIL:  There is a column named "f1" in table "a", but it cannot be referenced from this part of the query.
+HINT:  To reference that column, you must mark this subquery with LATERAL.
 --Testcase 319:
 select f1,g from int4_tbl a, (select a.f1 as g) ss;
 ERROR:  invalid reference to FROM-clause entry for table "a"
 LINE 1: select f1,g from int4_tbl a, (select a.f1 as g) ss;
                                              ^
-HINT:  There is an entry for table "a", but it cannot be referenced from this part of the query.
+DETAIL:  There is an entry for table "a", but it cannot be referenced from this part of the query.
+HINT:  To reference that table, you must mark this subquery with LATERAL.
 --Testcase 320:
 select f1,g from int4_tbl a cross join (select f1 as g) ss;
 ERROR:  column "f1" does not exist
 LINE 1: select f1,g from int4_tbl a cross join (select f1 as g) ss;
                                                        ^
-HINT:  There is a column named "f1" in table "a", but it cannot be referenced from this part of the query.
+DETAIL:  There is a column named "f1" in table "a", but it cannot be referenced from this part of the query.
+HINT:  To reference that column, you must mark this subquery with LATERAL.
 --Testcase 321:
 select f1,g from int4_tbl a cross join (select a.f1 as g) ss;
 ERROR:  invalid reference to FROM-clause entry for table "a"
 LINE 1: select f1,g from int4_tbl a cross join (select a.f1 as g) ss...
                                                        ^
-HINT:  There is an entry for table "a", but it cannot be referenced from this part of the query.
+DETAIL:  There is an entry for table "a", but it cannot be referenced from this part of the query.
+HINT:  To reference that table, you must mark this subquery with LATERAL.
 -- SQL:2008 says the left table is in scope but illegal to access here
 --Testcase 322:
 select f1,g from int4_tbl a right join lateral generate_series(0, a.f1) g on true;
@@ -6675,13 +8196,13 @@ update xx1 set x2 = f1 from (select * from int4_tbl where f1 = x1) ss;
 ERROR:  column "x1" does not exist
 LINE 1: ... set x2 = f1 from (select * from int4_tbl where f1 = x1) ss;
                                                                 ^
-HINT:  There is a column named "x1" in table "xx1", but it cannot be referenced from this part of the query.
+DETAIL:  There is a column named "x1" in table "xx1", but it cannot be referenced from this part of the query.
 --Testcase 327:
 update xx1 set x2 = f1 from (select * from int4_tbl where f1 = xx1.x1) ss;
 ERROR:  invalid reference to FROM-clause entry for table "xx1"
 LINE 1: ...t x2 = f1 from (select * from int4_tbl where f1 = xx1.x1) ss...
                                                              ^
-HINT:  There is an entry for table "xx1", but it cannot be referenced from this part of the query.
+DETAIL:  There is an entry for table "xx1", but it cannot be referenced from this part of the query.
 -- can't do it even with LATERAL:
 --Testcase 328:
 update xx1 set x2 = f1 from lateral (select * from int4_tbl where f1 = x1) ss;
@@ -6699,13 +8220,13 @@ delete from xx1 using (select * from int4_tbl where f1 = x1) ss;
 ERROR:  column "x1" does not exist
 LINE 1: ...te from xx1 using (select * from int4_tbl where f1 = x1) ss;
                                                                 ^
-HINT:  There is a column named "x1" in table "xx1", but it cannot be referenced from this part of the query.
+DETAIL:  There is a column named "x1" in table "xx1", but it cannot be referenced from this part of the query.
 --Testcase 331:
 delete from xx1 using (select * from int4_tbl where f1 = xx1.x1) ss;
 ERROR:  invalid reference to FROM-clause entry for table "xx1"
 LINE 1: ...from xx1 using (select * from int4_tbl where f1 = xx1.x1) ss...
                                                              ^
-HINT:  There is an entry for table "xx1", but it cannot be referenced from this part of the query.
+DETAIL:  There is an entry for table "xx1", but it cannot be referenced from this part of the query.
 --Testcase 332:
 delete from xx1 using lateral (select * from int4_tbl where f1 = x1) ss;
 ERROR:  invalid reference to FROM-clause entry for table "xx1"
@@ -6862,12 +8383,20 @@ select * from j11 inner join j21 on j11.id = j21.id;
 --Testcase 340:
 explain (verbose, costs off)
 select * from j11 inner join j21 on j11.id > j21.id;
-                                                    QUERY PLAN                                                    
-------------------------------------------------------------------------------------------------------------------
- Foreign Scan
+                       QUERY PLAN                        
+---------------------------------------------------------
+ Nested Loop
    Output: j11.id, j21.id
-   SQLite query: SELECT r1.`id`, r2.`id` FROM (main."j11" r1 INNER JOIN main."j21" r2 ON (((r1.`id` > r2.`id`))))
-(3 rows)
+   Join Filter: (j11.id > j21.id)
+   ->  Foreign Scan on public.j11
+         Output: j11.id
+         SQLite query: SELECT `id` FROM main."j11"
+   ->  Materialize
+         Output: j21.id
+         ->  Foreign Scan on public.j21
+               Output: j21.id
+               SQLite query: SELECT `id` FROM main."j21"
+(11 rows)
 
 -- ensure non-unique rel is not chosen as inner
 --Testcase 341:
@@ -7139,6 +8668,42 @@ left join j22 on j12.id1 = j22.id1 where j12.id2 = 1;
    SQLite query: SELECT r1.`id1`, r1.`id2`, r2.`id1`, r2.`id2` FROM (main."j12" r1 LEFT JOIN main."j22" r2 ON (((r1.`id1` = r2.`id1`)))) WHERE ((r1.`id2` = 1))
 (3 rows)
 
+-- create unique index command does not work with foreign table
+-- Add these normal tables for it.
+--Testcase 624:
+create table j1 (id1 int, id2 int, primary key(id1,id2));
+--Testcase 625:
+create table j2 (id1 int, id2 int, primary key(id1,id2));
+--Testcase 626:
+insert into j1 values(1,1),(1,2);
+--Testcase 627:
+insert into j2 values(1,1);
+analyze j1;
+analyze j2;
+--Testcase 621:
+create unique index j1_id2_idx on j1(id2) where id2 is not null;
+-- ensure we don't use a partial unique index as unique proofs
+--Testcase 622:
+explain (verbose, costs off)
+select * from j1
+inner join j2 on j1.id2 = j2.id2;
+                QUERY PLAN                
+------------------------------------------
+ Nested Loop
+   Output: j1.id1, j1.id2, j2.id1, j2.id2
+   Join Filter: (j2.id2 = j1.id2)
+   ->  Seq Scan on public.j2
+         Output: j2.id1, j2.id2
+   ->  Seq Scan on public.j1
+         Output: j1.id1, j1.id2
+(7 rows)
+
+--Testcase 623:
+drop index j1_id2_idx;
+--Testcase 628:
+drop table j1;
+--Testcase 629:
+drop table j2;
 -- validate logic in merge joins which skips mark and restore.
 -- it should only do this if all quals which were used to detect the unique
 -- are present as join quals, and not plain quals.
@@ -7225,25 +8790,6 @@ reset enable_sort;
 --drop table j2;
 --drop table j3;
 -- check that semijoin inner is not seen as unique for a portion of the outerrel
---Testcase 483:
-CREATE FOREIGN TABLE onek (
-  unique1   int4 OPTIONS (key 'true'),
-  unique2   int4,
-  two     int4,
-  four    int4,
-  ten     int4,
-  twenty    int4,
-  hundred   int4,
-  thousand  int4,
-  twothousand int4,
-  fivethous int4,
-  tenthous  int4,
-  odd     int4,
-  even    int4,
-  stringu1  name,
-  stringu2  name,
-  string4   name
-) SERVER sqlite_svr;
 --Testcase 358:
 explain (verbose, costs off)
 select t1.unique1, t2.hundred
@@ -7314,12 +8860,43 @@ where exists (select 1 from j3
 
 --Testcase 486:
 drop table j3;
+<<<<<<<< HEAD:expected/15.7/extra/join.out
 --Testcase 560:
 DELETE FROM INT4_TBL;
 --Testcase 561:
 DELETE FROM INT8_TBL;
 --Testcase 562:
 DELETE FROM FLOAT8_TBL;
+========
+-- sqlite_fdw is not supported WITH fillfactor, INDEX, VACUM, ANALYZE with foreign table.
+-- Exercise the "skip fetch" Bitmap Heap Scan optimization when candidate
+-- tuples are discarded. This may occur when:
+--   1. A join doesn't require all inner tuples to be scanned for each outer
+--      tuple, and
+--   2. The inner side is scanned using a bitmap heap scan, and
+--   3. The bitmap heap scan is eligible for the "skip fetch" optimization.
+--      This optimization is usable when no data from the underlying table is
+--      needed. Use a temp table so it is only visible to this backend and
+--      vacuum may reliably mark all blocks in the table all visible in the
+--      visibility map.
+-- CREATE TEMP TABLE skip_fetch (a INT, b INT) WITH (fillfactor=10);
+-- INSERT INTO skip_fetch SELECT i % 3, i FROM generate_series(0,30) i;
+-- CREATE INDEX ON skip_fetch(a);
+-- VACUUM (ANALYZE) skip_fetch;
+-- SET enable_indexonlyscan = off;
+-- SET enable_seqscan = off;
+-- EXPLAIN (COSTS OFF)
+-- SELECT t1.a FROM skip_fetch t1 LEFT JOIN skip_fetch t2 ON t2.a = 1 WHERE t2.a IS NULL;
+-- SELECT t1.a FROM skip_fetch t1 LEFT JOIN skip_fetch t2 ON t2.a = 1 WHERE t2.a IS NULL;
+-- RESET enable_indexonlyscan;
+-- RESET enable_seqscan;
+--Testcase 656:
+DELETE FROM INT4_TBL;
+--Testcase 657:
+DELETE FROM FLOAT8_TBL;
+--Testcase 658:
+DELETE FROM INT8_TBL;
+>>>>>>>> origin/master:expected/17.0/extra/join.out
 DO $d$
 declare
   l_rec record;

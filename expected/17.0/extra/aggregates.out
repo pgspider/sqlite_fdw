@@ -61,6 +61,7 @@ CREATE FOREIGN TABLE INT8_TBL(
   q1 int8 OPTIONS (key 'true'),
   q2 int8 OPTIONS (key 'true')
 ) SERVER sqlite_svr;
+<<<<<<<< HEAD:expected/17.0/extra/aggregates.out
 --Testcase 782:
 INSERT INTO INT8_TBL VALUES('  123   ','  456');
 --Testcase 783:
@@ -82,6 +83,29 @@ INSERT INTO INT4_TBL(f1) VALUES ('    -123456');
 --Testcase 790:
 INSERT INTO INT4_TBL(f1) VALUES ('2147483647');
 --Testcase 791:
+========
+--Testcase 697:
+INSERT INTO INT8_TBL VALUES('  123   ','  456');
+--Testcase 698:
+INSERT INTO INT8_TBL VALUES('123   ','4567890123456789');
+--Testcase 699:
+INSERT INTO INT8_TBL VALUES('4567890123456789','123');
+--Testcase 700:
+INSERT INTO INT8_TBL VALUES(+4567890123456789,'4567890123456789');
+--Testcase 701:
+INSERT INTO INT8_TBL VALUES('+4567890123456789','-4567890123456789');
+--Testcase 273:
+CREATE FOREIGN TABLE INT4_TBL(f1 int4 OPTIONS (key 'true')) SERVER sqlite_svr;
+--Testcase 702:
+INSERT INTO INT4_TBL(f1) VALUES ('   0  ');
+--Testcase 703:
+INSERT INTO INT4_TBL(f1) VALUES ('123456     ');
+--Testcase 704:
+INSERT INTO INT4_TBL(f1) VALUES ('    -123456');
+--Testcase 705:
+INSERT INTO INT4_TBL(f1) VALUES ('2147483647');
+--Testcase 706:
+>>>>>>>> origin/master:expected/15.7/extra/aggregates.out
 INSERT INTO INT4_TBL(f1) VALUES ('-2147483647');
 --Testcase 274:
 CREATE FOREIGN TABLE multi_arg_agg (a int OPTIONS (key 'true'), b int, c text) SERVER sqlite_svr;
@@ -89,6 +113,16 @@ CREATE FOREIGN TABLE multi_arg_agg (a int OPTIONS (key 'true'), b int, c text) S
 CREATE FOREIGN TABLE VARCHAR_TBL(f1 varchar(4) OPTIONS (key 'true')) SERVER sqlite_svr;
 --Testcase 276:
 CREATE FOREIGN TABLE FLOAT8_TBL(f1 float8 OPTIONS (key 'true')) SERVER sqlite_svr;
+--Testcase 707:
+INSERT INTO FLOAT8_TBL(f1) VALUES ('    0.0   ');
+--Testcase 708:
+INSERT INTO FLOAT8_TBL(f1) VALUES ('1004.30  ');
+--Testcase 709:
+INSERT INTO FLOAT8_TBL(f1) VALUES ('   -34.84');
+--Testcase 710:
+INSERT INTO FLOAT8_TBL(f1) VALUES ('1.2345678901234e+200');
+--Testcase 711:
+INSERT INTO FLOAT8_TBL(f1) VALUES ('1.2345678901234e-200');
 -- avoid bit-exact output here because operations may not be bit-exact.
 --Testcase 588:
 SET extra_float_digits = 0;
@@ -4230,10 +4264,19 @@ set work_mem to default;
 ----+----+----
 (0 rows)
 
+<<<<<<<< HEAD:expected/17.0/extra/aggregates.out
 --Testcase 792:
 DELETE FROM INT4_TBL;
 --Testcase 793:
 DELETE FROM INT8_TBL;
+========
+--Testcase 712:
+DELETE FROM INT4_TBL;
+--Testcase 713:
+DELETE FROM INT8_TBL;
+--Testcase 714:
+DELETE FROM FLOAT8_TBL;
+>>>>>>>> origin/master:expected/15.7/extra/aggregates.out
 -- Clean up
 DO $d$
 declare
