@@ -15,7 +15,10 @@ OBJS = connection.o option.o deparse.o sqlite_query.o sqlite_fdw.o sqlite_data_n
 EXTENSION = sqlite_fdw
 DATA = sqlite_fdw--1.0.sql sqlite_fdw--1.0--1.1.sql
 
+ifndef REGRESS
 REGRESS = extra/sqlite_fdw_post types/bitstring types/bool types/float4 types/float8 types/int4 types/int8 types/numeric types/macaddr types/macaddr8 types/out_of_range types/timestamp types/uuid extra/join extra/limit extra/aggregates extra/prepare extra/select_having extra/select extra/insert extra/update extra/encodings sqlite_fdw type aggregate selectfunc 
+endif
+
 REGRESS_OPTS = --encoding=utf8
 
 SQLITE_LIB = sqlite3
