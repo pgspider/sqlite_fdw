@@ -7,7 +7,7 @@
 # Otherwise, it will exit with failure.
 
 # Usage: ./execute_test.sh pg_version mode
-#     pg_version is a PostgreSQL version to be tested like 16.0.
+#     pg_version is a PostgreSQL version to be tested like 17.0.
 #	  mode is flag for sqlite_fdw compiler.
 #
 # Requiremets

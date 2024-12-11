@@ -55,7 +55,7 @@
 #endif
 
 /* Code version is updated at new release. */
-#define CODE_VERSION   20400
+#define CODE_VERSION   20500
 
 #if (PG_VERSION_NUM < 100000)
 /*
@@ -110,7 +110,6 @@ typedef struct sqlite_opt
 									 * connecting to the SQLite server. */
 	unsigned long max_blob_size;	/* Max blob size to read without
 									 * truncation */
-	bool		use_remote_estimate;	/* use remote estimate for rows */
 }			sqlite_opt;
 
 /* Struct for extra information passed to sqlite_estimate_path_cost_size() */
@@ -203,10 +202,8 @@ typedef struct SqliteFdwRelationInfo
 	Cost		rel_total_cost;
 
 	/* Options extracted from catalogs. */
-	bool		use_remote_estimate;
 	Cost		fdw_startup_cost;
 	Cost		fdw_tuple_cost;
-	List	   *shippable_extensions;	/* OIDs of whitelisted extensions */
 
 	/* Bitmap of attr numbers we need to fetch from the remote server. */
 	Bitmapset  *attrs_used;
@@ -233,7 +230,6 @@ typedef struct SqliteFdwRelationInfo
 	/* Cached catalog information. */
 	ForeignTable *table;
 	ForeignServer *server;
-	UserMapping *user;			/* only set in use_remote_estimate mode */
 
 	int			fetch_size;		/* fetch size for this remote table */
 
@@ -254,6 +250,12 @@ typedef struct SqliteFdwRelationInfo
 										 * subquery? */
 	Relids		lower_subquery_rels;	/* all relids appearing in lower
 										 * subqueries */
+#if (PG_VERSION_NUM >= 170000)
+	Relids		hidden_subquery_rels;	/* relids, which can't be referred to
+										 * from upper relations, used
+										 * internally for equivalence member
+										 * search */
+#endif
 
 	/*
 	 * Index of the relation.  It is used to create an alias to a subquery
@@ -363,8 +365,6 @@ extern void sqlite_deparse_direct_delete_sql(StringInfo buf, PlannerInfo *root,
 											 List *remote_conds,
 											 List **params_list,
 											 List **retrieved_attrs);
-extern void sqlite_append_where_clause(StringInfo buf, PlannerInfo *root, RelOptInfo *baserel, List *exprs,
-									   bool is_first, List **params);
 extern void sqlite_deparse_analyze(StringInfo buf, char *dbname, char *relname);
 extern void sqlite_deparse_string_literal(StringInfo buf, const char *val);
 extern List *sqlite_build_tlist_to_deparse(RelOptInfo *foreignrel);
