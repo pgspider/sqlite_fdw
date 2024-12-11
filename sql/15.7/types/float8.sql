@@ -56,6 +56,14 @@ INSERT INTO FLOAT8_TBL(f1) VALUES ('    - 3');
 --Testcase 17:
 INSERT INTO FLOAT8_TBL(f1) VALUES ('123           5');
 
+-- Also try it with non-error-throwing API
+CREATE FOREIGN TABLE NON_ERROR_THROWING_API_FLOAT8(f1 text, id serial OPTIONS (key 'true')) SERVER sqlite_svr;
+INSERT INTO NON_ERROR_THROWING_API_FLOAT8 VALUES ('34.5', 1), ('xyz', 2), ('1e4000', 3);
+SELECT pg_input_is_valid(f1, 'float8') FROM NON_ERROR_THROWING_API_FLOAT8 WHERE id = 1;
+SELECT pg_input_is_valid(f1, 'float8') FROM NON_ERROR_THROWING_API_FLOAT8 WHERE id = 2;
+SELECT pg_input_is_valid(f1, 'float8') FROM NON_ERROR_THROWING_API_FLOAT8 WHERE id = 3;
+SELECT * FROM pg_input_error_info((SELECT f1 FROM NON_ERROR_THROWING_API_FLOAT8 WHERE id = 3), 'float8');
+
 -- special inputs
 --Testcase 19:
 DELETE FROM FLOAT8_TMP;
@@ -665,6 +673,23 @@ DELETE FROM FLOAT8_TMP;
 INSERT INTO FLOAT8_TMP VALUES ((float8 'nan'));
 --Testcase 219:
 SELECT atanh(f1) FROM FLOAT8_TMP;
+
+-- error functions
+-- we run these with extra_float_digits = -1, to get consistently rounded
+-- results on all platforms.
+SET extra_float_digits = -1;
+
+DELETE FROM FLOAT8_TBL;
+INSERT INTO FLOAT8_TBL(f1) VALUES (float8 '-infinity'),
+      (-28), (-6), (-3.4), (-2.1), (-1.1), (-0.45),
+      (-1.2e-9), (-2.3e-13), (-1.2e-17), (0),
+      (1.2e-17), (2.3e-13), (1.2e-9),
+      (0.45), (1.1), (2.1), (3.4), (6), (28),
+      (float8 'infinity'), (float8 'nan');
+SELECT f1,
+       erf(f1),
+       erfc(f1)
+FROM FLOAT8_TBL;
 
 --Testcase 369:
 RESET extra_float_digits;

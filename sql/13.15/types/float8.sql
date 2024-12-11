@@ -56,6 +56,14 @@ INSERT INTO FLOAT8_TBL(f1) VALUES ('    - 3');
 --Testcase 17:
 INSERT INTO FLOAT8_TBL(f1) VALUES ('123           5');
 
+-- Also try it with non-error-throwing API
+CREATE FOREIGN TABLE NON_ERROR_THROWING_API_FLOAT8(f1 text, id serial OPTIONS (key 'true')) SERVER sqlite_svr;
+INSERT INTO NON_ERROR_THROWING_API_FLOAT8 VALUES ('34.5', 1), ('xyz', 2), ('1e4000', 3);
+SELECT pg_input_is_valid(f1, 'float8') FROM NON_ERROR_THROWING_API_FLOAT8 WHERE id = 1;
+SELECT pg_input_is_valid(f1, 'float8') FROM NON_ERROR_THROWING_API_FLOAT8 WHERE id = 2;
+SELECT pg_input_is_valid(f1, 'float8') FROM NON_ERROR_THROWING_API_FLOAT8 WHERE id = 3;
+SELECT * FROM pg_input_error_info((SELECT f1 FROM NON_ERROR_THROWING_API_FLOAT8 WHERE id = 3), 'float8');
+
 -- special inputs
 --Testcase 19:
 DELETE FROM FLOAT8_TMP;
@@ -120,11 +128,23 @@ DELETE FROM FLOAT8_TMP;
 INSERT INTO FLOAT8_TMP VALUES ('Infinity'::float8 / 'Infinity'::float8);
 --Testcase 138:
 SELECT f1 FROM FLOAT8_TMP;
+--Testcase 272:
+DELETE FROM FLOAT8_TMP;
+--Testcase 273:
+INSERT INTO FLOAT8_TMP VALUES ('42'::float8 / 'Infinity'::float8);
+--Testcase 274:
+SELECT f1 FROM FLOAT8_TMP;
 --Testcase 31:
 DELETE FROM FLOAT8_TMP;
 --Testcase 139:
 INSERT INTO FLOAT8_TMP VALUES ('nan'::float8 / 'nan'::float8);
 --Testcase 140:
+SELECT f1 FROM FLOAT8_TMP;
+--Testcase 275:
+DELETE FROM FLOAT8_TMP;
+--Testcase 276:
+INSERT INTO FLOAT8_TMP VALUES ('nan'::float8 / '0'::float8);
+--Testcase 277:
 SELECT f1 FROM FLOAT8_TMP;
 --Testcase 32:
 DELETE FROM FLOAT8_TMP;
@@ -134,63 +154,63 @@ INSERT INTO FLOAT8_TMP VALUES ('nan'::numeric::float8);
 SELECT f1 FROM FLOAT8_TMP;
 
 --Testcase 34:
-SELECT '' AS five, * FROM FLOAT8_TBL;
+SELECT * FROM FLOAT8_TBL;
 
 --Testcase 35:
-SELECT '' AS four, f.* FROM FLOAT8_TBL f WHERE f.f1 <> '1004.3';
+SELECT f.* FROM FLOAT8_TBL f WHERE f.f1 <> '1004.3';
 
 --Testcase 36:
-SELECT '' AS one, f.* FROM FLOAT8_TBL f WHERE f.f1 = '1004.3';
+SELECT f.* FROM FLOAT8_TBL f WHERE f.f1 = '1004.3';
 
 --Testcase 37:
-SELECT '' AS three, f.* FROM FLOAT8_TBL f WHERE '1004.3' > f.f1;
+SELECT f.* FROM FLOAT8_TBL f WHERE '1004.3' > f.f1;
 
 --Testcase 38:
-SELECT '' AS three, f.* FROM FLOAT8_TBL f WHERE  f.f1 < '1004.3';
+SELECT f.* FROM FLOAT8_TBL f WHERE  f.f1 < '1004.3';
 
 --Testcase 39:
-SELECT '' AS four, f.* FROM FLOAT8_TBL f WHERE '1004.3' >= f.f1;
+SELECT f.* FROM FLOAT8_TBL f WHERE '1004.3' >= f.f1;
 
 --Testcase 40:
-SELECT '' AS four, f.* FROM FLOAT8_TBL f WHERE  f.f1 <= '1004.3';
+SELECT f.* FROM FLOAT8_TBL f WHERE  f.f1 <= '1004.3';
 
 --Testcase 41:
-SELECT '' AS three, f.f1, f.f1 * '-10' AS x
+SELECT f.f1, f.f1 * '-10' AS x
    FROM FLOAT8_TBL f
    WHERE f.f1 > '0.0';
 
 --Testcase 42:
-SELECT '' AS three, f.f1, f.f1 + '-10' AS x
+SELECT f.f1, f.f1 + '-10' AS x
    FROM FLOAT8_TBL f
    WHERE f.f1 > '0.0';
 
 --Testcase 43:
-SELECT '' AS three, f.f1, f.f1 / '-10' AS x
+SELECT f.f1, f.f1 / '-10' AS x
    FROM FLOAT8_TBL f
    WHERE f.f1 > '0.0';
 
 --Testcase 44:
-SELECT '' AS three, f.f1, f.f1 - '-10' AS x
+SELECT f.f1, f.f1 - '-10' AS x
    FROM FLOAT8_TBL f
    WHERE f.f1 > '0.0';
 
 --Testcase 45:
-SELECT '' AS one, f.f1 ^ '2.0' AS square_f1
+SELECT f.f1 ^ '2.0' AS square_f1
    FROM FLOAT8_TBL f where f.f1 = '1004.3';
 
 -- absolute value
 --Testcase 46:
-SELECT '' AS five, f.f1, @f.f1 AS abs_f1
+SELECT f.f1, @f.f1 AS abs_f1
    FROM FLOAT8_TBL f;
 
 -- truncate
 --Testcase 47:
-SELECT '' AS five, f.f1, trunc(f.f1) AS trunc_f1
+SELECT f.f1, trunc(f.f1) AS trunc_f1
    FROM FLOAT8_TBL f;
 
 -- round
 --Testcase 48:
-SELECT '' AS five, f.f1, round(f.f1) AS round_f1
+SELECT f.f1, round(f.f1) AS round_f1
    FROM FLOAT8_TBL f;
 
 -- ceil / ceiling
@@ -208,6 +228,7 @@ select floor(f1) as floor_f1 from float8_tbl f;
 select sign(f1) as sign_f1 from float8_tbl f;
 
 -- avoid bit-exact output here because operations may not be bit-exact.
+--Testcase 278:
 SET extra_float_digits = 0;
 
 -- square root
@@ -223,7 +244,7 @@ SELECT |/f1 as eight FROM FLOAT8_TBL;
 ROLLBACK;
 
 --Testcase 57:
-SELECT '' AS three, f.f1, |/f.f1 AS sqrt_f1
+SELECT f.f1, |/f.f1 AS sqrt_f1
    FROM FLOAT8_TBL f
    WHERE f.f1 > '0.0';
 
@@ -270,12 +291,185 @@ DELETE FROM FLOAT8_TMP;
 INSERT INTO FLOAT8_TMP VALUES ('NaN'::float8 , '0'::float8);
 --Testcase 156:
 SELECT power(f1, f2) FROM FLOAT8_TMP;
+--Testcase 279:
+DELETE FROM FLOAT8_TMP;
+--Testcase 280:
+INSERT INTO FLOAT8_TMP VALUES ('infinity'::float8, '0'::float8);
+--Testcase 281:
+SELECT power(f1, f2) FROM FLOAT8_TMP;
+--Testcase 282:
+DELETE FROM FLOAT8_TMP;
+--Testcase 283:
+INSERT INTO FLOAT8_TMP VALUES ('-infinity'::float8, '0'::float8);
+--Testcase 284:
+SELECT power(f1, f2) FROM FLOAT8_TMP;
+--Testcase 285:
+DELETE FROM FLOAT8_TMP;
+--Testcase 286:
+INSERT INTO FLOAT8_TMP VALUES ('0'::float8, 'infinity'::float8);
+--Testcase 287:
+SELECT power(f1, f2) FROM FLOAT8_TMP;
+--Testcase 288:
+DELETE FROM FLOAT8_TMP;
+--Testcase 289:
+INSERT INTO FLOAT8_TMP VALUES ('0'::float8, '-infinity'::float8);
+--Testcase 290:
+SELECT power(f1, f2) FROM FLOAT8_TMP;
+--Testcase 291:
+DELETE FROM FLOAT8_TMP;
+--Testcase 292:
+INSERT INTO FLOAT8_TMP VALUES ('1'::float8, 'infinity'::float8);
+--Testcase 293:
+SELECT power(f1, f2) FROM FLOAT8_TMP;
+--Testcase 294:
+DELETE FROM FLOAT8_TMP;
+--Testcase 295:
+INSERT INTO FLOAT8_TMP VALUES ('1'::float8, '-infinity'::float8);
+--Testcase 296:
+SELECT power(f1, f2) FROM FLOAT8_TMP;
+--Testcase 297:
+DELETE FROM FLOAT8_TMP;
+--Testcase 298:
+INSERT INTO FLOAT8_TMP VALUES ('-1'::float8, 'infinity'::float8);
+--Testcase 299:
+SELECT power(f1, f2) FROM FLOAT8_TMP;
+--Testcase 300:
+DELETE FROM FLOAT8_TMP;
+--Testcase 301:
+INSERT INTO FLOAT8_TMP VALUES ('-1'::float8, '-infinity'::float8);
+--Testcase 302:
+SELECT power(f1, f2) FROM FLOAT8_TMP;
+--Testcase 303:
+DELETE FROM FLOAT8_TMP;
+--Testcase 304:
+INSERT INTO FLOAT8_TMP VALUES ('0.1'::float8, 'infinity'::float8);
+--Testcase 305:
+SELECT power(f1, f2) FROM FLOAT8_TMP;
+--Testcase 306:
+DELETE FROM FLOAT8_TMP;
+--Testcase 307:
+INSERT INTO FLOAT8_TMP VALUES ('-0.1'::float8, 'infinity'::float8);
+--Testcase 308:
+SELECT power(f1, f2) FROM FLOAT8_TMP;
+--Testcase 309:
+DELETE FROM FLOAT8_TMP;
+--Testcase 310:
+INSERT INTO FLOAT8_TMP VALUES ('1.1'::float8, 'infinity'::float8);
+--Testcase 311:
+SELECT power(f1, f2) FROM FLOAT8_TMP;
+--Testcase 312:
+DELETE FROM FLOAT8_TMP;
+--Testcase 313:
+INSERT INTO FLOAT8_TMP VALUES ('-1.1'::float8, 'infinity'::float8);
+--Testcase 314:
+SELECT power(f1, f2) FROM FLOAT8_TMP;
+--Testcase 315:
+DELETE FROM FLOAT8_TMP;
+--Testcase 316:
+INSERT INTO FLOAT8_TMP VALUES ('0.1'::float8, '-infinity'::float8);
+--Testcase 317:
+SELECT power(f1, f2) FROM FLOAT8_TMP;
+--Testcase 318:
+DELETE FROM FLOAT8_TMP;
+--Testcase 319:
+INSERT INTO FLOAT8_TMP VALUES ('-0.1'::float8, '-infinity'::float8);
+--Testcase 320:
+SELECT power(f1, f2) FROM FLOAT8_TMP;
+--Testcase 321:
+DELETE FROM FLOAT8_TMP;
+--Testcase 322:
+INSERT INTO FLOAT8_TMP VALUES ('1.1'::float8, '-infinity'::float8);
+--Testcase 323:
+SELECT power(f1, f2) FROM FLOAT8_TMP;
+--Testcase 324:
+DELETE FROM FLOAT8_TMP;
+--Testcase 325:
+INSERT INTO FLOAT8_TMP VALUES ('-1.1'::float8, '-infinity'::float8);
+--Testcase 326:
+SELECT power(f1, f2) FROM FLOAT8_TMP;
+--Testcase 327:
+DELETE FROM FLOAT8_TMP;
+--Testcase 328:
+INSERT INTO FLOAT8_TMP VALUES ('infinity'::float8, '-2'::float8);
+--Testcase 329:
+SELECT power(f1, f2) FROM FLOAT8_TMP;
+--Testcase 330:
+DELETE FROM FLOAT8_TMP;
+--Testcase 331:
+INSERT INTO FLOAT8_TMP VALUES ('infinity'::float8, '2'::float8);
+--Testcase 332:
+SELECT power(f1, f2) FROM FLOAT8_TMP;
+--Testcase 333:
+DELETE FROM FLOAT8_TMP;
+--Testcase 334:
+INSERT INTO FLOAT8_TMP VALUES ('infinity'::float8, 'infinity'::float8);
+--Testcase 335:
+SELECT power(f1, f2) FROM FLOAT8_TMP;
+--Testcase 336:
+DELETE FROM FLOAT8_TMP;
+--Testcase 337:
+INSERT INTO FLOAT8_TMP VALUES ('infinity'::float8, '-infinity'::float8);
+--Testcase 338:
+SELECT power(f1, f2) FROM FLOAT8_TMP;
+
+-- Intel's icc misoptimizes the code that controls the sign of this result,
+-- even with -mp1.  Pending a fix for that, only test for "is it zero".
+--Testcase 339:
+DELETE FROM FLOAT8_TMP;
+--Testcase 340:
+INSERT INTO FLOAT8_TMP VALUES ('-infinity'::float8, '-2'::float8);
+--Testcase 341:
+SELECT power(f1, f2) = '0' FROM FLOAT8_TMP;
+--Testcase 342:
+DELETE FROM FLOAT8_TMP;
+--Testcase 343:
+INSERT INTO FLOAT8_TMP VALUES ('-infinity'::float8, '-3'::float8);
+--Testcase 344:
+SELECT power(f1, f2) FROM FLOAT8_TMP;
+--Testcase 345:
+DELETE FROM FLOAT8_TMP;
+--Testcase 346:
+INSERT INTO FLOAT8_TMP VALUES ('-infinity'::float8, '2'::float8);
+--Testcase 347:
+SELECT power(f1, f2) FROM FLOAT8_TMP;
+--Testcase 348:
+DELETE FROM FLOAT8_TMP;
+--Testcase 349:
+INSERT INTO FLOAT8_TMP VALUES ('-infinity'::float8, '3'::float8);
+--Testcase 350:
+SELECT power(f1, f2) FROM FLOAT8_TMP;
+--Testcase 351:
+DELETE FROM FLOAT8_TMP;
+--Testcase 352:
+INSERT INTO FLOAT8_TMP VALUES ('-infinity'::float8, '-3.5'::float8);
+--Testcase 353:
+SELECT power(f1, f2) FROM FLOAT8_TMP;
+--Testcase 354:
+DELETE FROM FLOAT8_TMP;
+--Testcase 355:
+INSERT INTO FLOAT8_TMP VALUES ('-infinity'::float8, 'infinity'::float8);
+--Testcase 356:
+SELECT power(f1, f2) FROM FLOAT8_TMP;
+--Testcase 357:
+DELETE FROM FLOAT8_TMP;
+--Testcase 358:
+INSERT INTO FLOAT8_TMP VALUES ('-infinity'::float8, '-infinity'::float8);
+--Testcase 359:
+SELECT power(f1, f2) FROM FLOAT8_TMP;
 
 -- take exp of ln(f.f1)
 --Testcase 67:
-SELECT '' AS three, f.f1, exp(ln(f.f1)) AS exp_ln_f1
+SELECT f.f1, exp(ln(f.f1)) AS exp_ln_f1
    FROM FLOAT8_TBL f
    WHERE f.f1 > '0.0';
+
+-- check edge cases for exp
+--Testcase 360:
+DELETE FROM FLOAT8_TMP;
+--Testcase 361:
+INSERT INTO FLOAT8_TMP VALUES ('inf'::float8), ('-inf'::float8), ('nan'::float8);
+--Testcase 362:
+SELECT exp(f1) FROM FLOAT8_TMP;
 
 -- cube root
 BEGIN;
@@ -288,11 +482,11 @@ SELECT ||/f1 as three FROM FLOAT8_TBL;
 ROLLBACK;
 
 --Testcase 71:
-SELECT '' AS five, f.f1, ||/f.f1 AS cbrt_f1 FROM FLOAT8_TBL f;
+SELECT f.f1, ||/f.f1 AS cbrt_f1 FROM FLOAT8_TBL f;
 
 
 --Testcase 72:
-SELECT '' AS five, * FROM FLOAT8_TBL;
+SELECT * FROM FLOAT8_TBL;
 
 --Testcase 73:
 UPDATE FLOAT8_TBL
@@ -300,10 +494,10 @@ UPDATE FLOAT8_TBL
    WHERE FLOAT8_TBL.f1 > '0.0';
 
 --Testcase 74:
-SELECT '' AS bad, f.f1 * '1e200' from FLOAT8_TBL f;
+SELECT f.f1 * '1e200' from FLOAT8_TBL f;
 
 --Testcase 75:
-SELECT '' AS bad, f.f1 ^ '1e200' from FLOAT8_TBL f;
+SELECT f.f1 ^ '1e200' from FLOAT8_TBL f;
 
 BEGIN;
 --Testcase 76:
@@ -315,19 +509,19 @@ SELECT * FROM FLOAT8_TBL;
 ROLLBACK;
 
 --Testcase 79:
-SELECT '' AS bad, ln(f.f1) from FLOAT8_TBL f where f.f1 = '0.0' ;
+SELECT ln(f.f1) from FLOAT8_TBL f where f.f1 = '0.0' ;
 
 --Testcase 80:
-SELECT '' AS bad, ln(f.f1) from FLOAT8_TBL f where f.f1 < '0.0' ;
+SELECT ln(f.f1) from FLOAT8_TBL f where f.f1 < '0.0' ;
 
 --Testcase 81:
-SELECT '' AS bad, exp(f.f1) from FLOAT8_TBL f;
+SELECT exp(f.f1) from FLOAT8_TBL f;
 
 --Testcase 82:
-SELECT '' AS bad, f.f1 / '0.0' from FLOAT8_TBL f;
+SELECT f.f1 / '0.0' from FLOAT8_TBL f;
 
 --Testcase 83:
-SELECT '' AS five, * FROM FLOAT8_TBL;
+SELECT * FROM FLOAT8_TBL;
 
 -- hyperbolic functions
 -- we run these with extra_float_digits = 0 too, since different platforms
@@ -480,6 +674,24 @@ INSERT INTO FLOAT8_TMP VALUES ((float8 'nan'));
 --Testcase 219:
 SELECT atanh(f1) FROM FLOAT8_TMP;
 
+-- error functions
+-- we run these with extra_float_digits = -1, to get consistently rounded
+-- results on all platforms.
+SET extra_float_digits = -1;
+
+DELETE FROM FLOAT8_TBL;
+INSERT INTO FLOAT8_TBL(f1) VALUES (float8 '-infinity'),
+      (-28), (-6), (-3.4), (-2.1), (-1.1), (-0.45),
+      (-1.2e-9), (-2.3e-13), (-1.2e-17), (0),
+      (1.2e-17), (2.3e-13), (1.2e-9),
+      (0.45), (1.1), (2.1), (3.4), (6), (28),
+      (float8 'infinity'), (float8 'nan');
+SELECT f1,
+       erf(f1),
+       erfc(f1)
+FROM FLOAT8_TBL;
+
+--Testcase 369:
 RESET extra_float_digits;
 
 -- test for over- and underflow
@@ -517,7 +729,7 @@ INSERT INTO FLOAT8_TBL(f1) VALUES ('-1.2345678901234e+200');
 INSERT INTO FLOAT8_TBL(f1) VALUES ('-1.2345678901234e-200');
 
 --Testcase 94:
-SELECT '' AS five, * FROM FLOAT8_TBL;
+SELECT * FROM FLOAT8_TBL;
 
 -- test edge-case coercions to integer
 --Testcase 220:
@@ -892,7 +1104,7 @@ rollback;
 --Testcase 269:
 drop type xfloat8 cascade;
 
---Testcase 272:
+--Testcase 363:
 DELETE FROM FLOAT8_TBL;
 
 -- Clean up

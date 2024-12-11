@@ -68,6 +68,15 @@ INSERT INTO FLOAT4_TBL(f1) VALUES ('     - 3.0');
 --Testcase 17:
 INSERT INTO FLOAT4_TBL(f1) VALUES ('123            5');
 
+-- Also try it with non-error-throwing API
+CREATE FOREIGN TABLE NON_ERROR_THROWING_API_FLOAT4(f1 text, id serial OPTIONS (key 'true')) SERVER sqlite_svr;
+INSERT INTO NON_ERROR_THROWING_API_FLOAT4 VALUES ('34.5', 1), ('xyz', 2), ('1e400', 3);
+SELECT pg_input_is_valid(f1, 'float4') FROM NON_ERROR_THROWING_API_FLOAT4 WHERE id = 1;
+SELECT pg_input_is_valid(f1, 'float4') FROM NON_ERROR_THROWING_API_FLOAT4 WHERE id = 2;
+SELECT pg_input_is_valid(f1, 'float4') FROM NON_ERROR_THROWING_API_FLOAT4 WHERE id = 3;
+SELECT * FROM pg_input_error_info((SELECT f1 FROM NON_ERROR_THROWING_API_FLOAT4 WHERE id = 3), 'float4');
+
+
 -- special inputs
 --Testcase 18:
 DELETE FROM FLOAT4_TMP;

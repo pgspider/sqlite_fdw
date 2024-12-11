@@ -52,6 +52,21 @@ INSERT INTO INT8_TBL(q1) VALUES ('');
 --Testcase 13:
 SELECT * FROM INT8_TBL;
 
+-- Also try it with non-error-throwing API
+--Testcase 251:
+CREATE FOREIGN TABLE NON_ERROR_THROWING_API_INT8(f1 text, id serial OPTIONS (key 'true')) SERVER sqlite_svr;
+--Testcase 252:
+INSERT INTO NON_ERROR_THROWING_API_INT8 VALUES ('34', 1), ('asdf', 2), ('10000000000000000000', 3);
+--Testcase 253:
+SELECT pg_input_is_valid(f1, 'int8') FROM NON_ERROR_THROWING_API_INT8 WHERE id = 1;
+--Testcase 254:
+SELECT pg_input_is_valid(f1, 'int8') FROM NON_ERROR_THROWING_API_INT8 WHERE id = 2;
+--Testcase 255:
+SELECT pg_input_is_valid(f1, 'int8') FROM NON_ERROR_THROWING_API_INT8 WHERE id = 3;
+--Testcase 256:
+SELECT * FROM pg_input_error_info((SELECT f1 FROM NON_ERROR_THROWING_API_INT8 WHERE id = 3), 'int8');
+
+
 -- int8/int8 cmp
 --Testcase 14:
 SELECT * FROM INT8_TBL WHERE q2 = 4567890123456789;
@@ -124,33 +139,33 @@ SELECT * FROM INT8_TBL WHERE '123'::int2 >= q1;
 
 
 --Testcase 44:
-SELECT '' AS five, q1 AS plus, -q1 AS minus FROM INT8_TBL;
+SELECT q1 AS plus, -q1 AS minus FROM INT8_TBL;
 
 --Testcase 45:
-SELECT '' AS five, q1, q2, q1 + q2 AS plus FROM INT8_TBL;
+SELECT q1, q2, q1 + q2 AS plus FROM INT8_TBL;
 --Testcase 46:
-SELECT '' AS five, q1, q2, q1 - q2 AS minus FROM INT8_TBL;
+SELECT q1, q2, q1 - q2 AS minus FROM INT8_TBL;
 --Testcase 47:
-SELECT '' AS three, q1, q2, q1 * q2 AS multiply FROM INT8_TBL;
+SELECT q1, q2, q1 * q2 AS multiply FROM INT8_TBL;
 --Testcase 48:
-SELECT '' AS three, q1, q2, q1 * q2 AS multiply FROM INT8_TBL
+SELECT q1, q2, q1 * q2 AS multiply FROM INT8_TBL
  WHERE q1 < 1000 or (q2 > 0 and q2 < 1000);
 --Testcase 49:
-SELECT '' AS five, q1, q2, q1 / q2 AS divide, q1 % q2 AS mod FROM INT8_TBL;
+SELECT q1, q2, q1 / q2 AS divide, q1 % q2 AS mod FROM INT8_TBL;
 
 --Testcase 50:
-SELECT '' AS five, q1, float8(q1) FROM INT8_TBL;
+SELECT q1, float8(q1) FROM INT8_TBL;
 --Testcase 51:
-SELECT '' AS five, q2, float8(q2) FROM INT8_TBL;
+SELECT q2, float8(q2) FROM INT8_TBL;
 
 --Testcase 52:
 SELECT 37 + q1 AS plus4 FROM INT8_TBL;
 --Testcase 53:
 SELECT 37 - q1 AS minus4 FROM INT8_TBL;
 --Testcase 54:
-SELECT '' AS five, 2 * q1 AS "twice int4" FROM INT8_TBL;
+SELECT 2 * q1 AS "twice int4" FROM INT8_TBL;
 --Testcase 55:
-SELECT '' AS five, q1 * 2 AS "twice int4" FROM INT8_TBL;
+SELECT q1 * 2 AS "twice int4" FROM INT8_TBL;
 
 -- int8 op int4
 --Testcase 56:
@@ -177,47 +192,47 @@ SELECT max(q1), max(q2) FROM INT8_TBL;
 -- TO_CHAR()
 --
 --Testcase 63:
-SELECT '' AS to_char_1, to_char(q1, '9G999G999G999G999G999'), to_char(q2, '9,999,999,999,999,999')
+SELECT to_char(q1, '9G999G999G999G999G999'), to_char(q2, '9,999,999,999,999,999')
 	FROM INT8_TBL;
 
 --Testcase 64:
-SELECT '' AS to_char_2, to_char(q1, '9G999G999G999G999G999D999G999'), to_char(q2, '9,999,999,999,999,999.999,999')
+SELECT to_char(q1, '9G999G999G999G999G999D999G999'), to_char(q2, '9,999,999,999,999,999.999,999')
 	FROM INT8_TBL;
 
 --Testcase 65:
-SELECT '' AS to_char_3, to_char( (q1 * -1), '9999999999999999PR'), to_char( (q2 * -1), '9999999999999999.999PR')
+SELECT to_char( (q1 * -1), '9999999999999999PR'), to_char( (q2 * -1), '9999999999999999.999PR')
 	FROM INT8_TBL;
 
 --Testcase 66:
-SELECT '' AS to_char_4, to_char( (q1 * -1), '9999999999999999S'), to_char( (q2 * -1), 'S9999999999999999')
+SELECT to_char( (q1 * -1), '9999999999999999S'), to_char( (q2 * -1), 'S9999999999999999')
 	FROM INT8_TBL;
 
 --Testcase 67:
-SELECT '' AS to_char_5,  to_char(q2, 'MI9999999999999999')     FROM INT8_TBL;
+SELECT to_char(q2, 'MI9999999999999999')     FROM INT8_TBL;
 --Testcase 68:
-SELECT '' AS to_char_6,  to_char(q2, 'FMS9999999999999999')    FROM INT8_TBL;
+SELECT to_char(q2, 'FMS9999999999999999')    FROM INT8_TBL;
 --Testcase 69:
-SELECT '' AS to_char_7,  to_char(q2, 'FM9999999999999999THPR') FROM INT8_TBL;
+SELECT to_char(q2, 'FM9999999999999999THPR') FROM INT8_TBL;
 --Testcase 70:
-SELECT '' AS to_char_8,  to_char(q2, 'SG9999999999999999th')   FROM INT8_TBL;
+SELECT to_char(q2, 'SG9999999999999999th')   FROM INT8_TBL;
 --Testcase 71:
-SELECT '' AS to_char_9,  to_char(q2, '0999999999999999')       FROM INT8_TBL;
+SELECT to_char(q2, '0999999999999999')       FROM INT8_TBL;
 --Testcase 72:
-SELECT '' AS to_char_10, to_char(q2, 'S0999999999999999')      FROM INT8_TBL;
+SELECT to_char(q2, 'S0999999999999999')      FROM INT8_TBL;
 --Testcase 73:
-SELECT '' AS to_char_11, to_char(q2, 'FM0999999999999999')     FROM INT8_TBL;
+SELECT to_char(q2, 'FM0999999999999999')     FROM INT8_TBL;
 --Testcase 74:
-SELECT '' AS to_char_12, to_char(q2, 'FM9999999999999999.000') FROM INT8_TBL;
+SELECT to_char(q2, 'FM9999999999999999.000') FROM INT8_TBL;
 --Testcase 75:
-SELECT '' AS to_char_13, to_char(q2, 'L9999999999999999.000')  FROM INT8_TBL;
+SELECT to_char(q2, 'L9999999999999999.000')  FROM INT8_TBL;
 --Testcase 76:
-SELECT '' AS to_char_14, to_char(q2, 'FM9999999999999999.999') FROM INT8_TBL;
+SELECT to_char(q2, 'FM9999999999999999.999') FROM INT8_TBL;
 --Testcase 77:
-SELECT '' AS to_char_15, to_char(q2, 'S 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 . 9 9 9') FROM INT8_TBL;
+SELECT to_char(q2, 'S 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 . 9 9 9') FROM INT8_TBL;
 --Testcase 78:
-SELECT '' AS to_char_16, to_char(q2, E'99999 "text" 9999 "9999" 999 "\\"text between quote marks\\"" 9999') FROM INT8_TBL;
+SELECT to_char(q2, E'99999 "text" 9999 "9999" 999 "\\"text between quote marks\\"" 9999') FROM INT8_TBL;
 --Testcase 79:
-SELECT '' AS to_char_17, to_char(q2, '999999SG9999999999')     FROM INT8_TBL;
+SELECT to_char(q2, '999999SG9999999999')     FROM INT8_TBL;
 
 -- check min/max values and overflow behavior
 --Testcase 80:
@@ -261,6 +276,13 @@ DELETE FROM INT8_TMP;
 INSERT INTO INT8_TMP VALUES (-('-9223372036854775808'::int8));
 --Testcase 155:
 SELECT q1 FROM INT8_TMP;
+
+--Testcase 257:
+DELETE FROM INT8_TMP;
+--Testcase 258:
+INSERT INTO INT8_TMP VALUES (0::int8 , '-9223372036854775808'::int8);
+--Testcase 259:
+SELECT q1 - q2 FROM INT8_TMP;
 
 --Testcase 87:
 DELETE FROM INT8_TMP;
@@ -450,7 +472,6 @@ SELECT q1, q2, q1 & q2 AS "and", q1 | q2 AS "or", q1 # q2 AS "xor", ~q1 AS "not"
 --Testcase 117:
 SELECT q1, q1 << 2 AS "shl", q1 >> 3 AS "shr" FROM INT8_TBL;
 
-
 -- generate_series
 
 --Testcase 118:
@@ -615,7 +636,194 @@ INSERT INTO INT8_TMP VALUES ((9223372036854775807)::int8, (9223372036854775806):
 --Testcase 248:
 SELECT lcm(q1, q2) FROM INT8_TMP; -- overflow
 
---Testcase 251:
+-- non-decimal literals
+
+--Testcase 260:
+CREATE FOREIGN TABLE special_case_int8 (f1 text, id int OPTIONS (key 'true')) SERVER sqlite_svr;
+--Testcase 261:
+INSERT INTO special_case_int8 VALUES ('0b100101'::int8);
+--Testcase 262:
+SELECT f1 FROM special_case_int8;
+
+--Testcase 263:
+DELETE FROM special_case_int8;
+--Testcase 264:
+INSERT INTO special_case_int8 VALUES ('0o273'::int8);
+--Testcase 265:
+SELECT f1 FROM special_case_int8;
+
+--Testcase 266:
+DELETE FROM special_case_int8;
+--Testcase 267:
+INSERT INTO special_case_int8 VALUES ('0x42F'::int8);
+--Testcase 268:
+SELECT f1 FROM special_case_int8;
+
+--Testcase 269:
+DELETE FROM special_case_int8;
+--Testcase 270:
+INSERT INTO special_case_int8 VALUES ('0b'::int8);
+--Testcase 271:
+SELECT f1 FROM special_case_int8;
+
+--Testcase 272:
+DELETE FROM special_case_int8;
+--Testcase 273:
+INSERT INTO special_case_int8 VALUES ('0o'::int8);
+--Testcase 274:
+SELECT f1 FROM special_case_int8;
+
+--Testcase 275:
+DELETE FROM special_case_int8;
+--Testcase 276:
+INSERT INTO special_case_int8 VALUES ('0x'::int8);
+--Testcase 277:
+SELECT f1 FROM special_case_int8;
+
+-- cases near overflow
+--Testcase 278:
+DELETE FROM special_case_int8;
+--Testcase 279:
+INSERT INTO special_case_int8 VALUES ('0b111111111111111111111111111111111111111111111111111111111111111'::int8);
+--Testcase 280:
+SELECT f1 FROM special_case_int8;
+
+--Testcase 281:
+DELETE FROM special_case_int8;
+--Testcase 282:
+INSERT INTO special_case_int8 VALUES ('0b1000000000000000000000000000000000000000000000000000000000000000'::int8);
+--Testcase 283:
+SELECT f1 FROM special_case_int8;
+
+--Testcase 284:
+DELETE FROM special_case_int8;
+--Testcase 285:
+INSERT INTO special_case_int8 VALUES ('0o777777777777777777777'::int8);
+--Testcase 286:
+SELECT f1 FROM special_case_int8;
+
+--Testcase 287:
+DELETE FROM special_case_int8;
+--Testcase 288:
+INSERT INTO special_case_int8 VALUES ('0o1000000000000000000000'::int8);
+--Testcase 289:
+SELECT f1 FROM special_case_int8;
+
+--Testcase 290:
+DELETE FROM special_case_int8;
+--Testcase 291:
+INSERT INTO special_case_int8 VALUES ('0x7FFFFFFFFFFFFFFF'::int8);
+--Testcase 292:
+SELECT f1 FROM special_case_int8;
+
+--Testcase 293:
+DELETE FROM special_case_int8;
+--Testcase 294:
+INSERT INTO special_case_int8 VALUES ('0x8000000000000000'::int8);
+--Testcase 295:
+SELECT f1 FROM special_case_int8;
+
+--Testcase 296:
+DELETE FROM special_case_int8;
+--Testcase 297:
+INSERT INTO special_case_int8 VALUES ('-0b1000000000000000000000000000000000000000000000000000000000000000'::int8);
+--Testcase 298:
+SELECT f1 FROM special_case_int8;
+
+--Testcase 299:
+DELETE FROM special_case_int8;
+--Testcase 300:
+INSERT INTO special_case_int8 VALUES ('-0b1000000000000000000000000000000000000000000000000000000000000001'::int8);
+--Testcase 301:
+SELECT f1 FROM special_case_int8;
+
+--Testcase 302:
+DELETE FROM special_case_int8;
+--Testcase 303:
+INSERT INTO special_case_int8 VALUES ('-0o1000000000000000000000'::int8);
+--Testcase 304:
+SELECT f1 FROM special_case_int8;
+
+--Testcase 305:
+DELETE FROM special_case_int8;
+--Testcase 306:
+INSERT INTO special_case_int8 VALUES ('-0o1000000000000000000001'::int8);
+--Testcase 307:
+SELECT f1 FROM special_case_int8;
+
+--Testcase 308:
+DELETE FROM special_case_int8;
+--Testcase 309:
+INSERT INTO special_case_int8 VALUES ('-0x8000000000000000'::int8);
+--Testcase 310:
+SELECT f1 FROM special_case_int8;
+
+--Testcase 311:
+DELETE FROM special_case_int8;
+--Testcase 312:
+INSERT INTO special_case_int8 VALUES ('-0x8000000000000001'::int8);
+--Testcase 313:
+SELECT f1 FROM special_case_int8;
+
+-- underscores
+--Testcase 314:
+DELETE FROM special_case_int8;
+--Testcase 315:
+INSERT INTO special_case_int8 VALUES ('1_000_000'::int8);
+--Testcase 316:
+SELECT f1 FROM special_case_int8;
+
+--Testcase 317:
+DELETE FROM special_case_int8;
+--Testcase 318:
+INSERT INTO special_case_int8 VALUES ('1_2_3'::int8);
+--Testcase 319:
+SELECT f1 FROM special_case_int8;
+
+--Testcase 320:
+DELETE FROM special_case_int8;
+--Testcase 321:
+INSERT INTO special_case_int8 VALUES ('0x1EEE_FFFF'::int8);
+--Testcase 322:
+SELECT f1 FROM special_case_int8;
+
+--Testcase 323:
+DELETE FROM special_case_int8;
+--Testcase 324:
+INSERT INTO special_case_int8 VALUES ('0o2_73'::int8);
+--Testcase 325:
+SELECT f1 FROM special_case_int8;
+
+--Testcase 326:
+DELETE FROM special_case_int8;
+--Testcase 327:
+INSERT INTO special_case_int8 VALUES ('0b_10_0101'::int8);
+--Testcase 328:
+SELECT f1 FROM special_case_int8;
+
+-- error cases
+--Testcase 329:
+DELETE FROM special_case_int8;
+--Testcase 330:
+INSERT INTO special_case_int8 VALUES ('_100'::int8);
+--Testcase 331:
+SELECT f1 FROM special_case_int8;
+
+--Testcase 332:
+DELETE FROM special_case_int8;
+--Testcase 333:
+INSERT INTO special_case_int8 VALUES ('100_'::int8);
+--Testcase 334:
+SELECT f1 FROM special_case_int8;
+
+--Testcase 335:
+DELETE FROM special_case_int8;
+--Testcase 336:
+INSERT INTO special_case_int8 VALUES ('100__000'::int8);
+--Testcase 337:
+SELECT f1 FROM special_case_int8;
+
+--Testcase 338:
 DELETE FROM INT8_TBL;
 
 -- Clean up

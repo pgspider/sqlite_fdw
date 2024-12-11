@@ -597,7 +597,7 @@ for `INSERT` and `UPDATE` commands. PostgreSQL supports both `blob` and `text` [
 - `sqlite_fdw` doesn't pushdown `#` (XOR) operator because there is no equal SQLite operator.
 
 ### MAC address support
-- `sqlite_fdw` PostgreSQL `macaddr`/`macaddr8` values support based on `int` SQLite data affinity, because there is no per bit operations for SQLite `blob` affinity data. For `macaddr` out of range error is possible because this type is 6 bytes length, but SQLite `int` can store value p to 8 bytes.
+- `sqlite_fdw` PostgreSQL `macaddr`/`macaddr8` values support based on `int` SQLite data affinity, because there is no per bit operations for SQLite `blob` affinity data. For `macaddr` out of range error is possible because this type is 6 bytes length, but SQLite `int` can store value up to 8 bytes.
 - `sqlite_fdw` doesn't pushdown any operations with MAC adresses because there is 3 possible affinities for it in SQLite: `integer`, `blob` and `text`.
 
 Tests
