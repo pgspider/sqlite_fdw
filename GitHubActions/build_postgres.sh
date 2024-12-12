@@ -6,7 +6,7 @@
 # then builds it.
 #
 # Usage: ./build_postgres.sh pg_version [configure_options]
-#     pg_version is a PostgreSQL version to be installed like 16.0.
+#     pg_version is a PostgreSQL version to be installed like 17.0.
 #     configure_options are a list of option for postgres server.
 #
 # Requirements

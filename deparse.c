@@ -56,7 +56,7 @@ typedef enum
 {
 	FDW_COLLATE_NONE,			/* expression is of a noncollatable type */
 	FDW_COLLATE_SAFE,			/* collation derives from a foreign Var */
-	FDW_COLLATE_UNSAFE			/* collation derives from something else */
+	FDW_COLLATE_UNSAFE,			/* collation derives from something else */
 } FDWCollateState;
 
 typedef struct foreign_loc_cxt
@@ -129,16 +129,28 @@ static void sqlite_deparse_relation(StringInfo buf, Relation rel);
 static void sqlite_deparse_target_list(StringInfo buf, PlannerInfo *root, Index rtindex, Relation rel,
 									   Bitmapset *attrs_used, bool qualify_col, List **retrieved_attrs, bool is_concat, bool check_null);
 static void sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *root, bool qualify_col, bool dml_context);
-static void sqlite_deparse_select(List *tlist, List **retrieved_attrs, deparse_expr_cxt *context);
+static void sqlite_deparse_select(List *tlist, bool is_subquery, List **retrieved_attrs, deparse_expr_cxt *context);
+static void sqlite_deparse_subquery_target_list(deparse_expr_cxt *context);
 static void sqlite_deparse_case_expr(CaseExpr *node, deparse_expr_cxt *context);
 static void sqlite_deparse_null_if_expr(NullIfExpr *node, deparse_expr_cxt *context);
 static void sqlite_deparse_coalesce_expr(CoalesceExpr *node, deparse_expr_cxt *context);
 static void sqlite_deparse_from_expr_for_rel(StringInfo buf, PlannerInfo *root, RelOptInfo *foreignrel,
 											 bool use_alias, Index ignore_rel, List **ignore_conds,
+#if PG_VERSION_NUM >= 170000											 
+											 List **additional_conds, 
+#endif											 
 											 List **params_list);
+#if PG_VERSION_NUM >= 170000
+static void sqlite_append_where_clause(List *exprs, List *additional_conds,
+									   deparse_expr_cxt   *context);
+#endif
 static void sqlite_deparse_range_tbl_ref(StringInfo buf, PlannerInfo *root,
 										 RelOptInfo *foreignrel, bool make_subquery,
-										 Index ignore_rel, List **ignore_conds, List **params_list);
+										 Index ignore_rel, List **ignore_conds,
+#if PG_VERSION_NUM >= 170000
+										 List **additional_conds, 
+#endif
+										 List **params_list);
 static void sqlite_deparse_from_expr(List *quals, deparse_expr_cxt *context);
 static void sqlite_deparse_aggref(Aggref *node, deparse_expr_cxt *context);
 static void sqlite_append_limit_clause(deparse_expr_cxt *context);
@@ -1289,7 +1301,7 @@ sqlite_deparse_select_stmt_for_rel(StringInfo buf, PlannerInfo *root, RelOptInfo
 	context.params_list = params_list;
 
 	/* Construct SELECT clause */
-	sqlite_deparse_select(tlist, retrieved_attrs, &context);
+	sqlite_deparse_select(tlist, is_subquery, retrieved_attrs, &context);
 
 	/*
 	 * For upper relations, the WHERE clause is built from the remote
@@ -1338,7 +1350,7 @@ sqlite_deparse_select_stmt_for_rel(StringInfo buf, PlannerInfo *root, RelOptInfo
  * Deparese SELECT statment
  */
 static void
-sqlite_deparse_select(List *tlist, List **retrieved_attrs, deparse_expr_cxt *context)
+sqlite_deparse_select(List *tlist, bool is_subquery, List **retrieved_attrs, deparse_expr_cxt *context)
 {
 	StringInfo	buf = context->buf;
 	PlannerInfo *root = context->root;
@@ -1350,7 +1362,16 @@ sqlite_deparse_select(List *tlist, List **retrieved_attrs, deparse_expr_cxt *con
 	 */
 	appendStringInfoString(buf, "SELECT ");
 
-	if (IS_JOIN_REL(foreignrel) ||
+	if (is_subquery)
+	{
+		/*
+		 * For a relation that is deparsed as a subquery, emit expressions
+		 * specified in the relation's reltarget.  Note that since this is for
+		 * the subquery, no need to care about *retrieved_attrs.
+		 */
+		sqlite_deparse_subquery_target_list(context);
+	}
+	else if (IS_JOIN_REL(foreignrel) ||
 		fpinfo->is_tlist_func_pushdown == true ||
 		IS_UPPER_REL(foreignrel))
 	{
@@ -1391,6 +1412,9 @@ sqlite_deparse_from_expr(List *quals, deparse_expr_cxt *context)
 {
 	StringInfo	buf = context->buf;
 	RelOptInfo *scanrel = context->scanrel;
+#if PG_VERSION_NUM >= 170000
+	List	   *additional_conds = NIL;
+#endif
 
 	/* For upper relations, scanrel must be either a joinrel or a baserel */
 	Assert(!IS_UPPER_REL(context->foreignrel) ||
@@ -1401,17 +1425,25 @@ sqlite_deparse_from_expr(List *quals, deparse_expr_cxt *context)
 	appendStringInfoString(buf, " FROM ");
 	sqlite_deparse_from_expr_for_rel(buf, context->root, scanrel,
 									 (bms_num_members(scanrel->relids) == BMS_MULTIPLE),
-									 (Index) 0, NULL,
+									 (Index) 0, NULL, 
+#if PG_VERSION_NUM >= 170000
+									 &additional_conds,
+#endif
 									 context->params_list);
 
+#if PG_VERSION_NUM >= 170000
+	sqlite_append_where_clause(quals, additional_conds, context);
+	if (additional_conds != NIL)
+		list_free_deep(additional_conds);
+#else
 	/* Construct WHERE clause */
 	if (quals != NIL)
 	{
 		appendStringInfo(buf, " WHERE ");
 		sqlite_append_conditions(quals, context);
 	}
+#endif
 }
-
 
 /*
  * Deparse conditions from the provided list and append them to buf.
@@ -1469,7 +1501,10 @@ sqlite_get_jointype_name(JoinType jointype)
 
 		case JOIN_FULL:
 			return "FULL";
-
+#if PG_VERSION_NUM >= 170000	
+		case JOIN_SEMI:
+			return "SEMI";
+#endif
 		default:
 			/* Shouldn't come here, but protect from buggy code. */
 			elog(ERROR, "unsupported join type %d", jointype);
@@ -1514,6 +1549,42 @@ sqlite_deparse_explicit_target_list(List *tlist, List **retrieved_attrs,
 		appendStringInfoString(buf, "NULL");
 }
 
+/*
+ * Emit expressions specified in the given relation's reltarget.
+ *
+ * This is used for deparsing the given relation as a subquery.
+ */
+static void
+sqlite_deparse_subquery_target_list(deparse_expr_cxt *context)
+{
+	StringInfo	buf = context->buf;
+	RelOptInfo *foreignrel = context->foreignrel;
+	bool		first;
+	ListCell   *lc;
+	int			col = 1;
+
+	/* Should only be called in these cases. */
+	Assert(IS_SIMPLE_REL(foreignrel) || IS_JOIN_REL(foreignrel));
+
+	first = true;
+	foreach(lc, foreignrel->reltarget->exprs)
+	{
+		Node	   *node = (Node *) lfirst(lc);
+
+		if (!first)
+			appendStringInfoString(buf, ", ");
+		first = false;
+
+		sqlite_deparse_expr((Expr *) node, context);
+
+		appendStringInfo(buf, " AS %s%d", SUBQUERY_COL_ALIAS_PREFIX, col);
+		col++;
+	}
+
+	/* Don't generate bad syntax if no expressions */
+	if (first)
+		appendStringInfoString(buf, "NULL");
+}
 
 /*
  * Construct FROM clause for given relation
@@ -1521,10 +1592,22 @@ sqlite_deparse_explicit_target_list(List *tlist, List **retrieved_attrs,
  * The function constructs ... JOIN ... ON ... for join relation. For a base
  * relation it just returns schema-qualified tablename, with the appropriate
  * alias if so requested.
+ * 
+ * 'ignore_rel' is either zero or the RT index of a target relation.  In the
+ * latter case the function constructs FROM clause of UPDATE or USING clause
+ * of DELETE; it deparses the join relation as if the relation never contained
+ * the target relation, and creates a List of conditions to be deparsed into
+ * the top-level WHERE clause, which is returned to *ignore_conds.
+ *
+ * 'additional_conds' is a pointer to a list of strings to be appended to
+ * the WHERE clause, coming from lower-level SEMI-JOINs.
  */
 static void
 sqlite_deparse_from_expr_for_rel(StringInfo buf, PlannerInfo *root, RelOptInfo *foreignrel,
 								 bool use_alias, Index ignore_rel, List **ignore_conds,
+#if PG_VERSION_NUM >= 170000
+								 List **additional_conds, 
+#endif
 								 List **params_list)
 {
 	if (IS_JOIN_REL(foreignrel))
@@ -1536,6 +1619,10 @@ sqlite_deparse_from_expr_for_rel(StringInfo buf, PlannerInfo *root, RelOptInfo *
 		RelOptInfo *innerrel = fpinfo->innerrel;
 		bool		outerrel_is_target = false;
 		bool		innerrel_is_target = false;
+#if PG_VERSION_NUM >= 170000	
+		List	   *additional_conds_i = NIL;
+		List	   *additional_conds_o = NIL;
+#endif
 
 		if (ignore_rel > 0 && bms_is_member(ignore_rel, foreignrel->relids))
 		{
@@ -1566,13 +1653,17 @@ sqlite_deparse_from_expr_for_rel(StringInfo buf, PlannerInfo *root, RelOptInfo *
 				innerrel_is_target = true;
 		}
 
-		/* Deparse outer relation */
+		/* Deparse outer relation if not the target relation. */
 		if (!outerrel_is_target)
 		{
 			initStringInfo(&join_sql_o);
 			sqlite_deparse_range_tbl_ref(&join_sql_o, root, outerrel,
 										 fpinfo->make_outerrel_subquery,
-										 ignore_rel, ignore_conds, params_list);
+										 ignore_rel, ignore_conds,
+#if PG_VERSION_NUM >= 170000
+										 &additional_conds_o,
+#endif
+										 params_list);
 
 			/*
 			 * If inner relation is the target relation, skip deparsing it.
@@ -1588,18 +1679,76 @@ sqlite_deparse_from_expr_for_rel(StringInfo buf, PlannerInfo *root, RelOptInfo *
 				Assert(fpinfo->jointype == JOIN_INNER);
 				Assert(fpinfo->joinclauses == NIL);
 				appendBinaryStringInfo(buf, join_sql_o.data, join_sql_o.len);
+#if PG_VERSION_NUM >= 170000	
+				/* Pass EXISTS conditions to upper level */
+				if (additional_conds_o != NIL)
+				{
+					Assert(*additional_conds == NIL);
+					*additional_conds = additional_conds_o;
+				}
+#endif
 				return;
 			}
 		}
 
-		/* Deparse inner relation */
+		/* Deparse inner relation if not the target relation. */
 		if (!innerrel_is_target)
 		{
 			initStringInfo(&join_sql_i);
 			sqlite_deparse_range_tbl_ref(&join_sql_i, root, innerrel,
 										 fpinfo->make_innerrel_subquery,
-										 ignore_rel, ignore_conds, params_list);
+										 ignore_rel, ignore_conds, 
+#if PG_VERSION_NUM >= 170000
+										 &additional_conds_i,
+#endif
+										 params_list);
+#if PG_VERSION_NUM >= 170000
+			/*
+			 * SEMI-JOIN is deparsed as the EXISTS subquery. It references
+			 * outer and inner relations, so it should be evaluated as the
+			 * condition in the upper-level WHERE clause. We deparse the
+			 * condition and pass it to upper level callers as an
+			 * additional_conds list. Upper level callers are responsible for
+			 * inserting conditions from the list where appropriate.
+			 */
+			if (fpinfo->jointype == JOIN_SEMI)
+			{
+				deparse_expr_cxt context;
+				StringInfoData str;
 
+				/* Construct deparsed condition from this SEMI-JOIN */
+				initStringInfo(&str);
+				appendStringInfo(&str, "EXISTS (SELECT NULL FROM %s",
+								 join_sql_i.data);
+
+				context.buf = &str;
+				context.foreignrel = foreignrel;
+				context.scanrel = foreignrel;
+				context.root = root;
+				context.params_list = params_list;
+
+				/*
+				 * Append SEMI-JOIN clauses and EXISTS conditions from lower
+				 * levels to the current EXISTS subquery
+				 */
+				sqlite_append_where_clause(fpinfo->joinclauses, additional_conds_i, &context);
+
+				/*
+				 * EXISTS conditions, coming from lower join levels, have just
+				 * been processed.
+				 */
+				if (additional_conds_i != NIL)
+				{
+					list_free_deep(additional_conds_i);
+					additional_conds_i = NIL;
+				}
+
+				/* Close parentheses for EXISTS subquery */
+				appendStringInfoChar(&str, ')');
+
+				*additional_conds = lappend(*additional_conds, str.data);
+			}
+#endif	
 			/*
 			 * If outer relation is the target relation, skip deparsing it.
 			 * See the above note about safety.
@@ -1609,6 +1758,14 @@ sqlite_deparse_from_expr_for_rel(StringInfo buf, PlannerInfo *root, RelOptInfo *
 				Assert(fpinfo->jointype == JOIN_INNER);
 				Assert(fpinfo->joinclauses == NIL);
 				appendBinaryStringInfo(buf, join_sql_i.data, join_sql_i.len);
+#if PG_VERSION_NUM >= 170000				
+				/* Pass EXISTS conditions to the upper call */
+				if (additional_conds_i != NIL)
+				{
+					Assert(*additional_conds == NIL);
+					*additional_conds = additional_conds_i;
+				}
+#endif
 				return;
 			}
 		}
@@ -1616,33 +1773,70 @@ sqlite_deparse_from_expr_for_rel(StringInfo buf, PlannerInfo *root, RelOptInfo *
 		/* Neither of the relations is the target relation. */
 		Assert(!outerrel_is_target && !innerrel_is_target);
 
+#if PG_VERSION_NUM >= 170000
 		/*
-		 * For a join relation FROM clause entry is deparsed as ((outer
-		 * relation) <join type> (inner relation) ON (joinclauses))
+		 * For semijoin FROM clause is deparsed as an outer relation. An inner
+		 * relation and join clauses are converted to EXISTS condition and
+		 * passed to the upper level.
 		 */
-		appendStringInfo(buf, "(%s %s JOIN %s ON ", join_sql_o.data,
-						 sqlite_get_jointype_name(fpinfo->jointype), join_sql_i.data);
-
-		/* Append join clause; (TRUE) if no join clause */
-		if (fpinfo->joinclauses)
+		if (fpinfo->jointype == JOIN_SEMI)
 		{
-			deparse_expr_cxt context;
-
-			context.buf = buf;
-			context.foreignrel = foreignrel;
-			context.scanrel = foreignrel;
-			context.root = root;
-			context.params_list = params_list;
-
-			appendStringInfo(buf, "(");
-			sqlite_append_conditions(fpinfo->joinclauses, &context);
-			appendStringInfo(buf, ")");
+			appendBinaryStringInfo(buf, join_sql_o.data, join_sql_o.len);
 		}
 		else
-			appendStringInfoString(buf, "(TRUE)");
+		{
+#endif
+		/*
+		 * For a join relation FROM clause, entry is deparsed as
+		 *
+		 * ((outer relation) <join type> (inner relation) ON
+		 * (joinclauses))
+		 */
+			appendStringInfo(buf, "(%s %s JOIN %s ON ", join_sql_o.data,
+							sqlite_get_jointype_name(fpinfo->jointype), join_sql_i.data);
 
-		/* End the FROM clause entry. */
-		appendStringInfo(buf, ")");
+			/* Append join clause; (TRUE) if no join clause */
+			if (fpinfo->joinclauses)
+			{
+				deparse_expr_cxt context;
+
+				context.buf = buf;
+				context.foreignrel = foreignrel;
+				context.scanrel = foreignrel;
+				context.root = root;
+				context.params_list = params_list;
+
+				appendStringInfo(buf, "(");		
+				sqlite_append_conditions(fpinfo->joinclauses, &context);
+				appendStringInfo(buf, ")");			
+			}
+			else
+				appendStringInfoString(buf, "(TRUE)");
+
+			/* End the FROM clause entry. */
+			appendStringInfo(buf, ")");
+#if PG_VERSION_NUM >= 170000
+		}
+
+		/*
+		 * Construct additional_conds to be passed to the upper caller from
+		 * current level additional_conds and additional_conds, coming from
+		 * inner and outer rels.
+		 */
+		if (additional_conds_o != NIL)
+		{
+			*additional_conds = list_concat(*additional_conds,
+											additional_conds_o);
+			list_free(additional_conds_o);
+		}
+
+		if (additional_conds_i != NIL)
+		{
+			*additional_conds = list_concat(*additional_conds,
+											additional_conds_i);
+			list_free(additional_conds_i);
+		}
+#endif
 	}
 	else
 	{
@@ -1670,10 +1864,15 @@ sqlite_deparse_from_expr_for_rel(StringInfo buf, PlannerInfo *root, RelOptInfo *
 
 /*
  * Append FROM clause entry for the given relation into buf.
+ * Conditions from lower-level SEMI-JOINs are appended to additional_conds
+ * and should be added to upper level WHERE clause.
  */
 static void
 sqlite_deparse_range_tbl_ref(StringInfo buf, PlannerInfo *root, RelOptInfo *foreignrel,
 							 bool make_subquery, Index ignore_rel, List **ignore_conds,
+#if PG_VERSION_NUM >= 170000
+							 List **additional_conds,
+#endif
 							 List **params_list)
 {
 	SqliteFdwRelationInfo *fpinfo = (SqliteFdwRelationInfo *) foreignrel->fdw_private;
@@ -1687,7 +1886,6 @@ sqlite_deparse_range_tbl_ref(StringInfo buf, PlannerInfo *root, RelOptInfo *fore
 	if (make_subquery)
 	{
 		List	   *retrieved_attrs;
-		int			ncols;
 
 		/*
 		 * The given relation shouldn't contain the target relation, because
@@ -1709,30 +1907,14 @@ sqlite_deparse_range_tbl_ref(StringInfo buf, PlannerInfo *root, RelOptInfo *fore
 		appendStringInfo(buf, " %s%d", SUBQUERY_REL_ALIAS_PREFIX,
 						 fpinfo->relation_index);
 
-		/*
-		 * Append the column aliases if needed.  Note that the subquery emits
-		 * expressions specified in the relation's reltarget (see
-		 * deparseSubqueryTargetList).
-		 */
-		ncols = list_length(foreignrel->reltarget->exprs);
-		if (ncols > 0)
-		{
-			int			i;
-
-			appendStringInfoChar(buf, '(');
-			for (i = 1; i <= ncols; i++)
-			{
-				if (i > 1)
-					appendStringInfoString(buf, ", ");
-
-				appendStringInfo(buf, "%s%d", SUBQUERY_COL_ALIAS_PREFIX, i);
-			}
-			appendStringInfoChar(buf, ')');
-		}
 	}
 	else
 		sqlite_deparse_from_expr_for_rel(buf, root, foreignrel, true, ignore_rel,
-										 ignore_conds, params_list);
+										 ignore_conds, 
+#if PG_VERSION_NUM >= 170000
+										 additional_conds,
+#endif
+										 params_list);
 }
 
 /*
@@ -1974,57 +2156,43 @@ sqlite_deparse_target_list(StringInfo buf,
 		appendStringInfoString(buf, ", '')");
 }
 
+#if PG_VERSION_NUM >= 170000
 /*
- * Deparse WHERE clauses in given list of RestrictInfos and append them to buf.
- *
- * baserel is the foreign table we're planning for.
- *
- * If no WHERE clause already exists in the buffer, is_first should be true.
- *
- * If params is not NULL, it receives a list of Params and other-relation Vars
- * used in the clauses; these values must be transmitted to the remote server
- * as parameter values.
- *
- * If params is NULL, we're generating the query for EXPLAIN purposes,
- * so Params and other-relation Vars should be replaced by dummy values.
+ * Append WHERE clause, containing conditions from exprs and additional_conds,
+ * to context->buf.
  */
 void
-sqlite_append_where_clause(StringInfo buf,
-						   PlannerInfo *root,
-						   RelOptInfo *baserel,
-						   List *exprs,
-						   bool is_first,
-						   List **params)
-{
-	deparse_expr_cxt context;
+sqlite_append_where_clause(List *exprs, List *additional_conds, deparse_expr_cxt *context)
+{	
+	StringInfo	buf = context->buf;
+	bool		need_and = false;
 	ListCell   *lc;
 
-	if (params)
-		*params = NIL;			/* initialize result list to empty */
+	if (exprs != NIL || additional_conds != NIL)
+		appendStringInfoString(buf, " WHERE ");
 
-	/* Set up context struct for recursion */
-	context.root = root;
-	context.foreignrel = baserel;
-	context.buf = buf;
-	context.params_list = params;
-
-	foreach(lc, exprs)
+	/*
+	 * If there are some filters, append them.
+	 */
+	if (exprs != NIL)
 	{
-		RestrictInfo *ri = (RestrictInfo *) lfirst(lc);
+		sqlite_append_conditions(exprs, context);
+		need_and = true;
+	}
 
-		/* Connect expressions with "AND" and parenthesize each condition. */
-		if (is_first)
-			appendStringInfoString(buf, " WHERE ");
-		else
+	/*
+	 * If there are some EXISTS conditions, coming from SEMI-JOINS, append
+	 * them.
+	 */
+	foreach(lc, additional_conds)
+	{
+		if (need_and)
 			appendStringInfoString(buf, " AND ");
-
-		appendStringInfoChar(buf, '(');
-		sqlite_deparse_expr(ri->clause, &context);
-		appendStringInfoChar(buf, ')');
-
-		is_first = false;
+		appendStringInfoString(buf, (char *) lfirst(lc));
+		need_and = true;
 	}
 }
+#endif
 
 #if PG_VERSION_NUM >= 140000
 /*
@@ -2472,6 +2640,9 @@ sqlite_deparse_direct_update_sql(StringInfo buf, PlannerInfo *root,
 	bool		first;
 	ListCell   *lc;
 	ListCell   *lc2;
+#if PG_VERSION_NUM >= 170000
+	List	   *additional_conds = NIL;
+#endif
 
 	elog(DEBUG3, "sqlite_fdw : %s\n", __func__);
 	/* Set up context struct for recursion */
@@ -2547,15 +2718,26 @@ sqlite_deparse_direct_update_sql(StringInfo buf, PlannerInfo *root,
 
 		appendStringInfo(buf, " FROM ");
 		sqlite_deparse_from_expr_for_rel(buf, root, foreignrel, true, rtindex,
-										 &ignore_conds, params_list);
+										 &ignore_conds, 
+#if PG_VERSION_NUM >= 170000										 
+										 &additional_conds,
+#endif										 
+										 params_list);
 		remote_conds = list_concat(remote_conds, ignore_conds);
 	}
+#if PG_VERSION_NUM >= 170000										 
 
+	sqlite_append_where_clause(remote_conds, additional_conds, &context);
+
+	if (additional_conds != NIL)
+		list_free_deep(additional_conds);
+#else	
 	if (remote_conds)
 	{
 		appendStringInfoString(buf, " WHERE ");
 		sqlite_append_conditions(remote_conds, &context);
 	}
+#endif
 }
 
 /*
@@ -2607,7 +2789,9 @@ sqlite_deparse_direct_delete_sql(StringInfo buf, PlannerInfo *root,
 								 List **retrieved_attrs)
 {
 	deparse_expr_cxt context;
-
+#if PG_VERSION_NUM >= 170000
+	List	   *additional_conds = NIL;
+#endif	
 	elog(DEBUG1, "sqlite_fdw : %s", __func__);
 
 	/* Set up context struct for recursion */
@@ -2628,15 +2812,25 @@ sqlite_deparse_direct_delete_sql(StringInfo buf, PlannerInfo *root,
 
 		appendStringInfo(buf, " USING ");
 		sqlite_deparse_from_expr_for_rel(buf, root, foreignrel, true, rtindex,
-										 &ignore_conds, params_list);
+										 &ignore_conds,
+#if PG_VERSION_NUM >= 170000										 
+										 &additional_conds,
+#endif										  
+										 params_list);
 		remote_conds = list_concat(remote_conds, ignore_conds);
 	}
+#if PG_VERSION_NUM >= 170000
+	sqlite_append_where_clause(remote_conds, additional_conds, &context);
 
+	if (additional_conds != NIL)
+		list_free_deep(additional_conds);
+#else
 	if (remote_conds)
 	{
 		appendStringInfoString(buf, " WHERE ");
 		sqlite_append_conditions(remote_conds, &context);
 	}
+#endif
 }
 
 /*
@@ -3521,7 +3715,7 @@ sqlite_deparse_coalesce_expr(CoalesceExpr *node, deparse_expr_cxt *context)
  * Print the representation of a parameter to be sent to the remote side.
  *
  * Note: we always label the Param's type explicitly rather than relying on
- * transmitting a numeric type OID in PQexecParams().  This allows us to
+ * transmitting a numeric type OID in PQsendQueryParams().  This allows us to
  * avoid assuming that types have the same OIDs on the remote side as they
  * do locally --- they need only have the same names.
  */
@@ -3751,13 +3945,12 @@ sqlite_append_order_by_clause(List *pathkeys, bool has_final_sort, deparse_expr_
 {
 	ListCell   *lcell;
 	int			nestlevel;
-	const char	   *delim = " ";
 	StringInfo	buf = context->buf;
+	bool		gotone = false;
 
 	/* Make sure any constants in the exprs are printed portably */
 	nestlevel = sqlite_set_transmission_modes();
 
-	appendStringInfo(buf, " ORDER BY");
 	foreach(lcell, pathkeys)
 	{
 		PathKey	*pathkey = lfirst(lcell);
@@ -3788,6 +3981,28 @@ sqlite_append_order_by_clause(List *pathkeys, bool has_final_sort, deparse_expr_
 
 		em_expr = em->em_expr;
 
+#if PG_VERSION_NUM >= 170000
+		/*
+		 * If the member is a Const expression then we needn't add it to the
+		 * ORDER BY clause.  This can happen in UNION ALL queries where the
+		 * union child targetlist has a Const.  Adding these would be
+		 * wasteful, but also, for INT columns, an integer literal would be
+		 * seen as an ordinal column position rather than a value to sort by.
+		 * deparseConst() does have code to handle this, but it seems less
+		 * effort on all accounts just to skip these for ORDER BY clauses.
+		 */
+		if (IsA(em_expr, Const))
+			continue;
+#endif
+
+		if (!gotone)
+		{
+			appendStringInfoString(buf, " ORDER BY ");
+			gotone = true;
+		}
+		else
+			appendStringInfoString(buf, ", ");
+
 		/*
 		 * Lookup the operator corresponding to the strategy in the opclass.
 		 * The datatype used by the opfamily is not necessarily the same as
@@ -3802,7 +4017,6 @@ sqlite_append_order_by_clause(List *pathkeys, bool has_final_sort, deparse_expr_
 				 pathkey->pk_strategy, em->em_datatype, em->em_datatype,
 				 pathkey->pk_opfamily);
 
-		appendStringInfoString(buf, delim);
 		sqlite_deparse_expr(em_expr, context);
 		/*
 		 * Here we need to use the expression's actual type to discover
@@ -3829,7 +4043,6 @@ sqlite_append_order_by_clause(List *pathkeys, bool has_final_sort, deparse_expr_
 			else if (pathkey->pk_nulls_first && pathkey->pk_strategy != BTLessStrategyNumber)
 				elog(WARNING, "Current Sqlite Version (%d) does not support NULLS FIRST for ORDER BY DESC, degraded emitted query to ORDER BY DESC NULLS LAST (default sqlite behaviour).", sqliteVersion);
 		}
-		delim = ", ";
 	}
 	sqlite_reset_transmission_modes(nestlevel);
 }

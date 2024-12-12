@@ -2,7 +2,7 @@ SQLite Foreign Data Wrapper for PostgreSQL
 ==========================================
 
 This is a foreign data wrapper (FDW) to connect [PostgreSQL](https://www.postgresql.org/)
-to [SQLite](https://sqlite.org/) database file. This FDW works with PostgreSQL 12, 13, 14, 15, 16 and confirmed with SQLite 3.42.0.
+to [SQLite](https://sqlite.org/) database file. This FDW works with PostgreSQL 13, 14, 15, 16, 17 and confirmed with SQLite 3.46.0.
 
 <img src="https://upload.wikimedia.org/wikipedia/commons/2/29/Postgresql_elephant.svg" align="center" height="100" alt="PostgreSQL"/>	+	<img src="https://upload.wikimedia.org/wikipedia/commons/3/38/SQLite370.svg" align="center" height="100" alt="SQLite"/>
 
@@ -57,7 +57,7 @@ Features
 - `WHERE` clauses are pushdowned
 - Aggregate function are pushdowned
 - `ORDER BY` is pushdowned
-- Joins (left/right/inner/cross) are pushdowned
+- Joins (left/right/inner/cross/semi) are pushdowned
 - `CASE` expressions are pushdowned.
 - `LIMIT` and `OFFSET` are pushdowned when all tables in the query are foreign tables belongs to the same PostgreSQL `FOREIGN SERVER` object.
 - Support `GROUP BY`, `HAVING` push-down.
@@ -362,7 +362,7 @@ Returns standard "version integer" as `major version * 10000 + minor version * 1
 ```
 sqlite_fdw_version
 --------------------
-              20400
+              20500
 ```
 
 Identifier case handling
@@ -627,30 +627,30 @@ Test directory have structure as following:
 
 ```
 +---sql
-|   +---12.16
+|   +---13.15
 |   |       filename1.sql
 |   |       filename2.sql
 |   |
-|   +---13.12
+|   +---14.12
 |   |       filename1.sql
 |   |       filename2.sql
 |   |
 .................
-|   \---15.4
+|   \---17.0
 |          filename1.sql
 |          filename2.sql
 |
 \---expected
-|   +---12.16
+|   +---13.15
 |   |       filename1.out
 |   |       filename2.out
 |   |
-|   +---13.12
+|   +---14.12
 |   |       filename1.out
 |   |       filename2.out
 |   |
 .................
-|   \---15.4
+|   \---17.0
             filename1.out
             filename2.out
 ```

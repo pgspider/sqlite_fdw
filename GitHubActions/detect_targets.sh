@@ -4,7 +4,7 @@
 #
 # This script detects target PostgreSQL versions for sqlite_fdw testing from
 # directory names in ./sql directory. Detected versions will be outputed to
-# the standard output as an array of string like ["15.4","16.0"].
+# the standard output as an array of string like ["16.3","17.0"].
 #
 # Usage: ./detect_targets.sh
 #
