@@ -46,7 +46,31 @@ CREATE TABLE BitT (p integer primary key, a BIT(3), b BIT VARYING(5));
 CREATE TABLE notype (a);
 CREATE TABLE typetest (i integer, v varchar(10) , c char(10), t text, d datetime, ti timestamp);
 CREATE TABLE type_TEXT (col text primary key);
-CREATE TABLE alltypetest (c1 int,     c2 tinyint,  c3 smallint, c4 mediumint,  c5 bigint,           c6 unsign big int,    c7 int8,               c8 character(10),       c9 varchar(255),            c10 character varying(255),        c11 nchar(55),                    c12 native character(70),      c13 nvarchar(100),                            c14 text,                          c15 clob,                               c16 blob,                         c17 real,          c18 double,         c19 double precision,   c20 float,           c21 numeric,  c22 decimal(10,5),  c23 date,            c24 datetime);
+CREATE TABLE alltypetest (
+	c1 int,
+	c2 tinyint,
+	c3 smallint,
+	c4 mediumint,
+	c5 bigint,
+	c6 unsign big int,
+	c7 int8,
+	c8 character(10),
+	c9 varchar(255),
+	c10 character varying(255),
+	c11 nchar(55),
+	c12 native character(70),
+	c13 nvarchar(100),
+	c14 text,
+	c15 clob,
+	c16 blob,
+	c17 real,
+	c18 double,
+	c19 double precision,
+	c20 float,
+	c21 numeric,
+	c22 decimal(10,5),
+	c23 date,
+	c24 datetime);
 INSERT INTO  alltypetest VALUES (583647,   127,        12767,       388607,      2036854775807,          573709551615,      2036854775807,             'abcdefghij',       'abcdefghijjhgfjfuafh',       'Côte dIvoire Fijifoxju',        'Hôm nay tôi rất vui',                 'I am happy today',              '今日はとても幸せです 今日はとても幸せです',            'The quick brown fox jumps o'       ,  'ABCDEFGHIJKLMNOPQRSTUVWX',          x'4142434445',                       3.40E+18,          1.79769E+108,          1.79769E+88,          1.79E+108,          1234,        99999.99999,        '9999-12-31',         '9999-12-31 23:59:59');
 
 -- a table that is missing some fields
@@ -104,5 +128,29 @@ WITH booldata AS (
 	(NULL) )
 				 )
 SELECT ROW_NUMBER() OVER () i, t1.i i1, t1.b b1, t2.i i2, t2.b b2 FROM booldata t1 INNER JOIN booldata t2 ON 1;
+
+-- SpatiaLite/PostGIS test
+-- This table name also tests SpatiaLite and PostGIS metadata functions. Made as analog of the next "martian" table.
+CREATE TABLE "♁" (
+	geom geometry NOT NULL,
+	osm_type varchar(16) NOT NULL,
+	osm_id int NOT NULL,
+	ver int NOT NULL,
+	arr text,
+	t jsonb
+);
+
+-- SpatiaLite/PostGIS test
+-- This table and column names also tests SpatiaLite and PostGIS metadata functions. Any geometry or geography column declaration cause some actions inside of spatial metadata storage or journals of SpatiaLite and PostGIS.
+-- This is real table and column names from one of DBs of Union Astronomique International.
+CREATE TABLE "♂" (
+	id int4,
+	"UAI" varchar(254),
+	"⌖" geometry,
+	geom geometry,
+	"t₀" date,
+	"class" text,
+	"URL" varchar(80)
+);
 
 analyze;
