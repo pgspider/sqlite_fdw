@@ -21,7 +21,6 @@ create table grem1_1 (a int primary key, b int generated always as (a * 2) store
 create table grem1_2 (a int primary key, b int generated always as (a * 2) stored, c int generated always as (a * 3) stored, d int generated always as (a * 4) stored);
 CREATE TABLE case_exp(c1 int primary key, c3 text, c6 varchar(10));
 
--- Tests for data type support
 CREATE TABLE "type_STRING" (col text primary key);
 CREATE TABLE "type_BOOLEANpk" (col boolean primary key);
 CREATE TABLE "type_BOOLEAN" (i int primary key, b boolean);
@@ -42,37 +41,12 @@ CREATE TABLE "type_VARBIT" (i int, b bit);
 CREATE VIEW  "type_VARBIT+" AS SELECT *, typeof(b) t, length(b) l FROM "type_VARBIT";
 CREATE TABLE "type_UUIDpk" (col uuid primary key);
 CREATE TABLE "type_UUID" (i int, u uuid);
-CREATE TABLE "types_PostGIS" (i int, gm geometry, gg geography, r raster, t text, gm1 geometry, gg1 geography);
 CREATE VIEW  "type_UUID+" AS SELECT *, typeof("u") t, length("u") l FROM "type_UUID";
 CREATE TABLE BitT (p integer primary key, a BIT(3), b BIT VARYING(5));
 CREATE TABLE notype (a);
 CREATE TABLE typetest (i integer, v varchar(10) , c char(10), t text, d datetime, ti timestamp);
 CREATE TABLE type_TEXT (col text primary key);
-CREATE TABLE alltypetest (
-	c1 int,
-	c2 tinyint,
-	c3 smallint,
-	c4 mediumint,
-	c5 bigint,
-	c6 unsign big int,
-	c7 int8,
-	c8 character(10),
-	c9 varchar(255),
-	c10 character varying(255),
-	c11 nchar(55),
-	c12 native character(70),
-	c13 nvarchar(100),
-	c14 text,
-	c15 clob,
-	c16 blob,
-	c17 real,
-	c18 double,
-	c19 double precision,
-	c20 float,
-	c21 numeric,
-	c22 decimal(10,5),
-	c23 date,
-	c24 datetime);
+CREATE TABLE alltypetest (c1 int,     c2 tinyint,  c3 smallint, c4 mediumint,  c5 bigint,           c6 unsign big int,    c7 int8,               c8 character(10),       c9 varchar(255),            c10 character varying(255),        c11 nchar(55),                    c12 native character(70),      c13 nvarchar(100),                            c14 text,                          c15 clob,                               c16 blob,                         c17 real,          c18 double,         c19 double precision,   c20 float,           c21 numeric,  c22 decimal(10,5),  c23 date,            c24 datetime);
 INSERT INTO  alltypetest VALUES (583647,   127,        12767,       388607,      2036854775807,          573709551615,      2036854775807,             'abcdefghij',       'abcdefghijjhgfjfuafh',       'Côte dIvoire Fijifoxju',        'Hôm nay tôi rất vui',                 'I am happy today',              '今日はとても幸せです 今日はとても幸せです',            'The quick brown fox jumps o'       ,  'ABCDEFGHIJKLMNOPQRSTUVWX',          x'4142434445',                       3.40E+18,          1.79769E+108,          1.79769E+88,          1.79E+108,          1234,        99999.99999,        '9999-12-31',         '9999-12-31 23:59:59');
 
 -- a table that is missing some fields
@@ -86,7 +60,7 @@ CREATE TABLE "A a" (col int primary key);
 -- test for issue #44 github
 CREATE VIRTUAL TABLE fts_table USING fts5(name, description, tokenize = porter);
 
--- github.com/pull/59
+-- updatable option test (github pull 59)
 CREATE TABLE RO_RW_test (
     i   int primary key not null,
     a   text,
@@ -96,7 +70,7 @@ CREATE TABLE RO_RW_test (
 
 INSERT INTO RO_RW_test (i, a, b, c) VALUES (1, 'A',1.001, 0);
 
--- test for PR #76 github, encodings support
+-- test for PR #76 github
 CREATE TABLE "Unicode data" (i text primary key, t text);
 
 INSERT INTO "Unicode data" (i, t) VALUES ('jap', 'いろはにほへと ちりぬるを わかよたれそ つねならむ うゐのおくやま けふこえて あさきゆめみし ゑひもせす.');
@@ -130,29 +104,5 @@ WITH booldata AS (
 	(NULL) )
 				 )
 SELECT ROW_NUMBER() OVER () i, t1.i i1, t1.b b1, t2.i i2, t2.b b2 FROM booldata t1 INNER JOIN booldata t2 ON 1;
-
--- SpatiaLite/PostGIS test
--- This table name also tests SpatiaLite and PostGIS metadata functions. Made as analog of the next "martian" table.
-CREATE TABLE "♁" (
-	geom geometry NOT NULL,
-	osm_type varchar(16) NOT NULL,
-	osm_id int NOT NULL,
-	ver int NOT NULL,
-	arr text,
-	t jsonb
-);
-
--- SpatiaLite/PostGIS test
--- This table and column names also tests SpatiaLite and PostGIS metadata functions. Any geometry or geography column declaration cause some actions inside of spatial metadata storage or journals of SpatiaLite and PostGIS.
--- This is real table and column names from one of DBs of Union Astronomique International.
-CREATE TABLE "♂" (
-	id int4,
-	"UAI" varchar(254),
-	"⌖" geometry,
-	geom geometry,
-	"t₀" date,
-	"class" text,
-	"URL" varchar(80)
-);
 
 analyze;
