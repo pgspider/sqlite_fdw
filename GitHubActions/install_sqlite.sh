@@ -18,13 +18,14 @@
 #
 ################################################################################
 
-VERSION=$1
-YEAR=$2
+VERSION="$1"
+YEAR="$2"
+TESTING_MODE="$3"
 
 CONFIGURE_OPTIONS=""
 
 while (( "$#" )); do
-  CONFIGURE_OPTIONS="$CONFIGURE_OPTIONS $3"
+  CONFIGURE_OPTIONS="$CONFIGURE_OPTIONS $4"
   shift
 done
 
@@ -42,3 +43,7 @@ fi
 
 make
 sudo make install
+
+if [ "$TESTING_MODE" == "postgis" ]; then
+  sudo apt-get install libspatialite-dev -y
+fi

@@ -61,9 +61,9 @@ jobs:
       - name: install SQLite, ${{ matrix.config }} mode
         run: |
           if [[ "${{ matrix.config }}" == "default" ]]; then
-            bash GitHubActions/install_sqlite.sh ${{ env.SQLITE_VERSION }} ${{ env.SQLITE_YEAR }}
+            bash GitHubActions/install_sqlite.sh ${{ env.SQLITE_VERSION }} ${{ env.SQLITE_YEAR }} "${{ matrix.config }}"
           elif [[ "${{ matrix.config }}" == "postgis" ]]; then
-            bash GitHubActions/install_sqlite.sh ${{ env.SQLITE_VERSION }} ${{ env.SQLITE_YEAR }} --enable-rtree
+            bash GitHubActions/install_sqlite.sh ${{ env.SQLITE_VERSION }} ${{ env.SQLITE_YEAR }} "${{ matrix.config }}" --enable-rtree
           fi
 
       - name: build sqlite_fdw, ${{ matrix.config }} mode
