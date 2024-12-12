@@ -15,6 +15,8 @@ DROP TABLE IF EXISTS test_having;
 DROP TABLE IF EXISTS onek;
 DROP TABLE IF EXISTS tenk1;
 DROP TABLE IF EXISTS btg;
+DROP TABLE IF EXISTS btg_groupby;
+DROP TABLE IF EXISTS group_agg_pk;
 DROP TABLE IF EXISTS num_typemod_test;
 DROP TABLE IF EXISTS t;
 DROP TABLE IF EXISTS RO_RW_test;
@@ -164,6 +166,8 @@ CREATE TABLE dates (
 );
 
 CREATE TABLE btg(id int primary key, p int, v text, c float, d float, e int);
+CREATE TABLE btg_groupby(x int, y int, z text, w int);
+CREATE TABLE group_agg_pk (x int, y int, z int, w int, f int);
 
 .separator "\t"
 .import /tmp/sqlite_fdw_test/onek.data onek
@@ -228,6 +232,8 @@ create table agg_t18 (inner_c int);
 create table agg_t19 (outer_c int);
 create table agg_t20 (x text);
 create table agg_t21 (x int);
+create table agg_t22 (c1 text, id int);
+create table agg_t23 (id int);
 CREATE TABLE float_tb(f real);
 
 -- multi-arg aggs
@@ -431,9 +437,18 @@ CREATE TABLE update_test (
 );
 
 create table upsert_test (a int primary key, b text);
+
 create table t (a int unique);
+create table tbl_ra(a int unique, b int);
 
 CREATE TABLE "type_FLOAT_INF" (i int primary key, f float);
 CREATE VIEW  "type_FLOAT_INF+" AS SELECT *, typeof("f") t, length("f") l FROM "type_FLOAT_INF";
 -- In PostgreSQL some of this valus causes error but is infinity representation in SQLite
 INSERT INTO  "type_FLOAT_INF" VALUES (1, -1e999),(2, 1e999),(3, -9e999),(4, 9e999),(5,-1e308),(6, 0),(7, 1e308);
+
+-- FOR timestamp.sql
+CREATE TABLE infinite_timestamp (
+	t1	TIMESTAMP,
+	t2	TIMESTAMP,
+	id integer primary key autoincrement
+);

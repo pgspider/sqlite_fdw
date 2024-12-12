@@ -27,6 +27,8 @@ DROP TABLE IF EXISTS tru_rtable_parent;
 DROP TABLE IF EXISTS tru_rtable_child;
 DROP TABLE IF EXISTS loct_empty;
 DROP TABLE IF EXISTS batch_table;
+DROP TABLE IF EXISTS loct1_rescan;
+DROP TABLE IF EXISTS loct2_rescan;
 
 CREATE TABLE "T 0" (
 	"C 1" int,
@@ -85,6 +87,9 @@ create table ft3 (f1 text, f2 text, f3 text, primary key (f1, f2, f3));
 create table foreign_tbl (a int primary key, b int);
 create table grem1 (a int primary key, b int);
 create table grem1_post14 (a int primary key, b int generated always as (a * 2) stored);
+
+create table loct1_rescan (c1 int);
+create table loct2_rescan (c1 int, c2 text);
 
 CREATE TABLE t1_constraint (
 	c1 int primary key,
