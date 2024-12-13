@@ -62,7 +62,7 @@ Features
 - `upper`, `lower` and other character case functions are **not** pushed down because they does not work with UNICODE character in SQLite.
 - `WITH TIES` option is **not** pushed down.
 - Bit string `#` (XOR) operator is **not** pushed down because there is no equal SQLite operator.
-- Operations with `macaddr` or `macaddr8` data are **not** pushdowned.
+- Operations with `macaddr` or `macaddr8` data are **not** pushed down.
 
 ### Notes about pushdowning
 
