@@ -134,9 +134,9 @@ static void sqlite_deparse_null_if_expr(NullIfExpr *node, deparse_expr_cxt *cont
 static void sqlite_deparse_coalesce_expr(CoalesceExpr *node, deparse_expr_cxt *context);
 static void sqlite_deparse_from_expr_for_rel(StringInfo buf, PlannerInfo *root, RelOptInfo *foreignrel,
 											 bool use_alias, Index ignore_rel, List **ignore_conds,
-#if PG_VERSION_NUM >= 170000											 
-											 List **additional_conds, 
-#endif											 
+#if PG_VERSION_NUM >= 170000
+											 List **additional_conds,
+#endif
 											 List **params_list);
 #if PG_VERSION_NUM >= 170000
 static void sqlite_append_where_clause(List *exprs, List *additional_conds,
@@ -146,7 +146,7 @@ static void sqlite_deparse_range_tbl_ref(StringInfo buf, PlannerInfo *root,
 										 RelOptInfo *foreignrel, bool make_subquery,
 										 Index ignore_rel, List **ignore_conds,
 #if PG_VERSION_NUM >= 170000
-										 List **additional_conds, 
+										 List **additional_conds,
 #endif
 										 List **params_list);
 static void sqlite_deparse_from_expr(List *quals, deparse_expr_cxt *context);
@@ -351,6 +351,8 @@ sqlite_is_valid_type(Oid type)
 		case TIMESTAMPOID:
 		case TIMESTAMPTZOID:
 		case UUIDOID:
+		case MACADDROID:
+		case MACADDR8OID:
 			return true;
 	}
 	return false;
@@ -1351,7 +1353,7 @@ sqlite_deparse_from_expr(List *quals, deparse_expr_cxt *context)
 	appendStringInfoString(buf, " FROM ");
 	sqlite_deparse_from_expr_for_rel(buf, context->root, scanrel,
 									 (bms_num_members(scanrel->relids) == BMS_MULTIPLE),
-									 (Index) 0, NULL, 
+									 (Index) 0, NULL,
 #if PG_VERSION_NUM >= 170000
 									 &additional_conds,
 #endif
@@ -1427,7 +1429,7 @@ sqlite_get_jointype_name(JoinType jointype)
 
 		case JOIN_FULL:
 			return "FULL";
-#if PG_VERSION_NUM >= 170000	
+#if PG_VERSION_NUM >= 170000
 		case JOIN_SEMI:
 			return "SEMI";
 #endif
@@ -1518,7 +1520,7 @@ sqlite_deparse_subquery_target_list(deparse_expr_cxt *context)
  * The function constructs ... JOIN ... ON ... for join relation. For a base
  * relation it just returns schema-qualified tablename, with the appropriate
  * alias if so requested.
- * 
+ *
  * 'ignore_rel' is either zero or the RT index of a target relation.  In the
  * latter case the function constructs FROM clause of UPDATE or USING clause
  * of DELETE; it deparses the join relation as if the relation never contained
@@ -1532,7 +1534,7 @@ static void
 sqlite_deparse_from_expr_for_rel(StringInfo buf, PlannerInfo *root, RelOptInfo *foreignrel,
 								 bool use_alias, Index ignore_rel, List **ignore_conds,
 #if PG_VERSION_NUM >= 170000
-								 List **additional_conds, 
+								 List **additional_conds,
 #endif
 								 List **params_list)
 {
@@ -1545,7 +1547,7 @@ sqlite_deparse_from_expr_for_rel(StringInfo buf, PlannerInfo *root, RelOptInfo *
 		RelOptInfo *innerrel = fpinfo->innerrel;
 		bool		outerrel_is_target = false;
 		bool		innerrel_is_target = false;
-#if PG_VERSION_NUM >= 170000	
+#if PG_VERSION_NUM >= 170000
 		List	   *additional_conds_i = NIL;
 		List	   *additional_conds_o = NIL;
 #endif
@@ -1605,7 +1607,7 @@ sqlite_deparse_from_expr_for_rel(StringInfo buf, PlannerInfo *root, RelOptInfo *
 				Assert(fpinfo->jointype == JOIN_INNER);
 				Assert(fpinfo->joinclauses == NIL);
 				appendBinaryStringInfo(buf, join_sql_o.data, join_sql_o.len);
-#if PG_VERSION_NUM >= 170000	
+#if PG_VERSION_NUM >= 170000
 				/* Pass EXISTS conditions to upper level */
 				if (additional_conds_o != NIL)
 				{
@@ -1623,7 +1625,7 @@ sqlite_deparse_from_expr_for_rel(StringInfo buf, PlannerInfo *root, RelOptInfo *
 			initStringInfo(&join_sql_i);
 			sqlite_deparse_range_tbl_ref(&join_sql_i, root, innerrel,
 										 fpinfo->make_innerrel_subquery,
-										 ignore_rel, ignore_conds, 
+										 ignore_rel, ignore_conds,
 #if PG_VERSION_NUM >= 170000
 										 &additional_conds_i,
 #endif
@@ -1674,7 +1676,7 @@ sqlite_deparse_from_expr_for_rel(StringInfo buf, PlannerInfo *root, RelOptInfo *
 
 				*additional_conds = lappend(*additional_conds, str.data);
 			}
-#endif	
+#endif
 			/*
 			 * If outer relation is the target relation, skip deparsing it.
 			 * See the above note about safety.
@@ -1684,7 +1686,7 @@ sqlite_deparse_from_expr_for_rel(StringInfo buf, PlannerInfo *root, RelOptInfo *
 				Assert(fpinfo->jointype == JOIN_INNER);
 				Assert(fpinfo->joinclauses == NIL);
 				appendBinaryStringInfo(buf, join_sql_i.data, join_sql_i.len);
-#if PG_VERSION_NUM >= 170000				
+#if PG_VERSION_NUM >= 170000
 				/* Pass EXISTS conditions to the upper call */
 				if (additional_conds_i != NIL)
 				{
@@ -1732,9 +1734,9 @@ sqlite_deparse_from_expr_for_rel(StringInfo buf, PlannerInfo *root, RelOptInfo *
 				context.root = root;
 				context.params_list = params_list;
 
-				appendStringInfo(buf, "(");		
+				appendStringInfo(buf, "(");
 				sqlite_append_conditions(fpinfo->joinclauses, &context);
-				appendStringInfo(buf, ")");			
+				appendStringInfo(buf, ")");
 			}
 			else
 				appendStringInfoString(buf, "(TRUE)");
@@ -1836,7 +1838,7 @@ sqlite_deparse_range_tbl_ref(StringInfo buf, PlannerInfo *root, RelOptInfo *fore
 	}
 	else
 		sqlite_deparse_from_expr_for_rel(buf, root, foreignrel, true, ignore_rel,
-										 ignore_conds, 
+										 ignore_conds,
 #if PG_VERSION_NUM >= 170000
 										 additional_conds,
 #endif
@@ -2089,7 +2091,7 @@ sqlite_deparse_target_list(StringInfo buf,
  */
 void
 sqlite_append_where_clause(List *exprs, List *additional_conds, deparse_expr_cxt *context)
-{	
+{
 	StringInfo	buf = context->buf;
 	bool		need_and = false;
 	ListCell   *lc;
@@ -2208,6 +2210,7 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 		List	   *options;
 		ListCell   *lc;
 		Oid			pg_atttyp = 0;
+		bool		no_unification = false;
 
 		elog(DEBUG3, "sqlite_fdw : %s , varattrno != 0", __func__);
 		/* varno must not be any of OUTER_VAR, INNER_VAR and INDEX_VAR. */
@@ -2243,39 +2246,69 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 #endif
 		pg_atttyp = get_atttype(rte->relid, varattno);
 
-		/* PostgreSQL data types with possible mixed affinity SQLite base we should
+		/*
+		 * PostgreSQL data types with possible mixed affinity SQLite base we should
 		 * normalize to preferred form in SQLite before transfer to PostgreSQL.
 		 * Recommended form for normalisation is someone from 1<->1 with PostgreSQL
 		 * internal storage, hence usually this will not original text data.
 		 */
-		if (!dml_context && ( pg_atttyp == FLOAT8OID || pg_atttyp == FLOAT4OID || pg_atttyp == NUMERICOID) )
+		if (!dml_context)
 		{
-			elog(DEBUG2, "floatN unification for \"%s\"", colname);
-			appendStringInfoString(buf, "sqlite_fdw_float(");
-			if (qualify_col)
-				ADD_REL_QUALIFIER(buf, varno);
-			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
-			appendStringInfoString(buf, ")");
-		}
-		else if (!dml_context && pg_atttyp == BOOLOID)
-		{
-			elog(DEBUG2, "boolean unification for \"%s\"", colname);
-			appendStringInfoString(buf, "sqlite_fdw_bool(");
-			if (qualify_col)
-				ADD_REL_QUALIFIER(buf, varno);
-			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
-			appendStringInfoString(buf, ")");
-		}
-		else if (!dml_context && pg_atttyp == UUIDOID)
-		{
-			elog(DEBUG2, "UUID unification for \"%s\"", colname);
-			appendStringInfoString(buf, "sqlite_fdw_uuid_blob(");
-			if (qualify_col)
-				ADD_REL_QUALIFIER(buf, varno);
-			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
-			appendStringInfoString(buf, ")");
+			switch (pg_atttyp)
+			{
+				case FLOAT8OID:
+				case FLOAT4OID:
+				case NUMERICOID:
+				{
+					elog(DEBUG2, "floatN unification for \"%s\"", colname);
+					appendStringInfoString(buf, "sqlite_fdw_float(");
+					if (qualify_col)
+						ADD_REL_QUALIFIER(buf, varno);
+					appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+					appendStringInfoString(buf, ")");
+					break;
+				}
+				case BOOLOID:
+				{
+					elog(DEBUG2, "boolean unification for \"%s\"", colname);
+					appendStringInfoString(buf, "sqlite_fdw_bool(");
+					if (qualify_col)
+						ADD_REL_QUALIFIER(buf, varno);
+					appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+					appendStringInfoString(buf, ")");
+					break;
+				}
+				case UUIDOID:
+				{
+					elog(DEBUG2, "UUID unification for \"%s\"", colname);
+					appendStringInfoString(buf, "sqlite_fdw_uuid_blob(");
+					if (qualify_col)
+						ADD_REL_QUALIFIER(buf, varno);
+					appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+					appendStringInfoString(buf, ")");
+					break;
+				}
+				case MACADDROID:
+				case MACADDR8OID:
+				{
+					int mac_len = (pg_atttyp == MACADDROID) ? MACADDR_LEN : MACADDR8_LEN;
+
+					elog(DEBUG2, "MAC%d address unification for \"%s\"", mac_len, colname);
+					appendStringInfoString(buf, "sqlite_fdw_macaddr_int(");
+					if (qualify_col)
+						ADD_REL_QUALIFIER(buf, varno);
+					appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+					appendStringInfo(buf, ", %d)", mac_len);
+					break;
+				}
+				default:
+				   no_unification = true;
+			}
 		}
 		else
+			no_unification = true;
+
+		if (no_unification)
 		{
 			elog(DEBUG4, "column name without data unification = \"%s\"", colname);
 			if (qualify_col)
@@ -2596,7 +2629,24 @@ sqlite_deparse_direct_update_sql(StringInfo buf, PlannerInfo *root,
 			appendStringInfo(buf, "sqlite_fdw_uuid_str(");
 			special_affinity = true;
 		}
+		else if ((pg_attyp == MACADDROID || pg_attyp == MACADDR8OID) && preferred_affinity != SQLITE_INTEGER)
+		{
+			if (preferred_affinity == SQLITE3_TEXT)
+				appendStringInfo(buf, "sqlite_fdw_macaddr_str(");
+			else if (preferred_affinity == SQLITE_BLOB)
+				appendStringInfo(buf, "sqlite_fdw_macaddr_blob(");
+			special_affinity = true;
+		}
+
 		sqlite_deparse_expr((Expr *) tle->expr, &context);
+
+		if (preferred_affinity == SQLITE3_TEXT || preferred_affinity == SQLITE_BLOB)
+		{
+			if (pg_attyp == MACADDROID)
+				appendStringInfo(buf, ", %d", MACADDR_LEN);
+			else if (pg_attyp == MACADDR8OID)
+				appendStringInfo(buf, ", %d", MACADDR8_LEN);
+		}
 
 		if (special_affinity)
 		{
@@ -2613,20 +2663,20 @@ sqlite_deparse_direct_update_sql(StringInfo buf, PlannerInfo *root,
 
 		appendStringInfo(buf, " FROM ");
 		sqlite_deparse_from_expr_for_rel(buf, root, foreignrel, true, rtindex,
-										 &ignore_conds, 
-#if PG_VERSION_NUM >= 170000										 
+										 &ignore_conds,
+#if PG_VERSION_NUM >= 170000
 										 &additional_conds,
-#endif										 
+#endif
 										 params_list);
 		remote_conds = list_concat(remote_conds, ignore_conds);
 	}
-#if PG_VERSION_NUM >= 170000										 
+#if PG_VERSION_NUM >= 170000
 
 	sqlite_append_where_clause(remote_conds, additional_conds, &context);
 
 	if (additional_conds != NIL)
 		list_free_deep(additional_conds);
-#else	
+#else
 	if (remote_conds)
 	{
 		appendStringInfoString(buf, " WHERE ");
@@ -2686,7 +2736,7 @@ sqlite_deparse_direct_delete_sql(StringInfo buf, PlannerInfo *root,
 	deparse_expr_cxt context;
 #if PG_VERSION_NUM >= 170000
 	List	   *additional_conds = NIL;
-#endif	
+#endif
 	elog(DEBUG1, "sqlite_fdw : %s", __func__);
 
 	/* Set up context struct for recursion */
@@ -2708,9 +2758,9 @@ sqlite_deparse_direct_delete_sql(StringInfo buf, PlannerInfo *root,
 		appendStringInfo(buf, " USING ");
 		sqlite_deparse_from_expr_for_rel(buf, root, foreignrel, true, rtindex,
 										 &ignore_conds,
-#if PG_VERSION_NUM >= 170000										 
+#if PG_VERSION_NUM >= 170000
 										 &additional_conds,
-#endif										  
+#endif
 										 params_list);
 		remote_conds = list_concat(remote_conds, ignore_conds);
 	}
@@ -2882,10 +2932,10 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 					else
 						appendStringInfoString(buf, extval);
 				}
-				else if (strcasecmp(extval, "Inf") == 0 ||
-						 strcasecmp(extval, "Infinity") == 0 ||
-						 strcasecmp(extval + 1, "Inf") == 0 ||
-						 strcasecmp(extval + 1, "Infinity") == 0)
+				else if (strcasecmp(extval, infs) == 0 ||
+						 strcasecmp(extval, infl) == 0 ||
+						 strcasecmp(extval + 1, infs) == 0 ||
+						 strcasecmp(extval + 1, infl) == 0)
 				{
 					bool is_negative_or_positive = false;
 					if (extval[0] == '-' || extval[0] == '+')
@@ -2963,7 +3013,8 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 			}
 			break;
 		case UUIDOID:
-			/* always deparse to BLOB, in case of UPDATE with text affinity
+			/*
+			 * always deparse to BLOB, in case of UPDATE with text affinity
 			 * transformation function will be added
 			 */
  			{
@@ -2973,10 +3024,24 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 				for (i = 0; i < strlen(extval); i++)
 				{
 					char c = extval[i];
-					if ( c != '-' )
+					if ( c != '-')
 						appendStringInfoChar(buf, c);
 				}
 	  			appendStringInfo(buf, "\'");
+			}
+			break;
+		case MACADDROID:
+		case MACADDR8OID:
+ 			{
+				int i = 0;
+				extval = OidOutputFunctionCall(typoutput, node->constvalue);
+				appendStringInfo(buf, "0x");
+				for (i = 0; i < strlen(extval); i++)
+				{
+					char c = extval[i];
+					if ( c != '-' && c != '.' && c != ':')
+						appendStringInfoChar(buf, c);
+				}
 			}
 			break;
 		default:

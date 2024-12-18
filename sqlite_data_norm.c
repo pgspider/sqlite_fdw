@@ -25,12 +25,20 @@
 #include "sqlite_fdw.h"
 #include "utils/uuid.h"
 
-static void error_helper(sqlite3* db, int rc);
+static void error_catcher(sqlite3* db, int rc);
 static bool infinity_processing (double* d, const char* t);
 
 #if !defined(SQLITE_ASCII) && !defined(SQLITE_EBCDIC)
 #define SQLITE_ASCII 1
 #endif
+
+#define PARSE_MACADDR(format) \
+if (count != MACADDR_LEN)  \
+	count = sscanf(str, format, &a, &b, &c, &d, &e, &f, junk);
+
+#define PARSE_MACADDR8(format) \
+if (count != MACADDR8_LEN)  \
+	count = sscanf(str, format, &a, &b, &c, &d, &e, &f, &g, &h, junk);
 
 /*
  * This UUID SQLite extension as a group of UUID C functions
@@ -210,7 +218,7 @@ sqlite_fdw_uuid_str(sqlite3_context* context, int argc, sqlite3_value** argv)
 }
 
 /*
- * uuid_blob normalize text or blob UUID argv[0] into a 16-byte blob.
+ * sqlite_fdw_data_norm_uuid normalize text or blob UUID argv[0] into a 16-byte blob.
  */
 static void
 sqlite_fdw_data_norm_uuid(sqlite3_context* context, int argc, sqlite3_value** argv)
@@ -340,8 +348,8 @@ sqlite_fdw_data_norm_bool(sqlite3_context* context, int argc, sqlite3_value** ar
 }
 
 /* Base ∞ constants */
-static const char * infs = "Inf";
-static const char * infl = "Infinity";
+const char * infs = "Inf";
+const char * infl = "Infinity";
 
 /*
  * Try to check SQLite value if there is any ∞ value with text affinity
@@ -349,21 +357,21 @@ static const char * infl = "Infinity";
 static bool
 infinity_processing (double* d, const char* t)
 {
-	static const char * minfs = "-Inf";
-	static const char * minfl = "-Infinity";
-	static const char * pinfs = "+Inf";
-	static const char * pinfl = "+Infinity";
+	static const char * neg_infs = "-Inf";
+	static const char * neg_infl = "-Infinity";
+	static const char * pos_infs = "+Inf";
+	static const char * pos_infl = "+Infinity";
 
 	if (strcasecmp(t, infs) == 0 ||
-		strcasecmp(t, pinfs) == 0 ||
+		strcasecmp(t, pos_infs) == 0 ||
 		strcasecmp(t, infl) == 0 ||
-		strcasecmp(t, pinfl) == 0)
+		strcasecmp(t, pos_infl) == 0)
 	{
 		*d = INFINITY;
 		return true;
 	}
-	if (strcasecmp(t, minfs) == 0 ||
-		strcasecmp(t, minfl) == 0)
+	if (strcasecmp(t, neg_infs) == 0 ||
+		strcasecmp(t, neg_infl) == 0)
 	{
 		*d = -INFINITY;
 		return true;
@@ -415,17 +423,311 @@ sqlite_fdw_data_norm_float(sqlite3_context* context, int argc, sqlite3_value** a
 }
 
 /*
+ * Converts argument int64-MAC address into a well-formed MAC address string.
+ */
+static void
+sqlite_fdw_macaddr_str(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+	sqlite3_value* arg = argv[0];
+	sqlite3_value* len_arg = argv[1];
+	int val_aff = sqlite3_value_type(arg);
+	int len = 0;
+
+	if (sqlite3_value_type(len_arg) != SQLITE_INTEGER)
+	{
+		ereport(ERROR,
+			(errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+			 errmsg("no mac address length argument in BLOB creating function %s", __func__)));
+	}
+
+	len = sqlite3_value_int(len_arg);
+	if (val_aff != SQLITE_INTEGER || (len !=MACADDR_LEN && len !=MACADDR8_LEN))
+	{
+		ereport(ERROR,
+		(errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+		 errmsg("internal mac deparse error or SQLite input have not 'int' affinity")));
+		return;
+	}
+	else
+	{
+		int				reslen = len * 4;
+		char		   *result = (char *) palloc(reslen);
+		sqlite3_int64	value = sqlite3_value_int64(arg);
+
+		if (len == MACADDR_LEN )
+		{
+			snprintf(result, reslen, "%02x:%02x:%02x:%02x:%02x:%02x",
+  				(unsigned char)((value >> (CHAR_BIT * 5)) & 0xFF),
+  				(unsigned char)((value >> (CHAR_BIT * 4)) & 0xFF),
+  				(unsigned char)((value >> (CHAR_BIT * 3)) & 0xFF),
+  				(unsigned char)((value >> (CHAR_BIT * 2)) & 0xFF),
+  				(unsigned char)((value >> (CHAR_BIT * 1)) & 0xFF),
+  				(unsigned char)((value >> (CHAR_BIT * 0)) & 0xFF));
+		}
+		else if (len == MACADDR8_LEN )
+		{
+			snprintf(result, reslen, "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
+  				(unsigned char)((value >> (CHAR_BIT * 7)) & 0xFF),
+  				(unsigned char)((value >> (CHAR_BIT * 6)) & 0xFF),
+  				(unsigned char)((value >> (CHAR_BIT * 5)) & 0xFF),
+  				(unsigned char)((value >> (CHAR_BIT * 4)) & 0xFF),
+  				(unsigned char)((value >> (CHAR_BIT * 3)) & 0xFF),
+  				(unsigned char)((value >> (CHAR_BIT * 2)) & 0xFF),
+  				(unsigned char)((value >> (CHAR_BIT * 1)) & 0xFF),
+  				(unsigned char)((value >> (CHAR_BIT * 0)) & 0xFF));
+		}
+		sqlite3_result_text(context, (char*)result, reslen, SQLITE_TRANSIENT);
+	}
+}
+
+/*
+ * Attempt to parse a zero-terminated input string zs into a int64
+ * as 6 bytes MAC address. Return 1 if ok, or 0 if the input string is not
+ * parsable.
+ */
+static int
+sqlite_fdw_macaddr6_int (const unsigned char* s, sqlite_uint64*	i)
+{
+	 int		 a,
+				 b,
+				 c,
+				 d,
+				 e,
+				 f;
+	 char		 junk[2];
+	 int		 count = 0;
+	 const char* str = (const char*)s;
+
+	 /* %1s matches if there is trailing non-whitespace garbage */
+	 PARSE_MACADDR("%x:%x:%x:%x:%x:%x%1s");
+	 PARSE_MACADDR("%x-%x-%x-%x-%x-%x%1s");
+	 PARSE_MACADDR("%2x%2x%2x:%2x%2x%2x%1s");
+	 PARSE_MACADDR("%2x%2x%2x-%2x%2x%2x%1s");
+	 PARSE_MACADDR("%2x%2x.%2x%2x.%2x%2x%1s");
+	 PARSE_MACADDR("%2x%2x-%2x%2x-%2x%2x%1s");
+	 PARSE_MACADDR("%2x%2x%2x%2x%2x%2x%1s");
+	 if (count != MACADDR_LEN)
+		return false;
+
+	if ((a < 0) || (a > 255) ||
+		(b < 0) || (b > 255) ||
+		(c < 0) || (c > 255) ||
+		(d < 0) || (d > 255) ||
+		(e < 0) || (e > 255) ||
+		(f < 0) || (f > 255) )
+		return false;
+
+	*i = (((sqlite_int64)a) << 40) +
+		(((sqlite_int64)b) << 32) +
+		(c<<24) +
+		(d<<16) +
+		(e<<8) +
+		f;
+	return true;
+}
+
+/*
+ * Attempt to parse a zero-terminated input string zs into a int64
+ * as 8 bytes MAC address. Return 1 if ok, or 0 if the input string is not
+ * parsable.
+ */
+static int
+sqlite_fdw_macaddr8_int (const unsigned char* s, sqlite_uint64*	i)
+{
+	 int 		 a,
+				 b,
+				 c,
+				 d,
+				 e,
+				 f,
+				 g,
+				 h;
+	 char   	 junk[2];
+	 int		 count = 0;
+	 const char* str = (const char*)s;
+
+	 /* %1s matches if there is trailing non-whitespace garbage */
+ 	 PARSE_MACADDR8("%x:%x:%x:%x:%x:%x:%x:%x%1s");
+	 PARSE_MACADDR8("%x-%x-%x-%x-%x-%x-%x-%x%1s");
+	 PARSE_MACADDR8("%2x%2x%2x%2x:%2x%2x%2x%2x%1s");
+	 PARSE_MACADDR8("%2x%2x%2x%2x-%2x%2x%2x%2x%1s");
+	 PARSE_MACADDR8("%2x%2x.%2x%2x.%2x%2x.%2x%2x%1s");
+	 PARSE_MACADDR8("%2x%2x-%2x%2x-%2x%2x-%2x%2x%1s");
+	 PARSE_MACADDR8("%2x%2x%2x%2x%2x%2x%2x%2x%1s");
+	 if (count != MACADDR8_LEN)
+		return false;
+
+	 if ((a < 0) || (a > 255) ||
+	 	 (b < 0) || (b > 255) ||
+	 	 (c < 0) || (c > 255) ||
+	 	 (d < 0) || (d > 255) ||
+		 (e < 0) || (e > 255) ||
+		 (f < 0) || (f > 255) ||
+   		 (g < 0) || (g > 255) ||
+		 (h < 0) || (h > 255) )
+		return false;
+
+	*i = (((sqlite_int64)a) << 56) +
+		(((sqlite_int64)b) << 48) +
+		(((sqlite_int64)c) << 40) +
+		(((sqlite_int64)d) << 32) +
+		(e<<24) +
+		(f<<16) +
+		(g<<8) +
+		h;
+	return true;
+}
+
+/*
+ * sqlite_fdw_data_norm_macaddr normalize text or ineger or blob macaddr argv[0] into 6 or 8 byte blob.
+ */
+static void
+sqlite_fdw_data_norm_macaddr(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+	sqlite3_value* val_arg = argv[0];
+	sqlite3_value* len_arg = argv[1];
+	int val_aff = sqlite3_value_type(val_arg);
+	int len = 0;
+
+	if (val_aff == SQLITE_INTEGER)
+	{
+		/* the fastest call for typical case */
+		sqlite3_result_value(context, val_arg);
+		return;
+	}
+
+	if (sqlite3_value_type(len_arg) != SQLITE_INTEGER)
+	{
+		ereport(ERROR,
+			(errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+			 errmsg("no mac address length argument in MAC addr blob creating function %s", __func__)));
+	}
+
+	len = sqlite3_value_int(len_arg);
+
+	if (val_aff == SQLITE3_TEXT)
+	{
+		const unsigned char* txt = sqlite3_value_text(val_arg);
+		sqlite3_uint64 mac_int = 0;
+		int res = (len == MACADDR_LEN) ? sqlite_fdw_macaddr6_int(txt, &mac_int) : sqlite_fdw_macaddr8_int(txt, &mac_int);
+		if (res)
+		{
+			sqlite3_result_int64(context, mac_int);
+			return;
+		}
+	}
+	else if (val_aff == SQLITE_BLOB)
+	{
+		const unsigned char*	pBlob = sqlite3_value_blob(val_arg);
+		int						l_blob = sqlite3_value_bytes(val_arg);
+		sqlite3_uint64			res = 0;
+
+		if (len == MACADDR_LEN)
+		{
+			if (l_blob != MACADDR_LEN)
+			{
+				ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+								errmsg("PostgreSQL macaddr data type allows only %d bytes SQLite blob value", MACADDR_LEN)));
+			}
+			res = (((sqlite_int64)(pBlob[0])) << (CHAR_BIT *5)) +
+				  (((sqlite_int64)(pBlob[1])) << (CHAR_BIT *4)) +
+				  (((sqlite_int64)(pBlob[2])) << (CHAR_BIT *3)) +
+				  (((sqlite_int64)(pBlob[3])) << (CHAR_BIT *2)) +
+				  (((sqlite_int64)(pBlob[4])) << (CHAR_BIT *1)) +
+				  (((sqlite_int64)(pBlob[5])) << (CHAR_BIT *0));
+		}
+		else if (len == MACADDR8_LEN)
+		{
+			if (l_blob != MACADDR8_LEN)
+			{
+				ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+								errmsg("PostgreSQL macaddr8 data type allows only %d bytes SQLite blob value", MACADDR8_LEN)));
+			}
+			res = (((sqlite_int64)(pBlob[0])) << (CHAR_BIT *7)) +
+				  (((sqlite_int64)(pBlob[1])) << (CHAR_BIT *6)) +
+				  (((sqlite_int64)(pBlob[2])) << (CHAR_BIT *5)) +
+				  (((sqlite_int64)(pBlob[3])) << (CHAR_BIT *4)) +
+				  (((sqlite_int64)(pBlob[4])) << (CHAR_BIT *3)) +
+				  (((sqlite_int64)(pBlob[5])) << (CHAR_BIT *2)) +
+				  (((sqlite_int64)(pBlob[6])) << (CHAR_BIT *1)) +
+				  (((sqlite_int64)(pBlob[7])) << (CHAR_BIT *0));
+		}
+		sqlite3_result_int64(context, res);
+		return;
+	}
+	sqlite3_result_value(context, val_arg);
+}
+
+/*
+ * Converts argument int-MAC address (both 6 or 8 bytes) to MAC-BLOB address integer.
+ */
+static void
+sqlite_fdw_macaddr_blob(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+	sqlite3_value* arg = argv[0];
+	sqlite3_value* len_arg = argv[1];
+	int val_aff = sqlite3_value_type(arg);
+	int len = 0;
+
+	if (sqlite3_value_type(len_arg) != SQLITE_INTEGER)
+	{
+		ereport(ERROR,
+			(errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+			 errmsg("no mac address length argument in MAC addr blob creating function %s", __func__)));
+	}
+
+	len = sqlite3_value_int(len_arg);
+	if (val_aff != SQLITE_INTEGER || (len != MACADDR_LEN && len != MACADDR8_LEN))
+	{
+		ereport(ERROR,
+		(errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+		 errmsg("internal mac deparse error or SQLite input have not 'int' affinity")));
+		return;
+	}
+
+	if (val_aff == SQLITE_INTEGER)
+	{
+		unsigned char aBlob[MACADDR8_LEN]; /* max possible, even for macaddr */
+		sqlite_uint64 v = sqlite3_value_int64(arg);
+		int			  i;
+
+		for (i = len - 1; i >=0; i--)
+		{
+			int s = CHAR_BIT*i;
+			aBlob[len-i-1] = (v >> s) & 0xff;
+		}
+
+		if (len == MACADDR_LEN)
+			sqlite3_result_blob(context, aBlob, MACADDR_LEN, SQLITE_TRANSIENT);
+		else
+			sqlite3_result_blob(context, aBlob, MACADDR8_LEN, SQLITE_TRANSIENT);
+		return;
+	}
+	else
+	{
+		ereport(ERROR,
+			(errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+			 errmsg("wrong mac address length argument %d in MAC addr blob creating function %s", len, __func__)));
+	}
+}
+
+/*
  * Makes pg error from SQLite error.
  * Interrupts normal executing, no need return after place of calling
  */
 static void
-error_helper(sqlite3* db, int rc)
+error_catcher(sqlite3* db, int rc)
 {
-	const char * err = sqlite3_errmsg(db);
-	ereport(ERROR,
-			(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
-			 errmsg("failed to create data unifying functions for SQLite DB"),
-			 errhint("%s \n SQLite code %d", err, rc)));
+	if (rc == SQLITE_OK)
+		return;
+	else
+	{
+		const char * err = sqlite3_errmsg(db);
+		ereport(ERROR,
+				(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
+				 errmsg("failed to create data unifying functions for SQLite DB"),
+				 errhint("%s \n SQLite code %d", err, rc)));
+	}
 }
 
 /*
@@ -439,22 +741,26 @@ sqlite_fdw_data_norm_functs_init(sqlite3* db)
 	static const int det_flags = SQLITE_UTF8 | SQLITE_INNOCUOUS | SQLITE_DETERMINISTIC;
 
 	int rc = sqlite3_create_function(db, "sqlite_fdw_uuid_blob", 1, det_flags, 0, sqlite_fdw_data_norm_uuid, 0, 0);
-	if (rc != SQLITE_OK)
-		error_helper(db, rc);
-	rc = sqlite3_create_function(db, "sqlite_fdw_bool", 1, det_flags, 0, sqlite_fdw_data_norm_bool, 0, 0);
-	if (rc != SQLITE_OK)
-		error_helper(db, rc);
+	error_catcher(db, rc);
 	rc = sqlite3_create_function(db, "sqlite_fdw_uuid_str", 1, det_flags, 0, sqlite_fdw_uuid_str, 0, 0);
-	if (rc != SQLITE_OK)
-		error_helper(db, rc);
+	error_catcher(db, rc);
+	rc = sqlite3_create_function(db, "sqlite_fdw_bool", 1, det_flags, 0, sqlite_fdw_data_norm_bool, 0, 0);
+	error_catcher(db, rc);
 	rc = sqlite3_create_function(db, "sqlite_fdw_float", 1, det_flags, 0, sqlite_fdw_data_norm_float, 0, 0);
-	if (rc != SQLITE_OK)
-		error_helper(db, rc);
+	error_catcher(db, rc);
+	rc = sqlite3_create_function(db, "sqlite_fdw_macaddr_int", 2, det_flags, 0, sqlite_fdw_data_norm_macaddr, 0, 0);
+	error_catcher(db, rc);
+	rc = sqlite3_create_function(db, "sqlite_fdw_macaddr_str", 2, det_flags, 0, sqlite_fdw_macaddr_str, 0, 0);
+	error_catcher(db, rc);
+	rc = sqlite3_create_function(db, "sqlite_fdw_macaddr_blob", 2, det_flags, 0, sqlite_fdw_macaddr_blob, 0, 0);
+	error_catcher(db, rc);
 
-	/* no rc because in future SQLite releases it can be added UUID generation function
-	 * PostgreSQL 13+, no gen_random_uuid() before
+	/*
 	 *	static const int flags = SQLITE_UTF8 | SQLITE_INNOCUOUS;
 	 *	sqlite3_create_function(db, "uuid_generate_v4", 0, flags, 0, uuid_generate, 0, 0);
 	 *	sqlite3_create_function(db, "gen_random_uuid", 1, flags, 0, uuid_generate, 0, 0);
+	 *
+	 * no rc because in future SQLite releases it can be added UUID generation function
+	 * PostgreSQL 13+, no gen_random_uuid() before
 	 */
 }
