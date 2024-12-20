@@ -77,10 +77,9 @@ INSERT INTO "type_UUID" ("i", "u") VALUES (28, '{b0eebc99-9c0b4ef8-bb6d6bb9-bd38
                             QUERY PLAN                            
 ------------------------------------------------------------------
  Insert on public."type_UUID"
-   Batch Size: 1
    ->  Result
          Output: 28, 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12'::uuid
-(4 rows)
+(3 rows)
 
 --Testcase 042:
 ALTER FOREIGN TABLE "type_UUID" ALTER COLUMN "u" OPTIONS (ADD column_type 'BLOB');
@@ -114,10 +113,9 @@ INSERT INTO "type_UUID" ("i", "u") VALUES (39, 'b0ee-bc99-9c0b-4ef8-bb6d-6bb9-bd
                             QUERY PLAN                            
 ------------------------------------------------------------------
  Insert on public."type_UUID"
-   Batch Size: 1
    ->  Result
          Output: 39, 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12'::uuid
-(4 rows)
+(3 rows)
 
 --Testcase 056:
 CREATE FOREIGN TABLE "type_UUID+"( "i" int OPTIONS (key 'true'), "u" uuid, "t" text, "l" smallint) SERVER sqlite_svr OPTIONS (table 'type_UUID+');

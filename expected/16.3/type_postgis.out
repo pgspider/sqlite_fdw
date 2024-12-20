@@ -307,32 +307,7 @@ ALTER FOREIGN TABLE "type_BOOLEAN" DROP COLUMN i;
 SELECT * FROM "type_BOOLEAN"; -- OK
  b 
 ---
- t
- f
- t
- f
- t
- f
- t
- t
- t
- f
- f
- f
- f
- f
- t
- t
- t
- t
- t
- t
- f
- f
- f
- t
- 
-(25 rows)
+(0 rows)
 
 -- define INTEGER as TEXT column
 --Testcase 67:
@@ -554,7 +529,7 @@ SELECT * FROM "type_DOUBLE"; -- OK, +- Inf
 
 --Testcase 47:
 DROP EXTENSION sqlite_fdw CASCADE;
-NOTICE:  drop cascades to 51 other objects
+NOTICE:  drop cascades to 55 other objects
 DETAIL:  drop cascades to server sqlite_svr
 drop cascades to foreign table department
 drop cascades to foreign table employee
@@ -584,6 +559,10 @@ drop cascades to foreign table "type_BIT"
 drop cascades to foreign table "type_VARBIT"
 drop cascades to foreign table "type_UUIDpk"
 drop cascades to foreign table "type_UUID"
+drop cascades to foreign table "type_MACADDRpk"
+drop cascades to foreign table "type_MACADDR"
+drop cascades to foreign table "type_MACADDR8pk"
+drop cascades to foreign table "type_MACADDR8"
 drop cascades to foreign table "types_PostGIS"
 drop cascades to foreign table "BitT"
 drop cascades to foreign table notype
