@@ -306,6 +306,12 @@ typedef struct SqliteFdwDirectModifyState
 	MemoryContext temp_cxt;		/* context for per-tuple temporary data */
 }			SqliteFdwDirectModifyState;
 
+typedef struct blobOutput
+{
+	const char*		dat;
+	int			len;
+} blobOutput;
+
 extern bool sqlite_is_foreign_expr(PlannerInfo *root,
 								   RelOptInfo *baserel,
 								   Expr *expr);
@@ -396,7 +402,19 @@ extern void sqlite_do_sql_command(sqlite3 * conn, const char *sql, int level, Li
 void sqlite_fdw_data_norm_functs_init(sqlite3* db);
 
 /* sqlite_query.c headers */
-sqlite3_int64
-			binstr2int64(const char *s);
+sqlite3_int64 binstr2int64(const char *s);
+bool		listed_datatype (const char * tn, const char ** arr);
+blobOutput	sqlite_datum_to_blob (Datum value);
+bool		listed_datatype_oid (Oid atttypid, int32 atttypmod, const char **arr);
+
+/* sqlite_gis.c headers */
+extern const char *postGisSpecificTypes[];
+extern const char *postGisSQLiteCompatibleTypes[];
+
+#ifdef SQLITE_FDW_GIS_ENABLE
+char*		SpatiaLiteAsPostGISgeom (blobOutput spatiaLiteBlob, Form_pg_attribute att);
+blobOutput	PostGISgeomAsSpatiaLite (Datum value, Form_pg_attribute att);
+void		sqlite_deparse_PostGIS_value(StringInfo buf, char *extval);
+#endif
 
 #endif							/* SQLITE_FDW_H */

@@ -10,13 +10,20 @@
 ##########################################################################
 
 MODULE_big = sqlite_fdw
-OBJS = connection.o option.o deparse.o sqlite_query.o sqlite_fdw.o sqlite_data_norm.o
+OBJS = connection.o option.o deparse.o sqlite_query.o sqlite_fdw.o sqlite_data_norm.o sqlite_gis.o
 
 EXTENSION = sqlite_fdw
 DATA = sqlite_fdw--1.0.sql sqlite_fdw--1.0--1.1.sql
 
+ifdef ENABLE_GIS
+override PG_CFLAGS += -DSQLITE_FDW_GIS_ENABLE
+GISTEST=postgis
+else
+GISTEST=nogis
+endif
+
 ifndef REGRESS
-REGRESS = extra/sqlite_fdw_post types/bitstring types/bool types/float4 types/float8 types/int4 types/int8 types/numeric types/macaddr types/macaddr8 types/out_of_range types/timestamp types/uuid extra/join extra/limit extra/aggregates extra/prepare extra/select_having extra/select extra/insert extra/update extra/encodings sqlite_fdw type aggregate selectfunc 
+REGRESS = extra/sqlite_fdw_post types/bitstring types/bool types/float4 types/float8 types/int4 types/int8 types/numeric types/$(GISTEST) types/macaddr types/macaddr8 types/out_of_range types/timestamp types/uuid extra/join extra/limit extra/aggregates extra/prepare extra/select_having extra/select extra/insert extra/update extra/encodings sqlite_fdw type_$(GISTEST) aggregate selectfunc 
 endif
 
 REGRESS_OPTS = --encoding=utf8
@@ -33,6 +40,10 @@ endif
 
 SHLIB_LINK := -lsqlite3
 
+ifdef ENABLE_GIS
+override SHLIB_LINK += -lspatialite
+endif
+
 ifdef USE_PGXS
 PG_CONFIG = pg_config
 PGXS := $(shell $(PG_CONFIG) --pgxs)
@@ -43,7 +54,6 @@ endif
 ifeq (,$(findstring $(MAJORVERSION), 13 14 15 16 17))
 $(error PostgreSQL 13, 14, 15, 16 or 17 is required to compile this extension)
 endif
-
 else
 subdir = contrib/sqlite_fdw
 top_builddir = ../..
@@ -60,3 +70,9 @@ endif
 REGRESS := $(addprefix $(REGRESS_PREFIX_SUB)/,$(REGRESS))
 $(shell mkdir -p results/$(REGRESS_PREFIX_SUB)/extra)
 $(shell mkdir -p results/$(REGRESS_PREFIX_SUB)/types)
+
+ifdef ENABLE_GIS
+check: temp-install
+temp-install: EXTRA_INSTALL+=contrib/postgis
+checkprep: EXTRA_INSTALL+=contrib/postgis
+endif
