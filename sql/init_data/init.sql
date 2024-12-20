@@ -42,6 +42,12 @@ CREATE VIEW  "type_VARBIT+" AS SELECT *, typeof(b) t, length(b) l FROM "type_VAR
 CREATE TABLE "type_UUIDpk" (col uuid primary key);
 CREATE TABLE "type_UUID" (i int, u uuid);
 CREATE VIEW  "type_UUID+" AS SELECT *, typeof("u") t, length("u") l FROM "type_UUID";
+CREATE TABLE "type_MACADDRpk" (col macaddr primary key);
+CREATE TABLE "type_MACADDR" (i int, m macaddr);
+CREATE VIEW  "type_MACADDR+" AS SELECT *, typeof("m") t, length("m") l, cast("m" as text) tx FROM "type_macaddr";
+CREATE TABLE "type_MACADDR8pk" (col macaddr8 primary key);
+CREATE TABLE "type_MACADDR8" (i int, m macaddr8);
+CREATE VIEW  "type_MACADDR8+" AS SELECT *, typeof("m") t, length("m") l, cast("m" as text) tx FROM "type_macaddr8";
 CREATE TABLE "types_PostGIS" (i int, gm geometry, gg geography, r raster, t text, gm1 geometry, gg1 geography);
 CREATE TABLE BitT (p integer primary key, a BIT(3), b BIT VARYING(5));
 CREATE TABLE notype (a);

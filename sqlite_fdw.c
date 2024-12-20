@@ -366,9 +366,9 @@ static bool sqlite_foreign_join_ok(PlannerInfo *root, RelOptInfo *joinrel,
 								   JoinType jointype, RelOptInfo *outerrel, RelOptInfo *innerrel,
 								   JoinPathExtraData *extra);
 #if PG_VERSION_NUM >= 170000
-static bool sqlite_semijoin_target_ok(PlannerInfo *root, 
-							   RelOptInfo *joinrel, 
-							   RelOptInfo *outerrel, 
+static bool sqlite_semijoin_target_ok(PlannerInfo *root,
+							   RelOptInfo *joinrel,
+							   RelOptInfo *outerrel,
 							   RelOptInfo *innerrel);
 #endif
 static void sqlite_adjust_foreign_grouping_path_cost(PlannerInfo *root,
@@ -3228,7 +3228,7 @@ sqlite_foreign_join_ok(PlannerInfo *root, RelOptInfo *joinrel, JoinType jointype
 	 * deparsed to EXISTS subquery, where inner relation can be referred). A
 	 * list of relation ids, which can't be referred to from higher levels, is
 	 * preserved as a hidden_subquery_rels list.
-	 * 
+	 *
 	 * For a FULL OUTER JOIN, the other clauses from either relation can not
 	 * be added to the joinclauses or remote_conds, since each relation acts
 	 * as an outer relation for the other.
@@ -3497,7 +3497,7 @@ sqliteGetForeignJoinPaths(PlannerInfo *root,
 	fpinfo->joinclause_sel = clauselist_selectivity(root, fpinfo->joinclauses,
 													0, fpinfo->jointype,
 													extra->sjinfo);
-	
+
 	/* Estimate costs for bare join relation */
 	sqlite_estimate_path_cost_size(root, joinrel, NIL, NIL, NULL,
 								   &rows, &width, &startup_cost, &total_cost);
@@ -4843,6 +4843,8 @@ sqlite_to_pg_type(StringInfo str, char *type)
 		{"varchar"},
 		{"char"},
 		{"uuid"},
+		{"macaddr"},
+		{"macaddr8"},
 		{"geometry"},
 		{"geography"},
 		{NULL}
@@ -5473,6 +5475,8 @@ sqlite_affinity_eqv_to_pgtype(Oid type)
 			return SQLITE_FLOAT;
 		case BYTEAOID:
 		case UUIDOID:
+		case MACADDROID:
+		case MACADDR8OID:
 			return SQLITE_BLOB;
 		default:
 			if (listed_datatype_oid(type, -1, postGisSQLiteCompatibleTypes))

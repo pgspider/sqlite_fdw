@@ -46,10 +46,14 @@ Features
 	- `timestamp`: `text` and `int`,
 	- `uuid`: `text`(32..39) and `blob`(16),
  	- `bool`: `text`(1..5) and `int`,
- 	- `double precision`, `float` and `numeric`: `real` values and special values with `text` affinity (`+Infinity`, `-Infinity`, `NaN`).
+ 	- `double precision`, `float` and `numeric`: `real` values and special values with `text` affinity (`+Infinity`, `-Infinity`, `NaN`),
+ 	- `macaddr`: `text`(12..17) or `blob`(6) or `integer`,
+ 	- `macaddr8`: `text`(16..23) or `blob`(8) or `integer`.
 - Support mixed SQLite [data affinity](https://www.sqlite.org/datatype3.html) output (`INSERT`/`UPDATE`) for such data types as
 	- `timestamp`: `text`(default) or `int`,
- 	- `uuid`: `text`(36) or `blob`(16)(default).
+ 	- `uuid`: `text`(36) or `blob`(16)(default),
+ 	- `macaddr`: `text`(17) or `blob`(6) or `integer`(default),
+ 	- `macaddr8`: `text`(23) or `blob`(8) or `integer`(default).
 - Full support for `+Infinity` (means ∞) and `-Infinity` (means -∞) special values for IEEE 754-2008 numbers in `double precision`, `float` and `numeric` columns including such conditions as ` n < '+Infinity'` or ` m > '-Infinity'`.
 - Bidirectional data transformation for `geometry` and `geography` data types for SpatiaLite ↔ PostGIS. [EWKB](https://libgeos.org/specifications/wkb/#extended-wkb) data transport is used. See [GIS support description](GIS.md).
 
@@ -66,7 +70,8 @@ Features
 - `upper`, `lower` and other character case functions are **not** pushed down because they does not work with UNICODE character in SQLite.
 - `WITH TIES` option is **not** pushed down.
 - Bit string `#` (XOR) operator is **not** pushed down because there is no equal SQLite operator.
-- operators for GIS data objects are **not** pushdowned except for `=`.
+- Operations with `macaddr` or `macaddr8` data are **not** pushed down.
+- Operators for GIS data objects are **not** pushdowned except for `=`.
 
 ### Notes about pushing down
 
@@ -180,9 +185,7 @@ Usage
 
 ### CREATE USER MAPPING options
 
-There is no user or password conceptions in SQLite, hence `sqlite_fdw` no need any `CREATE USER MAPPING` command.
-
-About access model and possible data modifications problems see about [connection to SQLite database file and access control](#connection-to-sqlite-database-file-and-access-control).
+There is no user or password conceptions in SQLite, hence `sqlite_fdw` no need any `CREATE USER MAPPING` command. About access model and possible data modifications problems see about [connection to SQLite database file and access control](#connection-to-sqlite-database-file-and-access-control).
 
 ### CREATE FOREIGN TABLE options
 
@@ -224,44 +227,48 @@ in SQLite (mixed affinity case). Updated and inserted values will have this affi
 
   Indicates a column as a part of primary key or unique key of SQLite table.
 
-#### Datatypes
-**WARNING! The table below represents roadmap**, work still in progress. Until it will be ended please refer real behaviour in non-obvious cases, where there is no ✔ or ∅ mark.
-
+### Datatypes
 This table represents `sqlite_fdw` behaviour if in PostgreSQL foreign table column some [affinity](https://www.sqlite.org/datatype3.html) of SQLite data is detected. Some details about data values support see in [limitations](#limitations).
 
-* **∅** - no support (runtime error)
-* **V** - transparent transformation
-* **T** - cast to text in SQLite utf-8 encoding, then to **PostgreSQL text with current encoding of database** and then transparent transformation if applicable
-* **✔** - transparent transformation where PostgreSQL datatype is equal to SQLite affinity
-* **V+** - transparent transformation if appliacable
+* **∅**  - no support (runtime error)
+* **✔**  - 1↔1, PostgreSQL datatype is equal to SQLite affinity
+* **✔-** - PostgreSQL datatype is equal to SQLite affinity, but possible out of range error
+* **V**  - transparent transformation if possible
+* **V+** - transparent transformation if possible
+* **i**  - ISO:SQL transformation for some special constants
 * **?** - not described/not tested
-* **-** - transparent transformation is possible for PostgreSQL (always or for some special values), but not implemented in `sqlite_fdw`.
+* **T** - cast to text in SQLite utf-8 encoding, then to **PostgreSQL text with current encoding of database** and then transformation for `text` affinity if applicable
 
 SQLite `NULL` affinity always can be transparent converted for a nullable column in PostgreSQL.
 
-| PostgreSQL   | SQLite <br> INT  | SQLite <br> REAL | SQLite <br> BLOB | SQLite <br> TEXT | SQLite <br> TEXT but <br>empty|SQLite<br>nearest<br>affinity|
+**SQLite data processing dependend on affinity**
+
+|  PostgreSQL  |     INT      |     REAL     |    BLOB      |    TEXT      | TEXT but <br>empty|nearest<br>affinity|
 |-------------:|:------------:|:------------:|:------------:|:------------:|:------------:|-------------:|
-|         bool |      V       |       ∅      |      T       |      V+      |      ∅       | INT          |
-|       bit(n) |    V n<=64   |       ∅      |      ∅       |      ∅       |      ∅       | INT          |
-|        bytea |      ∅       |       ∅      |      ✔       |      -       |      ?       | BLOB         |
+|         bool |      V       |       ∅      |      T       |      i       |      ∅       | INT          |
+|       bit(n) | V<br>(n<=64) |       ∅      |      ∅       |      ∅       |      ∅       | INT          |
+|        bytea |      ∅       |       ∅      |      ✔       |      V       |      ?       | BLOB         |
+|      char(n) |      ?       |       ?      |      T       |      ✔       |      V       | TEXT         |
 |         date |      V       |       V      |      T       |      V+      |    `NULL`    | ?            |
-|       float4 |      V+      |       ✔      |      T       |      -       |    `NULL`    | REAL         |
-|       float8 |      V+      |       ✔      |      T       |      -       |    `NULL`    | REAL         |
+|       float4 |      V+      |       ✔      |      ∅       |      i       |    `NULL`    | REAL         |
+|       float8 |      V+      |       ✔      |      ∅       |      i       |    `NULL`    | REAL         |
 |[geometry](GIS.md)| ∅       |       ∅      |      V+      |      ∅       |      ∅       | BLOB         |
 |[geography](GIS.md)|∅       |       ∅      |      V+      |      ∅       |      ∅       | BLOB         |
-|         int2 |      V+      |       ?      |      T       |      -       |    `NULL`    | INT          |
-|         int4 |      V+      |       ?      |      T       |      -       |    `NULL`    | INT          |
-|         int8 |      ✔       |       ?      |      T       |      -       |    `NULL`    | INT          |
+|         int2 |      ✔-      |       ?      |      ∅       |      ∅       |    `NULL`    | INT          |
+|         int4 |      ✔-      |       ?      |      ∅       |      ∅       |    `NULL`    | INT          |
+|         int8 |      ✔       |       ?      |      ∅       |      ∅       |    `NULL`    | INT          |
 |         json |      ?       |       ?      |      T       |      V+      |      ?       | TEXT         |
-|         name |      ?       |       ?      |      T       |      V       |    `NULL`    | TEXT         |
-|      numeric |      V       |       V      |      T       |      ∅       |    `NULL`    | REAL         |
+|      macaddr |      ✔-      |       ∅      | V<br>(Len=6b)|      V+      |      ?       | INT          |
+|     macaddr8 |      ✔       |       ∅      | V<br>(Len=8b)|      V+      |      ?       | INT          |
+|         name |      ?       |       ?      |      T       |      i       |    `NULL`    | TEXT         |
+|      numeric |      V       |       V      |      T       |      i       |    `NULL`    | REAL         |
 |         text |      ?       |       ?      |      T       |      ✔       |      V       | TEXT         |
 |         time |      V       |       V      |      T       |      V+      |    `NULL`    | ?            |
 |    timestamp |      V       |       V      |      T       |      V+      |    `NULL`    | ?            |
 |timestamp + tz|      V       |       V      |      T       |      V+      |    `NULL`    | ?            |
-|         uuid |      ∅       |       ∅      |V+<br>(only<br>16 bytes)| V+ |      ∅       | TEXT, BLOB   |
-|      varchar |      ?       |       ?      |      T       |      ✔       |      V       | TEXT         |
-|    varbit(n) |    V n<=64   |       ∅      |      V       |      ∅       |      ∅       | INT          |
+|         uuid |      ∅       |       ∅      |V+<br>(Len=16b)|     V+      |      ∅       | TEXT, BLOB   |
+|   varchar(n) |      ?       |       ?      |      T       |      ✔       |      V       | TEXT         |
+|    varbit(n) | V<br>(n<=64) |       ∅      |      ∅       |      ∅       |      ∅       | INT          |
 
 
 ### IMPORT FOREIGN SCHEMA options
@@ -277,7 +284,7 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 
   Allow borrowing `NULL`/`NOT NULL` constraints from SQLite table DDL.
 
-#### Datatype tranlsation rules for `IMPORT FOREIGN SCHEMA`
+#### Datatype translation rules for `IMPORT FOREIGN SCHEMA`
 
 | SQLite       | PostgreSQL       |
 |-------------:|:----------------:|
@@ -293,6 +300,8 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 | time         | time             |
 | date         | date             |
 | uuid         | uuid             |
+| macaddr      | macaddr          |
+| macaddr8     | macaddr8         |
 | [geometry](GIS.md)     | geometry         |
 | [geography](GIS.md)    | geography        |
 
@@ -620,6 +629,10 @@ for `INSERT` and `UPDATE` commands. PostgreSQL supports both `blob` and `text` [
 ### bit and varbit support
 - `sqlite_fdw` PostgreSQL `bit`/`varbit` values support based on `int` SQLite data affinity, because there is no per bit operations for SQLite `blob` affinity data. Maximum SQLite `int` affinity value is 8 bytes length, hence maximum `bit`/`varbit` values length is 64 bits.
 - `sqlite_fdw` doesn't pushdown `#` (XOR) operator because there is no equal SQLite operator.
+
+### MAC address support
+- `sqlite_fdw` PostgreSQL `macaddr`/`macaddr8` values support based on `int` SQLite data affinity, because there is no per bit operations for SQLite `blob` affinity data. For `macaddr` out of range error is possible because this type is 6 bytes length, but SQLite `int` can store value up to 8 bytes.
+- `sqlite_fdw` doesn't pushdown any operations with MAC adresses because there is 3 possible affinities for it in SQLite: `integer`, `blob` and `text`.
 
 Tests
 -----
