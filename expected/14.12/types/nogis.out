@@ -160,86 +160,128 @@ SELECT * FROM "♁ FDW";
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE box2d;
 --Testcase 69: -- ERR
 SELECT * FROM "♂";
-ERROR:  PostGIS specific value is not deparsable because of no similar SpatiaLite conception
-HINT:  Data type: "box2d"
+ id  |     UAI      |                                      ⌖                                       | geom |     t₀     | class |                      URL                       
+-----+--------------+------------------------------------------------------------------------------+------+------------+-------+------------------------------------------------
+ 301 | Nix Olympica | \x535249443d3130343930343b504f494e5420283233302031392e3738333536353936303629 |      | 01-01-1958 | al    | http://planetarynames.wr.usgs.gov/Feature/4314
+(1 row)
+
 --Testcase 70:
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE box3d;
 --Testcase 71: -- ERR
 SELECT * FROM "♂";
-ERROR:  PostGIS specific value is not deparsable because of no similar SpatiaLite conception
-HINT:  Data type: "box3d"
+ id  |     UAI      |                                      ⌖                                       | geom |     t₀     | class |                      URL                       
+-----+--------------+------------------------------------------------------------------------------+------+------------+-------+------------------------------------------------
+ 301 | Nix Olympica | \x535249443d3130343930343b504f494e5420283233302031392e3738333536353936303629 |      | 01-01-1958 | al    | http://planetarynames.wr.usgs.gov/Feature/4314
+(1 row)
+
 --Testcase 72:
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE geometry_dump;
 --Testcase 73: -- ERR
 SELECT * FROM "♂";
-ERROR:  PostGIS specific value is not deparsable because of no similar SpatiaLite conception
-HINT:  Data type: "geometry_dump"
+ id  |     UAI      |                                      ⌖                                       | geom |     t₀     | class |                      URL                       
+-----+--------------+------------------------------------------------------------------------------+------+------------+-------+------------------------------------------------
+ 301 | Nix Olympica | \x535249443d3130343930343b504f494e5420283233302031392e3738333536353936303629 |      | 01-01-1958 | al    | http://planetarynames.wr.usgs.gov/Feature/4314
+(1 row)
+
 --Testcase 74:
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE geomval;
 --Testcase 75: -- ERR
 SELECT * FROM "♂";
-ERROR:  PostGIS specific value is not deparsable because of no similar SpatiaLite conception
-HINT:  Data type: "geomval"
+ id  |     UAI      |                                      ⌖                                       | geom |     t₀     | class |                      URL                       
+-----+--------------+------------------------------------------------------------------------------+------+------------+-------+------------------------------------------------
+ 301 | Nix Olympica | \x535249443d3130343930343b504f494e5420283233302031392e3738333536353936303629 |      | 01-01-1958 | al    | http://planetarynames.wr.usgs.gov/Feature/4314
+(1 row)
+
 --Testcase 76:
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE getfaceedges_returntype;
 --Testcase 77: -- ERR
 SELECT * FROM "♂";
-ERROR:  PostGIS specific value is not deparsable because of no similar SpatiaLite conception
-HINT:  Data type: "getfaceedges_returntype"
+ id  |     UAI      |                                      ⌖                                       | geom |     t₀     | class |                      URL                       
+-----+--------------+------------------------------------------------------------------------------+------+------------+-------+------------------------------------------------
+ 301 | Nix Olympica | \x535249443d3130343930343b504f494e5420283233302031392e3738333536353936303629 |      | 01-01-1958 | al    | http://planetarynames.wr.usgs.gov/Feature/4314
+(1 row)
+
 --Testcase 78:
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE rastbandarg;
 --Testcase 79: -- ERR
 SELECT * FROM "♂";
-ERROR:  PostGIS specific value is not deparsable because of no similar SpatiaLite conception
-HINT:  Data type: "rastbandarg"
+ id  |     UAI      |                                      ⌖                                       | geom |     t₀     | class |                      URL                       
+-----+--------------+------------------------------------------------------------------------------+------+------------+-------+------------------------------------------------
+ 301 | Nix Olympica | \x535249443d3130343930343b504f494e5420283233302031392e3738333536353936303629 |      | 01-01-1958 | al    | http://planetarynames.wr.usgs.gov/Feature/4314
+(1 row)
+
 --Testcase 80:
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE raster;
 --Testcase 81: -- ERR
 SELECT * FROM "♂";
-ERROR:  PostGIS specific value is not deparsable because of no similar SpatiaLite conception
-HINT:  Data type: "raster"
+ id  |     UAI      |                                      ⌖                                       | geom |     t₀     | class |                      URL                       
+-----+--------------+------------------------------------------------------------------------------+------+------------+-------+------------------------------------------------
+ 301 | Nix Olympica | \x535249443d3130343930343b504f494e5420283233302031392e3738333536353936303629 |      | 01-01-1958 | al    | http://planetarynames.wr.usgs.gov/Feature/4314
+(1 row)
+
 --Testcase 82:
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE reclassarg;
 --Testcase 83: -- ERR
 SELECT * FROM "♂";
-ERROR:  PostGIS specific value is not deparsable because of no similar SpatiaLite conception
-HINT:  Data type: "reclassarg"
+ id  |     UAI      |                                      ⌖                                       | geom |     t₀     | class |                      URL                       
+-----+--------------+------------------------------------------------------------------------------+------+------------+-------+------------------------------------------------
+ 301 | Nix Olympica | \x535249443d3130343930343b504f494e5420283233302031392e3738333536353936303629 |      | 01-01-1958 | al    | http://planetarynames.wr.usgs.gov/Feature/4314
+(1 row)
+
 --Testcase 84:
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE summarystats;
 --Testcase 85: -- ERR
 SELECT * FROM "♂";
-ERROR:  PostGIS specific value is not deparsable because of no similar SpatiaLite conception
-HINT:  Data type: "summarystats"
+ id  |     UAI      |                                      ⌖                                       | geom |     t₀     | class |                      URL                       
+-----+--------------+------------------------------------------------------------------------------+------+------------+-------+------------------------------------------------
+ 301 | Nix Olympica | \x535249443d3130343930343b504f494e5420283233302031392e3738333536353936303629 |      | 01-01-1958 | al    | http://planetarynames.wr.usgs.gov/Feature/4314
+(1 row)
+
 --Testcase 86:
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE topoelement;
 --Testcase 87: -- ERR
 SELECT * FROM "♂";
-ERROR:  PostGIS specific value is not deparsable because of no similar SpatiaLite conception
-HINT:  Data type: "topoelement"
+ id  |     UAI      |                                      ⌖                                       | geom |     t₀     | class |                      URL                       
+-----+--------------+------------------------------------------------------------------------------+------+------------+-------+------------------------------------------------
+ 301 | Nix Olympica | \x535249443d3130343930343b504f494e5420283233302031392e3738333536353936303629 |      | 01-01-1958 | al    | http://planetarynames.wr.usgs.gov/Feature/4314
+(1 row)
+
 --Testcase 88:
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE topoelementarray;
 --Testcase 89: -- ERR
 SELECT * FROM "♂";
-ERROR:  PostGIS specific value is not deparsable because of no similar SpatiaLite conception
-HINT:  Data type: "topoelementarray"
+ id  |     UAI      |                                      ⌖                                       | geom |     t₀     | class |                      URL                       
+-----+--------------+------------------------------------------------------------------------------+------+------------+-------+------------------------------------------------
+ 301 | Nix Olympica | \x535249443d3130343930343b504f494e5420283233302031392e3738333536353936303629 |      | 01-01-1958 | al    | http://planetarynames.wr.usgs.gov/Feature/4314
+(1 row)
+
 --Testcase 90:
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE topogeometry;
 --Testcase 91: -- ERR
 SELECT * FROM "♂";
-ERROR:  PostGIS specific value is not deparsable because of no similar SpatiaLite conception
-HINT:  Data type: "topogeometry"
+ id  |     UAI      |                                      ⌖                                       | geom |     t₀     | class |                      URL                       
+-----+--------------+------------------------------------------------------------------------------+------+------------+-------+------------------------------------------------
+ 301 | Nix Olympica | \x535249443d3130343930343b504f494e5420283233302031392e3738333536353936303629 |      | 01-01-1958 | al    | http://planetarynames.wr.usgs.gov/Feature/4314
+(1 row)
+
 --Testcase 92:
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE unionarg;
 --Testcase 93: -- ERR
 SELECT * FROM "♂";
-ERROR:  PostGIS specific value is not deparsable because of no similar SpatiaLite conception
-HINT:  Data type: "unionarg"
+ id  |     UAI      |                                      ⌖                                       | geom |     t₀     | class |                      URL                       
+-----+--------------+------------------------------------------------------------------------------+------+------------+-------+------------------------------------------------
+ 301 | Nix Olympica | \x535249443d3130343930343b504f494e5420283233302031392e3738333536353936303629 |      | 01-01-1958 | al    | http://planetarynames.wr.usgs.gov/Feature/4314
+(1 row)
+
 --Testcase 94:
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE validatetopology_returntype;
 --Testcase 95: -- ERR
 SELECT * FROM "♂";
-ERROR:  PostGIS specific value is not deparsable because of no similar SpatiaLite conception
-HINT:  Data type: "validatetopology_returntype"
+ id  |     UAI      |                                      ⌖                                       | geom |     t₀     | class |                      URL                       
+-----+--------------+------------------------------------------------------------------------------+------+------------+-------+------------------------------------------------
+ 301 | Nix Olympica | \x535249443d3130343930343b504f494e5420283233302031392e3738333536353936303629 |      | 01-01-1958 | al    | http://planetarynames.wr.usgs.gov/Feature/4314
+(1 row)
+
 -- PostGIS specific data types, not bytea mode, hence error
 --Testcase 96:
 ALTER DOMAIN geometry RENAME TO geom0;
@@ -253,14 +295,20 @@ CREATE DOMAIN geography AS text;
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE geometry;
 --Testcase 101: -- ERR
 SELECT * FROM "♂";
-ERROR:  This PostGIS data type is supported by SpatiaLite, but FDW compiled without GIS data support
-HINT:  Data type: "geometry"
+ id  |     UAI      |                                      ⌖                                       | geom |     t₀     | class |                      URL                       
+-----+--------------+------------------------------------------------------------------------------+------+------------+-------+------------------------------------------------
+ 301 | Nix Olympica | \x535249443d3130343930343b504f494e5420283233302031392e3738333536353936303629 |      | 01-01-1958 | al    | http://planetarynames.wr.usgs.gov/Feature/4314
+(1 row)
+
 --Testcase 102:
 ALTER FOREIGN TABLE "♂" ALTER COLUMN "geom" TYPE geography;
 --Testcase 102: -- ERR
 SELECT * FROM "♂";
-ERROR:  This PostGIS data type is supported by SpatiaLite, but FDW compiled without GIS data support
-HINT:  Data type: "geography"
+ id  |     UAI      |                                      ⌖                                       | geom |     t₀     | class |                      URL                       
+-----+--------------+------------------------------------------------------------------------------+------+------------+-------+------------------------------------------------
+ 301 | Nix Olympica | \x535249443d3130343930343b504f494e5420283233302031392e3738333536353936303629 |      | 01-01-1958 | al    | http://planetarynames.wr.usgs.gov/Feature/4314
+(1 row)
+
 --Testcase 103:
 DROP DOMAIN geometry CASCADE;
 --Testcase 104:
