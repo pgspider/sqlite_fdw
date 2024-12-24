@@ -65,11 +65,21 @@ pg_column_void_text_error()
 }
 
 /*
+<<<<<<< HEAD
+ * convert_sqlite_to_pg:
+ * Convert SQLite data as sqlite3_value into PostgreSQL's compatible Datum
+=======
  * convert_sqlite_to_pg
  *		Converts SQLite value into PostgreSQL's Datum
+>>>>>>> fe112d6 (Add initial SpatiaLite ↔ PostGIS support (#96))
  */
 NullableDatum
-sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *attinmeta, AttrNumber attnum, int sqlite_value_affinity, int AffinityBehaviourFlags)
+sqlite_convert_to_pg(Form_pg_attribute att,
+					 sqlite3_value * val,
+					 AttInMetadata *attinmeta,
+					 AttrNumber attnum,
+					 int sqlite_value_affinity,
+					 int AffinityBehaviourFlags)
 {
 	Oid			pgtyp = att->atttypid;
 	Datum		value_datum = 0;
@@ -396,6 +406,10 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 							sqlite_value_to_pg_error();
 							break;
 						}
+					/*
+					 * SQLite UUID output always normalized to blob.
+					 * In sqlite_data_norm.c there is special additional C function.
+					 */
 					case SQLITE_BLOB: /* <-- proper and recommended SQLite affinity of value for pgtyp */
 						{
 							if (value_byte_size_blob_or_utf8 != UUID_LEN)
@@ -404,7 +418,7 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 												errmsg("PostgreSQL uuid data type allows only %d bytes SQLite blob value", UUID_LEN)));
 								break;
 							}
-						else
+							else
 							{
 								const unsigned char * sqlite_blob = 0;
 								pg_uuid_t  *retval = (pg_uuid_t *) palloc0(sizeof(pg_uuid_t));
@@ -415,10 +429,6 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 								break;
 							}
 						}
-					/*
-					 * SQLite UUID output always normalized to blob.
-					 * In sqlite_data_norm.c there is special additional C function.
-					 */
 					case SQLITE3_TEXT:
 						{
 							if (value_byte_size_blob_or_utf8)
@@ -750,7 +760,7 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 	Oid			type = att->atttypid;
 	int32		pgtypmod = att->atttypmod;
 	attnum++;
-	elog(DEBUG2, "sqlite_fdw : %s %d type=%u relid=%u typmod=%d ", __func__, attnum, type, relid, pgtypmod);
+	elog(DEBUG2, "sqlite_fdw : %s %d type=%u typmod=%d", __func__, attnum, type, pgtypmod);
 
 	if (*isnull)
 	{

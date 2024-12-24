@@ -1,0 +1,1345 @@
+--SET log_min_messages TO DEBUG4;
+--SET client_min_messages TO DEBUG4;
+--Testcase 01:
+CREATE EXTENSION sqlite_fdw;
+--Testcase 02:
+CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
+--Testcase 03:
+CREATE SERVER sqlite2 FOREIGN DATA WRAPPER sqlite_fdw;
+--Testcase 04:
+IMPORT FOREIGN SCHEMA main FROM SERVER sqlite_svr INTO public;
+--Testcase 05:
+SELECT * FROM "type_STRING";
+  col   
+--------
+ string
+ TYPE
+ type
+(3 rows)
+
+--Testcase 06:
+EXPLAIN (VERBOSE, COSTS OFF)
+UPDATE "type_STRING" SET col = '_' || substr(col, 2) RETURNING *;
+                                              QUERY PLAN                                               
+-------------------------------------------------------------------------------------------------------
+ Update on public."type_STRING"
+   Output: col
+   ->  Foreign Update on public."type_STRING"
+         SQLite query: UPDATE main."type_STRING" SET `col` = ('_' || substr(`col`, 2)) RETURNING `col`
+(4 rows)
+
+--Testcase 07:
+UPDATE "type_STRING" SET col = '_' || substr(col, 2) RETURNING *;
+ col 
+-----
+(0 rows)
+
+--Testcase 08:
+SELECT * FROM "type_STRING";
+  col   
+--------
+ _tring
+ _YPE
+ _ype
+(3 rows)
+
+--Testcase 09:
+EXPLAIN (VERBOSE, COSTS OFF)
+DELETE FROM "type_STRING" RETURNING *;
+                              QUERY PLAN                              
+----------------------------------------------------------------------
+ Delete on public."type_STRING"
+   Output: col
+   ->  Foreign Delete on public."type_STRING"
+         SQLite query: DELETE FROM main."type_STRING" RETURNING `col`
+(4 rows)
+
+--Testcase 10:
+DELETE FROM "type_STRING" RETURNING *;
+  col   
+--------
+ _tring
+ _tring
+ _tring
+(3 rows)
+
+--Testcase 11:
+EXPLAIN (VERBOSE, COSTS OFF)
+INSERT INTO "type_STRING"(col) VALUES ('string') ON CONFLICT DO NOTHING RETURNING *;
+           QUERY PLAN           
+--------------------------------
+ Insert on public."type_STRING"
+   Output: "type_STRING".col
+   Batch Size: 1
+   Conflict Resolution: NOTHING
+   ->  Result
+         Output: 'string'::text
+(6 rows)
+
+--Testcase 12:
+INSERT INTO "type_STRING"(col) VALUES ('string') ON CONFLICT DO NOTHING RETURNING *;
+  col   
+--------
+ string
+(1 row)
+
+--Testcase 13:
+SELECT * FROM "type_BYTE";
+ col 
+-----
+ c
+(1 row)
+
+--Testcase 14:
+EXPLAIN (VERBOSE, COSTS OFF)
+DELETE FROM "type_BYTE" RETURNING *;
+                             QUERY PLAN                             
+--------------------------------------------------------------------
+ Delete on public."type_BYTE"
+   Output: col
+   ->  Foreign Delete on public."type_BYTE"
+         SQLite query: DELETE FROM main."type_BYTE" RETURNING `col`
+(4 rows)
+
+--Testcase 15:
+DELETE FROM "type_BYTE" RETURNING *;
+ col 
+-----
+ c
+(1 row)
+
+--Testcase 16:
+SELECT * FROM "type_SINT";
+  col   
+--------
+  32767
+ -32768
+(2 rows)
+
+--Testcase 17:
+DELETE FROM "type_SINT" RETURNING *;
+  col  
+-------
+ 32767
+(1 row)
+
+--Testcase 18:
+SELECT * FROM "type_BINT";
+         col          
+----------------------
+  9223372036854775807
+ -9223372036854775808
+(2 rows)
+
+--Testcase 19:
+DELETE FROM "type_BINT" RETURNING *;
+         col         
+---------------------
+ 9223372036854775807
+ 9223372036854775807
+(2 rows)
+
+--Testcase 20:
+SELECT * FROM "type_INTEGER";
+  col   
+--------
+ 120506
+(1 row)
+
+--Testcase 21:
+DELETE FROM "type_INTEGER" RETURNING *;
+  col   
+--------
+ 120506
+ 120506
+(2 rows)
+
+--Testcase 22:
+SELECT * FROM "type_FLOAT";
+  col   
+--------
+ 3.1415
+(1 row)
+
+--Testcase 23:
+DELETE FROM "type_FLOAT" RETURNING *;
+  col   
+--------
+ 3.1415
+(1 row)
+
+--Testcase 24:
+SELECT * FROM "type_DOUBLE";
+        col        
+-------------------
+          1999.012
+ 3.141592653589793
+          Infinity
+         -Infinity
+(4 rows)
+
+--Testcase 25:
+DELETE FROM "type_DOUBLE" RETURNING *;
+   col    
+----------
+ 1999.012
+(1 row)
+
+--
+set datestyle=ISO;
+--Testcase 26:
+SELECT * FROM "type_TIMESTAMP";
+           col           |          b          
+-------------------------+---------------------
+ 2017-11-06 12:34:56.789 | 2017-11-06 00:00:00
+ 2017-11-06 01:03:00     | 2017-11-07 00:00:00
+(2 rows)
+
+--Testcase 27:
+DELETE FROM "type_TIMESTAMP" RETURNING *;
+           col           |          b          
+-------------------------+---------------------
+ 2017-11-06 12:34:56.789 | 2017-11-06 00:00:00
+ 2017-11-06 12:34:56.789 | 2017-11-06 00:00:00
+ 2017-11-06 12:34:56.789 | 2017-11-06 00:00:00
+ 2017-11-06 12:34:56.789 | 2017-11-06 00:00:00
+(4 rows)
+
+--Testcase 28:
+SELECT * FROM "type_BLOB";
+    col     
+------------
+ \xdeadbeef
+(1 row)
+
+--Testcase 29:
+DELETE FROM "type_BLOB" RETURNING *;
+    col     
+------------
+ \xdeadbeef
+ \xdeadbeef
+(2 rows)
+
+--Testcase 30:
+ALTER TABLE "type_UUID" ALTER COLUMN "i" OPTIONS (ADD key 'true');
+--Testcase 31:
+DELETE FROM "type_UUID" RETURNING *;
+ i  |                  u                   
+----+--------------------------------------
+ 41 | b0eebc99-9c0b-4ef8-bb6d-6bb900000a15
+(1 row)
+
+--Testcase 32:
+ALTER TABLE "type_BIT" ALTER COLUMN "i" OPTIONS (ADD key 'true');
+--Testcase 33:
+ALTER TABLE "type_BIT" ALTER COLUMN b TYPE bit(6);
+--Testcase 34:
+DELETE FROM "type_BIT" RETURNING *;
+ i |   b    
+---+--------
+ 6 | 110110
+ 6 | 110110
+(2 rows)
+
+--Testcase 35:
+SELECT * FROM typetest;
+ i | v |     c      | t |            d            |           ti            
+---+---+------------+---+-------------------------+-------------------------
+ 1 | a | b          | c | 2017-11-06 12:34:56.789 | 2017-11-06 12:34:56.789
+(1 row)
+
+--Testcase 36:
+INSERT INTO "type_STRING"(col) VALUES ('string') ON CONFLICT DO NOTHING RETURNING *;
+  col   
+--------
+ string
+(1 row)
+
+--Testcase 37:
+EXPLAIN (VERBOSE, COSTS OFF)
+INSERT INTO "type_STRING"(col) VALUES ('string') RETURNING *;
+           QUERY PLAN           
+--------------------------------
+ Insert on public."type_STRING"
+   Output: "type_STRING".col
+   Batch Size: 1
+   ->  Result
+         Output: 'string'::text
+(5 rows)
+
+--Testcase 38:
+INSERT INTO "type_BYTE"(col) VALUES ('c') RETURNING *;
+ col 
+-----
+ c
+(1 row)
+
+--Testcase 39:
+INSERT INTO "type_SINT"(col) VALUES (32767) RETURNING *;
+  col  
+-------
+ 32767
+(1 row)
+
+--Testcase 40:
+INSERT INTO "type_SINT"(col) VALUES (-32768) RETURNING *;
+  col   
+--------
+ -32768
+(1 row)
+
+--Testcase 41:
+INSERT INTO "type_BINT"(col) VALUES (9223372036854775807) RETURNING *;
+         col         
+---------------------
+ 9223372036854775807
+(1 row)
+
+--Testcase 42:
+INSERT INTO "type_BINT"(col) VALUES (-9223372036854775808) RETURNING *;
+         col          
+----------------------
+ -9223372036854775808
+(1 row)
+
+--Testcase 43:
+INSERT INTO "type_INTEGER"(col) VALUES (9223372036854775807) RETURNING *;
+         col         
+---------------------
+ 9223372036854775807
+(1 row)
+
+--Testcase 44:
+INSERT INTO "type_FLOAT"(col) VALUES (3.1415) RETURNING *;
+  col   
+--------
+ 3.1415
+(1 row)
+
+--Testcase 45:
+INSERT INTO "type_DOUBLE"(col) VALUES (3.14159265) RETURNING *;
+    col     
+------------
+ 3.14159265
+(1 row)
+
+--Testcase 46:
+INSERT INTO "type_TIMESTAMP" VALUES ('2017.11.06 12:34:56.789', '2017.11.06') RETURNING *;
+           col           |          b          
+-------------------------+---------------------
+ 2017-11-06 12:34:56.789 | 2017-11-06 00:00:00
+(1 row)
+
+--Testcase 47:
+INSERT INTO "type_TIMESTAMP" VALUES ('2017.11.06 1:3:0', '2017.11.07') RETURNING *;
+         col         |          b          
+---------------------+---------------------
+ 2017-11-06 01:03:00 | 2017-11-07 00:00:00
+(1 row)
+
+--Testcase 48:
+INSERT INTO "type_BLOB"(col) VALUES (bytea('\xDEADBEEF')) RETURNING *;
+    col     
+------------
+ \xdeadbeef
+(1 row)
+
+--Testcase 49:
+SELECT * FROM "type_DATE";
+    col     
+------------
+ 2021-02-23
+ 2021-03-08
+ 9999-12-30
+(3 rows)
+
+--Testcase 50:
+INSERT INTO "type_DATE"(col) VALUES ('2021.02.23') RETURNING col;
+    col     
+------------
+ 2021-02-23
+(1 row)
+
+--Testcase 51:
+INSERT INTO "type_DATE"(col) VALUES ('2021/03/08') RETURNING col;
+    col     
+------------
+ 2021-03-08
+(1 row)
+
+--Testcase 52:
+INSERT INTO "type_DATE"(col) VALUES ('9999-12-30') RETURNING col;
+    col     
+------------
+ 9999-12-30
+(1 row)
+
+--Testcase 53:
+INSERT INTO "type_DATE"(col) VALUES ('2021.04.23') RETURNING col;
+    col     
+------------
+ 2021-04-23
+(1 row)
+
+--Testcase 54:
+INSERT INTO "type_DATE"(col) VALUES ('2021/03/09') RETURNING col;
+    col     
+------------
+ 2021-03-09
+(1 row)
+
+--Testcase 55:
+INSERT INTO "type_DATE"(col) VALUES ('9999-12-29') RETURNING col;
+    col     
+------------
+ 9999-12-29
+(1 row)
+
+--Testcase 56:
+SELECT * FROM "type_DATE";
+    col     
+------------
+ 2021-02-23
+ 2021-03-08
+ 9999-12-30
+ 2021-04-23
+ 2021-03-09
+ 9999-12-29
+(6 rows)
+
+--Testcase 57:
+SELECT * FROM "type_TIME";
+      col      
+---------------
+ 01:23:45
+ 01:23:45.6789
+(2 rows)
+
+--Testcase 58:
+INSERT INTO "type_TIME"(col) VALUES ('01:23:46') RETURNING col;
+   col    
+----------
+ 01:23:46
+(1 row)
+
+--Testcase 59:
+INSERT INTO "type_TIME"(col) VALUES ('01:23:47.6789') RETURNING col;
+      col      
+---------------
+ 01:23:47.6789
+(1 row)
+
+--Testcase 60:
+SELECT * FROM "type_TIME";
+      col      
+---------------
+ 01:23:45
+ 01:23:45.6789
+ 01:23:46
+ 01:23:47.6789
+(4 rows)
+
+--Testcase 61:
+CREATE FOREIGN TABLE type_JSON(col JSON OPTIONS (key 'true')) SERVER sqlite_svr OPTIONS (table 'type_TEXT');
+--Testcase 62
+SELECT * FROM type_JSON;
+ col 
+-----
+(0 rows)
+
+--Testcase 63:
+INSERT INTO type_JSON(col) VALUES ('[1, 2, "foo", null]') RETURNING *;
+         col         
+---------------------
+ [1, 2, "foo", null]
+(1 row)
+
+--Testcase 64:
+INSERT INTO type_JSON(col) VALUES ('{"bar": "baz", "balance": 7.77, "active": false}'::json) RETURNING *;
+                       col                        
+--------------------------------------------------
+ {"bar": "baz", "balance": 7.77, "active": false}
+(1 row)
+
+--Testcase 65:
+SELECT * FROM type_JSON;
+                       col                        
+--------------------------------------------------
+ [1, 2, "foo", null]
+ {"bar": "baz", "balance": 7.77, "active": false}
+(2 rows)
+
+--Testcase 66:
+DELETE FROM type_JSON RETURNING *;
+         col         
+---------------------
+ [1, 2, "foo", null]
+(1 row)
+
+--Testcase 70:
+ALTER TABLE typetest ALTER COLUMN i OPTIONS (ADD key 'true');
+--Testcase 71: (i integer, v varchar(10), c char(10), t text, d datetime, ti timestamp);
+EXPLAIN (VERBOSE, COSTS OFF)
+INSERT INTO typetest VALUES (1, 'a', 'b', 'c', '2017.11.06 12:34:56.789', '2017.11.06 12:34:56.789') RETURNING *;
+                                                                                                   QUERY PLAN                                                                                                    
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Insert on public.typetest
+   Output: typetest.i, typetest.v, typetest.c, typetest.t, typetest.d, typetest.ti
+   Batch Size: 1
+   ->  Result
+         Output: '1'::bigint, 'a'::character varying(10), 'b         '::character(10), 'c'::text, '2017-11-06 12:34:56.789'::timestamp without time zone, '2017-11-06 12:34:56.789'::timestamp without time zone
+(5 rows)
+
+--Testcase 72: (i integer, v varchar(10), c char(10), t text, d datetime, ti timestamp);
+INSERT INTO typetest VALUES (1, 'a', 'b', 'c', '2017.11.06 12:34:56.789', '2017.11.06 12:34:56.789') RETURNING *;
+ i | v |     c      | t |            d            |           ti            
+---+---+------------+---+-------------------------+-------------------------
+ 1 | a | b          | c | 2017-11-06 12:34:56.789 | 2017-11-06 12:34:56.789
+(1 row)
+
+--Testcase 73:
+EXPLAIN (VERBOSE, COSTS OFF)
+INSERT INTO typetest VALUES (2, 'd', 'e', 'f', '2018.11.06 12:34:56.789', '2018.11.05 12:34:56.789') RETURNING d, c, t, i, ti, v;
+                                                                                                   QUERY PLAN                                                                                                    
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Insert on public.typetest
+   Output: typetest.d, typetest.c, typetest.t, typetest.i, typetest.ti, typetest.v
+   Batch Size: 1
+   ->  Result
+         Output: '2'::bigint, 'd'::character varying(10), 'e         '::character(10), 'f'::text, '2018-11-06 12:34:56.789'::timestamp without time zone, '2018-11-05 12:34:56.789'::timestamp without time zone
+(5 rows)
+
+--Testcase 74:
+INSERT INTO typetest VALUES (2, 'd', 'e', 'f', '2018.11.06 12:34:56.789', '2018.11.05 12:34:56.789') RETURNING d, c, t, i, ti, v;
+            d            |     c      | t | i |           ti            | v 
+-------------------------+------------+---+---+-------------------------+---
+ 2018-11-06 12:34:56.789 | e          | f | 2 | 2018-11-05 12:34:56.789 | d
+(1 row)
+
+--Testcase 75:
+EXPLAIN (VERBOSE, COSTS OFF)
+INSERT INTO typetest VALUES (3, 'g', 'h', 'i', '2019.11.06 12:34:56.789', '2019.11.05 12:34:56.789') RETURNING d c_date, c c_char, t c_text, i c_int, ti c_timestamp, v c_varchar;
+                                                                                                   QUERY PLAN                                                                                                    
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Insert on public.typetest
+   Output: typetest.d, typetest.c, typetest.t, typetest.i, typetest.ti, typetest.v
+   Batch Size: 1
+   ->  Result
+         Output: '3'::bigint, 'g'::character varying(10), 'h         '::character(10), 'i'::text, '2019-11-06 12:34:56.789'::timestamp without time zone, '2019-11-05 12:34:56.789'::timestamp without time zone
+(5 rows)
+
+--Testcase 76:
+INSERT INTO typetest VALUES (3, 'g', 'h', 'i', '2019.11.06 12:34:56.789', '2019.11.05 12:34:56.789') RETURNING d c_date, c c_char, t c_text, i c_int, ti c_timestamp, v c_varchar;
+         c_date          |   c_char   | c_text | c_int |       c_timestamp       | c_varchar 
+-------------------------+------------+--------+-------+-------------------------+-----------
+ 2019-11-06 12:34:56.789 | h          | i      |     3 | 2019-11-05 12:34:56.789 | g
+(1 row)
+
+--Testcase 77:
+EXPLAIN (VERBOSE, COSTS OFF)
+INSERT INTO typetest VALUES (4, 'j', 'k', 'l', '2020.11.06 12:34:56.789', '2020.11.05 12:34:56.789') RETURNING ti c_timestamp;
+                                                                                                   QUERY PLAN                                                                                                    
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Insert on public.typetest
+   Output: typetest.ti
+   Batch Size: 1
+   ->  Result
+         Output: '4'::bigint, 'j'::character varying(10), 'k         '::character(10), 'l'::text, '2020-11-06 12:34:56.789'::timestamp without time zone, '2020-11-05 12:34:56.789'::timestamp without time zone
+(5 rows)
+
+--Testcase 78:
+INSERT INTO typetest VALUES (4, 'j', 'k', 'l', '2020.11.06 12:34:56.789', '2020.11.05 12:34:56.789') RETURNING ti c_timestamp;
+       c_timestamp       
+-------------------------
+ 2020-11-05 12:34:56.789
+(1 row)
+
+--Testcase 79:
+EXPLAIN (VERBOSE, COSTS OFF)
+INSERT INTO typetest VALUES (5, 'm', 'n', 'opqrs', '2020.11.06 12:34:56.789', '2020.11.05 12:34:56.789') RETURNING substr(t, 2) sst;
+                                                                                                     QUERY PLAN                                                                                                      
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Insert on public.typetest
+   Output: substr(typetest.t, 2)
+   Batch Size: 1
+   ->  Result
+         Output: '5'::bigint, 'm'::character varying(10), 'n         '::character(10), 'opqrs'::text, '2020-11-06 12:34:56.789'::timestamp without time zone, '2020-11-05 12:34:56.789'::timestamp without time zone
+(5 rows)
+
+--Testcase 80:
+INSERT INTO typetest VALUES (5, 'm', 'n', 'opqrs', '2020.11.06 12:34:56.789', '2020.11.05 12:34:56.789') RETURNING substr(t, 2) sst;
+ sst  
+------
+ pqrs
+(1 row)
+
+--Testcase 81: (i integer, v varchar(10), c char(10), t text, d datetime, ti timestamp);
+EXPLAIN (VERBOSE, COSTS OFF)
+UPDATE typetest SET t='upd' WHERE i=1 RETURNING *;
+                                                       QUERY PLAN                                                       
+------------------------------------------------------------------------------------------------------------------------
+ Update on public.typetest
+   Output: i, v, c, t, d, ti
+   ->  Foreign Update on public.typetest
+         SQLite query: UPDATE main."typetest" SET `t` = 'upd' WHERE ((`i` = 1)) RETURNING `i`, `v`, `c`, `t`, `d`, `ti`
+(4 rows)
+
+--Testcase 82: (i integer, v varchar(10), c char(10), t text, d datetime, ti timestamp);
+UPDATE typetest SET t='upd' WHERE i=1 RETURNING *;
+ i | v |     c      |  t  |            d            |           ti            
+---+---+------------+-----+-------------------------+-------------------------
+ 1 | a | b          | upd | 2017-11-06 12:34:56.789 | 2017-11-06 12:34:56.789
+(1 row)
+
+--Testcase 83:
+EXPLAIN (VERBOSE, COSTS OFF)
+UPDATE typetest SET t='upd' WHERE i=2 RETURNING d, c, t, i, ti, v;
+                                                       QUERY PLAN                                                       
+------------------------------------------------------------------------------------------------------------------------
+ Update on public.typetest
+   Output: d, c, t, i, ti, v
+   ->  Foreign Update on public.typetest
+         SQLite query: UPDATE main."typetest" SET `t` = 'upd' WHERE ((`i` = 2)) RETURNING `i`, `v`, `c`, `t`, `d`, `ti`
+(4 rows)
+
+--Testcase 84:
+EXPLAIN (VERBOSE, COSTS OFF)
+UPDATE typetest SET t='upd' WHERE i=2 RETURNING d, c, t, i, ti, v;
+                                                       QUERY PLAN                                                       
+------------------------------------------------------------------------------------------------------------------------
+ Update on public.typetest
+   Output: d, c, t, i, ti, v
+   ->  Foreign Update on public.typetest
+         SQLite query: UPDATE main."typetest" SET `t` = 'upd' WHERE ((`i` = 2)) RETURNING `i`, `v`, `c`, `t`, `d`, `ti`
+(4 rows)
+
+--Testcase 85:
+EXPLAIN (VERBOSE, COSTS OFF)
+UPDATE typetest SET t='upd' WHERE i=3 RETURNING d c_date, c c_char, t c_text, i c_int, ti c_timestamp, v c_varchar;
+                                                       QUERY PLAN                                                       
+------------------------------------------------------------------------------------------------------------------------
+ Update on public.typetest
+   Output: d, c, t, i, ti, v
+   ->  Foreign Update on public.typetest
+         SQLite query: UPDATE main."typetest" SET `t` = 'upd' WHERE ((`i` = 3)) RETURNING `i`, `v`, `c`, `t`, `d`, `ti`
+(4 rows)
+
+--Testcase 86:
+UPDATE typetest SET t='upd' WHERE i=3 RETURNING d c_date, c c_char, t c_text, i c_int, ti c_timestamp, v c_varchar;
+         c_date          |   c_char   | c_text | c_int |       c_timestamp       | c_varchar 
+-------------------------+------------+--------+-------+-------------------------+-----------
+ 2019-11-06 12:34:56.789 | h          | upd    |     3 | 2019-11-05 12:34:56.789 | g
+ 2019-11-06 12:34:56.789 | h          | upd    |     3 | 2019-11-05 12:34:56.789 | g
+(2 rows)
+
+--Testcase 87:
+EXPLAIN (VERBOSE, COSTS OFF)
+UPDATE typetest SET t='upd' WHERE i=4 RETURNING ti c_timestamp;
+                                          QUERY PLAN                                           
+-----------------------------------------------------------------------------------------------
+ Update on public.typetest
+   Output: ti
+   ->  Foreign Update on public.typetest
+         SQLite query: UPDATE main."typetest" SET `t` = 'upd' WHERE ((`i` = 4)) RETURNING `ti`
+(4 rows)
+
+--Testcase 88:
+UPDATE typetest SET t='upd' WHERE i=4 RETURNING ti c_timestamp;
+       c_timestamp       
+-------------------------
+ 2020-11-05 12:34:56.789
+(1 row)
+
+--Testcase 89:
+EXPLAIN (VERBOSE, COSTS OFF)
+UPDATE typetest SET t='upd' WHERE i=5 RETURNING substr(c, 2) sst;
+                                          QUERY PLAN                                          
+----------------------------------------------------------------------------------------------
+ Update on public.typetest
+   Output: substr((c)::text, 2)
+   ->  Foreign Update on public.typetest
+         SQLite query: UPDATE main."typetest" SET `t` = 'upd' WHERE ((`i` = 5)) RETURNING `c`
+(4 rows)
+
+--Testcase 90:
+UPDATE typetest SET t='upd' WHERE i=5 RETURNING substr(c, 2) sst;
+ sst 
+-----
+ 
+(1 row)
+
+--Testcase 91: (i integer, v varchar(10), c char(10), t text, d datetime, ti timestamp);
+EXPLAIN (VERBOSE, COSTS OFF)
+DELETE FROM typetest WHERE i=1 RETURNING *;
+                                                 QUERY PLAN                                                  
+-------------------------------------------------------------------------------------------------------------
+ Delete on public.typetest
+   Output: i, v, c, t, d, ti
+   ->  Foreign Delete on public.typetest
+         SQLite query: DELETE FROM main."typetest" WHERE ((`i` = 1)) RETURNING `i`, `v`, `c`, `t`, `d`, `ti`
+(4 rows)
+
+--Testcase 92: (i integer, v varchar(10), c char(10), t text, d datetime, ti timestamp);
+DELETE FROM typetest WHERE i=1 RETURNING *;
+ i | v |     c      |  t  |            d            |           ti            
+---+---+------------+-----+-------------------------+-------------------------
+ 1 | a | b          | upd | 2017-11-06 12:34:56.789 | 2017-11-06 12:34:56.789
+(1 row)
+
+--Testcase 93:
+EXPLAIN (VERBOSE, COSTS OFF)
+DELETE FROM typetest WHERE i=2 RETURNING d, c, t, i, ti, v;
+                                                 QUERY PLAN                                                  
+-------------------------------------------------------------------------------------------------------------
+ Delete on public.typetest
+   Output: d, c, t, i, ti, v
+   ->  Foreign Delete on public.typetest
+         SQLite query: DELETE FROM main."typetest" WHERE ((`i` = 2)) RETURNING `i`, `v`, `c`, `t`, `d`, `ti`
+(4 rows)
+
+--Testcase 94:
+EXPLAIN (VERBOSE, COSTS OFF)
+DELETE FROM typetest WHERE i=2 RETURNING d, c, t, i, ti, v;
+                                                 QUERY PLAN                                                  
+-------------------------------------------------------------------------------------------------------------
+ Delete on public.typetest
+   Output: d, c, t, i, ti, v
+   ->  Foreign Delete on public.typetest
+         SQLite query: DELETE FROM main."typetest" WHERE ((`i` = 2)) RETURNING `i`, `v`, `c`, `t`, `d`, `ti`
+(4 rows)
+
+--Testcase 95:
+EXPLAIN (VERBOSE, COSTS OFF)
+DELETE FROM typetest WHERE i=3 RETURNING d c_date, c c_char, t c_text, i c_int, ti c_timestamp, v c_varchar;
+                                                 QUERY PLAN                                                  
+-------------------------------------------------------------------------------------------------------------
+ Delete on public.typetest
+   Output: d, c, t, i, ti, v
+   ->  Foreign Delete on public.typetest
+         SQLite query: DELETE FROM main."typetest" WHERE ((`i` = 3)) RETURNING `i`, `v`, `c`, `t`, `d`, `ti`
+(4 rows)
+
+--Testcase 96:
+DELETE FROM typetest WHERE i=3 RETURNING d c_date, c c_char, t c_text, i c_int, ti c_timestamp, v c_varchar;
+         c_date          |   c_char   | c_text | c_int |       c_timestamp       | c_varchar 
+-------------------------+------------+--------+-------+-------------------------+-----------
+ 2019-11-06 12:34:56.789 | h          | upd    |     3 | 2019-11-05 12:34:56.789 | g
+ 2019-11-06 12:34:56.789 | h          | upd    |     3 | 2019-11-05 12:34:56.789 | g
+(2 rows)
+
+--Testcase 97:
+EXPLAIN (VERBOSE, COSTS OFF)
+DELETE FROM typetest WHERE i=4 RETURNING ti c_timestamp;
+                                     QUERY PLAN                                     
+------------------------------------------------------------------------------------
+ Delete on public.typetest
+   Output: ti
+   ->  Foreign Delete on public.typetest
+         SQLite query: DELETE FROM main."typetest" WHERE ((`i` = 4)) RETURNING `ti`
+(4 rows)
+
+--Testcase 98:
+DELETE FROM typetest WHERE i=4 RETURNING ti c_timestamp;
+       c_timestamp       
+-------------------------
+ 2020-11-05 12:34:56.789
+(1 row)
+
+--Testcase 99:
+EXPLAIN (VERBOSE, COSTS OFF)
+DELETE FROM typetest WHERE i=5 RETURNING substr(c, 2) sst;
+                                    QUERY PLAN                                     
+-----------------------------------------------------------------------------------
+ Delete on public.typetest
+   Output: substr((c)::text, 2)
+   ->  Foreign Delete on public.typetest
+         SQLite query: DELETE FROM main."typetest" WHERE ((`i` = 5)) RETURNING `c`
+(4 rows)
+
+--Testcase 100:
+DELETE FROM typetest WHERE i=5 RETURNING substr(c, 2) sst;
+ sst 
+-----
+ 
+(1 row)
+
+--Testcase 101:
+EXPLAIN (VERBOSE, COSTS OFF)
+INSERT INTO typetest VALUES (6, 'p', 'q', 'r', '2021.11.06 12:34:56.789', '2021.11.05 12:34:56.789') RETURNING 'ok' t;
+                                                                                                   QUERY PLAN                                                                                                    
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Insert on public.typetest
+   Output: 'ok'::text
+   Batch Size: 1
+   ->  Result
+         Output: '6'::bigint, 'p'::character varying(10), 'q         '::character(10), 'r'::text, '2021-11-06 12:34:56.789'::timestamp without time zone, '2021-11-05 12:34:56.789'::timestamp without time zone
+(5 rows)
+
+--Testcase 102:
+INSERT INTO typetest VALUES (6, 'p', 'q', 'r', '2021.11.06 12:34:56.789', '2021.11.05 12:34:56.789') RETURNING 'ok' t;
+ t  
+----
+ ok
+(1 row)
+
+EXPLAIN (VERBOSE, COSTS OFF)
+UPDATE typetest SET t='upd' WHERE i=6 RETURNING 'ok1';
+                                   QUERY PLAN                                   
+--------------------------------------------------------------------------------
+ Update on public.typetest
+   Output: 'ok1'::text
+   ->  Foreign Update on public.typetest
+         SQLite query: UPDATE main."typetest" SET `t` = 'upd' WHERE ((`i` = 6))
+(4 rows)
+
+--Testcase 103:
+UPDATE typetest SET t='upd' WHERE i=6 RETURNING 'ok1';
+ ?column? 
+----------
+ ok1
+(1 row)
+
+--Testcase 104:
+EXPLAIN (VERBOSE, COSTS OFF)
+DELETE FROM typetest WHERE i=6 RETURNING 'del';
+                             QUERY PLAN                              
+---------------------------------------------------------------------
+ Delete on public.typetest
+   Output: 'del'::text
+   ->  Foreign Delete on public.typetest
+         SQLite query: DELETE FROM main."typetest" WHERE ((`i` = 6))
+(4 rows)
+
+--Testcase 105:
+DELETE FROM typetest WHERE i=6 RETURNING 'del';
+ ?column? 
+----------
+ del
+(1 row)
+
+-- Test UPDATE/DELETE with RETURNING on a three-table join
+--Testcase 110:
+INSERT INTO ret_base (c1,c2,c3)
+  SELECT id, id - 1200, to_char(id, 'FM00000') FROM generate_series(1201, 1300) id RETURNING *;
+  c1  | c2  |  c3   
+------+-----+-------
+ 1201 |   1 | 01201
+ 1202 |   2 | 01202
+ 1203 |   3 | 01203
+ 1204 |   4 | 01204
+ 1205 |   5 | 01205
+ 1206 |   6 | 01206
+ 1207 |   7 | 01207
+ 1208 |   8 | 01208
+ 1209 |   9 | 01209
+ 1210 |  10 | 01210
+ 1211 |  11 | 01211
+ 1212 |  12 | 01212
+ 1213 |  13 | 01213
+ 1214 |  14 | 01214
+ 1215 |  15 | 01215
+ 1216 |  16 | 01216
+ 1217 |  17 | 01217
+ 1218 |  18 | 01218
+ 1219 |  19 | 01219
+ 1220 |  20 | 01220
+ 1221 |  21 | 01221
+ 1222 |  22 | 01222
+ 1223 |  23 | 01223
+ 1224 |  24 | 01224
+ 1225 |  25 | 01225
+ 1226 |  26 | 01226
+ 1227 |  27 | 01227
+ 1228 |  28 | 01228
+ 1229 |  29 | 01229
+ 1230 |  30 | 01230
+ 1231 |  31 | 01231
+ 1232 |  32 | 01232
+ 1233 |  33 | 01233
+ 1234 |  34 | 01234
+ 1235 |  35 | 01235
+ 1236 |  36 | 01236
+ 1237 |  37 | 01237
+ 1238 |  38 | 01238
+ 1239 |  39 | 01239
+ 1240 |  40 | 01240
+ 1241 |  41 | 01241
+ 1242 |  42 | 01242
+ 1243 |  43 | 01243
+ 1244 |  44 | 01244
+ 1245 |  45 | 01245
+ 1246 |  46 | 01246
+ 1247 |  47 | 01247
+ 1248 |  48 | 01248
+ 1249 |  49 | 01249
+ 1250 |  50 | 01250
+ 1251 |  51 | 01251
+ 1252 |  52 | 01252
+ 1253 |  53 | 01253
+ 1254 |  54 | 01254
+ 1255 |  55 | 01255
+ 1256 |  56 | 01256
+ 1257 |  57 | 01257
+ 1258 |  58 | 01258
+ 1259 |  59 | 01259
+ 1260 |  60 | 01260
+ 1261 |  61 | 01261
+ 1262 |  62 | 01262
+ 1263 |  63 | 01263
+ 1264 |  64 | 01264
+ 1265 |  65 | 01265
+ 1266 |  66 | 01266
+ 1267 |  67 | 01267
+ 1268 |  68 | 01268
+ 1269 |  69 | 01269
+ 1270 |  70 | 01270
+ 1271 |  71 | 01271
+ 1272 |  72 | 01272
+ 1273 |  73 | 01273
+ 1274 |  74 | 01274
+ 1275 |  75 | 01275
+ 1276 |  76 | 01276
+ 1277 |  77 | 01277
+ 1278 |  78 | 01278
+ 1279 |  79 | 01279
+ 1280 |  80 | 01280
+ 1281 |  81 | 01281
+ 1282 |  82 | 01282
+ 1283 |  83 | 01283
+ 1284 |  84 | 01284
+ 1285 |  85 | 01285
+ 1286 |  86 | 01286
+ 1287 |  87 | 01287
+ 1288 |  88 | 01288
+ 1289 |  89 | 01289
+ 1290 |  90 | 01290
+ 1291 |  91 | 01291
+ 1292 |  92 | 01292
+ 1293 |  93 | 01293
+ 1294 |  94 | 01294
+ 1295 |  95 | 01295
+ 1296 |  96 | 01296
+ 1297 |  97 | 01297
+ 1298 |  98 | 01298
+ 1299 |  99 | 01299
+ 1300 | 100 | 01300
+(100 rows)
+
+--Testcase 111:
+SELECT * FROM ret_base;
+  c1  | c2  |  c3   
+------+-----+-------
+ 1201 |   1 | 01201
+ 1202 |   2 | 01202
+ 1203 |   3 | 01203
+ 1204 |   4 | 01204
+ 1205 |   5 | 01205
+ 1206 |   6 | 01206
+ 1207 |   7 | 01207
+ 1208 |   8 | 01208
+ 1209 |   9 | 01209
+ 1210 |  10 | 01210
+ 1211 |  11 | 01211
+ 1212 |  12 | 01212
+ 1213 |  13 | 01213
+ 1214 |  14 | 01214
+ 1215 |  15 | 01215
+ 1216 |  16 | 01216
+ 1217 |  17 | 01217
+ 1218 |  18 | 01218
+ 1219 |  19 | 01219
+ 1220 |  20 | 01220
+ 1221 |  21 | 01221
+ 1222 |  22 | 01222
+ 1223 |  23 | 01223
+ 1224 |  24 | 01224
+ 1225 |  25 | 01225
+ 1226 |  26 | 01226
+ 1227 |  27 | 01227
+ 1228 |  28 | 01228
+ 1229 |  29 | 01229
+ 1230 |  30 | 01230
+ 1231 |  31 | 01231
+ 1232 |  32 | 01232
+ 1233 |  33 | 01233
+ 1234 |  34 | 01234
+ 1235 |  35 | 01235
+ 1236 |  36 | 01236
+ 1237 |  37 | 01237
+ 1238 |  38 | 01238
+ 1239 |  39 | 01239
+ 1240 |  40 | 01240
+ 1241 |  41 | 01241
+ 1242 |  42 | 01242
+ 1243 |  43 | 01243
+ 1244 |  44 | 01244
+ 1245 |  45 | 01245
+ 1246 |  46 | 01246
+ 1247 |  47 | 01247
+ 1248 |  48 | 01248
+ 1249 |  49 | 01249
+ 1250 |  50 | 01250
+ 1251 |  51 | 01251
+ 1252 |  52 | 01252
+ 1253 |  53 | 01253
+ 1254 |  54 | 01254
+ 1255 |  55 | 01255
+ 1256 |  56 | 01256
+ 1257 |  57 | 01257
+ 1258 |  58 | 01258
+ 1259 |  59 | 01259
+ 1260 |  60 | 01260
+ 1261 |  61 | 01261
+ 1262 |  62 | 01262
+ 1263 |  63 | 01263
+ 1264 |  64 | 01264
+ 1265 |  65 | 01265
+ 1266 |  66 | 01266
+ 1267 |  67 | 01267
+ 1268 |  68 | 01268
+ 1269 |  69 | 01269
+ 1270 |  70 | 01270
+ 1271 |  71 | 01271
+ 1272 |  72 | 01272
+ 1273 |  73 | 01273
+ 1274 |  74 | 01274
+ 1275 |  75 | 01275
+ 1276 |  76 | 01276
+ 1277 |  77 | 01277
+ 1278 |  78 | 01278
+ 1279 |  79 | 01279
+ 1280 |  80 | 01280
+ 1281 |  81 | 01281
+ 1282 |  82 | 01282
+ 1283 |  83 | 01283
+ 1284 |  84 | 01284
+ 1285 |  85 | 01285
+ 1286 |  86 | 01286
+ 1287 |  87 | 01287
+ 1288 |  88 | 01288
+ 1289 |  89 | 01289
+ 1290 |  90 | 01290
+ 1291 |  91 | 01291
+ 1292 |  92 | 01292
+ 1293 |  93 | 01293
+ 1294 |  94 | 01294
+ 1295 |  95 | 01295
+ 1296 |  96 | 01296
+ 1297 |  97 | 01297
+ 1298 |  98 | 01298
+ 1299 |  99 | 01299
+ 1300 | 100 | 01300
+(100 rows)
+
+--Testcase 112:
+INSERT INTO ret_j1t (c1, c2, c3) VALUES (8, 5, 14.2), (7, 2, -14.3), (12, 3, 0.001), (9, 3, -0.5) RETURNING *;
+ c1 | c2 |  c3   
+----+----+-------
+  8 |  5 |  14.2
+  7 |  2 | -14.3
+ 12 |  3 | 0.001
+  9 |  3 |  -0.5
+(4 rows)
+
+--Testcase 113:
+SELECT * FROM ret_j1t;
+ c1 | c2 |  c3   
+----+----+-------
+  8 |  5 |  14.2
+  7 |  2 | -14.3
+ 12 |  3 | 0.001
+  9 |  3 |  -0.5
+(4 rows)
+
+--Testcase 114:
+INSERT INTO ret_j2t (c1, c2, c3) VALUES (8, 18, 5.8), (7, 41, 2.1), (12, 28, -0.09), (9, 14, +17.4) RETURNING *;
+ c1 | c2 |  c3   
+----+----+-------
+  8 | 18 |   5.8
+  7 | 41 |   2.1
+ 12 | 28 | -0.09
+  9 | 14 |  17.4
+(4 rows)
+
+--Testcase 115:
+SELECT * FROM ret_j2t;
+ c1 | c2 |  c3   
+----+----+-------
+  8 | 18 |   5.8
+  7 | 41 |   2.1
+ 12 | 28 | -0.09
+  9 | 14 |  17.4
+(4 rows)
+
+--Testcase 116:
+UPDATE ret_base SET c3 = 'foo+' RETURNING ret_base.*, ret_base;
+  c1  | c2 |  c3  |   ret_base    
+------+----+------+---------------
+ 1201 |  1 | foo+ | (1201,1,foo+)
+(1 row)
+
+--Testcase 117:
+EXPLAIN (verbose, costs off)
+UPDATE ret_base SET c3 = 'foo'
+  FROM ret_j1t INNER JOIN ret_j2t ON (ret_j1t.c1 = ret_j2t.c1)
+  WHERE ret_base.c1 > 1200 AND ret_base.c2 = ret_j1t.c1
+  RETURNING ret_base, ret_base.*, ret_j1t, ret_j1t.*;       -- can be pushed down
+                                                   QUERY PLAN                                                   
+----------------------------------------------------------------------------------------------------------------
+ Update on public.ret_base
+   Output: ret_base.*, ret_base.c1, ret_base.c2, ret_base.c3, ret_j1t.*, ret_j1t.c1, ret_j1t.c2, ret_j1t.c3
+   ->  Merge Join
+         Output: 'foo'::text, ret_base.c1, ret_base.*, ret_j1t.*, ret_j2t.*, ret_j1t.c1, ret_j1t.c2, ret_j1t.c3
+         Merge Cond: (ret_j1t.c1 = ret_j2t.c1)
+         ->  Merge Join
+               Output: ret_base.c1, ret_base.*, ret_base.c2, ret_j1t.*, ret_j1t.c1, ret_j1t.c2, ret_j1t.c3
+               Merge Cond: (ret_base.c2 = ret_j1t.c1)
+               ->  Sort
+                     Output: ret_base.c1, ret_base.*, ret_base.c2
+                     Sort Key: ret_base.c2
+                     ->  Foreign Scan on public.ret_base
+                           Output: ret_base.c1, ret_base.*, ret_base.c2
+                           SQLite query: SELECT `c1`, `c2`, `c3` FROM main."ret_base" WHERE ((`c1` > 1200))
+               ->  Sort
+                     Output: ret_j1t.*, ret_j1t.c1, ret_j1t.c2, ret_j1t.c3
+                     Sort Key: ret_j1t.c1
+                     ->  Foreign Scan on public.ret_j1t
+                           Output: ret_j1t.*, ret_j1t.c1, ret_j1t.c2, ret_j1t.c3
+                           SQLite query: SELECT `c1`, `c2`, sqlite_fdw_float(`c3`) FROM main."ret_j1t"
+         ->  Sort
+               Output: ret_j2t.*, ret_j2t.c1
+               Sort Key: ret_j2t.c1
+               ->  Foreign Scan on public.ret_j2t
+                     Output: ret_j2t.*, ret_j2t.c1
+                     SQLite query: SELECT `c1`, `c2`, sqlite_fdw_float(`c3`) FROM main."ret_j2t"
+(26 rows)
+
+--Testcase 118:
+UPDATE ret_base SET c3 = 'foo'
+  FROM ret_j1t INNER JOIN ret_j2t ON (ret_j1t.c1 = ret_j2t.c1)
+  WHERE ret_base.c1 > 1200 AND ret_base.c2 = ret_j1t.c1
+  RETURNING ret_base, ret_base.*, ret_j1t, ret_j1t.*;
+   ret_base    |  c1  | c2 | c3  |   ret_j1t    | c1 | c2 |  c3   
+---------------+------+----+-----+--------------+----+----+-------
+ (1207,7,foo)  | 1207 |  7 | foo | (7,2,-14.3)  |  7 |  2 | -14.3
+ (1208,8,foo)  | 1208 |  8 | foo | (8,5,14.2)   |  8 |  5 |  14.2
+ (1209,9,foo)  | 1209 |  9 | foo | (9,3,-0.5)   |  9 |  3 |  -0.5
+ (1212,12,foo) | 1212 | 12 | foo | (12,3,0.001) | 12 |  3 | 0.001
+(4 rows)
+
+--Testcase 119:
+EXPLAIN (verbose, costs off)
+DELETE FROM ret_base
+  USING ret_j1t LEFT JOIN ret_j2t ON (ret_j1t.c1 = ret_j2t.c1)
+  WHERE ret_base.c1 > 1200 AND ret_base.c1 % 10 = 0 AND ret_base.c2 = ret_j1t.c1
+  RETURNING 100;                          -- can be pushed down
+                                                                                                                                                                                                                                                                                                                                                    QUERY PLAN                                                                                                                                                                                                                                                                                                                                                     
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Delete on public.ret_base
+   Output: 100
+   ->  Foreign Scan
+         Output: ret_base.c1, ret_j1t.*, ret_j2t.*
+         SQLite query: SELECT r1.`c1`, CASE WHEN ( r2.`c1` IS NOT NULL) OR ( r2.`c2` IS NOT NULL) OR ( sqlite_fdw_float(r2.`c3`) IS NOT NULL) THEN ("(" || COALESCE(r2.`c1`, '') || "," || COALESCE(r2.`c2`, '') || "," || COALESCE(sqlite_fdw_float(r2.`c3`), '')|| ")") END, CASE WHEN ( r3.`c1` IS NOT NULL) OR ( r3.`c2` IS NOT NULL) OR ( sqlite_fdw_float(r3.`c3`) IS NOT NULL) THEN ("(" || COALESCE(r3.`c1`, '') || "," || COALESCE(r3.`c2`, '') || "," || COALESCE(sqlite_fdw_float(r3.`c3`), '')|| ")") END FROM ((main."ret_base" r1 INNER JOIN main."ret_j1t" r2 ON (((r1.`c2` = r2.`c1`)) AND ((r1.`c1` > 1200)) AND (((r1.`c1` % 10) = 0)))) LEFT JOIN main."ret_j2t" r3 ON (((r2.`c1` = r3.`c1`))))
+         ->  Hash Left Join
+               Output: ret_base.c1, ret_j1t.*, ret_j2t.*
+               Hash Cond: (ret_j1t.c1 = ret_j2t.c1)
+               ->  Hash Join
+                     Output: ret_base.c1, ret_j1t.*, ret_j1t.c1
+                     Hash Cond: (ret_base.c2 = ret_j1t.c1)
+                     ->  Foreign Scan on public.ret_base
+                           Output: ret_base.c1, ret_base.c2, ret_base.c3
+                           SQLite query: SELECT `c1`, `c2` FROM main."ret_base" WHERE ((`c1` > 1200)) AND (((`c1` % 10) = 0))
+                     ->  Hash
+                           Output: ret_j1t.*, ret_j1t.c1
+                           ->  Foreign Scan on public.ret_j1t
+                                 Output: ret_j1t.*, ret_j1t.c1
+                                 SQLite query: SELECT `c1`, `c2`, sqlite_fdw_float(`c3`) FROM main."ret_j1t"
+               ->  Hash
+                     Output: ret_j2t.*, ret_j2t.c1
+                     ->  Foreign Scan on public.ret_j2t
+                           Output: ret_j2t.*, ret_j2t.c1
+                           SQLite query: SELECT `c1`, `c2`, sqlite_fdw_float(`c3`) FROM main."ret_j2t"
+(24 rows)
+
+--Testcase 120:
+DELETE FROM ret_base
+  USING ret_j1t LEFT JOIN ret_j2t ON (ret_j1t.c1 = ret_j2t.c1)
+  WHERE ret_base.c1 > 1200 AND ret_base.c1 % 10 = 0 AND ret_base.c2 = ret_j1t.c1
+  RETURNING 100;
+ ?column? 
+----------
+(0 rows)
+
+--Testcase 121: 
+DELETE FROM ret_base RETURNING ret_base.*, ret_base;
+  c1  | c2 |  c3  |   ret_base    
+------+----+------+---------------
+ 1201 |  1 | foo+ | (1201,1,foo+)
+(1 row)
+
+--Testcase 122: Test that trigger on remote table works as expected
+CREATE OR REPLACE FUNCTION F_BRTRIG() RETURNS trigger AS $$
+BEGIN
+    NEW.c3 = NEW.c3 || '_trig_update';
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+--Testcase 123:
+CREATE TRIGGER t1_br_insert BEFORE INSERT OR UPDATE
+    ON ret_base FOR EACH ROW EXECUTE PROCEDURE F_BRTRIG();
+--Testcase 124:
+INSERT INTO ret_base (c1,c2,c3) VALUES (1208, 818, 'fff') RETURNING *;
+  c1  | c2  |       c3        
+------+-----+-----------------
+ 1208 | 818 | fff_trig_update
+(1 row)
+
+--Testcase 125:
+INSERT INTO ret_base (c1,c2,c3) VALUES (1218, 818, 'ggg') RETURNING *;
+  c1  | c2  |       c3        
+------+-----+-----------------
+ 1218 | 818 | ggg_trig_update
+(1 row)
+
+--Testcase 126:
+EXPLAIN (verbose, costs off)
+UPDATE ret_base SET c2 = c2 + 600 WHERE c1 % 10 = 8 AND c1 < 1300 RETURNING *;
+                                                    QUERY PLAN                                                    
+------------------------------------------------------------------------------------------------------------------
+ Update on public.ret_base
+   Output: c1, c2, c3
+   ->  Foreign Scan on public.ret_base
+         Output: (c2 + 600), c1, ret_base.*
+         SQLite query: SELECT `c1`, `c2`, `c3` FROM main."ret_base" WHERE ((`c1` < 1300)) AND (((`c1` % 10) = 8))
+(5 rows)
+
+--Testcase 127:
+UPDATE ret_base SET c2 = c2 + 600 WHERE c1 % 10 = 8 AND c1 < 1300 RETURNING *;
+  c1  |  c2  |             c3              
+------+------+-----------------------------
+ 1208 | 1418 | fff_trig_update_trig_update
+ 1218 | 1418 | ggg_trig_update_trig_update
+(2 rows)
+
+--Testcase 128:
+EXPLAIN (verbose, costs off)
+DELETE FROM ret_base WHERE ret_base.c1 > 1200 RETURNING ret_base.*, ret_base;
+                                             QUERY PLAN                                             
+----------------------------------------------------------------------------------------------------
+ Delete on public.ret_base
+   Output: c1, c2, c3, ret_base.*
+   ->  Foreign Delete on public.ret_base
+         SQLite query: DELETE FROM main."ret_base" WHERE ((`c1` > 1200)) RETURNING `c1`, `c2`, `c3`
+(4 rows)
+
+--Testcase 129:
+DELETE FROM ret_base WHERE ret_base.c1 > 1200 RETURNING ret_base.*, ret_base;
+  c1  |  c2  |             c3              |                ret_base                 
+------+------+-----------------------------+-----------------------------------------
+ 1208 | 1418 | fff_trig_update_trig_update | (1208,1418,fff_trig_update_trig_update)
+(1 row)
+
+--Testcase 130:
+CREATE SERVER sqlite_svr_ins FOREIGN DATA WRAPPER sqlite_fdw
+OPTIONS (database '/tmp/sqlite_fdw_test/core.db');
+--Testcase 131:
+CREATE FOREIGN TABLE inserttest01 (col1 int4, col2 int4 NOT NULL, col3 text default 'testing') SERVER sqlite_svr_ins;
+--Testcase 132:
+CREATE VIEW inserttest01_view_wco AS
+SELECT * FROM inserttest01 WHERE col1 > 20 AND col2 = 50
+WITH CHECK OPTION;
+--Testcase 133:
+CREATE VIEW inserttest01_view AS
+SELECT * FROM inserttest01 WHERE col1 > 20 AND col2 = 50;
+--Testcase 134: ok
+INSERT INTO inserttest01_view values(10, 40, 'uuuuu');
+--Testcase 135: no!
+INSERT INTO inserttest01_view_wco values(10, 50, 'uuuuu');
+ERROR:  new row violates check option for view "inserttest01_view_wco"
+DETAIL:  Failing row contains (10, 50, uuuuu).
+--Testcase 136: no!
+INSERT INTO inserttest01_view_wco values(25, 40, 'uuuuu');
+ERROR:  new row violates check option for view "inserttest01_view_wco"
+DETAIL:  Failing row contains (25, 40, uuuuu).
+--Testcase 137: ok
+INSERT INTO inserttest01_view values(11, 42, 'uuuuu') RETURNING *;
+ col1 | col2 | col3  
+------+------+-------
+   11 |   42 | uuuuu
+(1 row)
+
+--Testcase 138:
+ALTER TABLE inserttest01 ALTER COLUMN col1 OPTIONS (ADD key 'true');
+--Testcase 139:
+DELETE FROM inserttest01 RETURNING *;
+ col1 | col2 |  col3   
+------+------+---------
+      |    3 | testing
+(1 row)
+
+--Testcase 200:
+DROP EXTENSION sqlite_fdw CASCADE;
+NOTICE:  drop cascades to 62 other objects
+DETAIL:  drop cascades to server sqlite_svr
+drop cascades to foreign table department
+drop cascades to foreign table employee
+drop cascades to foreign table empdata
+drop cascades to foreign table numbers
+drop cascades to foreign table t
+drop cascades to foreign table multiprimary
+drop cascades to foreign table columntest
+drop cascades to foreign table noprimary
+drop cascades to foreign table limittest
+drop cascades to foreign table grem1_1
+drop cascades to foreign table grem1_2
+drop cascades to foreign table case_exp
+drop cascades to foreign table "type_STRING"
+drop cascades to foreign table "type_BOOLEANpk"
+drop cascades to foreign table "type_BOOLEAN"
+drop cascades to foreign table "type_BYTE"
+drop cascades to foreign table "type_SINT"
+drop cascades to foreign table "type_BINT"
+drop cascades to foreign table "type_INTEGER"
+drop cascades to foreign table "type_FLOAT"
+drop cascades to foreign table "type_DOUBLE"
+drop cascades to foreign table "type_TIMESTAMP"
+drop cascades to foreign table "type_BLOB"
+drop cascades to foreign table "type_DATE"
+drop cascades to foreign table "type_TIME"
+drop cascades to foreign table "type_BIT"
+drop cascades to foreign table "type_VARBIT"
+drop cascades to foreign table "type_UUIDpk"
+drop cascades to foreign table "type_UUID"
+drop cascades to foreign table "type_MACADDRpk"
+drop cascades to foreign table "type_MACADDR"
+drop cascades to foreign table "type_MACADDR8pk"
+drop cascades to foreign table "type_MACADDR8"
+drop cascades to foreign table "types_PostGIS"
+drop cascades to foreign table "BitT"
+drop cascades to foreign table notype
+drop cascades to foreign table typetest
+drop cascades to foreign table "type_TEXT"
+drop cascades to foreign table alltypetest
+drop cascades to foreign table shorty
+drop cascades to foreign table "A a"
+drop cascades to foreign table fts_table
+drop cascades to foreign table fts_table_data
+drop cascades to foreign table fts_table_idx
+drop cascades to foreign table fts_table_content
+drop cascades to foreign table fts_table_docsize
+drop cascades to foreign table fts_table_config
+drop cascades to foreign table "RO_RW_test"
+drop cascades to foreign table "Unicode data"
+drop cascades to foreign table "type_BOOLEAN_oper"
+drop cascades to foreign table ret_base
+drop cascades to foreign table ret_j1t
+drop cascades to foreign table ret_j2t
+drop cascades to foreign table "♁"
+drop cascades to foreign table "♂"
+drop cascades to foreign table type_json
+drop cascades to server sqlite2
+drop cascades to server sqlite_svr_ins
+drop cascades to foreign table inserttest01
+drop cascades to view inserttest01_view_wco
+drop cascades to view inserttest01_view
