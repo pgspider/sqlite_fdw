@@ -535,7 +535,7 @@ SELECT * FROM "type_DOUBLE"; -- OK, +- Inf
 
 --Testcase 47:
 DROP EXTENSION sqlite_fdw CASCADE;
-NOTICE:  drop cascades to 55 other objects
+NOTICE:  drop cascades to 58 other objects
 DETAIL:  drop cascades to server sqlite_svr
 drop cascades to foreign table department
 drop cascades to foreign table employee
@@ -586,6 +586,9 @@ drop cascades to foreign table fts_table_config
 drop cascades to foreign table "RO_RW_test"
 drop cascades to foreign table "Unicode data"
 drop cascades to foreign table "type_BOOLEAN_oper"
+drop cascades to foreign table ret_base
+drop cascades to foreign table ret_j1t
+drop cascades to foreign table ret_j2t
 drop cascades to foreign table "♁"
 drop cascades to foreign table "♂"
 drop cascades to foreign table type_json

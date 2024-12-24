@@ -51,7 +51,7 @@ CREATE VIEW  "type_MACADDR8+" AS SELECT *, typeof("m") t, length("m") l, cast("m
 CREATE TABLE "types_PostGIS" (i int, gm geometry, gg geography, r raster, t text, gm1 geometry, gg1 geography);
 CREATE TABLE BitT (p integer primary key, a BIT(3), b BIT VARYING(5));
 CREATE TABLE notype (a);
-CREATE TABLE typetest (i integer, v varchar(10) , c char(10), t text, d datetime, ti timestamp);
+CREATE TABLE typetest (i integer, v varchar(10), c char(10), t text, d datetime, ti timestamp);
 CREATE TABLE type_TEXT (col text primary key);
 CREATE TABLE alltypetest (
 	c1 int,
@@ -91,7 +91,7 @@ CREATE TABLE "A a" (col int primary key);
 -- test for issue #44 github
 CREATE VIRTUAL TABLE fts_table USING fts5(name, description, tokenize = porter);
 
--- updatable option test (github pull 59)
+-- updatable + force_readonly options test
 CREATE TABLE RO_RW_test (
     i   int primary key not null,
     a   text,
@@ -135,6 +135,11 @@ WITH booldata AS (
 	(NULL) )
 				 )
 SELECT ROW_NUMBER() OVER () i, t1.i i1, t1.b b1, t2.i i2, t2.b b2 FROM booldata t1 INNER JOIN booldata t2 ON 1;
+
+-- RETURNING for UPDATE/DELETE ... FROM ret_base JOIN ret_j1t JOIN ret_j2t
+CREATE TABLE ret_base (c1 int primary key, c2 int, c3 text);
+CREATE TABLE ret_j1t  (c1 int primary key, c2 int, c3 float);
+CREATE TABLE ret_j2t  (c1 int primary key, c2 int, c3 float);
 
 -- SpatiaLite/PostGIS test
 -- This table name also tests SpatiaLite and PostGIS metadata functions. Made as analog of the next "martian" table.
