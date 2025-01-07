@@ -32,7 +32,12 @@ static char*
 			getHexFormOfBlob(blobOutput b);
 #endif
 
-#define		EWKT_SRID_TEST_PREFIX_LEN 12
+/*
+ * Byte length of PostGIS/GEOS copyed image
+ * of geoobject initial data for testing or
+ * extracting SRID data
+ */
+#define		EWKB_SRID_TEST_PREFIX_LEN 12
 
 /*
  * This is data types from PostGIS 3.4. For a newer version use the following query
@@ -55,8 +60,8 @@ const char *postGisSQLiteCompatibleTypes[] = { "geometry", "geography", NULL };
 
 #ifdef SQLITE_FDW_GIS_ENABLE
 /*
- * SpatiaLiteAsPostGISgeom:
- * Gives SpatiaLite BLOB, returns hex value string for PostGIS/GEOS input function
+ * SpatiaLiteAsPostGISgeom
+ *		Converts SpatiaLite BLOB to hex value string for PostGIS/GEOS input function
  */
 char *
 SpatiaLiteAsPostGISgeom (blobOutput spatiaLiteBlob, Form_pg_attribute att)
@@ -106,14 +111,12 @@ SpatiaLiteAsPostGISgeom (blobOutput spatiaLiteBlob, Form_pg_attribute att)
 }
 
 /*
- * getHexFormOfBlob:
- *
- * Return normal ASCII hex string for a bytes from given BLOB
+ * getHexFormOfBlob
+ *		Return normal ASCII hex string for a bytes of input data BLOB
  */
 static char*
 getHexFormOfBlob(blobOutput b)
 {
-	const char hex[] = "0123456789abcdef";
 	const char *bstr = b.dat;
 	char* hstr = (char*)palloc(b.len * 2 + 1);
 	unsigned char *phstr = (unsigned char *)hstr;
@@ -125,8 +128,8 @@ getHexFormOfBlob(blobOutput b)
 			*phstr++ = '0';
 			*phstr++ = '0';
 		} else {
-			*phstr++ = hex[((bstr[i] >> 4) & 0x0F)];
-			*phstr++ = hex[((bstr[i]) & 0x0F)];
+			*phstr++ = hex_dig[((bstr[i] >> 4) & 0x0F)];
+			*phstr++ = hex_dig[((bstr[i]) & 0x0F)];
 		}
 	}
 	*phstr++ = '\0';
@@ -134,23 +137,23 @@ getHexFormOfBlob(blobOutput b)
 }
 
 /*
- * hasSRID:
- * return true if there is any SRID data in hex input of EWKB
- * in other cases, including damaged input data, returns false
+ * hasSRID
+ *		Returns true if there is any SRID data in hex input of EWKB
+ *		in other cases, including damaged input data, returns false
  */
 static inline bool hasSRID (char *hexEWKB)
 {
 	unsigned char  *blob = NULL;
 	int				blob_size;
-	const int		wkbSRID = 0x20000000; /* PostGIS doc/ZMSgeoms.txt */
+	const int		wkbSRID = 0x20000000; /* See PostGIS file doc/ZMSgeoms.txt */
 	int				endian;
 	int				endian_arch = gaiaEndianArch ();
 	int				srid;
-	char			hexPrefix[EWKT_SRID_TEST_PREFIX_LEN + 1]; /* also reserved for \0 */
+	char			hexPrefix[EWKB_SRID_TEST_PREFIX_LEN + 1]; /* also reserved for \0 */
 	int				i;
 
-	/* Copy only some initial hex byte images to get SRID flag and SRID */
-	for (i = 0; i < EWKT_SRID_TEST_PREFIX_LEN && hexEWKB[i] != '\0'; i++) {
+	/* Copy only some initial hex byte images to get SRID flag and SRID value */
+	for (i = 0; i < EWKB_SRID_TEST_PREFIX_LEN && hexEWKB[i] != '\0'; i++) {
 		hexPrefix[i] = hexEWKB[i];
 	}
 	hexPrefix[i] = '\0'; /* Null-terminate the substring */
@@ -165,9 +168,9 @@ static inline bool hasSRID (char *hexEWKB)
 }
 
 /*
- * EWKB2SpatiaLiteBlobImage:
- * gives char* and len struncture for SQLite BLOB binding from
- * input hex string with possible EWKB presentation
+ * EWKB2SpatiaLiteBlobImage
+ *		Uses char* and len struncture for SQLite BLOB binding from
+ *		input hex string with possible EWKB presentation
  */
 static inline blobOutput
 EWKB2SpatiaLiteBlobImage (char *hexEWKB, Form_pg_attribute att)
@@ -218,8 +221,8 @@ EWKB2SpatiaLiteBlobImage (char *hexEWKB, Form_pg_attribute att)
 }
 
 /*
- * PostGISgeomAsSpatiaLite:
- * Gives PostGIS/GEOS BLOB, returns SpatiaLite BLOB
+ * PostGISgeomAsSpatiaLite
+ *		Converts PostGIS/GEOS BLOB as Datum + attribute metadata to SpatiaLite BLOB
  */
 blobOutput
 PostGISgeomAsSpatiaLite (Datum d, Form_pg_attribute att)
@@ -234,9 +237,8 @@ PostGISgeomAsSpatiaLite (Datum d, Form_pg_attribute att)
 }
 
 /*
- * common_EWKB_error:
- *
- * Message about error inside of PostGIS/GEOS<->SpatiaLite transformation
+ * common_EWKB_error
+ *		Message about error inside of both PostGIS/GEOS<->SpatiaLite transformations
  */
 static void
 common_EWKB_error (Form_pg_attribute att, int len, const char* data, bool direction_to_pg)
@@ -259,10 +261,9 @@ common_EWKB_error (Form_pg_attribute att, int len, const char* data, bool direct
 }
 
 /*
- * sqlite_deparse_PostGIS_value:
- *
- * PostGIS gives a GEOS value and the function transforms a value to SpatiaLite constant
- * text input converted to EWKB and than EWKB converted to hex code.
+ * sqlite_deparse_PostGIS_value
+ *		Transform PostGIS/GEOS value from extval to SpatiaLite hex constant
+ *		for a SQLite query. SQLite constant format is EWKB.
  */
 void
 sqlite_deparse_PostGIS_value(StringInfo buf, char *extval)
@@ -271,7 +272,7 @@ sqlite_deparse_PostGIS_value(StringInfo buf, char *extval)
 	char* hexform = getHexFormOfBlob(bO);
 
 	appendStringInfo(buf, "X\'%s\'", hexform);
-	elog(DEBUG4, "sqlite_fdw : SpatialiteData %s", hexform);
+	elog(DEBUG4, "sqlite_fdw : SpatiaLiteData %s", hexform);
 	pfree(hexform);
 }
 

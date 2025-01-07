@@ -35,5 +35,6 @@ cd postgis
 echo " - PostGIS directory"
 export LD_LIBRARY_PATH=/usr/local/lib/:$LD_LIBRARY_PATH
 ./configure --with-pgconfig=/usr/local/pgsql/bin/pg_config --with-geosconfig=$GEOS_CONFIG_PATH
+#CFLAGS="$CFLAGS -DPROJ_RENAME_SYMBOLS -O2" # Use C++ renaming for different libproj versions for SpatiaLite and PostGIS
 make
 sudo make install

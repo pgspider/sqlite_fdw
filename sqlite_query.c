@@ -39,8 +39,9 @@ static char *
 			int642binstr(sqlite3_int64 num, char *s, size_t len);
 
 /*
- * Human readable message about disallowed combination of PostgreSQL columnn
- * data type and SQLite data value affinity
+ * sqlite_value_to_pg_error
+ *		Human readable message about disallowed combination of PostgreSQL columnn
+ *		data type and SQLite data value affinity
  */
 static void
 sqlite_value_to_pg_error()
@@ -50,7 +51,8 @@ sqlite_value_to_pg_error()
 }
 
 /*
- * Human readable message about disallowed void text for the PostgreSQL columnn
+ * pg_column_void_text_error
+ *		Human readable message about disallowed void text for the PostgreSQL columnn
  */
 static void
 pg_column_void_text_error()
@@ -60,7 +62,8 @@ pg_column_void_text_error()
 }
 
 /*
- * convert_sqlite_to_pg: Convert SQLite data into PostgreSQL's compatible data types
+ * convert_sqlite_to_pg
+ *		Converts SQLite value into PostgreSQL's Datum
  */
 NullableDatum
 sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *attinmeta, AttrNumber attnum, int sqlite_value_affinity, int AffinityBehaviourFlags)
@@ -616,9 +619,9 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 }
 
 /*
- * sqlite_datum_to_blob:
- * Common part of extracting and preparing PostgreSQL bytea data
- * for SQLite binding as blob
+ * sqlite_datum_to_blob
+ *		Common part of extracting and preparing PostgreSQL bytea data
+ *		for SQLite binding as blob
  */
 blobOutput
 sqlite_datum_to_blob (Datum value)
@@ -640,6 +643,11 @@ sqlite_datum_to_blob (Datum value)
 	return (struct blobOutput){dat, len};
 }
 
+/*
+ * get_column_option_string
+ *		By Oid of relation and varattno returns value of requested option
+ *		of foreign table
+ */
 static char *
 get_column_option_string(Oid relid, int varattno, char *optionname)
 {
@@ -661,8 +669,9 @@ get_column_option_string(Oid relid, int varattno, char *optionname)
 }
 
 /*
- * bind_sql_var:
- * Bind the values provided as DatumBind the values and nulls to modify the target table (INSERT/UPDATE)
+ * bind_sql_var
+ *		Bind the values provided as DatumBind the values and nulls
+ *		to modify the target table (INSERT/UPDATE)
  */
 void
 sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt * stmt, bool *isnull, Oid relid)
@@ -798,7 +807,8 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 					bool		typeVarLength = false;
 
 					getTypeOutputInfo(type, &outputFunctionId, &typeVarLength);
-					outputString = OidOutputFunctionCall(outputFunctionId, value); /* uuid text belongs to ASCII subset, no need to translate encoding */
+					outputString = OidOutputFunctionCall(outputFunctionId, value);
+					/* uuid text belongs to ASCII subset, no need to translate encoding */
 					ret = sqlite3_bind_text(stmt, attnum, outputString, -1, SQLITE_TRANSIENT);
 				}
 				break;
@@ -823,7 +833,8 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 					bool		typeVarLength = false;
 					elog(DEBUG2, "sqlite_fdw : bind mac as text");
 					getTypeOutputInfo(type, &outputFunctionId, &typeVarLength);
-					outputString = OidOutputFunctionCall(outputFunctionId, value); /* MAC text belongs to ASCII subset, no need to translate encoding */
+					outputString = OidOutputFunctionCall(outputFunctionId, value);
+					/* MAC text belongs to ASCII subset, no need to translate encoding */
 					ret = sqlite3_bind_text(stmt, attnum, outputString, -1, SQLITE_TRANSIENT);
 				}
 				else if (sqlite_aff == SQLITE_BLOB)
@@ -933,7 +944,8 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 					int32		atttypmod = att->atttypmod;
 
 					/*
-					 * If a domain has been declared as bytea, it can support PostGIS data type
+					 * If a domain has been declared as bytea,
+					 * it can support PostGIS data type
 					 */
 					atttypid = getBaseTypeAndTypmod(atttypid, &atttypmod);
 
@@ -971,8 +983,8 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 }
 
 /*
- * sqlite_text_value_to_pg_db_encoding:
- * Convert SQLite text to PostgreSQL text with database encoding
+ * sqlite_text_value_to_pg_db_encoding
+ *		Converts SQLite text to PostgreSQL text with database encoding
  */
 static char *
 sqlite_text_value_to_pg_db_encoding(sqlite3_value *val)
@@ -994,9 +1006,9 @@ sqlite_text_value_to_pg_db_encoding(sqlite3_value *val)
 }
 
 /*
- * int642binstr:
- * Converts int64 from SQLite to PostgreSQL string from 0 and 1 only
- * s must be allocated with length not less than len + 1 bytes
+ * int642binstr
+ *		Converts int64 from SQLite to PostgreSQL string from 0 and 1 only
+ * 		s must be allocated with length not less than len + 1 bytes
  */
 static char *
 int642binstr(sqlite3_int64 num, char *s, size_t len)
@@ -1009,8 +1021,8 @@ int642binstr(sqlite3_int64 num, char *s, size_t len)
 }
 
 /*
- * binstr2int64:
- * Converts PostgreSQL string from 0 and 1 only to int64 for SQLite
+ * binstr2int64
+ *		Converts PostgreSQL string from 0 and 1 only to int64 for SQLite
  */
 sqlite3_int64
 binstr2int64(const char *s)
@@ -1039,9 +1051,9 @@ binstr2int64(const char *s)
 }
 
 /*
- * listed_datatype:
- * Checks if name of data type belongs to array of special data type names
- * used for PostGIS data type which have not stable Oid
+ * listed_datatype
+ *		Checks if a name of data type belongs to array of special data type names
+ *		used for PostGIS data type which have not stable Oid
  */
 bool
 listed_datatype (const char * tn, const char ** arr)
@@ -1066,9 +1078,9 @@ listed_datatype (const char * tn, const char ** arr)
 }
 
 /*
- * listed_datatype_oid:
- * Checks if Oid of data type is one of Oids of listed data types
- * listed in given array.
+ * listed_datatype_oid
+ *		Checks if Oid of data type is one of Oids of listed data types
+ *		listed in given array.
  */
 bool
 listed_datatype_oid(Oid atttypid, int32 atttypmod, const char** arr)

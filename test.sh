@@ -17,7 +17,7 @@ done
 [ "$ENABLE_GIS" == "1" ] && gispref='post' || gispref='no';
 
 # full test sequence, you can put your own test sequence here
-export REGRESS="extra/sqlite_fdw_post types/bitstring types/bool types/float4 types/float8 types/int4 types/int8 types/numeric extra/${gispref}gis types/macaddr types/macaddr8 types/out_of_range types/timestamp types/uuid extra/join extra/limit extra/aggregates extra/prepare extra/select_having extra/select extra/insert extra/update extra/encodings sqlite_fdw type_${gispref}gis aggregate selectfunc";
+export REGRESS="extra/sqlite_fdw_post types/bitstring types/bool types/float4 types/float8 types/int4 types/int8 types/numeric types/${gispref}gis types/macaddr types/macaddr8 types/out_of_range types/timestamp types/uuid extra/join extra/limit extra/aggregates extra/prepare extra/select_having extra/select extra/insert extra/update extra/encodings sqlite_fdw type_${gispref}gis aggregate selectfunc";
 make clean $1;
 make $1;
 make check $1 | tee make_check.out;

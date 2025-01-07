@@ -28,6 +28,9 @@
 static void error_catcher(sqlite3* db, int rc);
 static bool infinity_processing (double* d, const char* t);
 
+/* Also used for BLOBs in sqlite_gis.c */
+const char hex_dig[] = "0123456789abcdef";
+
 #if !defined(SQLITE_ASCII) && !defined(SQLITE_EBCDIC)
 #define SQLITE_ASCII 1
 #endif
@@ -161,7 +164,6 @@ sqlite_fdw_uuid_blob (const unsigned char* s0, unsigned char* Blob)
 static void
 sqlite3UuidBlobToStr( const unsigned char *aBlob, unsigned char *zs)
 {
-	static const char hex_dig[] = "0123456789abcdef";
 	unsigned char x;
 	int i = 0, k=0x550;
 	for(; i < UUID_LEN; i++, k = k >> 1)
