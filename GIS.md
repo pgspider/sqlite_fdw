@@ -12,7 +12,7 @@ Notes about compilation environment and PROJ library
 ----------------------------------------------------
 Both SpatiaLite and PostGIS uses [PROJ C++ library](https://github.com/OSGeo/PROJ) from
 [Open Source Geospatial Foundation](https://github.com/OSGeo) for reprojecting and some calculations.
-Recommended configuration of SQLite FDW with GIS support containt both SpatiaLite and PostGIS.
+Recommended configuration of SQLite FDW with GIS support contains both SpatiaLite and PostGIS.
 **It is recommended to install only 1 version of PROJ in a system to avoid integration issue**.
 Before compilation you should ensure equal versions of PROJ library required by SpatiaLite and PostGIS on
 your system. Otherwise some encapsualted and unwanted memory freeing errors can occur.
