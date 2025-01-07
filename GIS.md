@@ -8,6 +8,18 @@ to [SpatiaLite](https://www.gaia-gis.it/fossil/libspatialite/index) SQLite datab
 This description contains only information about GIS support without common SQL and
 system descriptions from [common FDW description](README.md).
 
+Notes about compilation environment and PROJ library
+----------------------------------------------------
+Both SpatiaLite and PostGIS uses [PROJ C++ library](https://github.com/OSGeo/PROJ) from
+[Open Source Geospatial Foundation](https://github.com/OSGeo) for reprojecting and some calculations.
+Recommended configuration of SQLite FDW with GIS support containt both SpatiaLite and PostGIS.
+**It is recommended to install only 1 version of PROJ in a system to avoid integration issue**.
+Before compilation you should ensure equal versions of PROJ library required by SpatiaLite and PostGIS on
+your system. Otherwise some encapsualted and unwanted memory freeing errors can occur.
+If you need different PROJ library versions, you can reference [this PROJ issue](https://github.com/OSGeo/PROJ/issues/4361)
+and try to use someting like `CFLAGS="$CFLAGS -DPROJ_RENAME_SYMBOLS -O2"` during compilation of
+SpatiaLite or PostGIS to link one of this extensions with other PROJ version.
+
 Common conditions of GIS support
 --------------------------------
 
@@ -44,7 +56,7 @@ SQL commands as `CREATE DOMAIN geometry AS bytea;` and `CREATE DOMAIN geography 
 This allows to have in PostgreSQL PostGIS compatible `bytea` data easy
 convertable to PostGIS storage format.
 
-PostgGIS and SpatiaLite vector data formats
+PostGIS and SpatiaLite vector data formats
 -------------------------------------------
 
 Vector GIS data in PostGIS can be stored in a columns with `geography` or `geometry`

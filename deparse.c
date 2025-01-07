@@ -2374,41 +2374,35 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 					break;
 				}
 				default:
-				   no_unification = true;
-			}
-		}
-		else if (!dml_context && listed_datatype_oid(pg_atttyp, -1, postGisSQLiteCompatibleTypes))
-		{
-#ifdef SQLITE_FDW_GIS_ENABLE
-			if (qualify_col)
-				ADD_REL_QUALIFIER(buf, varno);
-			appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
-#else
-			int32		typmod = -1;
-			Oid			typid = getBaseTypeAndTypmod(pg_atttyp, &typmod);
-			char	   *pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(pg_atttyp, -1));
-
-			if (typid == BYTEAOID)
 				{
-					if (qualify_col)
-						ADD_REL_QUALIFIER(buf, varno);
-					appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
-				}
-			else
-			{
-				ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-								errmsg("This PostGIS data type is supported by SpatiaLite, but FDW compiled without GIS data support"),
-								errhint("Data type: \"%s\"", pg_dataTypeName)));
-			}
-#endif
-		}
-		else if (!dml_context && listed_datatype_oid(pg_atttyp, -1, postGisSpecificTypes))
-		{
-			char	   *pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(pg_atttyp, -1));
+					no_unification = true;
+#ifndef SQLITE_FDW_GIS_ENABLE
+					if (listed_datatype_oid(pg_atttyp, -1, postGisSQLiteCompatibleTypes))
+					{
+						int32		typmod = -1;
+						Oid			typid = getBaseTypeAndTypmod(pg_atttyp, &typmod);
+						char	   *pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(pg_atttyp, -1));
 
-			ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-							errmsg("PostGIS specific value is not deparsable because of no similar SpatiaLite conception "),
-							errhint("Data type: \"%s\"", pg_dataTypeName)));
+						if (typid != BYTEAOID)
+						{
+							ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+											errmsg("This PostGIS data type is supported by SpatiaLite, but FDW compiled without GIS data support"),
+											errhint("Data type: \"%s\"", pg_dataTypeName)));
+						}
+						/* else no unification for normal column */
+					}
+					else
+#endif
+					if (listed_datatype_oid(pg_atttyp, -1, postGisSpecificTypes))
+					{
+						char	   *pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(pg_atttyp, -1));
+
+						ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+										errmsg("PostGIS specific value is not deparsable because of no similar SpatiaLite conception"),
+										errhint("Data type: \"%s\"", pg_dataTypeName)));
+					}
+				}
+			}
 		}
 		else
 			no_unification = true;
