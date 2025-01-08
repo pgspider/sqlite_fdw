@@ -17,7 +17,7 @@ Recommended configuration of SQLite FDW with GIS support contains both SpatiaLit
 Before compilation you should ensure equal versions of PROJ library required by SpatiaLite and PostGIS on
 your system. Otherwise some encapsualted and unwanted memory freeing errors can occur.
 If you need different PROJ library versions, you can reference [this PROJ issue](https://github.com/OSGeo/PROJ/issues/4361)
-and try to use someting like `CFLAGS="$CFLAGS -DPROJ_RENAME_SYMBOLS -O2"` during compilation of
+and try to use something like `CFLAGS="$CFLAGS -DPROJ_RENAME_SYMBOLS -O2"` during compilation of
 SpatiaLite or PostGIS to link one of this extensions with other PROJ version.
 
 Common conditions of GIS support

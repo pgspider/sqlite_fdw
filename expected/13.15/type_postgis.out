@@ -297,18 +297,24 @@ SELECT * FROM type_JSON;
 
 --Testcase 57
 DELETE FROM type_JSON;
---Testcase 62:
+--Testcase 60:
 DROP FOREIGN TABLE IF EXISTS "type_BOOLEAN";
+--Testcase 61:
+CREATE FOREIGN TABLE "type_BOOLEAN" (i int, b boolean OPTIONS (key 'true')) SERVER sqlite_svr;
+--Testcase 62:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (1, 'on'), (2, false);
 --Testcase 63:
-CREATE FOREIGN TABLE "type_BOOLEAN" (i int, b boolean) SERVER sqlite_svr;
---Testcase 64:
 ALTER FOREIGN TABLE "type_BOOLEAN" DROP COLUMN i;
---Testcase 65:
+--Testcase 64:
 SELECT * FROM "type_BOOLEAN"; -- OK
  b 
 ---
-(0 rows)
+ t
+ f
+(2 rows)
 
+--Testcase 65:
+DELETE FROM "type_BOOLEAN";
 -- define INTEGER as TEXT column
 --Testcase 67:
 ALTER FOREIGN TABLE "type_INTEGER" ALTER COLUMN col TYPE text;
