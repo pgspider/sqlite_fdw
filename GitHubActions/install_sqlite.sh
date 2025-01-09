@@ -5,12 +5,13 @@
 # This sript downloads SQLite source code from the official web site into
 # ./workdir then builds and installs it.
 #
-# Usage: ./install_sqlite.sh version year [configure_options]
-#     version: SQLite version to be installed
+# Usage: ./install_sqlite.sh version year testing_mode [configure_options]
+#     version: SQLite version to be installed.
 #     year: A year of SQLite released. It is used for determining a download URL.
-#     configure_options are a list of option for sqlite server.
+#     testing_mode:	'default' or 'postgis' value.
+#     configure_options: are a list of option for sqlite server.
 #
-#     Ex) ./install_sqlite.sh 3420000 2023 --enable-rtree
+#     Ex) ./install_sqlite.sh 3420000 2023 postgis --enable-rtree
 #
 # Requirements
 # - be able to connect to the SQLite official web site by curl.
