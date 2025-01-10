@@ -49,6 +49,14 @@ CREATE TABLE "type_MACADDR8pk" (col macaddr8 primary key);
 CREATE TABLE "type_MACADDR8" (i int, m macaddr8);
 CREATE VIEW  "type_MACADDR8+" AS SELECT *, typeof("m") t, length("m") l, cast("m" as text) tx FROM "type_macaddr8";
 CREATE TABLE "types_PostGIS" (i int, gm geometry, gg geography, r raster, t text, gm1 geometry, gg1 geography);
+CREATE TABLE "type_JSON" (i int, j json, ot varchar(8), oi int, q text[], j1 json, ot1 text, oi1 int2);
+CREATE TABLE "type_JSONB" (i int, j jsonb, ot varchar(8), oi int, q text[], j1 jsonb, ot1 text, oi1 int2);
+CREATE VIEW  "type_JSONB+" AS SELECT
+	*,
+	typeof("j") t,
+	length("j") l,
+	substr(hex(cast("j" as text)), 1, 16) || '...' tx
+FROM "type_JSONB";
 CREATE TABLE BitT (p integer primary key, a BIT(3), b BIT VARYING(5));
 CREATE TABLE notype (a);
 CREATE TABLE typetest (i integer, v varchar(10) , c char(10), t text, d datetime, ti timestamp);
