@@ -14,7 +14,7 @@
 # - SQLite development package is installed in a system.
 ################################################################################
 
-VERSION=$1
+VERSION="$1"
 MODE="$2"
 
 mkdir -p ./workdir/postgresql-${VERSION}/contrib/sqlite_fdw
