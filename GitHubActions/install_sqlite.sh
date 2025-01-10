@@ -37,9 +37,9 @@ unzip sqlite-src-${VERSION}.zip > /dev/null
 cd sqlite-src-${VERSION}
 
 if [ -z "$CONFIGURE_OPTIONS" ]; then
-  ./configure --enable-fts5
+  ./configure --enable-fts5 --enable-json1
 else
-  ./configure --enable-fts5 $CONFIGURE_OPTIONS
+  ./configure --enable-fts5 --enable-json1 $CONFIGURE_OPTIONS
 fi
 
 make
