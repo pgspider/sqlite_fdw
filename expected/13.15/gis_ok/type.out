@@ -7,7 +7,9 @@ CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 --Testcase 46:
 CREATE SERVER sqlite2 FOREIGN DATA WRAPPER sqlite_fdw;
-IMPORT FOREIGN SCHEMA public FROM SERVER sqlite_svr INTO public;
+--Testcase 47:
+CREATE EXTENSION postgis;
+IMPORT FOREIGN SCHEMA main FROM SERVER sqlite_svr INTO public;
 --Testcase 1:
 INSERT INTO "type_STRING"(col) VALUES ('string');
 --Testcase 4:
@@ -295,70 +297,24 @@ SELECT * FROM type_JSON;
 
 --Testcase 57
 DELETE FROM type_JSON;
---Testcase 62:
+--Testcase 60:
 DROP FOREIGN TABLE IF EXISTS "type_BOOLEAN";
---Testcase 63:
+--Testcase 61:
 CREATE FOREIGN TABLE "type_BOOLEAN" (i int, b boolean OPTIONS (key 'true')) SERVER sqlite_svr;
---Testcase 108:
-INSERT INTO "type_BOOLEAN"(i, b) VALUES 
-  (1, TRUE), 
-  (2, FALSE), 
-  (3, TRUE), 
-  (4, FALSE), 
-  (5, true), 
-  (6, false), 
-  (7, 'Yes'), 
-  (8, 'YeS'), 
-  (9, 'yes'), 
-  (10, 'no'), 
-  (11, 'No'), 
-  (12, 'nO'), 
-  (13, 'off'), 
-  (14, 'oFf'), 
-  (15, 'on'), 
-  (16, 'ON'), 
-  (17, 't'), 
-  (18, 'T'), 
-  (19, 'Y'), 
-  (20, 'y'), 
-  (21, 'F'), 
-  (22, 'f'), 
-  (24, '0'), 
-  (25, '1'), 
-  (26, NULL);
---Testcase 64:
+--Testcase 62:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (1, 'on'), (2, false);
+--Testcase 63:
 ALTER FOREIGN TABLE "type_BOOLEAN" DROP COLUMN i;
---Testcase 65:
+--Testcase 64:
 SELECT * FROM "type_BOOLEAN"; -- OK
  b 
 ---
  t
  f
- t
- f
- t
- f
- t
- t
- t
- f
- f
- f
- f
- f
- t
- t
- t
- t
- t
- t
- f
- f
- f
- t
- 
-(25 rows)
+(2 rows)
 
+--Testcase 65:
+DELETE FROM "type_BOOLEAN";
 -- define INTEGER as TEXT column
 --Testcase 67:
 ALTER FOREIGN TABLE "type_INTEGER" ALTER COLUMN col TYPE text;
@@ -541,7 +497,7 @@ INSERT INTO "type_DOUBLE" VALUES (PI());
 --Testcase 109: ERR primary key
 INSERT INTO "type_DOUBLE" VALUES (PI());
 ERROR:  Failed to execute remote SQL
-HINT:  SQLite error 'UNIQUE constraint failed: type_DOUBLE.col', SQLite result code 19
+HINT:  SQLite error 'UNIQUE constraint failed: type_DOUBLE.col', SQLite result code 1555
 CONTEXT:  SQL query: INSERT INTO main."type_DOUBLE"(`col`) VALUES (?)
 --Testcase 110:
 INSERT INTO "type_DOUBLE" VALUES ('Infinity');
@@ -560,12 +516,12 @@ SELECT * FROM "type_DOUBLE"; -- OK, +- Inf
 --Testcase 114: ERR primary key
 INSERT INTO "type_DOUBLE" VALUES ('Infinity');
 ERROR:  Failed to execute remote SQL
-HINT:  SQLite error 'UNIQUE constraint failed: type_DOUBLE.col', SQLite result code 19
+HINT:  SQLite error 'UNIQUE constraint failed: type_DOUBLE.col', SQLite result code 1555
 CONTEXT:  SQL query: INSERT INTO main."type_DOUBLE"(`col`) VALUES (?)
 --Testcase 115: ERR primary key
 INSERT INTO "type_DOUBLE" VALUES ('-Infinity');
 ERROR:  Failed to execute remote SQL
-HINT:  SQLite error 'UNIQUE constraint failed: type_DOUBLE.col', SQLite result code 19
+HINT:  SQLite error 'UNIQUE constraint failed: type_DOUBLE.col', SQLite result code 1555
 CONTEXT:  SQL query: INSERT INTO main."type_DOUBLE"(`col`) VALUES (?)
 --Testcase 116:
 SELECT * FROM "type_DOUBLE"; -- OK, +- Inf
@@ -577,58 +533,7 @@ SELECT * FROM "type_DOUBLE"; -- OK, +- Inf
          -Infinity
 (4 rows)
 
---Testcase 47:
+--Testcase 300:
+SET client_min_messages TO ERROR;
+--Testcase 301: no details
 DROP EXTENSION sqlite_fdw CASCADE;
-NOTICE:  drop cascades to 52 other objects
-DETAIL:  drop cascades to server sqlite_svr
-drop cascades to foreign table department
-drop cascades to foreign table employee
-drop cascades to foreign table empdata
-drop cascades to foreign table numbers
-drop cascades to foreign table t
-drop cascades to foreign table multiprimary
-drop cascades to foreign table columntest
-drop cascades to foreign table noprimary
-drop cascades to foreign table limittest
-drop cascades to foreign table grem1_1
-drop cascades to foreign table grem1_2
-drop cascades to foreign table case_exp
-drop cascades to foreign table "type_STRING"
-drop cascades to foreign table "type_BOOLEANpk"
-drop cascades to foreign table "type_BYTE"
-drop cascades to foreign table "type_SINT"
-drop cascades to foreign table "type_BINT"
-drop cascades to foreign table "type_INTEGER"
-drop cascades to foreign table "type_FLOAT"
-drop cascades to foreign table "type_DOUBLE"
-drop cascades to foreign table "type_TIMESTAMP"
-drop cascades to foreign table "type_BLOB"
-drop cascades to foreign table "type_DATE"
-drop cascades to foreign table "type_TIME"
-drop cascades to foreign table "type_BIT"
-drop cascades to foreign table "type_VARBIT"
-drop cascades to foreign table "type_UUIDpk"
-drop cascades to foreign table "type_UUID"
-drop cascades to foreign table "type_MACADDRpk"
-drop cascades to foreign table "type_MACADDR"
-drop cascades to foreign table "type_MACADDR8pk"
-drop cascades to foreign table "type_MACADDR8"
-drop cascades to foreign table "BitT"
-drop cascades to foreign table notype
-drop cascades to foreign table typetest
-drop cascades to foreign table "type_TEXT"
-drop cascades to foreign table alltypetest
-drop cascades to foreign table shorty
-drop cascades to foreign table "A a"
-drop cascades to foreign table fts_table
-drop cascades to foreign table fts_table_data
-drop cascades to foreign table fts_table_idx
-drop cascades to foreign table fts_table_content
-drop cascades to foreign table fts_table_docsize
-drop cascades to foreign table fts_table_config
-drop cascades to foreign table "RO_RW_test"
-drop cascades to foreign table "Unicode data"
-drop cascades to foreign table "type_BOOLEAN_oper"
-drop cascades to foreign table type_json
-drop cascades to foreign table "type_BOOLEAN"
-drop cascades to server sqlite2

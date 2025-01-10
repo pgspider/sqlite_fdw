@@ -8,8 +8,10 @@ OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 
 --Testcase 46:
 CREATE SERVER sqlite2 FOREIGN DATA WRAPPER sqlite_fdw;
+--Testcase 47:
+CREATE EXTENSION postgis;
 
-IMPORT FOREIGN SCHEMA public FROM SERVER sqlite_svr INTO public;
+IMPORT FOREIGN SCHEMA main FROM SERVER sqlite_svr INTO public;
 
 --Testcase 1:
 INSERT INTO "type_STRING"(col) VALUES ('string');
@@ -138,42 +140,18 @@ SELECT * FROM type_JSON;
 --Testcase 57
 DELETE FROM type_JSON;
 
---Testcase 62:
+--Testcase 60:
 DROP FOREIGN TABLE IF EXISTS "type_BOOLEAN";
---Testcase 63:
+--Testcase 61:
 CREATE FOREIGN TABLE "type_BOOLEAN" (i int, b boolean OPTIONS (key 'true')) SERVER sqlite_svr;
---Testcase 108:
-INSERT INTO "type_BOOLEAN"(i, b) VALUES 
-  (1, TRUE), 
-  (2, FALSE), 
-  (3, TRUE), 
-  (4, FALSE), 
-  (5, true), 
-  (6, false), 
-  (7, 'Yes'), 
-  (8, 'YeS'), 
-  (9, 'yes'), 
-  (10, 'no'), 
-  (11, 'No'), 
-  (12, 'nO'), 
-  (13, 'off'), 
-  (14, 'oFf'), 
-  (15, 'on'), 
-  (16, 'ON'), 
-  (17, 't'), 
-  (18, 'T'), 
-  (19, 'Y'), 
-  (20, 'y'), 
-  (21, 'F'), 
-  (22, 'f'), 
-  (24, '0'), 
-  (25, '1'), 
-  (26, NULL);
-
---Testcase 64:
+--Testcase 62:
+INSERT INTO "type_BOOLEAN" (i, b) VALUES (1, 'on'), (2, false);
+--Testcase 63:
 ALTER FOREIGN TABLE "type_BOOLEAN" DROP COLUMN i;
---Testcase 65:
+--Testcase 64:
 SELECT * FROM "type_BOOLEAN"; -- OK
+--Testcase 65:
+DELETE FROM "type_BOOLEAN";
 
 -- define INTEGER as TEXT column
 --Testcase 67:
@@ -304,5 +282,7 @@ INSERT INTO "type_DOUBLE" VALUES ('-Infinity');
 --Testcase 116:
 SELECT * FROM "type_DOUBLE"; -- OK, +- Inf
 
---Testcase 47:
+--Testcase 300:
+SET client_min_messages TO ERROR;
+--Testcase 301: no details
 DROP EXTENSION sqlite_fdw CASCADE;

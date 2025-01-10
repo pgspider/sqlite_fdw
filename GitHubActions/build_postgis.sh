@@ -5,12 +5,12 @@
 # This script downloads PostgreSQL from the official web site into ./workdir
 # then builds it.
 #
-# Usage: ./build_postgres.sh pg_version postgis_version
+# Usage: ./build_postgis.sh pg_version postgis_version
 #     pg_version is a PostgreSQL version to be installed like 16.0.
 #     postgis_version is a PostGIS version to be installed.
 #
 # Requirements
-# - be able to connect to the PostgreSQL official web site by curl.
+# - be able to connect to the PostGIS official web site by wget.
 #
 ################################################################################
 

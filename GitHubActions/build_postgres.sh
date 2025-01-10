@@ -14,7 +14,7 @@
 #
 ################################################################################
 
-VERSION=$1
+POSTGRESQL_VERSION=$1
 CONFIGURE_OPTIONS=""
 
 while (( "$#" )); do
@@ -24,9 +24,9 @@ done
 
 mkdir -p ./workdir
 cd ./workdir
-curl -O https://ftp.postgresql.org/pub/source/v${VERSION}/postgresql-${VERSION}.tar.bz2
-tar xjf postgresql-${VERSION}.tar.bz2
-cd postgresql-${VERSION}
+curl -O https://ftp.postgresql.org/pub/source/v${POSTGRESQL_VERSION}/postgresql-${POSTGRESQL_VERSION}.tar.bz2
+tar xjf postgresql-${POSTGRESQL_VERSION}.tar.bz2
+cd postgresql-${POSTGRESQL_VERSION}
 
 if [ -z "$CONFIGURE_OPTIONS" ]; then
   ./configure

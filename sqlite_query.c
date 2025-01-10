@@ -13,6 +13,10 @@
 #include "postgres.h"
 #include "sqlite_fdw.h"
 
+#ifdef SQLITE_FDW_GIS_ENABLE
+#include <spatialite.h>
+#endif
+
 #include <sqlite3.h>
 
 #include "catalog/pg_type_d.h"
@@ -29,16 +33,15 @@
 
 static char *
 			get_column_option_string(Oid relid, int varattno, char *optionname);
-int
-			sqlite_bind_blob_algo (int attnum, Datum value, sqlite3_stmt * stmt);
 static char *
 			sqlite_text_value_to_pg_db_encoding(sqlite3_value *val);
 static char *
 			int642binstr(sqlite3_int64 num, char *s, size_t len);
 
 /*
- * Human readable message about disallowed combination of PostgreSQL columnn
- * data type and SQLite data value affinity
+ * sqlite_value_to_pg_error
+ *		Human readable message about disallowed combination of PostgreSQL columnn
+ *		data type and SQLite data value affinity
  */
 static void
 sqlite_value_to_pg_error()
@@ -48,7 +51,8 @@ sqlite_value_to_pg_error()
 }
 
 /*
- * Human readable message about disallowed void text for the PostgreSQL columnn
+ * pg_column_void_text_error
+ *		Human readable message about disallowed void text for the PostgreSQL columnn
  */
 static void
 pg_column_void_text_error()
@@ -58,7 +62,8 @@ pg_column_void_text_error()
 }
 
 /*
- * convert_sqlite_to_pg: Convert Sqlite data into PostgreSQL's compatible data types
+ * convert_sqlite_to_pg
+ *		Converts SQLite value into PostgreSQL's Datum
  */
 NullableDatum
 sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *attinmeta, AttrNumber attnum, int sqlite_value_affinity, int AffinityBehaviourFlags)
@@ -66,7 +71,7 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 	Oid			pgtyp = att->atttypid;
 	Datum		value_datum = 0;
 	char	   *valstr = NULL;
-				/* Compute always, void text and void BLOB will be special cases */
+				/* Compute always, void text and void BLOB is special cases */
 	int		 	value_byte_size_blob_or_utf8 = sqlite3_value_bytes(val);
 
 	switch (pgtyp)
@@ -114,7 +119,7 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 							break;
 						}
 					case SQLITE_BLOB: /* <-- proper and recommended SQLite affinity of value for pgtyp */
-					case SQLITE3_TEXT: /* threated as UTF-8 text BLOB */
+					case SQLITE3_TEXT: /* treated as UTF-8 text BLOB */
 					{
 						value_datum = (Datum) palloc0(value_byte_size_blob_or_utf8 + VARHDRSZ);
 						memcpy(VARDATA(value_datum), sqlite3_value_blob(val), value_byte_size_blob_or_utf8);
@@ -493,45 +498,117 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 							sqlite3_int64 sqlti = sqlite3_value_int64(val);
 
 							buffer = int642binstr(sqlti, buffer, SQLITE_FDW_BIT_DATATYPE_BUF_SIZE);
-							elog(DEBUG4, "sqlite_fdw : BIT buf l=%ld v = %s", SQLITE_FDW_BIT_DATATYPE_BUF_SIZE, buffer);
 							valstr = buffer;
-							break; /* !!! use valstr later! */
+							elog(DEBUG4, "sqlite_fdw : BIT buf l=%ld v = %s", SQLITE_FDW_BIT_DATATYPE_BUF_SIZE, buffer);
+							break;
 						}
 					case SQLITE_FLOAT:
 					case SQLITE_BLOB:
-						{
-							sqlite_value_to_pg_error();
-							break;
-						}
-					case SQLITE3_TEXT:
-						{
-							if (value_byte_size_blob_or_utf8)
-								sqlite_value_to_pg_error();
-							else
-								pg_column_void_text_error();
-							break;
-						}
 					default:
 						{
 							sqlite_value_to_pg_error();
 							break;
 						}
+					case SQLITE3_TEXT:
+					{
+						if (value_byte_size_blob_or_utf8)
+							sqlite_value_to_pg_error();
+						else
+							pg_column_void_text_error();
+						break;
 					}
-					break;
 				}
-		/*
-		 * some popular datatypes for default algorythm branch
-		 * case BPCHAROID:
-		 * case VARCHAROID:
-		 * case TEXTOID:
-		 * case JSONOID:
-		 * case NAMEOID:
-		 * case TIMEOID:
-		 */
-		default:
+				break;
+			}
+		case BPCHAROID:
+		case VARCHAROID:
+		case CHAROID:
+		case TEXTOID:
+		case JSONOID:
+		case JSONBOID:
+		case NAMEOID:
+		case DATEOID:
+		case TIMEOID:
 			{
 				valstr = sqlite_text_value_to_pg_db_encoding(val);
+				break;
 			}
+		default:
+			{
+				/*
+				 * PostGIS data types can be supported only by name
+				 * This is very rare and not fast algorythm branch
+				 */
+				char *pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(att->atttypid, att->atttypmod));
+				NameData	pgColND = att->attname;
+
+				if (listed_datatype(pg_dataTypeName, postGisSpecificTypes))
+				{
+					elog(DEBUG4, "sqlite_fdw : is postGisSpecificType %s", pg_dataTypeName);
+					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+									errmsg("This data type is PostGIS specific and is not supported by SpatiaLite or sqlite_fdw"),
+									errhint("Data type: \"%s\" in column \"%.*s\"", pg_dataTypeName, (int)sizeof(pgColND.data), pgColND.data)));
+				}
+
+				if (listed_datatype(pg_dataTypeName, postGisSQLiteCompatibleTypes))
+				{
+					elog(DEBUG4, "sqlite_fdw : is postGisSQLiteCompatibleType");
+					switch (sqlite_value_affinity)
+					{
+						case SQLITE_INTEGER:
+						case SQLITE_FLOAT:
+						default:
+							{
+								sqlite_value_to_pg_error();
+								break;
+							}
+						case SQLITE_BLOB: /* <-- proper and recommended SQLite affinity of value for pgtyp */
+						{
+#ifdef SQLITE_FDW_GIS_ENABLE
+							unsigned const char * p_blob = sqlite3_value_blob(val);
+							valstr = SpatiaLiteAsPostGISgeom (
+								(struct blobOutput){(const char *)p_blob, value_byte_size_blob_or_utf8},
+								att
+							);
+							/* !!! use valstr later! Hex Input */
+#else
+							Oid			atttypid = att->atttypid;
+							int32		atttypmod = att->atttypmod;
+
+							/*
+							 * If a domain has been declared as bytea, it can support PostGIS data type
+							 */
+							atttypid = getBaseTypeAndTypmod(atttypid, &atttypmod);
+
+							if (atttypid == BYTEAOID)
+							{
+								value_datum = (Datum) palloc0(value_byte_size_blob_or_utf8 + VARHDRSZ);
+								memcpy(VARDATA(value_datum), sqlite3_value_blob(val), value_byte_size_blob_or_utf8);
+								SET_VARSIZE(value_datum, value_byte_size_blob_or_utf8 + VARHDRSZ);
+								return (struct NullableDatum) {PointerGetDatum((const void *)value_datum), false};
+							}
+							else
+								ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+												errmsg("This PostGIS data type is supported by SpatiaLite, but FDW compiled without GIS data support"),
+												errhint("Data type: \"%s\" in column \"%.*s\"", pg_dataTypeName, (int)sizeof(pgColND.data), pgColND.data)));
+#endif
+							break;
+						}
+						case SQLITE3_TEXT:
+						{
+							/* WKT data transport is not implemented */
+							sqlite_value_to_pg_error();
+							break;
+						}
+					}
+				}
+				else
+				{
+					/* common, not PostGIS case */
+					valstr = sqlite_text_value_to_pg_db_encoding(val);
+				}
+			}
+		break;
 	}
 	/* convert string value to appropriate type value */
 	value_datum = InputFunctionCall(&attinmeta->attinfuncs[attnum],
@@ -542,12 +619,12 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 }
 
 /*
- * sqlite_bind_blob_algo:
- * Common part of extracting and preparing PostgreSQL bytea data
- * for SQLite binding as blob
+ * sqlite_datum_to_blob
+ *		Common part of extracting and preparing PostgreSQL bytea data
+ *		for SQLite binding as blob
  */
-int
-sqlite_bind_blob_algo (int attnum, Datum value, sqlite3_stmt * stmt)
+blobOutput
+sqlite_datum_to_blob (Datum value)
 {
 	int			len;
 	char	   *dat = NULL;
@@ -563,9 +640,14 @@ sqlite_bind_blob_algo (int attnum, Datum value, sqlite3_stmt * stmt)
 		len = VARSIZE_4B(result) - VARHDRSZ;
 		dat = VARDATA_4B(result);
 	}
-	return sqlite3_bind_blob(stmt, attnum, dat, len, SQLITE_TRANSIENT);
+	return (struct blobOutput){dat, len};
 }
 
+/*
+ * get_column_option_string
+ *		By Oid of relation and varattno returns value of requested option
+ *		of foreign table
+ */
 static char *
 get_column_option_string(Oid relid, int varattno, char *optionname)
 {
@@ -587,8 +669,9 @@ get_column_option_string(Oid relid, int varattno, char *optionname)
 }
 
 /*
- * bind_sql_var:
- * Bind the values provided as DatumBind the values and nulls to modify the target table (INSERT/UPDATE)
+ * bind_sql_var
+ *		Bind the values provided as DatumBind the values and nulls
+ *		to modify the target table (INSERT/UPDATE)
  */
 void
 sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt * stmt, bool *isnull, Oid relid)
@@ -691,7 +774,8 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 			}
 		case BYTEAOID:
 			{
-				ret = sqlite_bind_blob_algo(attnum, value, stmt);
+				blobOutput b = sqlite_datum_to_blob(value);
+				ret = sqlite3_bind_blob(stmt, attnum, b.dat, b.len, SQLITE_TRANSIENT);
 				break;
 			}
 		case UUIDOID:
@@ -723,7 +807,8 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 					bool		typeVarLength = false;
 
 					getTypeOutputInfo(type, &outputFunctionId, &typeVarLength);
-					outputString = OidOutputFunctionCall(outputFunctionId, value); /* uuid text belongs to ASCII subset, no need to translate encoding */
+					outputString = OidOutputFunctionCall(outputFunctionId, value);
+					/* uuid text belongs to ASCII subset, no need to translate encoding */
 					ret = sqlite3_bind_text(stmt, attnum, outputString, -1, SQLITE_TRANSIENT);
 				}
 				break;
@@ -748,7 +833,8 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 					bool		typeVarLength = false;
 					elog(DEBUG2, "sqlite_fdw : bind mac as text");
 					getTypeOutputInfo(type, &outputFunctionId, &typeVarLength);
-					outputString = OidOutputFunctionCall(outputFunctionId, value); /* MAC text belongs to ASCII subset, no need to translate encoding */
+					outputString = OidOutputFunctionCall(outputFunctionId, value);
+					/* MAC text belongs to ASCII subset, no need to translate encoding */
 					ret = sqlite3_bind_text(stmt, attnum, outputString, -1, SQLITE_TRANSIENT);
 				}
 				else if (sqlite_aff == SQLITE_BLOB)
@@ -842,23 +928,64 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 		default:
 			{
 				NameData	pgColND = att->attname;
-				const char	*pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(type, pgtypmod));
-				ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-								errmsg("cannot convert constant value to Sqlite value"),
-								errhint("Constant value data type: \"%s\" in column \"%.*s\"", pg_dataTypeName, (int)sizeof(pgColND.data), pgColND.data)));
+				char	*pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(type, pgtypmod));
+
+				/*
+				 * PostGIS data types can be supported only by name
+				 * This is very rare and not fast algorythm branch
+				 */
+				if (listed_datatype(pg_dataTypeName, postGisSQLiteCompatibleTypes))
+				{
+#ifdef SQLITE_FDW_GIS_ENABLE
+					blobOutput b = PostGISgeomAsSpatiaLite(value, att);
+					ret = sqlite3_bind_blob(stmt, attnum, b.dat, b.len, SQLITE_TRANSIENT);
+#else
+					Oid			atttypid = att->atttypid;
+					int32		atttypmod = att->atttypmod;
+
+					/*
+					 * If a domain has been declared as bytea,
+					 * it can support PostGIS data type
+					 */
+					atttypid = getBaseTypeAndTypmod(atttypid, &atttypmod);
+
+					if (atttypid == BYTEAOID)
+					{
+						blobOutput b = sqlite_datum_to_blob(value);
+						ret = sqlite3_bind_blob(stmt, attnum, b.dat, b.len, SQLITE_TRANSIENT);
+					}
+					else
+						ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+										errmsg("This PostGIS data type is supported by SpatiaLite, but FDW compiled without GIS data support"),
+										errhint("Data type: \"%s\" in column \"%.*s\"", pg_dataTypeName, (int)sizeof(pgColND.data), pgColND.data)));
+#endif
+					break;
+				}
+				else if (listed_datatype(pg_dataTypeName, postGisSpecificTypes))
+					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+									errmsg("This data type is PostGIS specific and have not any SpatiaLite value"),
+									errhint("Data type: \"%s\" in column \"%.*s\"", pg_dataTypeName, (int)sizeof(pgColND.data), pgColND.data)));
+				else
+					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+									errmsg("cannot convert constant value to SQLite value"),
+									errhint("Constant value data type: \"%s\" in column \"%.*s\"", pg_dataTypeName, (int)sizeof(pgColND.data), pgColND.data)));
 				break;
 			}
 	}
 	if (ret != SQLITE_OK)
 	{
-		const char	*pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(type, pgtypmod));
+		char	*pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(type, pgtypmod));
 		ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-						errmsg("Can't convert constant value to Sqlite: %s",
+						errmsg("Can't convert constant value to SQLite: %s",
 							   sqlite3_errmsg(sqlite3_db_handle(stmt))),
 						errhint("Constant value data type: %s", pg_dataTypeName)));
 	}
 }
 
+/*
+ * sqlite_text_value_to_pg_db_encoding
+ *		Converts SQLite text to PostgreSQL text with database encoding
+ */
 static char *
 sqlite_text_value_to_pg_db_encoding(sqlite3_value *val)
 {
@@ -871,13 +998,17 @@ sqlite_text_value_to_pg_db_encoding(sqlite3_value *val)
 	if (pg_database_encoding == PG_UTF8)
 		return utf8_text_value;
 	else
+	{
 		/* There is no UTF16 in PostgreSQL for fast sqlite3_value_text16, hence always convert */
-		return (char *) pg_do_encoding_conversion((unsigned char *) utf8_text_value, strlen(utf8_text_value), PG_UTF8, pg_database_encoding);
+		char * res = (char *) pg_do_encoding_conversion((unsigned char *) utf8_text_value, strlen(utf8_text_value), PG_UTF8, pg_database_encoding);
+		return res;
+	}
 }
 
 /*
- * Converts int64 from SQLite to PostgreSQL string from 0 and 1 only
- * s must be allocated with length not less than len + 1 bytes
+ * int642binstr
+ *		Converts int64 from SQLite to PostgreSQL string from 0 and 1 only
+ * 		s must be allocated with length not less than len + 1 bytes
  */
 static char *
 int642binstr(sqlite3_int64 num, char *s, size_t len)
@@ -890,7 +1021,8 @@ int642binstr(sqlite3_int64 num, char *s, size_t len)
 }
 
 /*
- * Converts PostgreSQL string from 0 and 1 only to int64 for SQLite
+ * binstr2int64
+ *		Converts PostgreSQL string from 0 and 1 only to int64 for SQLite
  */
 sqlite3_int64
 binstr2int64(const char *s)
@@ -911,8 +1043,52 @@ binstr2int64(const char *s)
 		else
 		{
 			ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-							errmsg("Not 0 or 1 in bit string")));
+							errmsg("Not 0 or 1 in bit string"),
+							errhint("value: %s", s)));
 		}
 	}
 	return rc;
 }
+
+/*
+ * listed_datatype
+ *		Checks if a name of data type belongs to array of special data type names
+ *		used for PostGIS data type which have not stable Oid
+ */
+bool
+listed_datatype (const char * tn, const char ** arr)
+{
+	int i = 0;
+	char * n = strchr(tn, '.');
+
+	if ( n != NULL )
+		n = n + sizeof(char);
+	else
+		n = (char *)tn;
+	while(arr[i])
+	{
+		if(!strcmp(arr[i], n))
+		{
+			elog(DEBUG4, "sqlite_fdw : %s \"%s\" = \"%s\" ", __func__, tn, arr[i]);
+			return true;
+		}
+		i++;
+	}
+	return false;
+}
+
+/*
+ * listed_datatype_oid
+ *		Checks if Oid of data type is one of Oids of listed data types
+ *		listed in given array.
+ */
+bool
+listed_datatype_oid(Oid atttypid, int32 atttypmod, const char** arr)
+{
+	const char *pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(atttypid, atttypmod));
+	bool		listed = listed_datatype(pg_dataTypeName, arr);
+
+	elog(DEBUG2, "sqlite_fdw : %s : unusual data type %s, listed = %d", __func__, pg_dataTypeName, listed);
+	return listed;
+}
+
