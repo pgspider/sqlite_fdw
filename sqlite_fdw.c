@@ -4994,10 +4994,10 @@ sqlite_execute_insert(EState *estate,
 	int			i;
 	Relation	rel = resultRelInfo->ri_RelationDesc;
 	Oid			foreignTableId = RelationGetRelid(rel);
-
 #if PG_VERSION_NUM >= 140000
 	TupleDesc	tupdesc = RelationGetDescr(rel);
 #endif
+
 	elog(DEBUG1, "sqlite_fdw : %s for RelId %u", __func__, foreignTableId);
 
 	oldcontext = MemoryContextSwitchTo(fmstate->temp_cxt);
@@ -5024,8 +5024,8 @@ sqlite_execute_insert(EState *estate,
 
 		sqlite_prepare_wrapper(fmstate->server, fmstate->conn, fmstate->query, &fmstate->stmt, NULL, true);
 	}
-#endif
 
+#endif
 	for (i = 0; i < *numSlots; i++)
 	{
 		foreach(lc, fmstate->retrieved_attrs)

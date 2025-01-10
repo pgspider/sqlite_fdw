@@ -362,6 +362,8 @@ sqlite_deparsable_data_type(Param *p)
 		case UUIDOID:
 		case MACADDROID:
 		case MACADDR8OID:
+		case JSONOID:
+		case JSONBOID:
 			return true;
 	}
 #ifdef SQLITE_FDW_GIS_ENABLE
@@ -763,7 +765,7 @@ sqlite_foreign_expr_walker(Node *node,
 				else if (inner_cxt.state != FDW_COLLATE_SAFE ||
 						 oe->inputcollid != inner_cxt.collation)
 				{
-					elog(DEBUG2, "sqlite_fdw : %s collante problems, do not push", __func__);
+					elog(DEBUG2, "sqlite_fdw : %s collate problems, do not push", __func__);
 					return false;
 				}
 
@@ -1162,7 +1164,6 @@ sqlite_foreign_expr_walker(Node *node,
 		if (!(sqlite_is_builtin(typeOid) || listed_datatype_oid(typeOid, -1, postGisSQLiteCompatibleTypes)))
 			return false;
 	}
-
 	/*
 	 * Now, merge my collation information into my parent's state.
 	 */
@@ -1209,6 +1210,7 @@ sqlite_foreign_expr_walker(Node *node,
 	}
 	/* It looks OK */
 	elog(DEBUG2, "sqlite_fdw : %s, pushed down", __func__);
+
 	return true;
 }
 
@@ -3062,7 +3064,7 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 				if (strlen(extval) > SQLITE_FDW_BIT_DATATYPE_BUF_SIZE - 1 )
 				{
 					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-							errmsg("SQLite FDW doens't support very long bit/varbit data"),
+							errmsg("SQLite FDW doesn't support very long bit/varbit data"),
 							errhint("bit length %ld, maximum %ld", strlen(extval), SQLITE_FDW_BIT_DATATYPE_BUF_SIZE - 1)));
 				}
 				appendStringInfo(buf, "%lld", binstr2int64(extval));
@@ -3338,7 +3340,7 @@ sqlite_deparse_op_expr(OpExpr *node, deparse_expr_cxt *context)
 }
 
 /*
- * Print the name of an operator.
+ * Gets SQLite SQL operand or other value for an operator.
  */
 static void
 sqlite_deparse_operator_name(StringInfo buf, Form_pg_operator opform)
@@ -3374,7 +3376,10 @@ sqlite_deparse_operator_name(StringInfo buf, Form_pg_operator opform)
 				 (strcmp(cur_opname, "~") == 0 && opform->oprresult != VARBITOID && opform->oprresult != BITOID) ||
 				 strcmp(cur_opname, "!~") == 0 ||
 				 strcmp(cur_opname, "~*") == 0 ||
-				 strcmp(cur_opname, "!~*") == 0)
+				 strcmp(cur_opname, "!~*") == 0 ||
+				 /* use this 2 operators only for JSON data */
+ 				 (strcmp(cur_opname, "->") == 0 && opform->oprleft != JSONOID && opform->oprleft != JSONBOID) ||
+  				 (strcmp(cur_opname, "->>") == 0 && opform->oprleft != JSONOID && opform->oprleft != JSONBOID))
 		{
 			ereport(ERROR, (errcode(ERRCODE_FDW_ERROR),
 							errmsg("SQL operator is not supported"),
@@ -3810,7 +3815,7 @@ sqlite_print_remote_placeholder(Oid paramtype, int32 paramtypmod,
  *
  * XXX there is a problem with this, which is that the set of built-in
  * objects expands over time.  Something that is built-in to us might not
- * be known to the remote server, if it's of an older version.  But keeping
+ * be known to the remote server, if it's of an older version. But keeping
  * track of that would be a huge exercise.
  */
 bool
