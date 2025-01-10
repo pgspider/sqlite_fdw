@@ -33,3 +33,19 @@ IS 'SQLite foreign data wrapper options validator';
 
 COMMENT ON FOREIGN DATA WRAPPER sqlite_fdw
 IS 'SQLite foreign data wrapper';
+
+CREATE OR REPLACE FUNCTION sqlite_fdw_sqlite_version()
+RETURNS int
+AS 'MODULE_PATHNAME'
+LANGUAGE C STRICT VOLATILE PARALLEL SAFE;
+
+COMMENT ON FUNCTION sqlite_fdw_sqlite_version()
+IS 'Returns used SQLite code version';
+
+CREATE OR REPLACE FUNCTION sqlite_fdw_sqlite_code_source()
+RETURNS text
+AS 'MODULE_PATHNAME'
+LANGUAGE C STRICT VOLATILE PARALLEL SAFE;
+
+COMMENT ON FUNCTION sqlite_fdw_sqlite_code_source()
+IS 'Returns used SQLite code source with commit point';

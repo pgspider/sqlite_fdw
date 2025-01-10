@@ -576,7 +576,7 @@ SELECT * from numbers;
 --Testcase 68:
 INSERT INTO numbers VALUES(1, 'One');
 ERROR:  Failed to execute remote SQL
-HINT:  SQLite error 'UNIQUE constraint failed: numbers.b', SQLite result code 19
+HINT:  SQLite error 'UNIQUE constraint failed: numbers.b', SQLite result code 2067
 CONTEXT:  SQL query: INSERT INTO main."numbers"(`a`, `b`) VALUES (?, ?)
 --Testcase 69:
 DELETE from numbers;
@@ -590,7 +590,7 @@ COMMIT;
 --Testcase 72:
 UPDATE numbers SET b='Two' WHERE a = 1; 
 ERROR:  Failed to execute remote SQL
-HINT:  SQLite error 'UNIQUE constraint failed: numbers.b', SQLite result code 19
+HINT:  SQLite error 'UNIQUE constraint failed: numbers.b', SQLite result code 2067
 CONTEXT:  SQL query: UPDATE main."numbers" SET `b` = 'Two' WHERE ((`a` = 1))
 --Testcase 73:
 SELECT * from numbers;
@@ -1444,16 +1444,18 @@ SELECT * FROM noprimary;
 --get version
 --Testcase 153:
 \df sqlite*
-                                            List of functions
- Schema |            Name            | Result data type |           Argument data types           | Type 
---------+----------------------------+------------------+-----------------------------------------+------
- public | sqlite_fdw_disconnect      | boolean          | text                                    | func
- public | sqlite_fdw_disconnect_all  | boolean          |                                         | func
- public | sqlite_fdw_get_connections | SETOF record     | OUT server_name text, OUT valid boolean | func
- public | sqlite_fdw_handler         | fdw_handler      |                                         | func
- public | sqlite_fdw_validator       | void             | text[], oid                             | func
- public | sqlite_fdw_version         | integer          |                                         | func
-(6 rows)
+                                             List of functions
+ Schema |             Name              | Result data type |           Argument data types           | Type 
+--------+-------------------------------+------------------+-----------------------------------------+------
+ public | sqlite_fdw_disconnect         | boolean          | text                                    | func
+ public | sqlite_fdw_disconnect_all     | boolean          |                                         | func
+ public | sqlite_fdw_get_connections    | SETOF record     | OUT server_name text, OUT valid boolean | func
+ public | sqlite_fdw_handler            | fdw_handler      |                                         | func
+ public | sqlite_fdw_sqlite_code_source | text             |                                         | func
+ public | sqlite_fdw_sqlite_version     | integer          |                                         | func
+ public | sqlite_fdw_validator          | void             | text[], oid                             | func
+ public | sqlite_fdw_version            | integer          |                                         | func
+(8 rows)
 
 --Testcase 154:
 SELECT * FROM public.sqlite_fdw_version();

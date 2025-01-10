@@ -11,7 +11,7 @@ CREATE FOREIGN TABLE inserttest01 (col1 int4, col2 int4 NOT NULL, col3 text defa
 --Testcase 1:
 insert into inserttest01 (col1, col2, col3) values (DEFAULT, DEFAULT, DEFAULT);
 ERROR:  Failed to execute remote SQL
-HINT:  SQLite error 'NOT NULL constraint failed: inserttest01.col2', SQLite result code 19
+HINT:  SQLite error 'NOT NULL constraint failed: inserttest01.col2', SQLite result code 1299
 CONTEXT:  SQL query: INSERT INTO main."inserttest01"(`col1`, `col2`, `col3`) VALUES (?, ?, ?)
 --Testcase 2:
 insert into inserttest01 (col2, col3) values (3, DEFAULT);

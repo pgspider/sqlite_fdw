@@ -24,11 +24,12 @@ jobs:
   test:
     needs: detect-pgversion
     env:
-      SQLITE_VERSION : "3460000"
-      SQLITE_YEAR: "2024"
+      SQLITE_VERSION : "3490000"
+      SQLITE_YEAR: "2025"
       POSTGIS_VERSION : "3.4.2"
       HTTP_PROXY: ""
       HTTPS_PROXY: ""
+      SQLITE_FOR_TESTING_DIR: "/opt/CI_sqlite"
     strategy:
       fail-fast: false
       matrix:
@@ -46,11 +47,25 @@ jobs:
       - name: set_proxy
         run: bash GitHubActions/env.sh
 
+      - name: download PostGIS, ${{ matrix.config }} mode
+        run: |
+          if [[ "${{ matrix.config }}" == "postgis" ]]; then
+            bash GitHubActions/download_postgis.sh ${{ env.POSTGIS_VERSION }}
+          fi
+
       - name: install locales
         run: bash GitHubActions/install_locales.sh
 
-      - name: build PostgreSQL ${{ matrix.pg }} with ${{ matrix.config }}
+      - name: build PostgreSQL ${{ matrix.pg }}
         run: bash GitHubActions/build_postgres.sh ${{ matrix.pg }}
+
+      - name: install SQLite, ${{ matrix.config }} mode
+        run: |
+          if [[ "${{ matrix.config }}" == "default" ]]; then
+            bash GitHubActions/install_sqlite.sh ${{ env.SQLITE_VERSION }} ${{ env.SQLITE_YEAR }} ${{ matrix.config }} ${{ env.SQLITE_FOR_TESTING_DIR }}
+          elif [[ "${{ matrix.config }}" == "postgis" ]]; then
+            bash GitHubActions/install_sqlite.sh ${{ env.SQLITE_VERSION }} ${{ env.SQLITE_YEAR }} ${{ matrix.config }} ${{ env.SQLITE_FOR_TESTING_DIR }} --enable-rtree
+          fi
 
       - name: build PostGIS ${{ env.POSTGIS_VERSION }} for PostgreSQL ${{ matrix.pg }}, ${{ matrix.config }} mode
         run: |
@@ -58,20 +73,12 @@ jobs:
             bash GitHubActions/build_postgis.sh ${{ matrix.pg }} ${{ env.POSTGIS_VERSION }}
           fi
 
-      - name: install SQLite, ${{ matrix.config }} mode
-        run: |
-          if [[ "${{ matrix.config }}" == "default" ]]; then
-            bash GitHubActions/install_sqlite.sh ${{ env.SQLITE_VERSION }} ${{ env.SQLITE_YEAR }} "${{ matrix.config }}"
-          elif [[ "${{ matrix.config }}" == "postgis" ]]; then
-            bash GitHubActions/install_sqlite.sh ${{ env.SQLITE_VERSION }} ${{ env.SQLITE_YEAR }} "${{ matrix.config }}" --enable-rtree
-          fi
-
       - name: build sqlite_fdw, ${{ matrix.config }} mode
         run: |
-          bash GitHubActions/build_sqlite_fdw.sh ${{ matrix.pg }} ${{ matrix.config }}
+          bash GitHubActions/build_sqlite_fdw.sh ${{ matrix.pg }} ${{ matrix.config }} ${{ env.SQLITE_FOR_TESTING_DIR }}
 
       - name: execute sqlite_fdw test
-        run: bash GitHubActions/execute_test.sh ${{ matrix.pg }} ${{ matrix.config }}
+        run: bash GitHubActions/execute_test.sh ${{ matrix.pg }} ${{ matrix.config }} ${{ env.SQLITE_FOR_TESTING_DIR }}
 
       - name: download output files (regression.diffs)
         if: failure()
@@ -83,3 +90,4 @@ jobs:
             workdir/postgresql-${{ matrix.pg }}/contrib/sqlite_fdw/regression.out
             workdir/postgresql-${{ matrix.pg }}/contrib/sqlite_fdw/results
           retention-days: 7
+
