@@ -495,7 +495,7 @@ INSERT INTO "type_DOUBLE" VALUES (PI());
 --Testcase 109: ERR primary key
 INSERT INTO "type_DOUBLE" VALUES (PI());
 ERROR:  Failed to execute remote SQL
-HINT:  SQLite error 'UNIQUE constraint failed: type_DOUBLE.col', SQLite result code 19
+HINT:  SQLite error 'UNIQUE constraint failed: type_DOUBLE.col', SQLite result code 1555
 CONTEXT:  SQL query: INSERT INTO main."type_DOUBLE"(`col`) VALUES (?)
 --Testcase 110:
 INSERT INTO "type_DOUBLE" VALUES ('Infinity');
@@ -514,12 +514,12 @@ SELECT * FROM "type_DOUBLE"; -- OK, +- Inf
 --Testcase 114: ERR primary key
 INSERT INTO "type_DOUBLE" VALUES ('Infinity');
 ERROR:  Failed to execute remote SQL
-HINT:  SQLite error 'UNIQUE constraint failed: type_DOUBLE.col', SQLite result code 19
+HINT:  SQLite error 'UNIQUE constraint failed: type_DOUBLE.col', SQLite result code 1555
 CONTEXT:  SQL query: INSERT INTO main."type_DOUBLE"(`col`) VALUES (?)
 --Testcase 115: ERR primary key
 INSERT INTO "type_DOUBLE" VALUES ('-Infinity');
 ERROR:  Failed to execute remote SQL
-HINT:  SQLite error 'UNIQUE constraint failed: type_DOUBLE.col', SQLite result code 19
+HINT:  SQLite error 'UNIQUE constraint failed: type_DOUBLE.col', SQLite result code 1555
 CONTEXT:  SQL query: INSERT INTO main."type_DOUBLE"(`col`) VALUES (?)
 --Testcase 116:
 SELECT * FROM "type_DOUBLE"; -- OK, +- Inf
@@ -533,7 +533,7 @@ SELECT * FROM "type_DOUBLE"; -- OK, +- Inf
 
 --Testcase 47:
 DROP EXTENSION sqlite_fdw CASCADE;
-NOTICE:  drop cascades to 55 other objects
+NOTICE:  drop cascades to 58 other objects
 DETAIL:  drop cascades to server sqlite_svr
 drop cascades to foreign table department
 drop cascades to foreign table employee
@@ -568,6 +568,9 @@ drop cascades to foreign table "type_MACADDR"
 drop cascades to foreign table "type_MACADDR8pk"
 drop cascades to foreign table "type_MACADDR8"
 drop cascades to foreign table "types_PostGIS"
+drop cascades to foreign table "type_JSON"
+drop cascades to foreign table "type_JSONB"
+drop cascades to foreign table "JSON_query"
 drop cascades to foreign table "BitT"
 drop cascades to foreign table notype
 drop cascades to foreign table typetest

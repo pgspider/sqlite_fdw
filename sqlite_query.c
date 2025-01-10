@@ -750,6 +750,7 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 		case VARCHAROID:
 		case TEXTOID:
 		case JSONOID:
+		case JSONBOID:
 		case NAMEOID:
 		case TIMEOID:
 		case TIMESTAMPOID:
