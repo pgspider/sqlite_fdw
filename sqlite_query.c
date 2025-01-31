@@ -25,10 +25,12 @@
 #include "nodes/makefuncs.h"
 #include "parser/parse_type.h"
 #include "utils/builtins.h"
+#include <sys/socket.h>
 #include "utils/inet.h"
 #include "utils/lsyscache.h"
 #include "utils/timestamp.h"
 #include "utils/uuid.h"
+
 
 
 static char *
@@ -71,11 +73,25 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 	Oid			pgtyp = att->atttypid;
 	Datum		value_datum = 0;
 	char	   *valstr = NULL;
-				/* Compute always, void text and void BLOB is special cases */
+				/* Compute always, void text and void BLOB are special cases */
 	int		 	value_byte_size_blob_or_utf8 = sqlite3_value_bytes(val);
 
 	switch (pgtyp)
 	{
+		/* Common cases are first as very frequent */
+		case TEXTOID:
+		case VARCHAROID:
+		case JSONOID:
+		case JSONBOID:
+		case DATEOID:
+		case TIMEOID:
+		case BPCHAROID:
+		case CHAROID:
+		case NAMEOID:
+			{
+				valstr = sqlite_text_value_to_pg_db_encoding(val);
+				break;
+			}
 		case BOOLOID:
 			{
 				switch (sqlite_value_affinity)
@@ -380,6 +396,10 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 							sqlite_value_to_pg_error();
 							break;
 						}
+					/*
+					 * SQLite UUID output always normalized to blob.
+					 * In sqlite_data_norm.c there is special additional C function.
+					 */
 					case SQLITE_BLOB: /* <-- proper and recommended SQLite affinity of value for pgtyp */
 						{
 							if (value_byte_size_blob_or_utf8 != UUID_LEN)
@@ -399,10 +419,6 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 								break;
 							}
 						}
-					/*
-					 * SQLite UUID output always normalized to blob.
-					 * In sqlite_data_norm.c there is special additional C function.
-					 */
 					case SQLITE3_TEXT:
 						{
 							if (value_byte_size_blob_or_utf8)
@@ -520,17 +536,60 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 				}
 				break;
 			}
-		case BPCHAROID:
-		case VARCHAROID:
-		case CHAROID:
-		case TEXTOID:
-		case JSONOID:
-		case JSONBOID:
-		case NAMEOID:
-		case DATEOID:
-		case TIMEOID:
+		case INETOID:
 			{
-				valstr = sqlite_text_value_to_pg_db_encoding(val);
+				switch (sqlite_value_affinity)
+				{
+					case SQLITE_INTEGER:
+					case SQLITE_FLOAT:
+						{
+							sqlite_value_to_pg_error();
+							break;
+						}
+					/*
+					 * SQLite IP output always normalized to blob.
+					 * In sqlite_data_norm.c there is special additional C function.
+					 */
+					case SQLITE_BLOB: /* <-- proper and recommended SQLite affinity of value for pgtyp */
+						{
+							int len = value_byte_size_blob_or_utf8;
+							if (len != 4 &&	len != 16 &&
+								len != 5 && len != 17)
+							{
+								ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+												errmsg("SQLite blob for inet or cidr can be only 4,5,16 or 17 bytes")));
+								break;
+							}
+							else
+							{
+								const unsigned char *sqlite_blob = sqlite3_value_blob(val);
+								bool			is_cidr = len == 5 || len == 17;
+								bool			ipv4 = len == 4 || len == 5;
+								int				ip_len = ipv4 ? 4 : 16;
+								inet		   *retval = (inet *) palloc0(sizeof(inet));
+
+								ip_family(retval) = ipv4 ? PGSQL_AF_INET : PGSQL_AF_INET6;
+								ip_bits(retval) = is_cidr ? sqlite_blob[ip_len] : ip_maxbits(retval);
+								memcpy(retval->inet_data.ipaddr, sqlite_blob, ip_len);
+								SET_INET_VARSIZE(retval);
+								return (struct NullableDatum){InetPGetDatum(retval), false};
+								break;
+							}
+						}
+					case SQLITE3_TEXT:
+						{
+							if (value_byte_size_blob_or_utf8)
+								sqlite_value_to_pg_error();
+							else
+								pg_column_void_text_error();
+							break;
+						}
+					default:
+						{
+							sqlite_value_to_pg_error();
+							break;
+						}
+				}
 				break;
 			}
 		default:
@@ -666,6 +725,46 @@ get_column_option_string(Oid relid, int varattno, char *optionname)
 		}
 	}
 	return coloptionvalue;
+}
+
+static sqlite_uint64
+get_int64_of_inet_ipv4(inet* pg_inet)
+{
+	sqlite_uint64	dat = 0;
+	unsigned char	bits = 0;
+
+	if (ip_family(pg_inet) != PGSQL_AF_INET)
+	{
+		ereport(ERROR,
+			(errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+			 errmsg("unable to use with integer affinity"),
+			 errdetail("Only IP v4 values can be used with integer affinity.")));
+	}
+	dat = (((sqlite_int64)(pg_inet->inet_data.ipaddr[0])) << (CHAR_BIT *3)) +
+		  (((sqlite_int64)(pg_inet->inet_data.ipaddr[1])) << (CHAR_BIT *2)) +
+		  (((sqlite_int64)(pg_inet->inet_data.ipaddr[2])) << (CHAR_BIT *1)) +
+		  (((sqlite_int64)(pg_inet->inet_data.ipaddr[3])) << (CHAR_BIT *0));
+
+	bits = ip_bits(pg_inet);
+	if (bits != 32)  /* bits will encoded as value of additional higest byte */
+		dat += (((sqlite_int64)(bits)) << (CHAR_BIT *4));
+	return dat;
+}
+
+static blobOutput
+get_blob_of_inet_ip(inet* pg_inet)
+{
+	int				l_ip = ip_addrsize(pg_inet);
+	unsigned char	bits = ip_bits(pg_inet);
+	bool			is_cidr = bits != ip_maxbits(pg_inet);
+	int				l_blob = l_ip + is_cidr;
+	unsigned char  *dat = palloc0(l_blob);
+
+	memcpy(dat, pg_inet->inet_data.ipaddr, l_ip);
+
+	if (is_cidr)  /* bits will encoded as value of additional byte */
+		dat[l_ip] = bits;
+	return  (struct blobOutput){(const char *)dat, l_blob};
 }
 
 /*
@@ -925,9 +1024,79 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 				ret = sqlite3_bind_int64(stmt, attnum, dat);
 				break;
 			}
+		case INETOID:
+			{
+				int			sqlite_aff = SQLITE_NULL;
+				inet	   *pg_inet = DatumGetInetP(value);
+
+				if (relid)
+				{
+					char * optv = get_column_option_string (relid, attnum, "column_type");
+
+					elog(DEBUG3, "sqlite_fdw : col type %s ", optv);
+					sqlite_aff = sqlite_affinity_code(optv);
+				}
+
+				switch (sqlite_aff)
+				{
+					case SQLITE_BLOB:
+					{
+						blobOutput		dat;
+
+						elog(DEBUG2, "sqlite_fdw : bind IP as blob");
+						dat = get_blob_of_inet_ip(pg_inet);
+						ret = sqlite3_bind_blob(stmt, attnum, dat.dat, dat.len, SQLITE_TRANSIENT);
+						break;
+					}
+					case SQLITE_INTEGER:
+					{
+						sqlite_uint64	dat = 0;
+
+						elog(DEBUG2, "sqlite_fdw : bind IP as integer");
+						dat = get_int64_of_inet_ipv4(pg_inet);
+						ret = sqlite3_bind_int64(stmt, attnum, dat);
+						break;
+					}
+					case SQLITE_NULL:
+					{
+						bool			ipv4 = ip_family(pg_inet) == PGSQL_AF_INET;
+
+						if (ipv4)
+						{
+							sqlite_uint64	dat = 0;
+
+							elog(DEBUG2, "sqlite_fdw : bind IPv4 as integer");
+							dat = get_int64_of_inet_ipv4(pg_inet);
+							ret = sqlite3_bind_int64(stmt, attnum, dat);
+						}
+						else
+						{
+							blobOutput dat;
+
+							elog(DEBUG2, "sqlite_fdw : bind IPv6 as blob");
+							dat = get_blob_of_inet_ip(pg_inet);
+							ret = sqlite3_bind_blob(stmt, attnum, dat.dat, dat.len, SQLITE_TRANSIENT);
+						}
+						break;
+					}
+					case SQLITE_TEXT:
+					default:
+					{
+						char	   *outputString = NULL;
+						Oid			outputFunctionId = InvalidOid;
+						bool		typeVarLength = false;
+
+						getTypeOutputInfo(type, &outputFunctionId, &typeVarLength);
+						outputString = OidOutputFunctionCall(outputFunctionId, value);
+						/* IP address text belongs to ASCII subset, no need to translate encoding */
+						ret = sqlite3_bind_text(stmt, attnum, outputString, -1, SQLITE_TRANSIENT);
+					}
+				}
+				break;
+			}
 		default:
 			{
-				NameData	pgColND = att->attname;
+				NameData pgColND = att->attname;
 				char	*pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(type, pgtypmod));
 
 				/*

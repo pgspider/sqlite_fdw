@@ -33,9 +33,11 @@
 #include "parser/parsetree.h"
 #include "parser/parse_type.h"
 #include "utils/builtins.h"
+#include "utils/inet.h"
 #include "utils/lsyscache.h"
 #include "utils/syscache.h"
 #include "utils/typcache.h"
+#include <sys/socket.h>
 
 /*
  * Global context for sqlite_foreign_expr_walker's search of an expression tree.
@@ -362,6 +364,7 @@ sqlite_deparsable_data_type(Param *p)
 		case UUIDOID:
 		case MACADDROID:
 		case MACADDR8OID:
+		case INETOID:
 			return true;
 	}
 #ifdef SQLITE_FDW_GIS_ENABLE
@@ -2373,6 +2376,16 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 					appendStringInfo(buf, ", %d)", mac_len);
 					break;
 				}
+				case INETOID:
+				{
+					elog(DEBUG2, "IP addr unification for \"%s\"", colname);
+					appendStringInfoString(buf, "sqlite_fdw_ipaddr_blob(");
+					if (qualify_col)
+						ADD_REL_QUALIFIER(buf, varno);
+					appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+					appendStringInfoString(buf, ")");
+					break;
+				}
 				default:
 				{
 					no_unification = true;
@@ -2736,6 +2749,24 @@ sqlite_deparse_direct_update_sql(StringInfo buf, PlannerInfo *root,
 				appendStringInfo(buf, "sqlite_fdw_macaddr_blob(");
 			special_affinity = true;
 		}
+		else if (pg_attyp == INETOID)
+		{
+			if (preferred_affinity == SQLITE_TEXT)
+			{
+				appendStringInfo(buf, "sqlite_fdw_ipaddr_str(");
+				special_affinity = true;
+			}
+			else if (preferred_affinity == SQLITE_INTEGER)
+			{
+				appendStringInfo(buf, "sqlite_fdw_ipaddr_int(");
+				special_affinity = true;
+			}
+			else if (preferred_affinity == SQLITE_NULL)
+			{
+				appendStringInfo(buf, "sqlite_fdw_ipaddr_native(");
+				special_affinity = true;
+			}
+		}
 
 		sqlite_deparse_expr((Expr *) tle->expr, &context);
 
@@ -2996,6 +3027,22 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 
 	switch (node->consttype)
 	{
+		/* Common cases are first as very frequent */
+		case BPCHAROID:
+		case VARCHAROID:
+		case CHAROID:
+		case TEXTOID:
+		case JSONOID:
+		case JSONBOID:
+		case NAMEOID:
+		case DATEOID:
+		case TIMEOID:
+			{
+				/* common branch of constants, deparsable as a text data */
+				extval = OidOutputFunctionCall(typoutput, node->constvalue);
+				sqlite_deparse_string_literal(buf, extval);
+				break;
+			}
 		case INT2OID:
 		case INT4OID:
 		case INT8OID:
@@ -3143,21 +3190,33 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 				}
 			}
 			break;
-		case BPCHAROID:
-		case VARCHAROID:
-		case CHAROID:
-		case TEXTOID:
-		case JSONOID:
-		case JSONBOID:
-		case NAMEOID:
-		case DATEOID:
-		case TIMEOID:
+		case INETOID:
 			{
-				/* common branch of constants, deparsable as a text data */
-				extval = OidOutputFunctionCall(typoutput, node->constvalue);
-				sqlite_deparse_string_literal(buf, extval);
-				break;
+				inet		   *pg_inet = DatumGetInetP(node->constvalue);
+				unsigned char	bits = ip_bits(pg_inet);
+				unsigned char  *ipaddr = pg_inet->inet_data.ipaddr;
+
+				appendStringInfo(buf, "X\'");
+				for (int i = 0; i < ip_addrsize(pg_inet); i++)
+				{
+					int d1 = (ipaddr[i] >> 4) & 0x0F;
+					int d2 = ipaddr[i] & 0x0F;
+
+					appendStringInfoChar(buf, hex_dig[d1]);
+					appendStringInfoChar(buf, hex_dig[d2]);
+				}
+				/* Is here an address mask? */
+				if (bits < ip_maxbits(pg_inet))
+				{
+					int d1 = (bits >> 4) & 0x0F;
+					int d2 = bits & 0x0F;
+
+					appendStringInfoChar(buf, hex_dig[d1]);
+					appendStringInfoChar(buf, hex_dig[d2]);
+				}
+	  			appendStringInfo(buf, "\'");
 			}
+			break;
 		default:
 			{
 				if (listed_datatype_oid(node->consttype, -1, postGisSQLiteCompatibleTypes))
