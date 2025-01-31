@@ -308,7 +308,7 @@ typedef struct SqliteFdwDirectModifyState
 
 typedef struct blobOutput
 {
-	const char*		dat;
+	const char*	dat;
 	int			len;
 } blobOutput;
 
