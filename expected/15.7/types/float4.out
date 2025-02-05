@@ -1907,12 +1907,81 @@ SELECT * FROM "type_FLOAT_INF+" WHERE f = 'NaN' ORDER BY i;
 (6 rows)
 
 --Testcase 351:
-DELETE FROM "type_FLOAT_INF" WHERE i >= 10;
+ALTER FOREIGN TABLE "type_FLOAT_INF" ALTER COLUMN f OPTIONS (ADD column_type 'real');
 --Testcase 352:
-DROP FOREIGN TABLE "type_FLOAT_INF";
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF";
+                         QUERY PLAN                         
+------------------------------------------------------------
+ Foreign Scan on public."type_FLOAT_INF"
+   Output: i, f
+   SQLite query: SELECT `i`, `f` FROM main."type_FLOAT_INF"
+(3 rows)
+
 --Testcase 353:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+";
+                                       QUERY PLAN                                        
+-----------------------------------------------------------------------------------------
+ Foreign Scan on public."type_FLOAT_INF+"
+   Output: i, f, t, l
+   SQLite query: SELECT `i`, sqlite_fdw_float(`f`), `t`, `l` FROM main."type_FLOAT_INF+"
+(3 rows)
+
+--Testcase 354: ERR - remove real
+SELECT * FROM "type_FLOAT_INF";
+ERROR:  you should disable column_type = real for this column for infinity value processing
+HINT:  SQLite value with "text" affinity (8 bytes) : 'Infinity'
+CONTEXT:  foreign table "type_FLOAT_INF" foreign column "f" have data type "double precision" (usual affinity "real"), in query there is reference to foreign column
+--Testcase 355:
+DELETE FROM "type_FLOAT_INF" WHERE i IN (SELECT i FROM "type_FLOAT_INF+" WHERE t = 'text');
+--Testcase 356:
+SELECT * FROM "type_FLOAT_INF";
+ i  |     f     
+----+-----------
+  1 | -Infinity
+  2 |  Infinity
+  3 | -Infinity
+  4 |  Infinity
+  5 |   -1e+308
+  6 |         0
+  7 |    1e+308
+ 10 |  Infinity
+ 11 |  Infinity
+ 12 | -Infinity
+ 13 |  Infinity
+ 14 |  Infinity
+ 15 | -Infinity
+ 16 |          
+(14 rows)
+
+--Testcase 357:
+SELECT * FROM "type_FLOAT_INF+";
+ i  |     f     |  t   | l 
+----+-----------+------+---
+  1 | -Infinity | real | 4
+  2 |  Infinity | real | 3
+  3 | -Infinity | real | 4
+  4 |  Infinity | real | 3
+  5 |   -1e+308 | real | 9
+  6 |         0 | real | 3
+  7 |    1e+308 | real | 8
+ 10 |  Infinity | real | 3
+ 11 |  Infinity | real | 3
+ 12 | -Infinity | real | 4
+ 13 |  Infinity | real | 3
+ 14 |  Infinity | real | 3
+ 15 | -Infinity | real | 4
+ 16 |           | null |  
+(14 rows)
+
+--Testcase 358:
+DELETE FROM "type_FLOAT_INF" WHERE i >= 10;
+--Testcase 359:
+DROP FOREIGN TABLE "type_FLOAT_INF";
+--Testcase 360:
 DROP FOREIGN TABLE "type_FLOAT_INF+";
---Testcase 270:
+--Testcase 390:
 DROP SERVER sqlite_svr;
---Testcase 271:
+--Testcase 391:
 DROP EXTENSION sqlite_fdw CASCADE;
