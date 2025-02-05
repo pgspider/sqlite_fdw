@@ -616,6 +616,7 @@ Array support is experimental. Please be careful.
 - SQLite does not support `numeric` type as PostgreSQL. Therefore, it does not allow to store numbers with too high precision and scale. Error out of range occurs.
 - SQLite does not support `NaN` special value for IEEE 754-2008 numbers. Please use this special value very cerefully because there is no such conception in SQLite at all and `NaN` value treated in SQLite as `NULL`.
 - SQLite support `+Infinity` and `-Infinity` special values for IEEE 754-2008 numbers in SQL expressions with numeric context. This values can be readed with both `text` and `real` affiniy, but can be writed to SQLite only with `real` affinity (as signed out of range value `9.0e999`).
+- Please note you can turn off processing of IEEE 754-2008 values with `text` affiniy thorough `real` value of `column_type` option. This can increase `SELECT` or `ORDER` speed, becasuse there will be no normalize function wrapping, but in this case any query will have unsuccessfilly result in case of any value with `text` affiniy.
 
 ### Boolean values
 - `sqlite_fdw` boolean values support exists only for `bool` columns in foreign table. SQLite documentation recommends to store boolean as value with `integer` [affinity](https://www.sqlite.org/datatype3.html). `NULL` isn't converted, 1 converted to `true`, all other `NOT NULL` values converted to `false`. During `SELECT ... WHERE condition_column` condition converted only to `condition_column`.
