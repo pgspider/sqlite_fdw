@@ -241,6 +241,11 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 								const char* text_value = (const char*) sqlite3_value_text(val);
 								if (strcasecmp(text_value, "NaN") == 0)
 									return (struct NullableDatum) {Float8GetDatum(NAN), false};
+								else if (isInfinity(text_value))
+								{
+									ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+													errmsg("you should disable column_type = real for this column for infinity value processing")));
+								}
 								else
 									sqlite_value_to_pg_error();
 				 			}
@@ -274,6 +279,11 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 								const char* text_value = (const char*) sqlite3_value_text(val);
 								if (strcasecmp(text_value, "NaN") == 0)
 									return (struct NullableDatum) {Float8GetDatum(NAN), false};
+								else if (isInfinity(text_value))
+								{
+									ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+													errmsg("you should disable column_type = real for this column for infinity value processing")));
+								}
 								else
 									sqlite_value_to_pg_error();
 				 			}
@@ -324,14 +334,14 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 							break;
 						}
 					case SQLITE3_TEXT:
-					{
-						if (value_byte_size_blob_or_utf8)
-							valstr = sqlite_text_value_to_pg_db_encoding(val);
-							/* !!! use valstr later! */
-						else
-							pg_column_void_text_error();
-						break;
-					}
+						{
+							if (value_byte_size_blob_or_utf8)
+								valstr = sqlite_text_value_to_pg_db_encoding(val);
+								/* !!! use valstr later! */
+							else
+								pg_column_void_text_error();
+							break;
+						}
 				}
 				break;
 			}
@@ -354,19 +364,25 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 							break;
 						}
 					case SQLITE3_TEXT:
-					{
-						if (value_byte_size_blob_or_utf8)
 						{
-							const char* text_value = (const char*) sqlite3_value_text(val);
-							if (strcasecmp(text_value, "NaN") == 0)
-								return (struct NullableDatum) {Float8GetDatum(NAN), false};
+							if (value_byte_size_blob_or_utf8)
+							{
+								const char* text_value = (const char*) sqlite3_value_text(val);
+
+								if (strcasecmp(text_value, "NaN") == 0)
+									return (struct NullableDatum) {Float8GetDatum(NAN), false};
+								else if (isInfinity(text_value))
+								{
+									ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+													errmsg("you should disable column_type = real for this column for infinity value processing")));
+								}
+								else
+									sqlite_value_to_pg_error();
+				 			}
 							else
-								sqlite_value_to_pg_error();
-			 			}
-						else
-							pg_column_void_text_error();
-						break;
-					}
+								pg_column_void_text_error();
+							break;
+						}
 				}
 				break;
 			}

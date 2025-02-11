@@ -384,6 +384,11 @@ extern void sqlite_classify_conditions(PlannerInfo *root,
 									   List *input_conds,
 									   List **remote_conds,
 									   List **local_conds);
+bool		isInfinity (const char * s);
+/* IEEE 754-2008 : ∞ and NaN */
+extern const char* CHAR_INF_SHORT;
+extern const char* CHAR_INF_LONG;
+extern const char* CHAR_NAN;
 
 /* connection.c headers */
 sqlite3    *sqlite_get_connection(ForeignServer *server, bool truncatable);
