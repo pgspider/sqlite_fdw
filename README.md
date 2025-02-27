@@ -128,11 +128,11 @@ For Debian or Ubuntu:
 
 `apt-get install libspatialite-dev` - for SpatiaLite ↔ PostGIS transformations
 
-Instead of `libsqlite3-dev` you can also [download SQLite source code][1] and [build SQLite][2] with FTS5 for full-text search.
+Instead of system `libsqlite3-dev` from OS repository you can also [download SQLite source code][1] and [build separate SQLite version][2] with FTS5 for full-text search. The directory of this not OS SQLite library can be pointed as prefix in a command like `./configure --enable-fts5 --prefix=$SQLITE_FOR_TESTING_DIR` before `make` and `make install`.
 
 #### 2. Build and install sqlite_fdw
 
-`sqlite_fdw` does not require to be compiled with PostGIS and `libspatialite-dev`. They are used only for full test which includes test for GIS support.
+`sqlite_fdw` does not require to be compiled with PostGIS and `libspatialite-dev`. They are used only for full tests which includes test for GIS support.
 
 Before building please add a directory of `pg_config` to PATH or ensure `pg_config` program is accessible from command line only by the name.
 
@@ -142,11 +142,20 @@ make USE_PGXS=1
 make install USE_PGXS=1
 ```
 
+Build and install without GIS support against separate compiled and installed SQLite version placed at given path.
+Example for `/opt/testing/other/SQLite/3.49.0`.
+```sh
+make USE_PGXS=1 SQLITE_FOR_TESTING_DIR=/opt/testing/other/SQLite/3.49.0
+make install USE_PGXS=1 SQLITE_FOR_TESTING_DIR=/opt/testing/other/SQLite/3.49.0
+```
+
 Build and install with GIS support
 ```sh
 make USE_PGXS=1 ENABLE_GIS=1
 make install USE_PGXS=1 ENABLE_GIS=1
 ```
+
+Also you can build against separate SQLite version and with GIS support using obvious combination of variables.
 
 If you want to build `sqlite_fdw` in a source tree of PostgreSQL, use
 ```sh
@@ -705,6 +714,7 @@ The test cases for each version are based on the test of corresponding version o
 You can execute test by test.sh directly.
 The version of PostgreSQL is detected automatically by $(VERSION) variable in Makefile.
 The corresponding sql and expected directory will be used to compare the result. For example, for Postgres 15.0, you can execute "test.sh" directly, and the sql/15.0 and expected/15.0 will be used to compare automatically.
+Please don't forget a command like `export SQLITE_FOR_TESTING_DIR=` with the same path as in SQLite's `./configure --prefix` berfore testing if you want to test not against your OS SQLite version, but against separate downloaded, compiled and installed SQLite version.
 
 Test data directory is `/tmp/sqlite_fdw_test`. If you have `/tmp` mounted as `tmpfs` the tests will be up to 800% faster.
 
