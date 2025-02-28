@@ -1186,13 +1186,11 @@ sqlite_make_JSONb (char* s)
 	int			len = 0;
 	char	   *dat = NULL;
 	sqlite3	   *conn = NULL;
-	int			rc;
 	const char *err;
 	sqlite3_stmt *res;
 	char	   *query;
-	char	   *base = "select jsonb('%s') j;";
+	int			rc = sqlite3_open_v2("", &conn, SQLITE_OPEN_MEMORY|SQLITE_OPEN_READONLY, NULL);
 
-	rc = sqlite3_open_v2("", &conn, SQLITE_OPEN_MEMORY|SQLITE_OPEN_READONLY, NULL);
 	if (rc != SQLITE_OK) {
 		sqlite3_close(conn);
 		ereport(ERROR,
@@ -1200,8 +1198,7 @@ sqlite_make_JSONb (char* s)
 				 errmsg("Failed to open in-memory SQLite for JSONB creating, result code %d", rc)));
 	}
 
-	query = palloc0(strlen(s) + strlen(base));
-	sprintf(query, base, s);
+	query = psprintf("select jsonb('%s') j;", s);
 	rc = sqlite3_prepare_v2(conn, query, -1, &res, 0);
 
 	if (rc != SQLITE_OK) {
