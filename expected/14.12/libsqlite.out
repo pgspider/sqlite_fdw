@@ -1,0 +1,30 @@
+-- Test for SQLite library code source and defaults
+--Testcase 1:
+CREATE EXTENSION sqlite_fdw;
+--Testcase 2:
+SELECT sqlite_fdw_sqlite_version();
+ sqlite_fdw_sqlite_version 
+---------------------------
+                   3049000
+(1 row)
+
+--Testcase 3:
+SELECT length(sqlite_fdw_sqlite_code_source());
+ length 
+--------
+     84
+(1 row)
+
+--Testcase 4:
+SELECT sqlite_fdw_sqlite_code_source();
+                            sqlite_fdw_sqlite_code_source                             
+--------------------------------------------------------------------------------------
+ 2025-02-06 11:55:18 4a7dd425dc2a0e5082a9049c9b4a9d4f199a71583d014c24b4cfe276c5a77cde
+(1 row)
+
+--Testcase 5:
+-- CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
+--Testcase 6:
+-- DROP SERVER sqlite_svr;
+--Testcase 7:
+DROP EXTENSION sqlite_fdw CASCADE;
