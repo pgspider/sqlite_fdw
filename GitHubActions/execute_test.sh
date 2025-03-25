@@ -6,9 +6,10 @@
 # sqlite_fdw. If all tests are passed, this script will exit successfully.
 # Otherwise, it will exit with failure.
 
-# Usage: ./execute_test.sh pg_version mode
+# Usage: ./execute_test.sh pg_version mode sqlite_for_testing_dir
 #     pg_version is a PostgreSQL version to be tested like 17.0.
 #	  mode is flag for sqlite_fdw compiler.
+#     sqlite_for_testing_dir: path to install directory of SQLite version for testing
 #
 # Requiremets
 # - the source code of PostgreSQL is located in ./workdir/postgresql-{pg_version}.
@@ -22,6 +23,7 @@
 
 VERSION=$1
 MODE="$2"
+SQLITE_FOR_TESTING_DIR="$3"
 
 cd ./workdir/postgresql-${VERSION}/contrib/sqlite_fdw
 

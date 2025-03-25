@@ -239,7 +239,7 @@ INSERT INTO "type_BOOLEANpk" VALUES (FALSE);
 --Testcase 44: ERR - primary key
 INSERT INTO "type_BOOLEANpk" VALUES (TRUE);
 ERROR:  Failed to execute remote SQL
-HINT:  SQLite error 'UNIQUE constraint failed: type_BOOLEANpk.col', SQLite result code 19
+HINT:  SQLite error 'UNIQUE constraint failed: type_BOOLEANpk.col', SQLite result code 1555
 CONTEXT:  SQL query: INSERT INTO main."type_BOOLEANpk"(`col`) VALUES (?)
 --Testcase 45:
 DELETE FROM "type_BOOLEANpk";
