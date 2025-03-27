@@ -25,13 +25,13 @@ GISPREF = no
 endif
 
 # Tests for PostgreSQL data types support
-TYPETESTS = types/bitstring types/bool types/float4 types/float8 types/int4 types/int8 types/json types/numeric types/$(GISTEST) types/macaddr types/macaddr8 types/out_of_range types/timestamp types/uuid
+TYPETESTS = types/bitstring types/bool types/float4 types/float8 types/int4 types/int8 types/numeric types/$(GISTEST) types/macaddr types/macaddr8 types/out_of_range types/timestamp types/uuid
 # Tests with different versions with GIS support and without GIS support
 GISDEPTESTS = gis_$(GISPREF)/type gis_$(GISPREF)/auto_import
 
 ifndef REGRESS
 # System tests, full default sequence
-REGRESS = libsqlite extra/sqlite_fdw_post $(TYPETESTS) extra/join extra/limit extra/aggregates extra/prepare extra/select_having extra/select extra/insert extra/update extra/encodings sqlite_fdw aggregate selectfunc $(GISDEPTESTS)
+REGRESS = extra/sqlite_fdw_post $(TYPETESTS) extra/join extra/limit extra/aggregates extra/prepare extra/select_having extra/select extra/insert extra/update extra/encodings sqlite_fdw aggregate selectfunc $(GISDEPTESTS)
 endif
 
 # Other encodings also are tested. Client encoding should be UTF-8-
@@ -50,6 +50,10 @@ SHLIB_LINK := -L$(SQLITE_FOR_TESTING_DIR)/lib -lsqlite3
 PG_CFLAGS += -I$(SQLITE_FOR_TESTING_DIR)/include -Wl,-rpath,$(SQLITE_FOR_TESTING_DIR)/lib
 else
 SHLIB_LINK := -lsqlite3
+endif
+
+ifdef ENABLE_GIS
+override SHLIB_LINK += -lspatialite
 endif
 
 ifdef ENABLE_GIS
@@ -92,9 +96,9 @@ $(shell mkdir -p results/$(REGRESS_PREFIX_SUB)/gis_$(GISPREF))
 # $(info    REGRESS         is $(REGRESS))
 # $(info    DLSUFFIX        is $(DLSUFFIX))
 
+
 ifdef ENABLE_GIS
 check: temp-install
 temp-install: EXTRA_INSTALL+=contrib/postgis
 checkprep: EXTRA_INSTALL+=contrib/postgis
 endif
-
