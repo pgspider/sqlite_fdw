@@ -56,6 +56,10 @@ ifdef ENABLE_GIS
 override SHLIB_LINK += -lspatialite
 endif
 
+ifdef ENABLE_GIS
+override SHLIB_LINK += -lspatialite
+endif
+
 ifdef USE_PGXS
 PG_CONFIG = pg_config
 PGXS := $(shell $(PG_CONFIG) --pgxs)
@@ -92,9 +96,9 @@ $(shell mkdir -p results/$(REGRESS_PREFIX_SUB)/gis_$(GISPREF))
 # $(info    REGRESS         is $(REGRESS))
 # $(info    DLSUFFIX        is $(DLSUFFIX))
 
+
 ifdef ENABLE_GIS
 check: temp-install
 temp-install: EXTRA_INSTALL+=contrib/postgis
 checkprep: EXTRA_INSTALL+=contrib/postgis
 endif
-
