@@ -840,7 +840,7 @@ ALTER FOREIGN TABLE "type_MACADDRpk" ALTER COLUMN col OPTIONS (SET column_type '
 --Testcase 158: ERR - primary key
 INSERT INTO "type_MACADDRpk" VALUES ('01-02-03-04-05-06');
 ERROR:  Failed to execute remote SQL
-HINT:  SQLite error 'UNIQUE constraint failed: type_MACADDRpk.col', SQLite extended result code 1555 (old result code 19)
+HINT:  SQLite error 'UNIQUE constraint failed: type_MACADDRpk.col', SQLite primary result code 19, extended result code 1555
 CONTEXT:  SQL query: INSERT INTO main."type_MACADDRpk"(`col`) VALUES (?)
 --Testcase 159:
 SELECT * FROM "type_MACADDRpk";
