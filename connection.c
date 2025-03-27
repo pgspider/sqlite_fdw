@@ -415,7 +415,7 @@ sqlitefdw_report_error(int elevel, sqlite3_stmt * stmt, sqlite3 * conn,
 			(errcode(sqlstate),
 			 errmsg("Failed to execute remote SQL"),
 			 errcontext("SQL query: %s", sql ? sql : ""),
-			 errhint("SQLite error '%s', SQLite result code %d", message ? message : "", erc)
+			 errhint("SQLite error '%s', SQLite extended result code %d (old result code %d)", message ? message : "", erc, rc)
 			));
 }
 

@@ -844,7 +844,7 @@ ERROR:  option "column_type" provided more than once
 --Testcase 158: ERR - primary key
 INSERT INTO "type_MACADDR8pk" VALUES ('01-02-03-04-05-06-07-08');
 ERROR:  Failed to execute remote SQL
-HINT:  SQLite error 'UNIQUE constraint failed: type_MACADDR8pk.col', SQLite result code 1555
+HINT:  SQLite error 'UNIQUE constraint failed: type_MACADDR8pk.col', SQLite extended result code 1555 (old result code 19)
 CONTEXT:  SQL query: INSERT INTO main."type_MACADDR8pk"(`col`) VALUES (?)
 --Testcase 159:
 SELECT * FROM "type_MACADDR8pk";
