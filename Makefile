@@ -17,21 +17,23 @@ DATA = sqlite_fdw--1.0.sql sqlite_fdw--1.0--1.1.sql
 
 ifdef ENABLE_GIS
 PG_CFLAGS += -DSQLITE_FDW_GIS_ENABLE
-GISTEST = postgis
-GISPREF = ok
+GIS_TEST = postgis
+GIS_DEP_TESTS_DIR = with_gis_support
+$(info  There is PostGIS support for PostgreSQL SQLite FDW)
 else
-GISTEST = nogis
-GISPREF = no
+GIS_TEST = nogis
+GIS_DEP_TESTS_DIR = without_gis_support
+$(info  There is NO PostGIS support for PostgreSQL SQLite FDW)
 endif
 
 # Tests for PostgreSQL data types support
-TYPETESTS = types/bitstring types/bool types/float4 types/float8 types/int4 types/int8 types/numeric types/$(GISTEST) types/macaddr types/macaddr8 types/out_of_range types/timestamp types/uuid
+DATA_TYPE_TESTS = types/bitstring types/bool types/float4 types/float8 types/int4 types/int8 types/numeric types/$(GIS_TEST) types/macaddr types/macaddr8 types/out_of_range types/timestamp types/uuid
 # Tests with different versions with GIS support and without GIS support
-GISDEPTESTS = gis_$(GISPREF)/type gis_$(GISPREF)/auto_import
+GIS_DEP_TESTS = $(GIS_DEP_TESTS_DIR)/type $(GIS_DEP_TESTS_DIR)/auto_import
 
 ifndef REGRESS
 # System tests, full default sequence
-REGRESS = extra/sqlite_fdw_post $(TYPETESTS) extra/join extra/limit extra/aggregates extra/prepare extra/select_having extra/select extra/insert extra/update extra/encodings sqlite_fdw aggregate selectfunc $(GISDEPTESTS)
+REGRESS = extra/sqlite_fdw_post $(DATA_TYPE_TESTS) extra/join extra/limit extra/aggregates extra/prepare extra/select_having extra/select extra/insert extra/update extra/encodings sqlite_fdw aggregate selectfunc $(GIS_DEP_TESTS)
 endif
 
 # Other encodings also are tested. Client encoding should be UTF-8.
@@ -78,7 +80,7 @@ endif
 REGRESS := $(addprefix $(REGRESS_PREFIX_SUB)/,$(REGRESS))
 $(shell mkdir -p results/$(REGRESS_PREFIX_SUB)/extra)
 $(shell mkdir -p results/$(REGRESS_PREFIX_SUB)/types)
-$(shell mkdir -p results/$(REGRESS_PREFIX_SUB)/gis_$(GISPREF))
+$(shell mkdir -p results/$(REGRESS_PREFIX_SUB)/$(GIS_DEP_TESTS_DIR))
 
 
 ifdef ENABLE_GIS
