@@ -14,10 +14,15 @@ while (( "$#" )); do
   shift;
 done
 
-[ "$ENABLE_GIS" == "1" ] && gispref='post' || gispref='no';
+[ "$ENABLE_GIS" == "1" ] && GIS_TEST='post' || GIS_TEST='no';
+type_tests="types/bitstring types/bool types/float4 types/float8 types/int4 types/int8 types/numeric types/${GIS_TEST}gis types/macaddr types/macaddr8 types/out_of_range types/timestamp types/uuid";
 
-# full test sequence, you can put your own test sequence here
-export REGRESS="extra/sqlite_fdw_post types/bitstring types/bool types/float4 types/float8 types/int4 types/int8 types/numeric types/${gispref}gis types/macaddr types/macaddr8 types/out_of_range types/timestamp types/uuid extra/join extra/limit extra/aggregates extra/prepare extra/select_having extra/select extra/insert extra/update extra/encodings sqlite_fdw type_${gispref}gis aggregate selectfunc";
+[ "$ENABLE_GIS" == "1" ] && GIS_DEP_TESTS_DIR='with_gis_support' || GIS_DEP_TESTS_DIR='without_gis_support';
+gis_dep_tests="$GIS_DEP_TESTS_DIR/type $GIS_DEP_TESTS_DIR/auto_import";
+
+# full composed test sequence, you can put your own test sequence here
+export REGRESS="extra/sqlite_fdw_post $type_tests extra/join extra/limit extra/aggregates extra/prepare extra/select_having extra/select extra/insert extra/update extra/encodings sqlite_fdw aggregate selectfunc $gis_dep_tests";
+
 make clean $1;
 make $1;
 make check $1 | tee make_check.out;
