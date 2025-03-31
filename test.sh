@@ -1,4 +1,9 @@
 #!/bin/bash
+
+# Usage:
+# ./test.sh                -- test without GIS support
+# ./test.sh ENABLE_GIS     -- test with GIS support
+
 testdir='/tmp/sqlite_fdw_test';
 rm -rf "$testdir";
 mkdir "$testdir";
