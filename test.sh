@@ -14,11 +14,6 @@ sqlite3 "$testdir/core.db" < sql/init_data/init_core.sql;
 sqlite3 "$testdir/common.db" < sql/init_data/init.sql;
 sqlite3 "$testdir/selectfunc.db" < sql/init_data/init_selectfunc.sql;
 
-while (( "$#" )); do
-  export "$1";
-  shift;
-done
-
 # full composed test sequence, you can put your own test sequence here by example
 #export REGRESS="extra/sqlite_fdw_post .... ";
 
