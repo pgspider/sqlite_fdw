@@ -5,8 +5,6 @@ CREATE EXTENSION sqlite_fdw;
 --Testcase 002:
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
---Testcase 003:
-CREATE SERVER sqlite2 FOREIGN DATA WRAPPER sqlite_fdw;
 --Testcase 02:
 CREATE FOREIGN TABLE "type_BIT"( "i" int OPTIONS (key 'true'), "b" bit(6)) SERVER sqlite_svr OPTIONS (table 'type_BIT');
 --Testcase 03:
@@ -801,10 +799,9 @@ SELECT "i", "b" FROM "type_BIT" WHERE (~ "b") IS NOT NULL;
 
 --Testcase 005:
 DROP EXTENSION sqlite_fdw CASCADE;
-NOTICE:  drop cascades to 6 other objects
+NOTICE:  drop cascades to 5 other objects
 DETAIL:  drop cascades to server sqlite_svr
 drop cascades to foreign table "type_BIT"
 drop cascades to foreign table "type_BIT+"
 drop cascades to foreign table "type_VARBIT"
 drop cascades to foreign table "type_VARBIT+"
-drop cascades to server sqlite2

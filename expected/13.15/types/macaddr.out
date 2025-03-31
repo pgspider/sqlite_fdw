@@ -5,8 +5,6 @@ CREATE EXTENSION sqlite_fdw;
 --Testcase 002:
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
---Testcase 003:
-CREATE SERVER sqlite2 FOREIGN DATA WRAPPER sqlite_fdw;
 --Testcase 009:
 CREATE FOREIGN TABLE "type_MACADDR"( "i" int OPTIONS (key 'true'), "m" macaddr) SERVER sqlite_svr OPTIONS (table 'type_MACADDR');
 --Testcase 010:
@@ -946,9 +944,8 @@ SELECT "m" != '01:02:03:04:05:06' FROM "type_MACADDR";
 
 --Testcase 200:
 DROP EXTENSION sqlite_fdw CASCADE;
-NOTICE:  drop cascades to 5 other objects
+NOTICE:  drop cascades to 4 other objects
 DETAIL:  drop cascades to server sqlite_svr
 drop cascades to foreign table "type_MACADDR"
 drop cascades to foreign table "type_MACADDR+"
 drop cascades to foreign table "type_MACADDRpk"
-drop cascades to server sqlite2

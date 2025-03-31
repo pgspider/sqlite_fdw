@@ -6,7 +6,6 @@ CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 
-
 --Testcase 04:
 IMPORT FOREIGN SCHEMA main FROM SERVER sqlite_svr INTO public;
 
