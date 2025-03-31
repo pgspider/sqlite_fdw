@@ -20,4 +20,3 @@ sqlite3 "$testdir/selectfunc.db" < sql/init_data/init_selectfunc.sql;
 make clean $@;
 make $@;
 make check $@ | tee make_check.out;
-export REGRESS=;
