@@ -5,7 +5,7 @@ CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 
 --Testcase 4:
-CREATE EXTENSION IF NOT EXIST postgis;
+CREATE EXTENSION IF NOT EXISTS postgis;
 --Testcase 5:
 CREATE EXTENSION postgis_raster;
 --Testcase 6:
