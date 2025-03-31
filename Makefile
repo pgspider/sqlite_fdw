@@ -19,11 +19,11 @@ ifdef ENABLE_GIS
 PG_CFLAGS += -DSQLITE_FDW_GIS_ENABLE
 GIS_TEST = postgis
 GIS_DEP_TESTS_DIR = with_gis_support
-$(info  There is PostGIS support for PostgreSQL SQLite FDW)
+$(info  There is PostGIS support for SQLite FDW)
 else
 GIS_TEST = nogis
 GIS_DEP_TESTS_DIR = without_gis_support
-$(info  There is NO PostGIS support for PostgreSQL SQLite FDW)
+$(info  There is NO PostGIS support for SQLite FDW)
 endif
 
 # Tests for PostgreSQL data types support
