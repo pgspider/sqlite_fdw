@@ -5,8 +5,6 @@ CREATE EXTENSION sqlite_fdw;
 --Testcase 002:
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
---Testcase 003:
-CREATE SERVER sqlite2 FOREIGN DATA WRAPPER sqlite_fdw;
 --Testcase 009:
 CREATE FOREIGN TABLE "type_UUID"( "i" int OPTIONS (key 'true'), "u" uuid) SERVER sqlite_svr OPTIONS (table 'type_UUID');
 --Testcase 010:
@@ -541,9 +539,8 @@ SELECT * FROM "type_UUIDpk";
 DELETE FROM "type_UUIDpk";
 --Testcase 200:
 DROP EXTENSION sqlite_fdw CASCADE;
-NOTICE:  drop cascades to 5 other objects
+NOTICE:  drop cascades to 4 other objects
 DETAIL:  drop cascades to server sqlite_svr
 drop cascades to foreign table "type_UUID"
 drop cascades to foreign table "type_UUID+"
 drop cascades to foreign table "type_UUIDpk"
-drop cascades to server sqlite2
