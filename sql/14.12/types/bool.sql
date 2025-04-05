@@ -5,8 +5,6 @@ CREATE EXTENSION sqlite_fdw;
 --Testcase 001:
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
---Testcase 002:
-CREATE SERVER sqlite2 FOREIGN DATA WRAPPER sqlite_fdw;
 
 --Testcase 01:
 CREATE FOREIGN TABLE "type_BOOLEAN" (i int OPTIONS (key 'true'), b bool) SERVER sqlite_svr;

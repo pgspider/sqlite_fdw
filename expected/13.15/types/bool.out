@@ -5,8 +5,6 @@ CREATE EXTENSION sqlite_fdw;
 --Testcase 001:
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
---Testcase 002:
-CREATE SERVER sqlite2 FOREIGN DATA WRAPPER sqlite_fdw;
 --Testcase 01:
 CREATE FOREIGN TABLE "type_BOOLEAN" (i int OPTIONS (key 'true'), b bool) SERVER sqlite_svr;
 --Testcase 02:
@@ -239,7 +237,7 @@ INSERT INTO "type_BOOLEANpk" VALUES (FALSE);
 --Testcase 44: ERR - primary key
 INSERT INTO "type_BOOLEANpk" VALUES (TRUE);
 ERROR:  Failed to execute remote SQL
-HINT:  SQLite error 'UNIQUE constraint failed: type_BOOLEANpk.col', SQLite result code 19
+HINT:  SQLite error 'UNIQUE constraint failed: type_BOOLEANpk.col', SQLite primary result code 19, extended result code 1555
 CONTEXT:  SQL query: INSERT INTO main."type_BOOLEANpk"(`col`) VALUES (?)
 --Testcase 45:
 DELETE FROM "type_BOOLEANpk";
@@ -1267,10 +1265,9 @@ SELECT DISTINCT b1, b2 FROM "type_BOOLEAN_oper";
 DELETE FROM "type_BOOLEAN";
 --Testcase 003:
 DROP EXTENSION sqlite_fdw CASCADE;
-NOTICE:  drop cascades to 6 other objects
+NOTICE:  drop cascades to 5 other objects
 DETAIL:  drop cascades to server sqlite_svr
 drop cascades to foreign table "type_BOOLEAN"
 drop cascades to foreign table "type_BOOLEAN+"
 drop cascades to foreign table "type_BOOLEANpk"
 drop cascades to foreign table "type_BOOLEAN_oper"
-drop cascades to server sqlite2
