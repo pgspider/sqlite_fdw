@@ -170,6 +170,8 @@ extern PGDLLEXPORT Datum sqlite_fdw_handler(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1(sqlite_fdw_handler);
 PG_FUNCTION_INFO_V1(sqlite_fdw_version);
+PG_FUNCTION_INFO_V1(sqlite_fdw_sqlite_version);
+PG_FUNCTION_INFO_V1(sqlite_fdw_sqlite_code_source);
 
 
 static void sqliteGetForeignRelSize(PlannerInfo *root,
@@ -495,6 +497,18 @@ Datum
 sqlite_fdw_version(PG_FUNCTION_ARGS)
 {
 	PG_RETURN_INT32(CODE_VERSION);
+}
+
+Datum
+sqlite_fdw_sqlite_version(PG_FUNCTION_ARGS)
+{
+	PG_RETURN_INT32(sqlite3_libversion_number());
+}
+
+Datum
+sqlite_fdw_sqlite_code_source(PG_FUNCTION_ARGS)
+{
+	PG_RETURN_TEXT_P(cstring_to_text(sqlite3_sourceid()));
 }
 
 /* Wrapper for sqlite3_prepare */
@@ -5746,3 +5760,4 @@ conversion_error_callback(void *arg)
 		pfree(err_cont_mess0);
 	}
 }
+
