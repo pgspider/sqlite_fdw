@@ -1,4 +1,9 @@
 #!/bin/bash
+
+# Usage:
+# ./test.sh                -- test without GIS support
+# ./test.sh ENABLE_GIS     -- test with GIS support
+
 testdir='/tmp/sqlite_fdw_test';
 rm -rf "$testdir";
 mkdir "$testdir";
@@ -15,27 +20,11 @@ fi
 "$sqlite3" "$testdir/common.db" < sql/init_data/init.sql;
 "$sqlite3" "$testdir/selectfunc.db" < sql/init_data/init_selectfunc.sql;
 
-while (( "$#" )); do
-  export "$1";
-  shift;
-done
+# full test sequence,
+# you can put your own test sequence here by following example
+# undefined REGRESS environment variable will cause full test sequence from Makefile
+#export REGRESS="extra/sqlite_fdw_post extra/test2 test3 types/test4 .... ";
 
-[ "$ENABLE_GIS" == "1" ] && gispref='post' || gispref='no';
-[ "$ENABLE_GIS" == "1" ] && gissuf='ok' || gissuf='no';
-
-while (( "$#" )); do
-  export "$1";
-  shift;
-done
-
-[ "$ENABLE_GIS" == "1" ] && gispref='post' || gispref='no';
-
-# full test sequence, you can put your own test sequence here
-type_tests="types/bitstring types/bool types/float4 types/float8 types/int4 types/int8 types/numeric types/${gispref}gis types/macaddr types/macaddr8 types/out_of_range types/timestamp types/uuid";
-gis_dep_tests="gis_$gissuf/type gis_$gissuf/auto_import";
-export REGRESS="extra/sqlite_fdw_post $type_tests extra/join extra/limit extra/aggregates extra/prepare extra/select_having extra/select extra/insert extra/update extra/encodings sqlite_fdw aggregate selectfunc $gis_dep_tests";
-
-make clean $1;
-make $1;
-make check $1 | tee make_check.out;
-export REGRESS=;
+make clean $@;
+make $@;
+make check $@ | tee make_check.out;

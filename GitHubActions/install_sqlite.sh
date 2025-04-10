@@ -39,7 +39,7 @@ cd ./workdir
 vsrc="sqlite-src-${VERSION}"
 adr="https://www.sqlite.org/${YEAR}/$vsrc.zip"
 echo "SQLite source code archive: $adr"
-curl -O "$adr"
+wget "$adr" -O "$vsrc.zip"
 unzip "$vsrc.zip" > /dev/null
 cd "$vsrc"
 

@@ -199,7 +199,6 @@ sqlite_open_db(const char *dbpath, int flags)
 		ereport(ERROR,
 				(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
 				 errmsg("Failed to open SQLite DB, file '%s', result code %d", dbpath, rc)));
-	sqlite3_extended_result_codes(conn, true);
 	/* make 'LIKE' of SQLite case sensitive like PostgreSQL */
 	rc = sqlite3_exec(conn, "pragma case_sensitive_like=1",
 					  NULL, NULL, &err);
@@ -392,13 +391,14 @@ sqlite_begin_remote_xact(ConnCacheEntry *entry)
 
 
 /*
- * Report an sqlite execution error
+ * Report an SQLite execution error.
  */
 void
 sqlitefdw_report_error(int elevel, sqlite3_stmt * stmt, sqlite3 * conn,
 					   const char *sql, int rc)
 {
 	const char *message = sqlite3_errmsg(conn);
+	int			erc = sqlite3_extended_errcode(conn);
 	int			sqlstate = ERRCODE_FDW_ERROR;
 
 	/* copy sql before callling another SQLite API */
@@ -415,10 +415,9 @@ sqlitefdw_report_error(int elevel, sqlite3_stmt * stmt, sqlite3 * conn,
 			(errcode(sqlstate),
 			 errmsg("Failed to execute remote SQL"),
 			 errcontext("SQL query: %s", sql ? sql : ""),
-			 errhint("SQLite error '%s', SQLite result code %d", message ? message : "", rc)
+			 errhint("SQLite error '%s', SQLite primary result code %d, extended result code %d", message ? message : "", rc, erc)
 			));
 }
-
 
 /*
  * sqlitefdw_xact_callback --- cleanup at main-transaction end.

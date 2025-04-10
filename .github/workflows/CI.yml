@@ -24,8 +24,8 @@ jobs:
   test:
     needs: detect-pgversion
     env:
-      SQLITE_VERSION : "3490000"
-      SQLITE_YEAR: "2025"
+      SQLITE_VERSION : "3460000"
+      SQLITE_YEAR: "2024"
       POSTGIS_VERSION : "3.4.2"
       HTTP_PROXY: ""
       HTTPS_PROXY: ""
