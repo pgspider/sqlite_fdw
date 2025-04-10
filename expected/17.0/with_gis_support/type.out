@@ -5,6 +5,10 @@ CREATE EXTENSION sqlite_fdw;
 --Testcase 45:
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
+
+--Testcase 47:
+CREATE EXTENSION postgis;
+
 IMPORT FOREIGN SCHEMA main FROM SERVER sqlite_svr INTO public;
 --Testcase 1:
 INSERT INTO "type_STRING"(col) VALUES ('string');

@@ -199,6 +199,7 @@ SELECT n, table_name, column_name, tab_no, def, "null", data_type, udt_schema, u
  41 | alltypetest       | c22             |     22 |     | YES  | numeric                     | pg_catalog | numeric
  41 | alltypetest       | c23             |     23 |     | YES  | date                        | pg_catalog | date
  41 | alltypetest       | c24             |     24 |     | YES  | timestamp without time zone | pg_catalog | timestamp
+
  42 | json_osm_test     | wkt             |      1 |     | YES  | text                        | pg_catalog | text
  42 | json_osm_test     | osm_type        |      2 |     | YES  | character varying           | pg_catalog | varchar
  42 | json_osm_test     | osm_id          |      3 |     | YES  | bigint                      | pg_catalog | int8
