@@ -22,6 +22,7 @@ fi
 
 # full test sequence,
 # you can put your own test sequence here by following example
+# undefined REGRESS environment variable will cause full test sequence from Makefile
 #export REGRESS="extra/sqlite_fdw_post extra/test2 test3 types/test4 .... ";
 
 make clean $@;
