@@ -287,10 +287,10 @@ INSERT INTO type_JSON(col) VALUES ('[1, 2, "foo", null]');
 INSERT INTO type_JSON(col) VALUES ('{"bar": "baz", "balance": 7.77, "active": false}'::json);
 --Testcase 56
 SELECT * FROM type_JSON;
-                       col                        
---------------------------------------------------
- [1, 2, "foo", null]
- {"bar": "baz", "balance": 7.77, "active": false}
+                     col                     
+---------------------------------------------
+ [1,2,"foo",null]
+ {"bar":"baz","balance":7.77,"active":false}
 (2 rows)
 
 --Testcase 57

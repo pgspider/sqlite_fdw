@@ -4861,6 +4861,8 @@ sqlite_to_pg_type(StringInfo str, char *type)
 		{"macaddr8"},
 		{"geometry"},
 		{"geography"},
+		{"jsonb"},
+		{"json"},
 		{NULL}
 	};
 
@@ -5008,10 +5010,10 @@ sqlite_execute_insert(EState *estate,
 	int			i;
 	Relation	rel = resultRelInfo->ri_RelationDesc;
 	Oid			foreignTableId = RelationGetRelid(rel);
-
 #if PG_VERSION_NUM >= 140000
 	TupleDesc	tupdesc = RelationGetDescr(rel);
 #endif
+
 	elog(DEBUG1, "sqlite_fdw : %s for RelId %u", __func__, foreignTableId);
 
 	oldcontext = MemoryContextSwitchTo(fmstate->temp_cxt);
@@ -5038,8 +5040,8 @@ sqlite_execute_insert(EState *estate,
 
 		sqlite_prepare_wrapper(fmstate->server, fmstate->conn, fmstate->query, &fmstate->stmt, NULL, true);
 	}
-#endif
 
+#endif
 	for (i = 0; i < *numSlots; i++)
 	{
 		foreach(lc, fmstate->retrieved_attrs)
@@ -5476,10 +5478,21 @@ sqlite_affinity_eqv_to_pgtype(Oid type)
 {
 	switch (type)
 	{
-		case INT2OID:
+		/* some popular first */
+		case VARCHAROID:
+		case TEXTOID:
+		case JSONOID:
+		case NAMEOID:
+		case DATEOID:
+		case TIMEOID:
+		case TIMESTAMPOID:
+		case TIMESTAMPTZOID:
+		case BPCHAROID:
+			return SQLITE3_TEXT;
 		case INT4OID:
-		case INT8OID:
 		case BOOLOID:
+		case INT8OID:
+		case INT2OID:
 		case BITOID:
 		case VARBITOID:
 			return SQLITE_INTEGER;
@@ -5491,6 +5504,7 @@ sqlite_affinity_eqv_to_pgtype(Oid type)
 		case UUIDOID:
 		case MACADDROID:
 		case MACADDR8OID:
+		case JSONBOID:
 			return SQLITE_BLOB;
 		default:
 			if (listed_datatype_oid(type, -1, postGisSQLiteCompatibleTypes))
@@ -5556,22 +5570,22 @@ static void
 conversion_error_callback(void *arg)
 {
 	ConversionLocation *errpos = (ConversionLocation *) arg;
-	Relation	rel = errpos->rel;
-	ForeignScanState *fsstate = errpos->fsstate;
-	const char *attname = NULL;
-	const char *relname = NULL;
-	bool		is_wholerow = false;
-	Form_pg_attribute att = errpos->att;
-	Oid			pgtyp = att->atttypid;
-	int32	 	pgtypmod = att->atttypmod;
-	NameData	pgColND = att->attname;
-	const char *pg_dataTypeName = NULL;
-	const char *sqlite_affinity = NULL;
-	const char *pg_good_affinity = NULL;
-	const int	max_logged_byte_length = NAMEDATALEN * 2;
-	int 		value_byte_size_blob_or_utf8 = sqlite3_value_bytes (errpos->val);
-	int			value_aff = sqlite3_value_type(errpos->val);
-	int			affinity_for_pg_column = sqlite_affinity_eqv_to_pgtype(pgtyp);
+	Relation			rel = errpos->rel;
+	ForeignScanState   *fsstate = errpos->fsstate;
+	const char		   *attname = NULL;
+	const char		   *relname = NULL;
+	bool				is_wholerow = false;
+	Form_pg_attribute	att = errpos->att;
+	Oid					pgtyp = att->atttypid;
+	int32	 			pgtypmod = att->atttypmod;
+	NameData			pgColND = att->attname;
+	const char		   *pg_dataTypeName = NULL;
+	const char		   *sqlite_affinity = NULL;
+	const char		   *pg_good_affinity = NULL;
+	const int			max_logged_byte_length = NAMEDATALEN * 2;
+	int 				value_byte_size_blob_or_utf8 = sqlite3_value_bytes (errpos->val);
+	int					value_aff = sqlite3_value_type(errpos->val);
+	int					affinity_for_pg_column = sqlite_affinity_eqv_to_pgtype(pgtyp);
 
 	pg_dataTypeName = TypeNameToString(makeTypeNameFromOid(pgtyp, pgtypmod));
 	sqlite_affinity = sqlite_datatype(value_aff);
@@ -5760,4 +5774,3 @@ conversion_error_callback(void *arg)
 		pfree(err_cont_mess0);
 	}
 }
-

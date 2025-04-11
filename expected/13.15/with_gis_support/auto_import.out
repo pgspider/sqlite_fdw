@@ -59,20 +59,21 @@ SELECT * FROM ft;
  contrib_regression    | public               | typetest           | contrib_regression     | sqlite_svr          | 39
  contrib_regression    | public               | type_TEXT          | contrib_regression     | sqlite_svr          | 40
  contrib_regression    | public               | alltypetest        | contrib_regression     | sqlite_svr          | 41
- contrib_regression    | public               | shorty             | contrib_regression     | sqlite_svr          | 42
- contrib_regression    | public               | A a                | contrib_regression     | sqlite_svr          | 43
- contrib_regression    | public               | fts_table          | contrib_regression     | sqlite_svr          | 44
- contrib_regression    | public               | fts_table_data     | contrib_regression     | sqlite_svr          | 45
- contrib_regression    | public               | fts_table_idx      | contrib_regression     | sqlite_svr          | 46
- contrib_regression    | public               | fts_table_content  | contrib_regression     | sqlite_svr          | 47
- contrib_regression    | public               | fts_table_docsize  | contrib_regression     | sqlite_svr          | 48
- contrib_regression    | public               | fts_table_config   | contrib_regression     | sqlite_svr          | 49
- contrib_regression    | public               | RO_RW_test         | contrib_regression     | sqlite_svr          | 50
- contrib_regression    | public               | Unicode data       | contrib_regression     | sqlite_svr          | 51
- contrib_regression    | public               | type_BOOLEAN_oper  | contrib_regression     | sqlite_svr          | 52
- contrib_regression    | public               | ♁                  | contrib_regression     | sqlite_svr          | 53
- contrib_regression    | public               | ♂                  | contrib_regression     | sqlite_svr          | 54
-(54 rows)
+ contrib_regression    | public               | json_osm_test      | contrib_regression     | sqlite_svr          | 42
+ contrib_regression    | public               | shorty             | contrib_regression     | sqlite_svr          | 43
+ contrib_regression    | public               | A a                | contrib_regression     | sqlite_svr          | 44
+ contrib_regression    | public               | fts_table          | contrib_regression     | sqlite_svr          | 45
+ contrib_regression    | public               | fts_table_data     | contrib_regression     | sqlite_svr          | 46
+ contrib_regression    | public               | fts_table_idx      | contrib_regression     | sqlite_svr          | 47
+ contrib_regression    | public               | fts_table_content  | contrib_regression     | sqlite_svr          | 48
+ contrib_regression    | public               | fts_table_docsize  | contrib_regression     | sqlite_svr          | 49
+ contrib_regression    | public               | fts_table_config   | contrib_regression     | sqlite_svr          | 50
+ contrib_regression    | public               | RO_RW_test         | contrib_regression     | sqlite_svr          | 51
+ contrib_regression    | public               | Unicode data       | contrib_regression     | sqlite_svr          | 52
+ contrib_regression    | public               | type_BOOLEAN_oper  | contrib_regression     | sqlite_svr          | 53
+ contrib_regression    | public               | ♁                  | contrib_regression     | sqlite_svr          | 54
+ contrib_regression    | public               | ♂                  | contrib_regression     | sqlite_svr          | 55
+(55 rows)
 
 --Testcase 07:
 CREATE VIEW fc AS (
@@ -148,19 +149,19 @@ SELECT n, table_name, column_name, tab_no, def, "null", data_type, udt_schema, u
  34 | types_PostGIS     | gm1             |      6 |     | YES  | USER-DEFINED                | public     | geometry
  34 | types_PostGIS     | gg1             |      7 |     | YES  | USER-DEFINED                | public     | geography
  35 | type_JSON         | i               |      1 |     | YES  | bigint                      | pg_catalog | int8
- 35 | type_JSON         | j               |      2 |     | YES  | numeric                     | pg_catalog | numeric
+ 35 | type_JSON         | j               |      2 |     | YES  | json                        | pg_catalog | json
  35 | type_JSON         | ot              |      3 |     | YES  | character varying           | pg_catalog | varchar
  35 | type_JSON         | oi              |      4 |     | YES  | bigint                      | pg_catalog | int8
  35 | type_JSON         | q               |      5 |     | YES  | text                        | pg_catalog | text
- 35 | type_JSON         | j1              |      6 |     | YES  | numeric                     | pg_catalog | numeric
+ 35 | type_JSON         | j1              |      6 |     | YES  | json                        | pg_catalog | json
  35 | type_JSON         | ot1             |      7 |     | YES  | text                        | pg_catalog | text
  35 | type_JSON         | oi1             |      8 |     | YES  | bigint                      | pg_catalog | int8
  36 | type_JSONB        | i               |      1 |     | YES  | bigint                      | pg_catalog | int8
- 36 | type_JSONB        | j               |      2 |     | YES  | numeric                     | pg_catalog | numeric
+ 36 | type_JSONB        | j               |      2 |     | YES  | jsonb                       | pg_catalog | jsonb
  36 | type_JSONB        | ot              |      3 |     | YES  | character varying           | pg_catalog | varchar
  36 | type_JSONB        | oi              |      4 |     | YES  | bigint                      | pg_catalog | int8
  36 | type_JSONB        | q               |      5 |     | YES  | text                        | pg_catalog | text
- 36 | type_JSONB        | j1              |      6 |     | YES  | numeric                     | pg_catalog | numeric
+ 36 | type_JSONB        | j1              |      6 |     | YES  | jsonb                       | pg_catalog | jsonb
  36 | type_JSONB        | ot1             |      7 |     | YES  | text                        | pg_catalog | text
  36 | type_JSONB        | oi1             |      8 |     | YES  | bigint                      | pg_catalog | int8
  37 | BitT              | p               |      1 |     | YES  | bigint                      | pg_catalog | int8
@@ -198,48 +199,53 @@ SELECT n, table_name, column_name, tab_no, def, "null", data_type, udt_schema, u
  41 | alltypetest       | c22             |     22 |     | YES  | numeric                     | pg_catalog | numeric
  41 | alltypetest       | c23             |     23 |     | YES  | date                        | pg_catalog | date
  41 | alltypetest       | c24             |     24 |     | YES  | timestamp without time zone | pg_catalog | timestamp
- 42 | shorty            | id              |      1 |     | YES  | bigint                      | pg_catalog | int8
- 42 | shorty            | c               |      2 |     | YES  | character                   | pg_catalog | bpchar
- 43 | A a               | col             |      1 |     | YES  | bigint                      | pg_catalog | int8
- 44 | fts_table         | name            |      1 |     | YES  | bytea                       | pg_catalog | bytea
- 44 | fts_table         | description     |      2 |     | YES  | bytea                       | pg_catalog | bytea
- 45 | fts_table_data    | id              |      1 |     | YES  | bigint                      | pg_catalog | int8
- 45 | fts_table_data    | block           |      2 |     | YES  | bytea                       | pg_catalog | bytea
- 46 | fts_table_idx     | segid           |      1 |     | NO   | bytea                       | pg_catalog | bytea
- 46 | fts_table_idx     | term            |      2 |     | NO   | bytea                       | pg_catalog | bytea
- 46 | fts_table_idx     | pgno            |      3 |     | YES  | bytea                       | pg_catalog | bytea
- 47 | fts_table_content | id              |      1 |     | YES  | bigint                      | pg_catalog | int8
- 47 | fts_table_content | c0              |      2 |     | YES  | bytea                       | pg_catalog | bytea
- 47 | fts_table_content | c1              |      3 |     | YES  | bytea                       | pg_catalog | bytea
- 48 | fts_table_docsize | id              |      1 |     | YES  | bigint                      | pg_catalog | int8
- 48 | fts_table_docsize | sz              |      2 |     | YES  | bytea                       | pg_catalog | bytea
- 49 | fts_table_config  | k               |      1 |     | NO   | bytea                       | pg_catalog | bytea
- 49 | fts_table_config  | v               |      2 |     | YES  | bytea                       | pg_catalog | bytea
- 50 | RO_RW_test        | i               |      1 |     | NO   | bigint                      | pg_catalog | int8
- 50 | RO_RW_test        | a               |      2 |     | YES  | text                        | pg_catalog | text
- 50 | RO_RW_test        | b               |      3 |     | YES  | double precision            | pg_catalog | float8
- 50 | RO_RW_test        | c               |      4 |     | YES  | bigint                      | pg_catalog | int8
- 51 | Unicode data      | i               |      1 |     | YES  | text                        | pg_catalog | text
- 51 | Unicode data      | t               |      2 |     | YES  | text                        | pg_catalog | text
- 52 | type_BOOLEAN_oper | i               |      1 |     | YES  | bytea                       | pg_catalog | bytea
- 52 | type_BOOLEAN_oper | i1              |      2 |     | YES  | bytea                       | pg_catalog | bytea
- 52 | type_BOOLEAN_oper | b1              |      3 |     | YES  | bytea                       | pg_catalog | bytea
- 52 | type_BOOLEAN_oper | i2              |      4 |     | YES  | bytea                       | pg_catalog | bytea
- 52 | type_BOOLEAN_oper | b2              |      5 |     | YES  | bytea                       | pg_catalog | bytea
- 53 | ♁                 | geom            |      1 |     | NO   | USER-DEFINED                | public     | geometry
- 53 | ♁                 | osm_type        |      2 |     | NO   | character varying           | pg_catalog | varchar
- 53 | ♁                 | osm_id          |      3 |     | NO   | bigint                      | pg_catalog | int8
- 53 | ♁                 | ver             |      4 |     | NO   | bigint                      | pg_catalog | int8
- 53 | ♁                 | arr             |      5 |     | YES  | text                        | pg_catalog | text
- 53 | ♁                 | t               |      6 |     | YES  | numeric                     | pg_catalog | numeric
- 54 | ♂                 | id              |      1 |     | YES  | bigint                      | pg_catalog | int8
- 54 | ♂                 | UAI             |      2 |     | YES  | character varying           | pg_catalog | varchar
- 54 | ♂                 | ⌖               |      3 |     | YES  | USER-DEFINED                | public     | geometry
- 54 | ♂                 | geom            |      4 |     | YES  | USER-DEFINED                | public     | geometry
- 54 | ♂                 | t₀              |      5 |     | YES  | date                        | pg_catalog | date
- 54 | ♂                 | class           |      6 |     | YES  | text                        | pg_catalog | text
- 54 | ♂                 | URL             |      7 |     | YES  | character varying           | pg_catalog | varchar
-(154 rows)
+ 42 | json_osm_test     | wkt             |      1 |     | YES  | text                        | pg_catalog | text
+ 42 | json_osm_test     | osm_type        |      2 |     | YES  | character varying           | pg_catalog | varchar
+ 42 | json_osm_test     | osm_id          |      3 |     | YES  | bigint                      | pg_catalog | int8
+ 42 | json_osm_test     | tags            |      4 |     | YES  | json                        | pg_catalog | json
+ 42 | json_osm_test     | way_nodes       |      5 |     | YES  | bigint                      | pg_catalog | int8
+ 43 | shorty            | id              |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 43 | shorty            | c               |      2 |     | YES  | character                   | pg_catalog | bpchar
+ 44 | A a               | col             |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 45 | fts_table         | name            |      1 |     | YES  | bytea                       | pg_catalog | bytea
+ 45 | fts_table         | description     |      2 |     | YES  | bytea                       | pg_catalog | bytea
+ 46 | fts_table_data    | id              |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 46 | fts_table_data    | block           |      2 |     | YES  | bytea                       | pg_catalog | bytea
+ 47 | fts_table_idx     | segid           |      1 |     | NO   | bytea                       | pg_catalog | bytea
+ 47 | fts_table_idx     | term            |      2 |     | NO   | bytea                       | pg_catalog | bytea
+ 47 | fts_table_idx     | pgno            |      3 |     | YES  | bytea                       | pg_catalog | bytea
+ 48 | fts_table_content | id              |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 48 | fts_table_content | c0              |      2 |     | YES  | bytea                       | pg_catalog | bytea
+ 48 | fts_table_content | c1              |      3 |     | YES  | bytea                       | pg_catalog | bytea
+ 49 | fts_table_docsize | id              |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 49 | fts_table_docsize | sz              |      2 |     | YES  | bytea                       | pg_catalog | bytea
+ 50 | fts_table_config  | k               |      1 |     | NO   | bytea                       | pg_catalog | bytea
+ 50 | fts_table_config  | v               |      2 |     | YES  | bytea                       | pg_catalog | bytea
+ 51 | RO_RW_test        | i               |      1 |     | NO   | bigint                      | pg_catalog | int8
+ 51 | RO_RW_test        | a               |      2 |     | YES  | text                        | pg_catalog | text
+ 51 | RO_RW_test        | b               |      3 |     | YES  | double precision            | pg_catalog | float8
+ 51 | RO_RW_test        | c               |      4 |     | YES  | bigint                      | pg_catalog | int8
+ 52 | Unicode data      | i               |      1 |     | YES  | text                        | pg_catalog | text
+ 52 | Unicode data      | t               |      2 |     | YES  | text                        | pg_catalog | text
+ 53 | type_BOOLEAN_oper | i               |      1 |     | YES  | bytea                       | pg_catalog | bytea
+ 53 | type_BOOLEAN_oper | i1              |      2 |     | YES  | bytea                       | pg_catalog | bytea
+ 53 | type_BOOLEAN_oper | b1              |      3 |     | YES  | bytea                       | pg_catalog | bytea
+ 53 | type_BOOLEAN_oper | i2              |      4 |     | YES  | bytea                       | pg_catalog | bytea
+ 53 | type_BOOLEAN_oper | b2              |      5 |     | YES  | bytea                       | pg_catalog | bytea
+ 54 | ♁                 | geom            |      1 |     | NO   | USER-DEFINED                | public     | geometry
+ 54 | ♁                 | osm_type        |      2 |     | NO   | character varying           | pg_catalog | varchar
+ 54 | ♁                 | osm_id          |      3 |     | NO   | bigint                      | pg_catalog | int8
+ 54 | ♁                 | ver             |      4 |     | NO   | bigint                      | pg_catalog | int8
+ 54 | ♁                 | arr             |      5 |     | YES  | text                        | pg_catalog | text
+ 54 | ♁                 | t               |      6 |     | YES  | jsonb                       | pg_catalog | jsonb
+ 55 | ♂                 | id              |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 55 | ♂                 | UAI             |      2 |     | YES  | character varying           | pg_catalog | varchar
+ 55 | ♂                 | ⌖               |      3 |     | YES  | USER-DEFINED                | public     | geometry
+ 55 | ♂                 | geom            |      4 |     | YES  | USER-DEFINED                | public     | geometry
+ 55 | ♂                 | t₀              |      5 |     | YES  | date                        | pg_catalog | date
+ 55 | ♂                 | class           |      6 |     | YES  | text                        | pg_catalog | text
+ 55 | ♂                 | URL             |      7 |     | YES  | character varying           | pg_catalog | varchar
+(159 rows)
 
 --Testcase 09: size/length/presision metadata
 SELECT n, table_name, column_name, tab_no, c_max_len, c_oct_len, num_pr, num_rdx, num_sc, dtp FROM fc;
@@ -308,19 +314,19 @@ SELECT n, table_name, column_name, tab_no, c_max_len, c_oct_len, num_pr, num_rdx
  34 | types_PostGIS     | gm1             |      6 |           |            |        |         |        |    
  34 | types_PostGIS     | gg1             |      7 |           |            |        |         |        |    
  35 | type_JSON         | i               |      1 |           |            |     64 |       2 |      0 |    
- 35 | type_JSON         | j               |      2 |           |            |        |      10 |        |    
+ 35 | type_JSON         | j               |      2 |           |            |        |         |        |    
  35 | type_JSON         | ot              |      3 |         8 |         32 |        |         |        |    
  35 | type_JSON         | oi              |      4 |           |            |     64 |       2 |      0 |    
  35 | type_JSON         | q               |      5 |           | 1073741824 |        |         |        |    
- 35 | type_JSON         | j1              |      6 |           |            |        |      10 |        |    
+ 35 | type_JSON         | j1              |      6 |           |            |        |         |        |    
  35 | type_JSON         | ot1             |      7 |           | 1073741824 |        |         |        |    
  35 | type_JSON         | oi1             |      8 |           |            |     64 |       2 |      0 |    
  36 | type_JSONB        | i               |      1 |           |            |     64 |       2 |      0 |    
- 36 | type_JSONB        | j               |      2 |           |            |        |      10 |        |    
+ 36 | type_JSONB        | j               |      2 |           |            |        |         |        |    
  36 | type_JSONB        | ot              |      3 |         8 |         32 |        |         |        |    
  36 | type_JSONB        | oi              |      4 |           |            |     64 |       2 |      0 |    
  36 | type_JSONB        | q               |      5 |           | 1073741824 |        |         |        |    
- 36 | type_JSONB        | j1              |      6 |           |            |        |      10 |        |    
+ 36 | type_JSONB        | j1              |      6 |           |            |        |         |        |    
  36 | type_JSONB        | ot1             |      7 |           | 1073741824 |        |         |        |    
  36 | type_JSONB        | oi1             |      8 |           |            |     64 |       2 |      0 |    
  37 | BitT              | p               |      1 |           |            |     64 |       2 |      0 |    
@@ -358,48 +364,53 @@ SELECT n, table_name, column_name, tab_no, c_max_len, c_oct_len, num_pr, num_rdx
  41 | alltypetest       | c22             |     22 |           |            |        |      10 |        |    
  41 | alltypetest       | c23             |     23 |           |            |        |         |        |   0
  41 | alltypetest       | c24             |     24 |           |            |        |         |        |   6
- 42 | shorty            | id              |      1 |           |            |     64 |       2 |      0 |    
- 42 | shorty            | c               |      2 |        10 |         40 |        |         |        |    
- 43 | A a               | col             |      1 |           |            |     64 |       2 |      0 |    
- 44 | fts_table         | name            |      1 |           |            |        |         |        |    
- 44 | fts_table         | description     |      2 |           |            |        |         |        |    
- 45 | fts_table_data    | id              |      1 |           |            |     64 |       2 |      0 |    
- 45 | fts_table_data    | block           |      2 |           |            |        |         |        |    
- 46 | fts_table_idx     | segid           |      1 |           |            |        |         |        |    
- 46 | fts_table_idx     | term            |      2 |           |            |        |         |        |    
- 46 | fts_table_idx     | pgno            |      3 |           |            |        |         |        |    
- 47 | fts_table_content | id              |      1 |           |            |     64 |       2 |      0 |    
- 47 | fts_table_content | c0              |      2 |           |            |        |         |        |    
- 47 | fts_table_content | c1              |      3 |           |            |        |         |        |    
- 48 | fts_table_docsize | id              |      1 |           |            |     64 |       2 |      0 |    
- 48 | fts_table_docsize | sz              |      2 |           |            |        |         |        |    
- 49 | fts_table_config  | k               |      1 |           |            |        |         |        |    
- 49 | fts_table_config  | v               |      2 |           |            |        |         |        |    
- 50 | RO_RW_test        | i               |      1 |           |            |     64 |       2 |      0 |    
- 50 | RO_RW_test        | a               |      2 |           | 1073741824 |        |         |        |    
- 50 | RO_RW_test        | b               |      3 |           |            |     53 |       2 |        |    
- 50 | RO_RW_test        | c               |      4 |           |            |     64 |       2 |      0 |    
- 51 | Unicode data      | i               |      1 |           | 1073741824 |        |         |        |    
- 51 | Unicode data      | t               |      2 |           | 1073741824 |        |         |        |    
- 52 | type_BOOLEAN_oper | i               |      1 |           |            |        |         |        |    
- 52 | type_BOOLEAN_oper | i1              |      2 |           |            |        |         |        |    
- 52 | type_BOOLEAN_oper | b1              |      3 |           |            |        |         |        |    
- 52 | type_BOOLEAN_oper | i2              |      4 |           |            |        |         |        |    
- 52 | type_BOOLEAN_oper | b2              |      5 |           |            |        |         |        |    
- 53 | ♁                 | geom            |      1 |           |            |        |         |        |    
- 53 | ♁                 | osm_type        |      2 |        16 |         64 |        |         |        |    
- 53 | ♁                 | osm_id          |      3 |           |            |     64 |       2 |      0 |    
- 53 | ♁                 | ver             |      4 |           |            |     64 |       2 |      0 |    
- 53 | ♁                 | arr             |      5 |           | 1073741824 |        |         |        |    
- 53 | ♁                 | t               |      6 |           |            |        |      10 |        |    
- 54 | ♂                 | id              |      1 |           |            |     64 |       2 |      0 |    
- 54 | ♂                 | UAI             |      2 |       254 |       1016 |        |         |        |    
- 54 | ♂                 | ⌖               |      3 |           |            |        |         |        |    
- 54 | ♂                 | geom            |      4 |           |            |        |         |        |    
- 54 | ♂                 | t₀              |      5 |           |            |        |         |        |   0
- 54 | ♂                 | class           |      6 |           | 1073741824 |        |         |        |    
- 54 | ♂                 | URL             |      7 |        80 |        320 |        |         |        |    
-(154 rows)
+ 42 | json_osm_test     | wkt             |      1 |           | 1073741824 |        |         |        |    
+ 42 | json_osm_test     | osm_type        |      2 |         8 |         32 |        |         |        |    
+ 42 | json_osm_test     | osm_id          |      3 |           |            |     64 |       2 |      0 |    
+ 42 | json_osm_test     | tags            |      4 |           |            |        |         |        |    
+ 42 | json_osm_test     | way_nodes       |      5 |           |            |     64 |       2 |      0 |    
+ 43 | shorty            | id              |      1 |           |            |     64 |       2 |      0 |    
+ 43 | shorty            | c               |      2 |        10 |         40 |        |         |        |    
+ 44 | A a               | col             |      1 |           |            |     64 |       2 |      0 |    
+ 45 | fts_table         | name            |      1 |           |            |        |         |        |    
+ 45 | fts_table         | description     |      2 |           |            |        |         |        |    
+ 46 | fts_table_data    | id              |      1 |           |            |     64 |       2 |      0 |    
+ 46 | fts_table_data    | block           |      2 |           |            |        |         |        |    
+ 47 | fts_table_idx     | segid           |      1 |           |            |        |         |        |    
+ 47 | fts_table_idx     | term            |      2 |           |            |        |         |        |    
+ 47 | fts_table_idx     | pgno            |      3 |           |            |        |         |        |    
+ 48 | fts_table_content | id              |      1 |           |            |     64 |       2 |      0 |    
+ 48 | fts_table_content | c0              |      2 |           |            |        |         |        |    
+ 48 | fts_table_content | c1              |      3 |           |            |        |         |        |    
+ 49 | fts_table_docsize | id              |      1 |           |            |     64 |       2 |      0 |    
+ 49 | fts_table_docsize | sz              |      2 |           |            |        |         |        |    
+ 50 | fts_table_config  | k               |      1 |           |            |        |         |        |    
+ 50 | fts_table_config  | v               |      2 |           |            |        |         |        |    
+ 51 | RO_RW_test        | i               |      1 |           |            |     64 |       2 |      0 |    
+ 51 | RO_RW_test        | a               |      2 |           | 1073741824 |        |         |        |    
+ 51 | RO_RW_test        | b               |      3 |           |            |     53 |       2 |        |    
+ 51 | RO_RW_test        | c               |      4 |           |            |     64 |       2 |      0 |    
+ 52 | Unicode data      | i               |      1 |           | 1073741824 |        |         |        |    
+ 52 | Unicode data      | t               |      2 |           | 1073741824 |        |         |        |    
+ 53 | type_BOOLEAN_oper | i               |      1 |           |            |        |         |        |    
+ 53 | type_BOOLEAN_oper | i1              |      2 |           |            |        |         |        |    
+ 53 | type_BOOLEAN_oper | b1              |      3 |           |            |        |         |        |    
+ 53 | type_BOOLEAN_oper | i2              |      4 |           |            |        |         |        |    
+ 53 | type_BOOLEAN_oper | b2              |      5 |           |            |        |         |        |    
+ 54 | ♁                 | geom            |      1 |           |            |        |         |        |    
+ 54 | ♁                 | osm_type        |      2 |        16 |         64 |        |         |        |    
+ 54 | ♁                 | osm_id          |      3 |           |            |     64 |       2 |      0 |    
+ 54 | ♁                 | ver             |      4 |           |            |     64 |       2 |      0 |    
+ 54 | ♁                 | arr             |      5 |           | 1073741824 |        |         |        |    
+ 54 | ♁                 | t               |      6 |           |            |        |         |        |    
+ 55 | ♂                 | id              |      1 |           |            |     64 |       2 |      0 |    
+ 55 | ♂                 | UAI             |      2 |       254 |       1016 |        |         |        |    
+ 55 | ♂                 | ⌖               |      3 |           |            |        |         |        |    
+ 55 | ♂                 | geom            |      4 |           |            |        |         |        |    
+ 55 | ♂                 | t₀              |      5 |           |            |        |         |        |   0
+ 55 | ♂                 | class           |      6 |           | 1073741824 |        |         |        |    
+ 55 | ♂                 | URL             |      7 |        80 |        320 |        |         |        |    
+(159 rows)
 
 --Testcase 10: other metadata
 SELECT n, table_name, column_name, tab_no, it, ip, max_crd, dtdid, sref, ididt, isgen FROM fc;
@@ -518,48 +529,53 @@ SELECT n, table_name, column_name, tab_no, it, ip, max_crd, dtdid, sref, ididt, 
  41 | alltypetest       | c22             |     22 |    |    |         | 22    | NO   | NO    | NEVER
  41 | alltypetest       | c23             |     23 |    |    |         | 23    | NO   | NO    | NEVER
  41 | alltypetest       | c24             |     24 |    |    |         | 24    | NO   | NO    | NEVER
- 42 | shorty            | id              |      1 |    |    |         | 1     | NO   | NO    | NEVER
- 42 | shorty            | c               |      2 |    |    |         | 2     | NO   | NO    | NEVER
- 43 | A a               | col             |      1 |    |    |         | 1     | NO   | NO    | NEVER
- 44 | fts_table         | name            |      1 |    |    |         | 1     | NO   | NO    | NEVER
- 44 | fts_table         | description     |      2 |    |    |         | 2     | NO   | NO    | NEVER
- 45 | fts_table_data    | id              |      1 |    |    |         | 1     | NO   | NO    | NEVER
- 45 | fts_table_data    | block           |      2 |    |    |         | 2     | NO   | NO    | NEVER
- 46 | fts_table_idx     | segid           |      1 |    |    |         | 1     | NO   | NO    | NEVER
- 46 | fts_table_idx     | term            |      2 |    |    |         | 2     | NO   | NO    | NEVER
- 46 | fts_table_idx     | pgno            |      3 |    |    |         | 3     | NO   | NO    | NEVER
- 47 | fts_table_content | id              |      1 |    |    |         | 1     | NO   | NO    | NEVER
- 47 | fts_table_content | c0              |      2 |    |    |         | 2     | NO   | NO    | NEVER
- 47 | fts_table_content | c1              |      3 |    |    |         | 3     | NO   | NO    | NEVER
- 48 | fts_table_docsize | id              |      1 |    |    |         | 1     | NO   | NO    | NEVER
- 48 | fts_table_docsize | sz              |      2 |    |    |         | 2     | NO   | NO    | NEVER
- 49 | fts_table_config  | k               |      1 |    |    |         | 1     | NO   | NO    | NEVER
- 49 | fts_table_config  | v               |      2 |    |    |         | 2     | NO   | NO    | NEVER
- 50 | RO_RW_test        | i               |      1 |    |    |         | 1     | NO   | NO    | NEVER
- 50 | RO_RW_test        | a               |      2 |    |    |         | 2     | NO   | NO    | NEVER
- 50 | RO_RW_test        | b               |      3 |    |    |         | 3     | NO   | NO    | NEVER
- 50 | RO_RW_test        | c               |      4 |    |    |         | 4     | NO   | NO    | NEVER
- 51 | Unicode data      | i               |      1 |    |    |         | 1     | NO   | NO    | NEVER
- 51 | Unicode data      | t               |      2 |    |    |         | 2     | NO   | NO    | NEVER
- 52 | type_BOOLEAN_oper | i               |      1 |    |    |         | 1     | NO   | NO    | NEVER
- 52 | type_BOOLEAN_oper | i1              |      2 |    |    |         | 2     | NO   | NO    | NEVER
- 52 | type_BOOLEAN_oper | b1              |      3 |    |    |         | 3     | NO   | NO    | NEVER
- 52 | type_BOOLEAN_oper | i2              |      4 |    |    |         | 4     | NO   | NO    | NEVER
- 52 | type_BOOLEAN_oper | b2              |      5 |    |    |         | 5     | NO   | NO    | NEVER
- 53 | ♁                 | geom            |      1 |    |    |         | 1     | NO   | NO    | NEVER
- 53 | ♁                 | osm_type        |      2 |    |    |         | 2     | NO   | NO    | NEVER
- 53 | ♁                 | osm_id          |      3 |    |    |         | 3     | NO   | NO    | NEVER
- 53 | ♁                 | ver             |      4 |    |    |         | 4     | NO   | NO    | NEVER
- 53 | ♁                 | arr             |      5 |    |    |         | 5     | NO   | NO    | NEVER
- 53 | ♁                 | t               |      6 |    |    |         | 6     | NO   | NO    | NEVER
- 54 | ♂                 | id              |      1 |    |    |         | 1     | NO   | NO    | NEVER
- 54 | ♂                 | UAI             |      2 |    |    |         | 2     | NO   | NO    | NEVER
- 54 | ♂                 | ⌖               |      3 |    |    |         | 3     | NO   | NO    | NEVER
- 54 | ♂                 | geom            |      4 |    |    |         | 4     | NO   | NO    | NEVER
- 54 | ♂                 | t₀              |      5 |    |    |         | 5     | NO   | NO    | NEVER
- 54 | ♂                 | class           |      6 |    |    |         | 6     | NO   | NO    | NEVER
- 54 | ♂                 | URL             |      7 |    |    |         | 7     | NO   | NO    | NEVER
-(154 rows)
+ 42 | json_osm_test     | wkt             |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 42 | json_osm_test     | osm_type        |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 42 | json_osm_test     | osm_id          |      3 |    |    |         | 3     | NO   | NO    | NEVER
+ 42 | json_osm_test     | tags            |      4 |    |    |         | 4     | NO   | NO    | NEVER
+ 42 | json_osm_test     | way_nodes       |      5 |    |    |         | 5     | NO   | NO    | NEVER
+ 43 | shorty            | id              |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 43 | shorty            | c               |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 44 | A a               | col             |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 45 | fts_table         | name            |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 45 | fts_table         | description     |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 46 | fts_table_data    | id              |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 46 | fts_table_data    | block           |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 47 | fts_table_idx     | segid           |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 47 | fts_table_idx     | term            |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 47 | fts_table_idx     | pgno            |      3 |    |    |         | 3     | NO   | NO    | NEVER
+ 48 | fts_table_content | id              |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 48 | fts_table_content | c0              |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 48 | fts_table_content | c1              |      3 |    |    |         | 3     | NO   | NO    | NEVER
+ 49 | fts_table_docsize | id              |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 49 | fts_table_docsize | sz              |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 50 | fts_table_config  | k               |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 50 | fts_table_config  | v               |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 51 | RO_RW_test        | i               |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 51 | RO_RW_test        | a               |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 51 | RO_RW_test        | b               |      3 |    |    |         | 3     | NO   | NO    | NEVER
+ 51 | RO_RW_test        | c               |      4 |    |    |         | 4     | NO   | NO    | NEVER
+ 52 | Unicode data      | i               |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 52 | Unicode data      | t               |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 53 | type_BOOLEAN_oper | i               |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 53 | type_BOOLEAN_oper | i1              |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 53 | type_BOOLEAN_oper | b1              |      3 |    |    |         | 3     | NO   | NO    | NEVER
+ 53 | type_BOOLEAN_oper | i2              |      4 |    |    |         | 4     | NO   | NO    | NEVER
+ 53 | type_BOOLEAN_oper | b2              |      5 |    |    |         | 5     | NO   | NO    | NEVER
+ 54 | ♁                 | geom            |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 54 | ♁                 | osm_type        |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 54 | ♁                 | osm_id          |      3 |    |    |         | 3     | NO   | NO    | NEVER
+ 54 | ♁                 | ver             |      4 |    |    |         | 4     | NO   | NO    | NEVER
+ 54 | ♁                 | arr             |      5 |    |    |         | 5     | NO   | NO    | NEVER
+ 54 | ♁                 | t               |      6 |    |    |         | 6     | NO   | NO    | NEVER
+ 55 | ♂                 | id              |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 55 | ♂                 | UAI             |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 55 | ♂                 | ⌖               |      3 |    |    |         | 3     | NO   | NO    | NEVER
+ 55 | ♂                 | geom            |      4 |    |    |         | 4     | NO   | NO    | NEVER
+ 55 | ♂                 | t₀              |      5 |    |    |         | 5     | NO   | NO    | NEVER
+ 55 | ♂                 | class           |      6 |    |    |         | 6     | NO   | NO    | NEVER
+ 55 | ♂                 | URL             |      7 |    |    |         | 7     | NO   | NO    | NEVER
+(159 rows)
 
 --Testcase 11:
 SELECT * FROM information_schema.column_options
