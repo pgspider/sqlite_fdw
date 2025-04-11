@@ -33,7 +33,7 @@ GIS_DEP_TESTS = $(GIS_DEP_TESTS_DIR)/type $(GIS_DEP_TESTS_DIR)/auto_import $(GIS
 
 ifndef REGRESS
 # System tests, full default sequence
-REGRESS = extra/sqlite_fdw_post $(DATA_TYPE_TESTS) extra/join extra/limit extra/aggregates extra/prepare extra/select_having extra/select extra/insert extra/update extra/encodings sqlite_fdw aggregate selectfunc $(GIS_DEP_TESTS)
+REGRESS = libsqlite extra/sqlite_fdw_post $(DATA_TYPE_TESTS) extra/join extra/limit extra/aggregates extra/prepare extra/select_having extra/select extra/insert extra/update extra/encodings sqlite_fdw aggregate selectfunc $(GIS_DEP_TESTS)
 endif
 
 # Other encodings also are tested. Client encoding should be UTF-8.

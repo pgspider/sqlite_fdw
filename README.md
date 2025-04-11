@@ -45,16 +45,16 @@ Features
 - Support mixed SQLite [data affinity](https://www.sqlite.org/datatype3.html) input and filtering (`SELECT`/`WHERE` usage) for such data types as
 	- `timestamp`: `text` and `int`,
 	- `uuid`: `text`(32..39) and `blob`(16),
- 	- `bool`: `text`(1..5) and `int`,
- 	- `double precision`, `float` and `numeric`: `real` values and special values with `text` affinity (`+Infinity`, `-Infinity`, `NaN`),
- 	- `macaddr`: `text`(12..17) or `blob`(6) or `integer`,
- 	- `macaddr8`: `text`(16..23) or `blob`(8) or `integer`,
- 	- `json`: `text`(default) or `blob` as SQLite `jsonb` object.
+	- `bool`: `text`(1..5) and `int`,
+	- `double precision`, `float` and `numeric`: `real` values and special values with `text` affinity (`+Infinity`, `-Infinity`, `NaN`),
+	- `macaddr`: `text`(12..17) or `blob`(6) or `integer`,
+	- `macaddr8`: `text`(16..23) or `blob`(8) or `integer`,
+	- `json`: `text`(default) or `blob` as SQLite `jsonb` object.
 - Support mixed SQLite [data affinity](https://www.sqlite.org/datatype3.html) output (`INSERT`/`UPDATE`) for such data types as
 	- `timestamp`: `text`(default) or `int`,
- 	- `uuid`: `text`(36) or `blob`(16)(default),
- 	- `macaddr`: `text`(17) or `blob`(6) or `integer`(default),
- 	- `macaddr8`: `text`(23) or `blob`(8) or `integer`(default).
+	- `uuid`: `text`(36) or `blob`(16)(default),
+	- `macaddr`: `text`(17) or `blob`(6) or `integer`(default),
+	- `macaddr8`: `text`(23) or `blob`(8) or `integer`(default).
 - Full support for `+Infinity` (means ∞) and `-Infinity` (means -∞) special values for IEEE 754-2008 numbers in `double precision`, `float` and `numeric` columns including such conditions as ` n < '+Infinity'` or ` m > '-Infinity'`.
 - Bidirectional data transformation for `geometry` and `geography` data types for SpatiaLite ↔ PostGIS. [EWKB](https://libgeos.org/specifications/wkb/#extended-wkb) data transport is used. See [GIS support description](GIS.md).
 
@@ -516,7 +516,7 @@ Once for a foreign datasource you need, as PostgreSQL superuser. Please specify 
 	CREATE SERVER sqlite_server
 	FOREIGN DATA WRAPPER sqlite_fdw
 	OPTIONS (
-          database '/path/to/database'
+			  database '/path/to/database'
 	);
 ```
 
@@ -653,7 +653,7 @@ for `INSERT` and `UPDATE` commands. PostgreSQL supports both `blob` and `text` [
 ### JSON support and operators
 - Operators `->` and `->>` for `json` and `jsonb` are pushed down. This means if you deal with a foreign table only, you can use SQLite syntax of `->` and `->>` operators which is more rich than PostgreSQL syntax. In PostgreSQL this operators means only 1-leveled extraction after one call, but possible multilevel extraction in one call of the operator in SQLite. You can extract `'{"a": 2, "c": [4, 5, {"f": 7}]}' ->'c' -> 2` with result `{"f":7}` both for PostgreSQL and SQLite tables, but `'{"a": 2, "c": [4, 5, {"f": 7}]}' ->'$.c[2]'` possible only in SQLite and for a foreign table.
 - For PostgreSQL numeric argument of `->` and `->>` operators means only coordinate inside of array. In SQLite transformable to number text argument of this operators also can extract array element. PostgreSQL differs `json -> (2::text)` and `json -> 2`, but SQLite not: `json -> '2'`.
-- Please note you can turn off processing of normalizing possible SQLite `jsonb` values with `blob` affinity for a column with formal SQLite `json` data type as option `column_type` = `text`. This can increase `SELECT` or `ORDER` speed, because there will be no normalize function wrapping, but in this case any query will have unsuccessfully result in case of any value with `blob` affiniy including any possible SQLite `jsonb` value.
+- Please note you can turn off processing of normalizing possible SQLite `json` values with `text` affinity for a column with formal SQLite `json` data type as option `column_type` = `text`. This can increase `SELECT` or `ORDER` speed, because there will be no normalize function wrapping, but in this case any query will have unsuccessfully result in case of any value with `blob` affiniy including any possible SQLite `jsonb` value.
 ```sql
 -- a query with normalization - standard ISO:SQL behaviour
 EXPLAIN (VERBOSE, COSTS OFF)
