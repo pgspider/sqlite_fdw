@@ -142,12 +142,12 @@ SELECT n, table_name, column_name, tab_no, def, "null", data_type, udt_schema, u
  33 | type_MACADDR8     | i               |      1 |     | YES  | bigint                      | pg_catalog | int8
  33 | type_MACADDR8     | m               |      2 |     | YES  | macaddr8                    | pg_catalog | macaddr8
  34 | types_PostGIS     | i               |      1 |     | YES  | bigint                      | pg_catalog | int8
- 34 | types_PostGIS     | gm              |      2 |     | YES  | bytea                       | pg_catalog | bytea
- 34 | types_PostGIS     | gg              |      3 |     | YES  | bytea                       | pg_catalog | bytea
+ 34 | types_PostGIS     | gm              |      2 |     | YES  | USER-DEFINED                | public     | geometry
+ 34 | types_PostGIS     | gg              |      3 |     | YES  | USER-DEFINED                | public     | geography
  34 | types_PostGIS     | r               |      4 |     | YES  | numeric                     | pg_catalog | numeric
  34 | types_PostGIS     | t               |      5 |     | YES  | text                        | pg_catalog | text
- 34 | types_PostGIS     | gm1             |      6 |     | YES  | bytea                       | pg_catalog | bytea
- 34 | types_PostGIS     | gg1             |      7 |     | YES  | bytea                       | pg_catalog | bytea
+ 34 | types_PostGIS     | gm1             |      6 |     | YES  | USER-DEFINED                | public     | geometry
+ 34 | types_PostGIS     | gg1             |      7 |     | YES  | USER-DEFINED                | public     | geography
  35 | type_JSON         | i               |      1 |     | YES  | bigint                      | pg_catalog | int8
  35 | type_JSON         | j               |      2 |     | YES  | json                        | pg_catalog | json
  35 | type_JSON         | ot              |      3 |     | YES  | character varying           | pg_catalog | varchar
@@ -199,7 +199,6 @@ SELECT n, table_name, column_name, tab_no, def, "null", data_type, udt_schema, u
  41 | alltypetest       | c22             |     22 |     | YES  | numeric                     | pg_catalog | numeric
  41 | alltypetest       | c23             |     23 |     | YES  | date                        | pg_catalog | date
  41 | alltypetest       | c24             |     24 |     | YES  | timestamp without time zone | pg_catalog | timestamp
-
  42 | json_osm_test     | wkt             |      1 |     | YES  | text                        | pg_catalog | text
  42 | json_osm_test     | osm_type        |      2 |     | YES  | character varying           | pg_catalog | varchar
  42 | json_osm_test     | osm_id          |      3 |     | YES  | bigint                      | pg_catalog | int8
@@ -233,7 +232,7 @@ SELECT n, table_name, column_name, tab_no, def, "null", data_type, udt_schema, u
  53 | type_BOOLEAN_oper | b1              |      3 |     | YES  | bytea                       | pg_catalog | bytea
  53 | type_BOOLEAN_oper | i2              |      4 |     | YES  | bytea                       | pg_catalog | bytea
  53 | type_BOOLEAN_oper | b2              |      5 |     | YES  | bytea                       | pg_catalog | bytea
- 54 | ♁                 | geom            |      1 |     | NO   | bytea                       | pg_catalog | bytea
+ 54 | ♁                 | geom            |      1 |     | NO   | USER-DEFINED                | public     | geometry
  54 | ♁                 | osm_type        |      2 |     | NO   | character varying           | pg_catalog | varchar
  54 | ♁                 | osm_id          |      3 |     | NO   | bigint                      | pg_catalog | int8
  54 | ♁                 | ver             |      4 |     | NO   | bigint                      | pg_catalog | int8
@@ -241,8 +240,8 @@ SELECT n, table_name, column_name, tab_no, def, "null", data_type, udt_schema, u
  54 | ♁                 | t               |      6 |     | YES  | jsonb                       | pg_catalog | jsonb
  55 | ♂                 | id              |      1 |     | YES  | bigint                      | pg_catalog | int8
  55 | ♂                 | UAI             |      2 |     | YES  | character varying           | pg_catalog | varchar
- 55 | ♂                 | ⌖               |      3 |     | YES  | bytea                       | pg_catalog | bytea
- 55 | ♂                 | geom            |      4 |     | YES  | bytea                       | pg_catalog | bytea
+ 55 | ♂                 | ⌖               |      3 |     | YES  | USER-DEFINED                | public     | geometry
+ 55 | ♂                 | geom            |      4 |     | YES  | USER-DEFINED                | public     | geometry
  55 | ♂                 | t₀              |      5 |     | YES  | date                        | pg_catalog | date
  55 | ♂                 | class           |      6 |     | YES  | text                        | pg_catalog | text
  55 | ♂                 | URL             |      7 |     | YES  | character varying           | pg_catalog | varchar

@@ -52,9 +52,9 @@ Features
  	- `json`: `text`(default) or `blob` as SQLite `jsonb` object.
 - Support mixed SQLite [data affinity](https://www.sqlite.org/datatype3.html) output (`INSERT`/`UPDATE`) for such data types as
 	- `timestamp`: `text`(default) or `int`,
-	- `uuid`: `text`(36) or `blob`(16)(default),
-	- `macaddr`: `text`(17) or `blob`(6) or `integer`(default),
-	- `macaddr8`: `text`(23) or `blob`(8) or `integer`(default).
+ 	- `uuid`: `text`(36) or `blob`(16)(default),
+ 	- `macaddr`: `text`(17) or `blob`(6) or `integer`(default),
+ 	- `macaddr8`: `text`(23) or `blob`(8) or `integer`(default).
 - Full support for `+Infinity` (means ∞) and `-Infinity` (means -∞) special values for IEEE 754-2008 numbers in `double precision`, `float` and `numeric` columns including such conditions as ` n < '+Infinity'` or ` m > '-Infinity'`.
 - Bidirectional data transformation for `geometry` and `geography` data types for SpatiaLite ↔ PostGIS. [EWKB](https://libgeos.org/specifications/wkb/#extended-wkb) data transport is used. See [GIS support description](GIS.md).
 
@@ -516,7 +516,7 @@ Once for a foreign datasource you need, as PostgreSQL superuser. Please specify 
 	CREATE SERVER sqlite_server
 	FOREIGN DATA WRAPPER sqlite_fdw
 	OPTIONS (
-			  database '/path/to/database'
+          database '/path/to/database'
 	);
 ```
 
