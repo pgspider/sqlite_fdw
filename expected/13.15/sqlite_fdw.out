@@ -1462,16 +1462,18 @@ SELECT * FROM noprimary;
 --get version
 --Testcase 153:
 \df sqlite*
-                                            List of functions
- Schema |            Name            | Result data type |           Argument data types           | Type 
---------+----------------------------+------------------+-----------------------------------------+------
- public | sqlite_fdw_disconnect      | boolean          | text                                    | func
- public | sqlite_fdw_disconnect_all  | boolean          |                                         | func
- public | sqlite_fdw_get_connections | SETOF record     | OUT server_name text, OUT valid boolean | func
- public | sqlite_fdw_handler         | fdw_handler      |                                         | func
- public | sqlite_fdw_validator       | void             | text[], oid                             | func
- public | sqlite_fdw_version         | integer          |                                         | func
-(6 rows)
+                                             List of functions
+ Schema |             Name              | Result data type |           Argument data types           | Type 
+--------+-------------------------------+------------------+-----------------------------------------+------
+ public | sqlite_fdw_disconnect         | boolean          | text                                    | func
+ public | sqlite_fdw_disconnect_all     | boolean          |                                         | func
+ public | sqlite_fdw_get_connections    | SETOF record     | OUT server_name text, OUT valid boolean | func
+ public | sqlite_fdw_handler            | fdw_handler      |                                         | func
+ public | sqlite_fdw_sqlite_code_source | text             |                                         | func
+ public | sqlite_fdw_sqlite_version     | integer          |                                         | func
+ public | sqlite_fdw_validator          | void             | text[], oid                             | func
+ public | sqlite_fdw_version            | integer          |                                         | func
+(8 rows)
 
 --Testcase 154:
 SELECT * FROM public.sqlite_fdw_version();
