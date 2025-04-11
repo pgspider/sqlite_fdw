@@ -41,7 +41,13 @@ CREATE TABLE "type_VARBIT" (i int, b bit);
 CREATE VIEW  "type_VARBIT+" AS SELECT *, typeof(b) t, length(b) l FROM "type_VARBIT";
 CREATE TABLE "type_UUIDpk" (col uuid primary key);
 CREATE TABLE "type_UUID" (i int, u uuid);
-CREATE VIEW  "type_UUID+" AS SELECT *, typeof("u") t, length("u") l FROM "type_UUID";
+CREATE VIEW  "type_UUID+" AS SELECT
+	*,
+	typeof(u) t,
+	length(u) l
+	-- blob affinity normalization form for "type_UUID+" view for better visual comparing during uuid test output, will be used later
+	-- case when typeof(u) = 'blob' then substr(lower(hex(u)),1,8) || '-' || substr(lower(hex(u)),9,4) || '-' || substr(lower(hex(u)),13,4) || '-' || substr(lower(hex(u)),17,4) || '-' || substr(lower(hex(u)),21,12) else null end uuid_blob_canon
+FROM "type_UUID";
 CREATE TABLE "type_MACADDRpk" (col macaddr primary key);
 CREATE TABLE "type_MACADDR" (i int, m macaddr);
 CREATE VIEW  "type_MACADDR+" AS SELECT *, typeof("m") t, length("m") l, cast("m" as text) tx FROM "type_macaddr";
