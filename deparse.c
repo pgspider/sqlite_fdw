@@ -2285,6 +2285,8 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 		ListCell   *lc;
 		Oid			pg_atttyp = InvalidOid;
 		bool		no_unification = false;
+		char	   *coltype = NULL;
+		int			colaff = SQLITE_NULL;
 
 		/* varno must not be any of OUTER_VAR, INNER_VAR and INDEX_VAR. */
 		Assert(!IS_SPECIAL_VARNO(varno));
@@ -2301,8 +2303,14 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 			if (strcmp(def->defname, "column_name") == 0)
 			{
 				colname = defGetString(def);
-				elog(DEBUG3, "sqlite_fdw : %s, column_name opt = %s\n", __func__, colname);
+				elog(DEBUG1, "column name = %s\n", colname);
 				break;
+			}
+			if (strcmp(def->defname, "column_type") == 0)
+			{
+				coltype = defGetString(def);
+				elog(DEBUG4, "column type = %s", coltype);
+				colaff = sqlite_affinity_code(coltype);
 			}
 		}
 
@@ -2332,12 +2340,22 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 				case FLOAT4OID:
 				case NUMERICOID:
 				{
-					elog(DEBUG2, "floatN unification for \"%s\"", colname);
-					appendStringInfoString(buf, "sqlite_fdw_float(");
-					if (qualify_col)
-						ADD_REL_QUALIFIER(buf, varno);
-					appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
-					appendStringInfoString(buf, ")");
+					if (colaff != SQLITE_FLOAT)
+					{
+						elog(DEBUG2, "floatN unification for \"%s\"", colname);
+						appendStringInfoString(buf, "sqlite_fdw_float(");
+						if (qualify_col)
+							ADD_REL_QUALIFIER(buf, varno);
+						appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+						appendStringInfoString(buf, ")");
+					}
+					else
+					{
+						elog(DEBUG2, "floatN real affinity only for \"%s\"", colname);
+						if (qualify_col)
+							ADD_REL_QUALIFIER(buf, varno);
+						appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+					}
 					break;
 				}
 				case BOOLOID:
@@ -2966,6 +2984,21 @@ get_complementary_var_node(Expr *node)
 	}
 }
 
+/* IEEE 754-2008 : ∞ and NaN */
+const char * CHAR_INF_SHORT = "Inf";
+const char * CHAR_INF_LONG = "Infinity";
+const char * CHAR_NAN = "NaN";
+
+bool
+isInfinity (const char * s)
+{
+return strcasecmp(s, CHAR_INF_SHORT) == 0 ||
+	   strcasecmp(s, CHAR_INF_LONG) == 0 ||
+	   strcasecmp(s + sizeof(char), CHAR_INF_SHORT) == 0 ||
+	   strcasecmp(s + sizeof(char), CHAR_INF_LONG) == 0;
+}
+
+
 /*
  * Deparse given constant value into context->buf.
  *
@@ -3031,10 +3064,7 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 					else
 						appendStringInfoString(buf, extval);
 				}
-				else if (strcasecmp(extval, infs) == 0 ||
-						 strcasecmp(extval, infl) == 0 ||
-						 strcasecmp(extval + 1, infs) == 0 ||
-						 strcasecmp(extval + 1, infl) == 0)
+				else if (isInfinity(extval))
 				{
 					bool is_negative_or_positive = false;
 					if (extval[0] == '-' || extval[0] == '+')
