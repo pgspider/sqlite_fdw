@@ -2,9 +2,9 @@ SQLite Foreign Data Wrapper for PostgreSQL
 ==========================================
 
 This is a foreign data wrapper (FDW) to connect [PostgreSQL](https://www.postgresql.org/)
-to [SQLite](https://sqlite.org/) database file. This FDW works with PostgreSQL 13, 14, 15, 16, 17 and confirmed with SQLite 3.46.0.
+to [SQLite](https://sqlite.org/) database file. This FDW works with PostgreSQL 13, 14, 15, 16, 17 and confirmed with SQLite 3.49.0.
 
-<img src="https://upload.wikimedia.org/wikipedia/commons/2/29/Postgresql_elephant.svg" align="center" height="100" alt="PostgreSQL"/>	+	<img src="https://upload.wikimedia.org/wikipedia/commons/3/38/SQLite370.svg" align="center" height="100" alt="SQLite"/>
+<img src="https://upload.wikimedia.org/wikipedia/commons/2/29/Postgresql_elephant.svg" align="center" height="100" alt="PostgreSQL"/>	+	<img src="SQLite.png" align="center" height="100" alt="SQLite"/>
 
 Also this foreign data wrapper (FDW) can connect PostgreSQL with [PostGIS](https://www.postgis.net/)
 to [SpatiaLite](https://www.gaia-gis.it/fossil/libspatialite/index) SQLite database file. This FDW works with PostGIS 2+ and confirmed with SpatiaLite 5.1. See [GIS support description](GIS.md).
@@ -48,7 +48,8 @@ Features
 	- `bool`: `text`(1..5) and `int`,
 	- `double precision`, `float` and `numeric`: `real` values and special values with `text` affinity (`+Infinity`, `-Infinity`, `NaN`),
 	- `macaddr`: `text`(12..17) or `blob`(6) or `integer`,
-	- `macaddr8`: `text`(16..23) or `blob`(8) or `integer`.
+	- `macaddr8`: `text`(16..23) or `blob`(8) or `integer`,
+	- `json`: `text`(default) or `blob` as SQLite `jsonb` object.
 - Support mixed SQLite [data affinity](https://www.sqlite.org/datatype3.html) output (`INSERT`/`UPDATE`) for such data types as
 	- `timestamp`: `text`(default) or `int`,
 	- `uuid`: `text`(36) or `blob`(16)(default),
@@ -66,12 +67,13 @@ Features
 - `LIMIT` and `OFFSET` are pushdowned when all tables in the query are foreign tables belongs to the same PostgreSQL `FOREIGN SERVER` object.
 - Support `GROUP BY`, `HAVING` push-down.
 - `mod()` is pushdowned. In PostgreSQL this function gives [argument-dependend data type](https://www.postgresql.org/docs/current/functions-math.html), but result from SQLite always [have `real` affinity](https://www.sqlite.org/lang_mathfunc.html#mod).
-- `=` operator for GIS data objects are pushdowned.
+- `=` operator for GIS data objects is pushed down.
+- Operators `->` and `->>` for `json` and `jsonb` are pushed down in `WHERE` clause.
 - `upper`, `lower` and other character case functions are **not** pushed down because they does not work with UNICODE character in SQLite.
 - `WITH TIES` option is **not** pushed down.
 - Bit string `#` (XOR) operator is **not** pushed down because there is no equal SQLite operator.
 - Operations with `macaddr` or `macaddr8` data are **not** pushed down.
-- Operators for GIS data objects are **not** pushdowned except for `=`.
+- GIS data oparators are **not** pushdowned except for `=`.
 
 ### Notes about pushing down
 
@@ -86,6 +88,8 @@ Features
 - `sqlite_fdw` can return implementation-dependent order for column if the column is not specified in `ORDER BY` clause.
 - When the column type is `varchar array`, if the string is shorter than the declared length, values of type character will be space-padded; values of type `character varying` will simply store the shorter string.
 - [String literals for `boolean`](https://www.postgresql.org/docs/current/datatype-boolean.html) (`t`, `f`, `y`, `n`, `yes`, `no`, `on`, `off` etc. case insensitive) can be readed and filtred but cannot writed, because SQLite documentation recommends only `int` affinity values (`0` or `1`)  for boolean data and usually text boolean data belongs to legacy datasets.
+- Directry for SQLite foreign table you can use SQLite specific extractor operand for `->` or `->>` like `$.a.d[1]` in `WHERE` clause, but PostgreSQL will calculate result of equal expression in `SELECT` clause as `NULL`.
+- If you will use unsupported by `sqlite_fdw` older SQLite versions from your OS, please note SQLite JSON processnig behaviour was unstable between 3.45.0 and 3.48.0 especially for negative array indexes. Please note this for explaining any unexpected results after `->` or `->>` operators or failed tests on your OS.
 
 Also see [Limitations](#limitations)
 
@@ -124,11 +128,11 @@ For Debian or Ubuntu:
 
 `apt-get install libspatialite-dev` - for SpatiaLite ↔ PostGIS transformations
 
-Instead of `libsqlite3-dev` you can also [download SQLite source code][1] and [build SQLite][2] with FTS5 for full-text search.
+Instead of system `libsqlite3-dev` from OS repository you can also [download SQLite source code][1] and [build separate SQLite version][2] with FTS5 for full-text search. The directory of this not OS SQLite library can be pointed as prefix in a command like `./configure --enable-fts5 --prefix=$SQLITE_FOR_TESTING_DIR` before `make` and `make install`.
 
 #### 2. Build and install sqlite_fdw
 
-`sqlite_fdw` does not require to be compiled with PostGIS and `libspatialite-dev`. They are used only for full test which includes test for GIS support.
+`sqlite_fdw` does not require to be compiled with PostGIS and `libspatialite-dev`. They are used only for full tests which includes test for GIS support.
 
 Before building please add a directory of `pg_config` to PATH or ensure `pg_config` program is accessible from command line only by the name.
 
@@ -138,11 +142,20 @@ make USE_PGXS=1
 make install USE_PGXS=1
 ```
 
+Build and install without GIS support against separate compiled and installed SQLite version placed at given path.
+Example for `/opt/testing/other/SQLite/3.49.0`.
+```sh
+make USE_PGXS=1 SQLITE_FOR_TESTING_DIR=/opt/testing/other/SQLite/3.49.0
+make install USE_PGXS=1 SQLITE_FOR_TESTING_DIR=/opt/testing/other/SQLite/3.49.0
+```
+
 Build and install with GIS support
 ```sh
 make USE_PGXS=1 ENABLE_GIS=1
 make install USE_PGXS=1 ENABLE_GIS=1
 ```
+
+Also you can build against separate SQLite version and with GIS support using obvious combination of variables.
 
 If you want to build `sqlite_fdw` in a source tree of PostgreSQL, use
 ```sh
@@ -233,7 +246,7 @@ This table represents `sqlite_fdw` behaviour if in PostgreSQL foreign table colu
 * **∅**  - no support (runtime error)
 * **✔**  - 1↔1, PostgreSQL datatype is equal to SQLite affinity
 * **✔-** - PostgreSQL datatype is equal to SQLite affinity, but possible out of range error
-* **V**  - transparent transformation if possible
+* **V**  - transparent transformation
 * **V+** - transparent transformation if possible
 * **i**  - ISO:SQL transformation for some special constants
 * **?** - not described/not tested
@@ -248,7 +261,7 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 |         bool |      V       |       ∅      |      T       |      i       |      ∅       | INT          |
 |       bit(n) | V<br>(n<=64) |       ∅      |      ∅       |      ∅       |      ∅       | INT          |
 |        bytea |      ∅       |       ∅      |      ✔       |      V       |      ?       | BLOB         |
-|      char(n) |      ?       |       ?      |      T       |      ✔       |      V       | TEXT         |
+|      char(n) |      ?       |       ?      |      T       |      ✔-      |      V       | TEXT         |
 |         date |      V       |       V      |      T       |      V+      |    `NULL`    | ?            |
 |       float4 |      V+      |       ✔      |      ∅       |      i       |    `NULL`    | REAL         |
 |       float8 |      V+      |       ✔      |      ∅       |      i       |    `NULL`    | REAL         |
@@ -257,17 +270,18 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 |         int2 |      ✔-      |       ?      |      ∅       |      ∅       |    `NULL`    | INT          |
 |         int4 |      ✔-      |       ?      |      ∅       |      ∅       |    `NULL`    | INT          |
 |         int8 |      ✔       |       ?      |      ∅       |      ∅       |    `NULL`    | INT          |
-|         json |      ?       |       ?      |      T       |      V+      |      ?       | TEXT         |
+|         json |      ∅       |       ∅      |      V+       |      V+      |      ∅       | TEXT         |
+|        jsonb |      ∅       |       ∅      |      V+       |      V+      |      ∅       | BLOB         |
 |      macaddr |      ✔-      |       ∅      | V<br>(Len=6b)|      V+      |      ?       | INT          |
 |     macaddr8 |      ✔       |       ∅      | V<br>(Len=8b)|      V+      |      ?       | INT          |
-|         name |      ?       |       ?      |      T       |      i       |    `NULL`    | TEXT         |
+|         name |      ?       |       ?      |      T       |      ✔-      |    `NULL`    | TEXT         |
 |      numeric |      V       |       V      |      T       |      i       |    `NULL`    | REAL         |
 |         text |      ?       |       ?      |      T       |      ✔       |      V       | TEXT         |
 |         time |      V       |       V      |      T       |      V+      |    `NULL`    | ?            |
 |    timestamp |      V       |       V      |      T       |      V+      |    `NULL`    | ?            |
 |timestamp + tz|      V       |       V      |      T       |      V+      |    `NULL`    | ?            |
 |         uuid |      ∅       |       ∅      |V+<br>(Len=16b)|     V+      |      ∅       | TEXT, BLOB   |
-|   varchar(n) |      ?       |       ?      |      T       |      ✔       |      V       | TEXT         |
+|   varchar(n) |      ?       |       ?      |      T       |      ✔-       |      V       | TEXT         |
 |    varbit(n) | V<br>(n<=64) |       ∅      |      ∅       |      ∅       |      ∅       | INT          |
 
 
@@ -304,6 +318,8 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 | macaddr8     | macaddr8         |
 | [geometry](GIS.md)     | geometry         |
 | [geography](GIS.md)    | geography        |
+| json         | json             |
+| jsonb        | jsonb            |
 
 **Note:** In case of `sqlite_fdw` compiling without GIS support, GIS data
 types will be converted to `bytea`.
@@ -635,6 +651,33 @@ for `INSERT` and `UPDATE` commands. PostgreSQL supports both `blob` and `text` [
 - `sqlite_fdw` PostgreSQL `macaddr`/`macaddr8` values support based on `int` SQLite data affinity, because there is no per bit operations for SQLite `blob` affinity data. For `macaddr` out of range error is possible because this type is 6 bytes length, but SQLite `int` can store value up to 8 bytes.
 - `sqlite_fdw` doesn't pushdown any operations with MAC adresses because there is 3 possible affinities for it in SQLite: `integer`, `blob` and `text`.
 
+### JSON support and operators
+- Operators `->` and `->>` for `json` and `jsonb` are pushed down. This means if you deal with a foreign table only, you can use SQLite syntax of `->` and `->>` operators which is more rich than PostgreSQL syntax. In PostgreSQL this operators means only 1-leveled extraction after one call, but possible multilevel extraction in one call of the operator in SQLite. You can extract `'{"a": 2, "c": [4, 5, {"f": 7}]}' ->'c' -> 2` with result `{"f":7}` both for PostgreSQL and SQLite tables, but `'{"a": 2, "c": [4, 5, {"f": 7}]}' ->'$.c[2]'` possible only in SQLite and for a foreign table.
+- For PostgreSQL numeric argument of `->` and `->>` operators means only coordinate inside of array. In SQLite transformable to number text argument of this operators also can extract array element. PostgreSQL differs `json -> (2::text)` and `json -> 2`, but SQLite not: `json -> '2'`.
+- Please note you can turn off processing of normalizing possible SQLite `json` values with `text` affinity for a column with formal SQLite `json` data type as option `column_type` = `text`. This can increase `SELECT` or `ORDER` speed, because there will be no normalize function wrapping, but in this case any query will have unsuccessfully result in case of any value with `blob` affiniy including any possible SQLite `jsonb` value.
+```sql
+-- a query with normalization - standard ISO:SQL behaviour
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "i", "j", j."j"->'c' res FROM "type_JSON" j;
+                         QUERY PLAN
+-------------------------------------------------------------
+ Foreign Scan on public."type_JSON" j
+   Output: i, j, (j -> 'c'::text)
+   SQLite query: SELECT `i`, json(`j`) FROM main."type_JSON"
+(3 rows)
+
+-- turn off normalization
+ALTER FOREIGN TABLE "type_JSON" ALTER COLUMN j OPTIONS (ADD column_type 'text');
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT "i", "j", j."j"->'c' res FROM "type_JSON" j;
+                      QUERY PLAN
+-------------------------------------------------------
+ Foreign Scan on public."type_JSON" j
+   Output: i, j, (j -> 'c'::text)
+   SQLite query: SELECT `i`, `j` FROM main."type_JSON"
+(3 rows)
+```
+
 Tests
 -----
 Test directory have structure as following:
@@ -672,6 +715,7 @@ The test cases for each version are based on the test of corresponding version o
 You can execute test by test.sh directly.
 The version of PostgreSQL is detected automatically by $(VERSION) variable in Makefile.
 The corresponding sql and expected directory will be used to compare the result. For example, for Postgres 15.0, you can execute "test.sh" directly, and the sql/15.0 and expected/15.0 will be used to compare automatically.
+Please don't forget a command like `export SQLITE_FOR_TESTING_DIR=` with the same path as in SQLite's `./configure --prefix` berfore testing if you want to test not against your OS SQLite version, but against separate downloaded, compiled and installed SQLite version.
 
 Test data directory is `/tmp/sqlite_fdw_test`. If you have `/tmp` mounted as `tmpfs` the tests will be up to 800% faster.
 

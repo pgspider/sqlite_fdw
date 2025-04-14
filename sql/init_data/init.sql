@@ -94,6 +94,14 @@ CREATE TABLE alltypetest (
 	c24 datetime);
 INSERT INTO  alltypetest VALUES (583647,   127,        12767,       388607,      2036854775807,          573709551615,      2036854775807,             'abcdefghij',       'abcdefghijjhgfjfuafh',       'Côte dIvoire Fijifoxju',        'Hôm nay tôi rất vui',                 'I am happy today',              '今日はとても幸せです 今日はとても幸せです',            'The quick brown fox jumps o'       ,  'ABCDEFGHIJKLMNOPQRSTUVWX',          x'4142434445',                       3.40E+18,          1.79769E+108,          1.79769E+88,          1.79E+108,          1234,        99999.99999,        '9999-12-31',         '9999-12-31 23:59:59');
 
+CREATE TABLE json_osm_test (
+	wkt text NULL,
+	osm_type varchar(8) NULL,
+	osm_id int8 NULL,
+	tags json NULL,
+	way_nodes int8[] NULL
+);
+
 -- a table that is missing some fields
 CREATE TABLE shorty (
    id  integer primary key,

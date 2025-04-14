@@ -27,7 +27,7 @@ $(info  There is NO PostGIS support for SQLite FDW)
 endif
 
 # Tests for PostgreSQL data types support
-DATA_TYPE_TESTS = types/bitstring types/bool types/float4 types/float8 types/int4 types/int8 types/numeric  types/macaddr types/macaddr8 types/out_of_range types/timestamp types/uuid
+DATA_TYPE_TESTS = types/bitstring types/bool types/float4 types/float8 types/int4 types/int8 types/json types/numeric  types/macaddr types/macaddr8 types/out_of_range types/timestamp types/uuid
 # Tests with different versions with GIS support and without GIS support
 GIS_DEP_TESTS = $(GIS_DEP_TESTS_DIR)/type $(GIS_DEP_TESTS_DIR)/auto_import $(GIS_DEP_TESTS_DIR)/$(GIS_TEST)
 

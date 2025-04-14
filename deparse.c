@@ -362,6 +362,8 @@ sqlite_deparsable_data_type(Param *p)
 		case UUIDOID:
 		case MACADDROID:
 		case MACADDR8OID:
+		case JSONOID:
+		case JSONBOID:
 			return true;
 	}
 #ifdef SQLITE_FDW_GIS_ENABLE
@@ -728,7 +730,27 @@ sqlite_foreign_expr_walker(Node *node,
 					|| strcmp(cur_opname, "^") == 0
 					|| strcmp(cur_opname, "#") == 0
 					|| strcmp(cur_opname, "~~*") == 0
-					|| strcmp(cur_opname, "!~~*") == 0)
+					|| strcmp(cur_opname, "!~~*") == 0
+					/* JSON/JSONB operators with array or
+					 * other JSON/JSONB or
+					 * jsonpath as right operand
+					 * https://www.postgresql.org/docs/current/functions-json.html
+					 */
+					|| ((oprleft == JSONOID || oprleft == JSONBOID)
+						&& (strcmp(cur_opname, "#>") == 0
+							|| strcmp(cur_opname, "#>>") == 0
+							|| strcmp(cur_opname, "@>") == 0
+							|| strcmp(cur_opname, "<@") == 0
+							|| strcmp(cur_opname, "?|") == 0
+							|| strcmp(cur_opname, "?&") == 0
+							|| strcmp(cur_opname, "@?") == 0
+							|| strcmp(cur_opname, "@@") == 0
+							|| strcmp(cur_opname, "||") == 0
+							|| strcmp(cur_opname, "?") == 0
+							|| strcmp(cur_opname, "-") == 0
+							|| strcmp(cur_opname, "#-") == 0
+							|| strcmp(cur_opname, "#-?") == 0
+					)))
 				{
 					return false;
 				}
@@ -760,10 +782,12 @@ sqlite_foreign_expr_walker(Node *node,
 				 */
 				if (oe->inputcollid == InvalidOid)
 					 /* OK, inputs are all noncollatable */ ;
-				else if (inner_cxt.state != FDW_COLLATE_SAFE ||
-						 oe->inputcollid != inner_cxt.collation)
+				else if ((inner_cxt.state != FDW_COLLATE_SAFE ||
+						 oe->inputcollid != inner_cxt.collation) &&
+						 	oprleft != JSONOID &&
+						 	oprleft != JSONBOID)
 				{
-					elog(DEBUG2, "sqlite_fdw : %s collante problems, do not push", __func__);
+					elog(DEBUG2, "sqlite_fdw : %s collate problems, do not push\n input coll %d, cxt coll %d, operator %d %s %d, ctxst %d", __func__, oe->inputcollid, inner_cxt.collation, oprleft, cur_opname, oprright, inner_cxt.state);
 					return false;
 				}
 
@@ -773,6 +797,8 @@ sqlite_foreign_expr_walker(Node *node,
 					state = FDW_COLLATE_NONE;
 				else if (inner_cxt.state == FDW_COLLATE_SAFE &&
 						 collation == inner_cxt.collation)
+					state = FDW_COLLATE_SAFE;
+				else if (collation == DEFAULT_COLLATION_OID)
 					state = FDW_COLLATE_SAFE;
 				else
 					state = FDW_COLLATE_UNSAFE;
@@ -1162,7 +1188,6 @@ sqlite_foreign_expr_walker(Node *node,
 		if (!(sqlite_is_builtin(typeOid) || listed_datatype_oid(typeOid, -1, postGisSQLiteCompatibleTypes)))
 			return false;
 	}
-
 	/*
 	 * Now, merge my collation information into my parent's state.
 	 */
@@ -1209,6 +1234,7 @@ sqlite_foreign_expr_walker(Node *node,
 	}
 	/* It looks OK */
 	elog(DEBUG2, "sqlite_fdw : %s, pushed down", __func__);
+
 	return true;
 }
 
@@ -1345,8 +1371,6 @@ sqlite_deparse_select_stmt_for_rel(StringInfo buf, PlannerInfo *root, RelOptInfo
 		sqlite_append_limit_clause(&context);
 
 }
-
-
 
 /*
  * Deparese SELECT statment
@@ -2336,6 +2360,26 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 		{
 			switch (pg_atttyp)
 			{
+				/* some polular usual data types without normalization first */
+				case INT4OID:
+				case TEXTOID:
+				case VARCHAROID:
+				case BYTEAOID:
+				case INT8OID:
+				case BPCHAROID:
+				case INT2OID:
+				case TIMEOID:
+				case TIMESTAMPOID:
+				case TIMESTAMPTZOID:
+				case DATEOID:
+				case NAMEOID:
+				case VARBITOID:
+				case BITOID:
+				case CHAROID:
+				{
+					no_unification = true;
+					break;
+				}
 				case FLOAT8OID:
 				case FLOAT4OID:
 				case NUMERICOID:
@@ -2389,6 +2433,36 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 						ADD_REL_QUALIFIER(buf, varno);
 					appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
 					appendStringInfo(buf, ", %d)", mac_len);
+					break;
+				}
+				case JSONOID:
+				{
+					if (colaff != SQLITE_TEXT)
+					{
+						elog(DEBUG2, "json unification for \"%s\"", colname);
+						appendStringInfoString(buf, "json(");
+						if (qualify_col)
+							ADD_REL_QUALIFIER(buf, varno);
+						appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+						appendStringInfoString(buf, ")");
+					}
+					else
+					{
+						elog(DEBUG2, "json text affinity only for \"%s\"", colname);
+						if (qualify_col)
+							ADD_REL_QUALIFIER(buf, varno);
+						appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+					}
+					break;
+				}
+				case JSONBOID: /* jsonb in SQLite is no the same as in PosrtgreSQL, use text transport */
+				{
+					elog(DEBUG2, "sqlite_fdw : json unification for \"%s\"", colname);
+					appendStringInfoString(buf, "json(");
+					if (qualify_col)
+						ADD_REL_QUALIFIER(buf, varno);
+					appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+					appendStringInfoString(buf, ")");
 					break;
 				}
 				default:
@@ -3029,6 +3103,20 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 
 	switch (node->consttype)
 	{
+		/* popular first */
+		case VARCHAROID:
+		case CHAROID:
+		case TEXTOID:
+		case DATEOID:
+		case TIMEOID:
+		case NAMEOID:
+		case BPCHAROID:
+			{
+				/* common branch of constants, deparsable as a text data */
+				extval = OidOutputFunctionCall(typoutput, node->constvalue);
+				sqlite_deparse_string_literal(buf, extval);
+				break;
+			}
 		case INT2OID:
 		case INT4OID:
 		case INT8OID:
@@ -3092,7 +3180,7 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 				if (strlen(extval) > SQLITE_FDW_BIT_DATATYPE_BUF_SIZE - 1 )
 				{
 					ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
-							errmsg("SQLite FDW doens't support very long bit/varbit data"),
+							errmsg("SQLite FDW doesn't support very long bit/varbit data"),
 							errhint("bit length %ld, maximum %ld", strlen(extval), SQLITE_FDW_BIT_DATATYPE_BUF_SIZE - 1)));
 				}
 				appendStringInfo(buf, "%lld", binstr2int64(extval));
@@ -3173,21 +3261,22 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 				}
 			}
 			break;
-		case BPCHAROID:
-		case VARCHAROID:
-		case CHAROID:
-		case TEXTOID:
-		case JSONOID:
 		case JSONBOID:
-		case NAMEOID:
-		case DATEOID:
-		case TIMEOID:
-			{
-				/* common branch of constants, deparsable as a text data */
+ 			{
 				extval = OidOutputFunctionCall(typoutput, node->constvalue);
+				appendStringInfo(buf, "jsonb(");
 				sqlite_deparse_string_literal(buf, extval);
-				break;
+				appendStringInfo(buf, ")");
 			}
+			break;
+		case JSONOID:
+ 			{
+				extval = OidOutputFunctionCall(typoutput, node->constvalue);
+				appendStringInfo(buf, "json(");
+				sqlite_deparse_string_literal(buf, extval);
+				appendStringInfo(buf, ")");
+			}
+			break;
 		default:
 			{
 				if (listed_datatype_oid(node->consttype, -1, postGisSQLiteCompatibleTypes))
@@ -3368,7 +3457,7 @@ sqlite_deparse_op_expr(OpExpr *node, deparse_expr_cxt *context)
 }
 
 /*
- * Print the name of an operator.
+ * Gets SQLite SQL operand or other value for an operator.
  */
 static void
 sqlite_deparse_operator_name(StringInfo buf, Form_pg_operator opform)
@@ -3840,7 +3929,7 @@ sqlite_print_remote_placeholder(Oid paramtype, int32 paramtypmod,
  *
  * XXX there is a problem with this, which is that the set of built-in
  * objects expands over time.  Something that is built-in to us might not
- * be known to the remote server, if it's of an older version.  But keeping
+ * be known to the remote server, if it's of an older version. But keeping
  * track of that would be a huge exercise.
  */
 bool
