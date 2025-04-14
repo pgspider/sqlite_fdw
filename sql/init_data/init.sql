@@ -44,9 +44,16 @@ CREATE TABLE "type_UUID" (i int, u uuid);
 CREATE VIEW  "type_UUID+" AS SELECT
 	*,
 	typeof(u) t,
-	length(u) l
-	-- blob affinity normalization form for "type_UUID+" view for better visual comparing during uuid test output, will be used later
-	-- case when typeof(u) = 'blob' then substr(lower(hex(u)),1,8) || '-' || substr(lower(hex(u)),9,4) || '-' || substr(lower(hex(u)),13,4) || '-' || substr(lower(hex(u)),17,4) || '-' || substr(lower(hex(u)),21,12) else null end uuid_blob_canon
+	length(u) l,
+	case
+		when typeof(u) = 'blob' then
+			substr(lower(hex(u)),1,8) || '-' ||
+			substr(lower(hex(u)),9,4) || '-' ||
+			substr(lower(hex(u)),13,4) || '-' ||
+			substr(lower(hex(u)),17,4) || '-' ||
+			substr(lower(hex(u)),21,12)
+		else null
+	end uuid_blob_canon
 FROM "type_UUID";
 CREATE TABLE "type_MACADDRpk" (col macaddr primary key);
 CREATE TABLE "type_MACADDR" (i int, m macaddr);
@@ -54,6 +61,47 @@ CREATE VIEW  "type_MACADDR+" AS SELECT *, typeof("m") t, length("m") l, cast("m"
 CREATE TABLE "type_MACADDR8pk" (col macaddr8 primary key);
 CREATE TABLE "type_MACADDR8" (i int, m macaddr8);
 CREATE VIEW  "type_MACADDR8+" AS SELECT *, typeof("m") t, length("m") l, cast("m" as text) tx FROM "type_macaddr8";
+CREATE TABLE "type_INETpk" (col inet primary key);
+CREATE TABLE "type_INET" (i integer primary key, ip inet);
+CREATE VIEW  "type_INET+" AS SELECT
+	*,
+	typeof("ip") t,
+	length("ip") l,
+	 cast("ip" as text) tx,
+	case
+		when typeof(ip) = 'blob' and (length(ip) = 16 or length(ip) = 17) then
+			lower(
+				substr(hex(ip),1,4)  || ':' ||
+				substr(hex(ip),5,4)  || ':' ||
+				substr(hex(ip),9,4)  || ':' ||
+				substr(hex(ip),13,4) || ':' ||
+				substr(hex(ip),17,4) || ':' ||
+				substr(hex(ip),21,4) || ':' ||
+				substr(hex(ip),25,4) || ':' ||
+				substr(hex(ip),29,4)
+			) ||
+			case
+				when length(ip) = 17 then
+					'/' || ((instr('123456789ABCDEF', substr(hex(ip),33,1)) << 4) + instr('123456789ABCDEF', substr(hex(ip),34,1)))
+				else ''
+			end
+		when typeof(ip) = 'blob' and (length(ip) = 4 or length(ip) = 5) then
+				((instr('123456789ABCDEF', substr(hex(ip),1,1)) << 4) + instr('123456789ABCDEF', substr(hex(ip),2,1))) || '.' ||
+				((instr('123456789ABCDEF', substr(hex(ip),3,1)) << 4) + instr('123456789ABCDEF', substr(hex(ip),4,1))) || '.' ||
+				((instr('123456789ABCDEF', substr(hex(ip),5,1)) << 4) + instr('123456789ABCDEF', substr(hex(ip),6,1))) || '.' ||
+				((instr('123456789ABCDEF', substr(hex(ip),7,1)) << 4) + instr('123456789ABCDEF', substr(hex(ip),8,1)))
+			||
+			case
+				when length(ip) = 5 then
+					'/' || ((instr('123456789ABCDEF', substr(hex(ip),9,1)) << 4) + instr('123456789ABCDEF', substr(hex(ip),10,1)))
+				else ''
+			end
+		when typeof(ip) = 'integer'
+			 then ((ip >> 24) & 255) || '.' || ((ip >> 16) & 255) || '.' || ((ip >> 8) & 255) || '.' || (ip & 255) ||
+				case when (ip >> 32) > 0 then '/' || (ip >> 32) else '' end
+		else null
+	end as ip_text
+FROM "type_INET";
 CREATE TABLE "types_PostGIS" (i int, gm geometry, gg geography, r raster, t text, gm1 geometry, gg1 geography);
 CREATE TABLE "type_JSON" (i int, j json, ot varchar(8), oi int, q text[], j1 json, ot1 text, oi1 int2);
 CREATE TABLE "type_JSONB" (i int, j jsonb, ot varchar(8), oi int, q text[], j1 jsonb, ot1 text, oi1 int2);

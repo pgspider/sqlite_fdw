@@ -4846,7 +4846,8 @@ sqlite_to_pg_type(StringInfo str, char *type)
 		{"real", "double precision"},
 		{"floa", "double precision"},
 		{"doub", "double precision"},
-	{NULL, NULL}};
+		{"ip", "inet"}, /* such as ipv4 ipv6 */
+		{NULL, NULL}};
 
 	static const char *pg_type[][2] = {
 		{"datetime", "timestamp"},
@@ -4859,6 +4860,7 @@ sqlite_to_pg_type(StringInfo str, char *type)
 		{"uuid"},
 		{"macaddr"},
 		{"macaddr8"},
+		{"inet"},
 		{"geometry"},
 		{"geography"},
 		{"jsonb"},
