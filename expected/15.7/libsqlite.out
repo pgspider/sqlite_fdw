@@ -5,7 +5,7 @@ CREATE EXTENSION sqlite_fdw;
 SELECT sqlite_fdw_sqlite_version();
  sqlite_fdw_sqlite_version 
 ---------------------------
-                   3046000
+                   3049000
 (1 row)
 
 --Testcase 3:
@@ -19,7 +19,7 @@ SELECT length(sqlite_fdw_sqlite_code_source());
 SELECT sqlite_fdw_sqlite_code_source();
                             sqlite_fdw_sqlite_code_source                             
 --------------------------------------------------------------------------------------
- 2024-05-23 13:25:27 96c92aba00c8375bc32fafcdf12429c58bd8aabfcadab6683e35bbb9cdebf19e
+ 2025-02-06 11:55:18 4a7dd425dc2a0e5082a9049c9b4a9d4f199a71583d014c24b4cfe276c5a77cde
 (1 row)
 
 --Testcase 7:
