@@ -1,0 +1,636 @@
+--SET log_min_messages  TO DEBUG1;
+--SET client_min_messages  TO DEBUG1;
+--Testcase 01:
+CREATE EXTENSION sqlite_fdw;
+--Testcase 02:
+CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
+OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
+--Testcase 04:
+IMPORT FOREIGN SCHEMA main FROM SERVER sqlite_svr INTO public;
+--Testcase 05:
+CREATE VIEW ft AS (
+SELECT *, row_number() OVER () n
+FROM information_schema.foreign_tables
+WHERE foreign_table_catalog = current_database()
+AND foreign_table_schema = 'public'
+);
+--Testcase 06:
+SELECT * FROM ft;
+ foreign_table_catalog | foreign_table_schema | foreign_table_name | foreign_server_catalog | foreign_server_name | n  
+-----------------------+----------------------+--------------------+------------------------+---------------------+----
+ contrib_regression    | public               | department         | contrib_regression     | sqlite_svr          |  1
+ contrib_regression    | public               | employee           | contrib_regression     | sqlite_svr          |  2
+ contrib_regression    | public               | empdata            | contrib_regression     | sqlite_svr          |  3
+ contrib_regression    | public               | numbers            | contrib_regression     | sqlite_svr          |  4
+ contrib_regression    | public               | t                  | contrib_regression     | sqlite_svr          |  5
+ contrib_regression    | public               | multiprimary       | contrib_regression     | sqlite_svr          |  6
+ contrib_regression    | public               | columntest         | contrib_regression     | sqlite_svr          |  7
+ contrib_regression    | public               | noprimary          | contrib_regression     | sqlite_svr          |  8
+ contrib_regression    | public               | limittest          | contrib_regression     | sqlite_svr          |  9
+ contrib_regression    | public               | grem1_1            | contrib_regression     | sqlite_svr          | 10
+ contrib_regression    | public               | grem1_2            | contrib_regression     | sqlite_svr          | 11
+ contrib_regression    | public               | case_exp           | contrib_regression     | sqlite_svr          | 12
+ contrib_regression    | public               | type_STRING        | contrib_regression     | sqlite_svr          | 13
+ contrib_regression    | public               | type_BOOLEANpk     | contrib_regression     | sqlite_svr          | 14
+ contrib_regression    | public               | type_BOOLEAN       | contrib_regression     | sqlite_svr          | 15
+ contrib_regression    | public               | type_BYTE          | contrib_regression     | sqlite_svr          | 16
+ contrib_regression    | public               | type_SINT          | contrib_regression     | sqlite_svr          | 17
+ contrib_regression    | public               | type_BINT          | contrib_regression     | sqlite_svr          | 18
+ contrib_regression    | public               | type_INTEGER       | contrib_regression     | sqlite_svr          | 19
+ contrib_regression    | public               | type_FLOAT         | contrib_regression     | sqlite_svr          | 20
+ contrib_regression    | public               | type_DOUBLE        | contrib_regression     | sqlite_svr          | 21
+ contrib_regression    | public               | type_TIMESTAMP     | contrib_regression     | sqlite_svr          | 22
+ contrib_regression    | public               | type_BLOB          | contrib_regression     | sqlite_svr          | 23
+ contrib_regression    | public               | type_DATE          | contrib_regression     | sqlite_svr          | 24
+ contrib_regression    | public               | type_TIME          | contrib_regression     | sqlite_svr          | 25
+ contrib_regression    | public               | type_BIT           | contrib_regression     | sqlite_svr          | 26
+ contrib_regression    | public               | type_VARBIT        | contrib_regression     | sqlite_svr          | 27
+ contrib_regression    | public               | type_UUIDpk        | contrib_regression     | sqlite_svr          | 28
+ contrib_regression    | public               | type_UUID          | contrib_regression     | sqlite_svr          | 29
+ contrib_regression    | public               | type_MACADDRpk     | contrib_regression     | sqlite_svr          | 30
+ contrib_regression    | public               | type_MACADDR       | contrib_regression     | sqlite_svr          | 31
+ contrib_regression    | public               | type_MACADDR8pk    | contrib_regression     | sqlite_svr          | 32
+ contrib_regression    | public               | type_MACADDR8      | contrib_regression     | sqlite_svr          | 33
+ contrib_regression    | public               | types_PostGIS      | contrib_regression     | sqlite_svr          | 34
+ contrib_regression    | public               | type_JSON          | contrib_regression     | sqlite_svr          | 35
+ contrib_regression    | public               | type_JSONB         | contrib_regression     | sqlite_svr          | 36
+ contrib_regression    | public               | BitT               | contrib_regression     | sqlite_svr          | 37
+ contrib_regression    | public               | notype             | contrib_regression     | sqlite_svr          | 38
+ contrib_regression    | public               | typetest           | contrib_regression     | sqlite_svr          | 39
+ contrib_regression    | public               | type_TEXT          | contrib_regression     | sqlite_svr          | 40
+ contrib_regression    | public               | alltypetest        | contrib_regression     | sqlite_svr          | 41
+ contrib_regression    | public               | json_osm_test      | contrib_regression     | sqlite_svr          | 42
+ contrib_regression    | public               | shorty             | contrib_regression     | sqlite_svr          | 43
+ contrib_regression    | public               | A a                | contrib_regression     | sqlite_svr          | 44
+ contrib_regression    | public               | fts_table          | contrib_regression     | sqlite_svr          | 45
+ contrib_regression    | public               | fts_table_data     | contrib_regression     | sqlite_svr          | 46
+ contrib_regression    | public               | fts_table_idx      | contrib_regression     | sqlite_svr          | 47
+ contrib_regression    | public               | fts_table_content  | contrib_regression     | sqlite_svr          | 48
+ contrib_regression    | public               | fts_table_docsize  | contrib_regression     | sqlite_svr          | 49
+ contrib_regression    | public               | fts_table_config   | contrib_regression     | sqlite_svr          | 50
+ contrib_regression    | public               | RO_RW_test         | contrib_regression     | sqlite_svr          | 51
+ contrib_regression    | public               | Unicode data       | contrib_regression     | sqlite_svr          | 52
+ contrib_regression    | public               | type_BOOLEAN_oper  | contrib_regression     | sqlite_svr          | 53
+ contrib_regression    | public               | ♁                  | contrib_regression     | sqlite_svr          | 54
+ contrib_regression    | public               | ♂                  | contrib_regression     | sqlite_svr          | 55
+(55 rows)
+
+--Testcase 07:
+CREATE VIEW fc AS (
+SELECT ft.n, table_name, column_name, ordinal_position tab_no, column_default def, is_nullable "null", data_type, character_maximum_length c_max_len, character_octet_length c_oct_len, numeric_precision num_pr, numeric_precision_radix num_rdx, numeric_scale num_sc, datetime_precision dtp, interval_type it, interval_precision ip, udt_schema, udt_name, maximum_cardinality max_crd, dtd_identifier dtdid, is_self_referencing sref, is_identity ididt,  is_generated isgen
+FROM information_schema.columns c
+INNER JOIN ft
+ON (c.table_catalog, c.table_schema, c.table_name) = (ft.foreign_table_catalog, ft.foreign_table_schema, ft.foreign_table_name)
+) order by n, tab_no;
+--Testcase 08: base metadata
+SELECT n, table_name, column_name, tab_no, def, "null", data_type, udt_schema, udt_name FROM fc;
+ n  |    table_name     |   column_name   | tab_no | def | null |          data_type          | udt_schema | udt_name  
+----+-------------------+-----------------+--------+-----+------+-----------------------------+------------+-----------
+  1 | department        | department_id   |      1 |     | YES  | bigint                      | pg_catalog | int8
+  1 | department        | department_name |      2 |     | YES  | text                        | pg_catalog | text
+  2 | employee          | emp_id          |      1 |     | YES  | bigint                      | pg_catalog | int8
+  2 | employee          | emp_name        |      2 |     | YES  | text                        | pg_catalog | text
+  2 | employee          | emp_dept_id     |      3 |     | YES  | bigint                      | pg_catalog | int8
+  3 | empdata           | emp_id          |      1 |     | YES  | bigint                      | pg_catalog | int8
+  3 | empdata           | emp_dat         |      2 |     | YES  | numeric                     | pg_catalog | numeric
+  4 | numbers           | a               |      1 |     | YES  | bigint                      | pg_catalog | int8
+  4 | numbers           | b               |      2 |     | YES  | character varying           | pg_catalog | varchar
+  5 | t                 | a               |      1 |     | YES  | bigint                      | pg_catalog | int8
+  5 | t                 | b               |      2 |     | YES  | bigint                      | pg_catalog | int8
+  6 | multiprimary      | a               |      1 |     | YES  | bigint                      | pg_catalog | int8
+  6 | multiprimary      | b               |      2 |     | YES  | bigint                      | pg_catalog | int8
+  6 | multiprimary      | c               |      3 |     | YES  | bigint                      | pg_catalog | int8
+  7 | columntest        | a a             |      1 |     | YES  | bigint                      | pg_catalog | int8
+  7 | columntest        | b b             |      2 |     | YES  | bigint                      | pg_catalog | int8
+  7 | columntest        | c c             |      3 |     | YES  | bigint                      | pg_catalog | int8
+  8 | noprimary         | a               |      1 |     | YES  | bigint                      | pg_catalog | int8
+  8 | noprimary         | b               |      2 |     | YES  | text                        | pg_catalog | text
+  9 | limittest         | id              |      1 |     | YES  | bigint                      | pg_catalog | int8
+  9 | limittest         | x               |      2 |     | YES  | bigint                      | pg_catalog | int8
+  9 | limittest         | y               |      3 |     | YES  | text                        | pg_catalog | text
+ 10 | grem1_1           | a               |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 11 | grem1_2           | a               |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 12 | case_exp          | c1              |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 12 | case_exp          | c3              |      2 |     | YES  | text                        | pg_catalog | text
+ 12 | case_exp          | c6              |      3 |     | YES  | character varying           | pg_catalog | varchar
+ 13 | type_STRING       | col             |      1 |     | YES  | text                        | pg_catalog | text
+ 14 | type_BOOLEANpk    | col             |      1 |     | YES  | boolean                     | pg_catalog | bool
+ 15 | type_BOOLEAN      | i               |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 15 | type_BOOLEAN      | b               |      2 |     | YES  | boolean                     | pg_catalog | bool
+ 16 | type_BYTE         | col             |      1 |     | YES  | character                   | pg_catalog | bpchar
+ 17 | type_SINT         | col             |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 18 | type_BINT         | col             |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 19 | type_INTEGER      | col             |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 20 | type_FLOAT        | col             |      1 |     | YES  | double precision            | pg_catalog | float8
+ 21 | type_DOUBLE       | col             |      1 |     | YES  | double precision            | pg_catalog | float8
+ 22 | type_TIMESTAMP    | col             |      1 |     | YES  | timestamp without time zone | pg_catalog | timestamp
+ 22 | type_TIMESTAMP    | b               |      2 |     | YES  | timestamp without time zone | pg_catalog | timestamp
+ 23 | type_BLOB         | col             |      1 |     | YES  | bytea                       | pg_catalog | bytea
+ 24 | type_DATE         | col             |      1 |     | YES  | date                        | pg_catalog | date
+ 25 | type_TIME         | col             |      1 |     | YES  | time without time zone      | pg_catalog | time
+ 26 | type_BIT          | i               |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 26 | type_BIT          | b               |      2 |     | YES  | bit                         | pg_catalog | bit
+ 27 | type_VARBIT       | i               |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 27 | type_VARBIT       | b               |      2 |     | YES  | bit                         | pg_catalog | bit
+ 28 | type_UUIDpk       | col             |      1 |     | YES  | uuid                        | pg_catalog | uuid
+ 29 | type_UUID         | i               |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 29 | type_UUID         | u               |      2 |     | YES  | uuid                        | pg_catalog | uuid
+ 30 | type_MACADDRpk    | col             |      1 |     | YES  | macaddr                     | pg_catalog | macaddr
+ 31 | type_MACADDR      | i               |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 31 | type_MACADDR      | m               |      2 |     | YES  | macaddr                     | pg_catalog | macaddr
+ 32 | type_MACADDR8pk   | col             |      1 |     | YES  | macaddr8                    | pg_catalog | macaddr8
+ 33 | type_MACADDR8     | i               |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 33 | type_MACADDR8     | m               |      2 |     | YES  | macaddr8                    | pg_catalog | macaddr8
+ 34 | types_PostGIS     | i               |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 34 | types_PostGIS     | gm              |      2 |     | YES  | USER-DEFINED                | public     | geometry
+ 34 | types_PostGIS     | gg              |      3 |     | YES  | USER-DEFINED                | public     | geography
+ 34 | types_PostGIS     | r               |      4 |     | YES  | numeric                     | pg_catalog | numeric
+ 34 | types_PostGIS     | t               |      5 |     | YES  | text                        | pg_catalog | text
+ 34 | types_PostGIS     | gm1             |      6 |     | YES  | USER-DEFINED                | public     | geometry
+ 34 | types_PostGIS     | gg1             |      7 |     | YES  | USER-DEFINED                | public     | geography
+ 35 | type_JSON         | i               |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 35 | type_JSON         | j               |      2 |     | YES  | json                        | pg_catalog | json
+ 35 | type_JSON         | ot              |      3 |     | YES  | character varying           | pg_catalog | varchar
+ 35 | type_JSON         | oi              |      4 |     | YES  | bigint                      | pg_catalog | int8
+ 35 | type_JSON         | q               |      5 |     | YES  | text                        | pg_catalog | text
+ 35 | type_JSON         | j1              |      6 |     | YES  | json                        | pg_catalog | json
+ 35 | type_JSON         | ot1             |      7 |     | YES  | text                        | pg_catalog | text
+ 35 | type_JSON         | oi1             |      8 |     | YES  | bigint                      | pg_catalog | int8
+ 36 | type_JSONB        | i               |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 36 | type_JSONB        | j               |      2 |     | YES  | jsonb                       | pg_catalog | jsonb
+ 36 | type_JSONB        | ot              |      3 |     | YES  | character varying           | pg_catalog | varchar
+ 36 | type_JSONB        | oi              |      4 |     | YES  | bigint                      | pg_catalog | int8
+ 36 | type_JSONB        | q               |      5 |     | YES  | text                        | pg_catalog | text
+ 36 | type_JSONB        | j1              |      6 |     | YES  | jsonb                       | pg_catalog | jsonb
+ 36 | type_JSONB        | ot1             |      7 |     | YES  | text                        | pg_catalog | text
+ 36 | type_JSONB        | oi1             |      8 |     | YES  | bigint                      | pg_catalog | int8
+ 37 | BitT              | p               |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 37 | BitT              | a               |      2 |     | YES  | bit                         | pg_catalog | bit
+ 37 | BitT              | b               |      3 |     | YES  | bit varying                 | pg_catalog | varbit
+ 38 | notype            | a               |      1 |     | YES  | bytea                       | pg_catalog | bytea
+ 39 | typetest          | i               |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 39 | typetest          | v               |      2 |     | YES  | character varying           | pg_catalog | varchar
+ 39 | typetest          | c               |      3 |     | YES  | character                   | pg_catalog | bpchar
+ 39 | typetest          | t               |      4 |     | YES  | text                        | pg_catalog | text
+ 39 | typetest          | d               |      5 |     | YES  | timestamp without time zone | pg_catalog | timestamp
+ 39 | typetest          | ti              |      6 |     | YES  | timestamp without time zone | pg_catalog | timestamp
+ 40 | type_TEXT         | col             |      1 |     | YES  | text                        | pg_catalog | text
+ 41 | alltypetest       | c1              |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 41 | alltypetest       | c2              |      2 |     | YES  | bigint                      | pg_catalog | int8
+ 41 | alltypetest       | c3              |      3 |     | YES  | bigint                      | pg_catalog | int8
+ 41 | alltypetest       | c4              |      4 |     | YES  | bigint                      | pg_catalog | int8
+ 41 | alltypetest       | c5              |      5 |     | YES  | bigint                      | pg_catalog | int8
+ 41 | alltypetest       | c6              |      6 |     | YES  | bigint                      | pg_catalog | int8
+ 41 | alltypetest       | c7              |      7 |     | YES  | bigint                      | pg_catalog | int8
+ 41 | alltypetest       | c8              |      8 |     | YES  | character                   | pg_catalog | bpchar
+ 41 | alltypetest       | c9              |      9 |     | YES  | character varying           | pg_catalog | varchar
+ 41 | alltypetest       | c10             |     10 |     | YES  | character varying           | pg_catalog | varchar
+ 41 | alltypetest       | c11             |     11 |     | YES  | text                        | pg_catalog | text
+ 41 | alltypetest       | c12             |     12 |     | YES  | text                        | pg_catalog | text
+ 41 | alltypetest       | c13             |     13 |     | YES  | text                        | pg_catalog | text
+ 41 | alltypetest       | c14             |     14 |     | YES  | text                        | pg_catalog | text
+ 41 | alltypetest       | c15             |     15 |     | YES  | text                        | pg_catalog | text
+ 41 | alltypetest       | c16             |     16 |     | YES  | bytea                       | pg_catalog | bytea
+ 41 | alltypetest       | c17             |     17 |     | YES  | double precision            | pg_catalog | float8
+ 41 | alltypetest       | c18             |     18 |     | YES  | double precision            | pg_catalog | float8
+ 41 | alltypetest       | c19             |     19 |     | YES  | double precision            | pg_catalog | float8
+ 41 | alltypetest       | c20             |     20 |     | YES  | double precision            | pg_catalog | float8
+ 41 | alltypetest       | c21             |     21 |     | YES  | numeric                     | pg_catalog | numeric
+ 41 | alltypetest       | c22             |     22 |     | YES  | numeric                     | pg_catalog | numeric
+ 41 | alltypetest       | c23             |     23 |     | YES  | date                        | pg_catalog | date
+ 41 | alltypetest       | c24             |     24 |     | YES  | timestamp without time zone | pg_catalog | timestamp
+ 42 | json_osm_test     | wkt             |      1 |     | YES  | text                        | pg_catalog | text
+ 42 | json_osm_test     | osm_type        |      2 |     | YES  | character varying           | pg_catalog | varchar
+ 42 | json_osm_test     | osm_id          |      3 |     | YES  | bigint                      | pg_catalog | int8
+ 42 | json_osm_test     | tags            |      4 |     | YES  | json                        | pg_catalog | json
+ 42 | json_osm_test     | way_nodes       |      5 |     | YES  | bigint                      | pg_catalog | int8
+ 43 | shorty            | id              |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 43 | shorty            | c               |      2 |     | YES  | character                   | pg_catalog | bpchar
+ 44 | A a               | col             |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 45 | fts_table         | name            |      1 |     | YES  | bytea                       | pg_catalog | bytea
+ 45 | fts_table         | description     |      2 |     | YES  | bytea                       | pg_catalog | bytea
+ 46 | fts_table_data    | id              |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 46 | fts_table_data    | block           |      2 |     | YES  | bytea                       | pg_catalog | bytea
+ 47 | fts_table_idx     | segid           |      1 |     | NO   | bytea                       | pg_catalog | bytea
+ 47 | fts_table_idx     | term            |      2 |     | NO   | bytea                       | pg_catalog | bytea
+ 47 | fts_table_idx     | pgno            |      3 |     | YES  | bytea                       | pg_catalog | bytea
+ 48 | fts_table_content | id              |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 48 | fts_table_content | c0              |      2 |     | YES  | bytea                       | pg_catalog | bytea
+ 48 | fts_table_content | c1              |      3 |     | YES  | bytea                       | pg_catalog | bytea
+ 49 | fts_table_docsize | id              |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 49 | fts_table_docsize | sz              |      2 |     | YES  | bytea                       | pg_catalog | bytea
+ 50 | fts_table_config  | k               |      1 |     | NO   | bytea                       | pg_catalog | bytea
+ 50 | fts_table_config  | v               |      2 |     | YES  | bytea                       | pg_catalog | bytea
+ 51 | RO_RW_test        | i               |      1 |     | NO   | bigint                      | pg_catalog | int8
+ 51 | RO_RW_test        | a               |      2 |     | YES  | text                        | pg_catalog | text
+ 51 | RO_RW_test        | b               |      3 |     | YES  | double precision            | pg_catalog | float8
+ 51 | RO_RW_test        | c               |      4 |     | YES  | bigint                      | pg_catalog | int8
+ 52 | Unicode data      | i               |      1 |     | YES  | text                        | pg_catalog | text
+ 52 | Unicode data      | t               |      2 |     | YES  | text                        | pg_catalog | text
+ 53 | type_BOOLEAN_oper | i               |      1 |     | YES  | bytea                       | pg_catalog | bytea
+ 53 | type_BOOLEAN_oper | i1              |      2 |     | YES  | bytea                       | pg_catalog | bytea
+ 53 | type_BOOLEAN_oper | b1              |      3 |     | YES  | bytea                       | pg_catalog | bytea
+ 53 | type_BOOLEAN_oper | i2              |      4 |     | YES  | bytea                       | pg_catalog | bytea
+ 53 | type_BOOLEAN_oper | b2              |      5 |     | YES  | bytea                       | pg_catalog | bytea
+ 54 | ♁                 | geom            |      1 |     | NO   | USER-DEFINED                | public     | geometry
+ 54 | ♁                 | osm_type        |      2 |     | NO   | character varying           | pg_catalog | varchar
+ 54 | ♁                 | osm_id          |      3 |     | NO   | bigint                      | pg_catalog | int8
+ 54 | ♁                 | ver             |      4 |     | NO   | bigint                      | pg_catalog | int8
+ 54 | ♁                 | arr             |      5 |     | YES  | text                        | pg_catalog | text
+ 54 | ♁                 | t               |      6 |     | YES  | jsonb                       | pg_catalog | jsonb
+ 55 | ♂                 | id              |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 55 | ♂                 | UAI             |      2 |     | YES  | character varying           | pg_catalog | varchar
+ 55 | ♂                 | ⌖               |      3 |     | YES  | USER-DEFINED                | public     | geometry
+ 55 | ♂                 | geom            |      4 |     | YES  | USER-DEFINED                | public     | geometry
+ 55 | ♂                 | t₀              |      5 |     | YES  | date                        | pg_catalog | date
+ 55 | ♂                 | class           |      6 |     | YES  | text                        | pg_catalog | text
+ 55 | ♂                 | URL             |      7 |     | YES  | character varying           | pg_catalog | varchar
+(159 rows)
+
+--Testcase 09: size/length/presision metadata
+SELECT n, table_name, column_name, tab_no, c_max_len, c_oct_len, num_pr, num_rdx, num_sc, dtp FROM fc;
+ n  |    table_name     |   column_name   | tab_no | c_max_len | c_oct_len  | num_pr | num_rdx | num_sc | dtp 
+----+-------------------+-----------------+--------+-----------+------------+--------+---------+--------+-----
+  1 | department        | department_id   |      1 |           |            |     64 |       2 |      0 |    
+  1 | department        | department_name |      2 |           | 1073741824 |        |         |        |    
+  2 | employee          | emp_id          |      1 |           |            |     64 |       2 |      0 |    
+  2 | employee          | emp_name        |      2 |           | 1073741824 |        |         |        |    
+  2 | employee          | emp_dept_id     |      3 |           |            |     64 |       2 |      0 |    
+  3 | empdata           | emp_id          |      1 |           |            |     64 |       2 |      0 |    
+  3 | empdata           | emp_dat         |      2 |           |            |        |      10 |        |    
+  4 | numbers           | a               |      1 |           |            |     64 |       2 |      0 |    
+  4 | numbers           | b               |      2 |       255 |       1020 |        |         |        |    
+  5 | t                 | a               |      1 |           |            |     64 |       2 |      0 |    
+  5 | t                 | b               |      2 |           |            |     64 |       2 |      0 |    
+  6 | multiprimary      | a               |      1 |           |            |     64 |       2 |      0 |    
+  6 | multiprimary      | b               |      2 |           |            |     64 |       2 |      0 |    
+  6 | multiprimary      | c               |      3 |           |            |     64 |       2 |      0 |    
+  7 | columntest        | a a             |      1 |           |            |     64 |       2 |      0 |    
+  7 | columntest        | b b             |      2 |           |            |     64 |       2 |      0 |    
+  7 | columntest        | c c             |      3 |           |            |     64 |       2 |      0 |    
+  8 | noprimary         | a               |      1 |           |            |     64 |       2 |      0 |    
+  8 | noprimary         | b               |      2 |           | 1073741824 |        |         |        |    
+  9 | limittest         | id              |      1 |           |            |     64 |       2 |      0 |    
+  9 | limittest         | x               |      2 |           |            |     64 |       2 |      0 |    
+  9 | limittest         | y               |      3 |           | 1073741824 |        |         |        |    
+ 10 | grem1_1           | a               |      1 |           |            |     64 |       2 |      0 |    
+ 11 | grem1_2           | a               |      1 |           |            |     64 |       2 |      0 |    
+ 12 | case_exp          | c1              |      1 |           |            |     64 |       2 |      0 |    
+ 12 | case_exp          | c3              |      2 |           | 1073741824 |        |         |        |    
+ 12 | case_exp          | c6              |      3 |        10 |         40 |        |         |        |    
+ 13 | type_STRING       | col             |      1 |           | 1073741824 |        |         |        |    
+ 14 | type_BOOLEANpk    | col             |      1 |           |            |        |         |        |    
+ 15 | type_BOOLEAN      | i               |      1 |           |            |     64 |       2 |      0 |    
+ 15 | type_BOOLEAN      | b               |      2 |           |            |        |         |        |    
+ 16 | type_BYTE         | col             |      1 |         1 |          4 |        |         |        |    
+ 17 | type_SINT         | col             |      1 |           |            |     64 |       2 |      0 |    
+ 18 | type_BINT         | col             |      1 |           |            |     64 |       2 |      0 |    
+ 19 | type_INTEGER      | col             |      1 |           |            |     64 |       2 |      0 |    
+ 20 | type_FLOAT        | col             |      1 |           |            |     53 |       2 |        |    
+ 21 | type_DOUBLE       | col             |      1 |           |            |     53 |       2 |        |    
+ 22 | type_TIMESTAMP    | col             |      1 |           |            |        |         |        |   6
+ 22 | type_TIMESTAMP    | b               |      2 |           |            |        |         |        |   6
+ 23 | type_BLOB         | col             |      1 |           |            |        |         |        |    
+ 24 | type_DATE         | col             |      1 |           |            |        |         |        |   0
+ 25 | type_TIME         | col             |      1 |           |            |        |         |        |   6
+ 26 | type_BIT          | i               |      1 |           |            |     64 |       2 |      0 |    
+ 26 | type_BIT          | b               |      2 |         1 |            |        |         |        |    
+ 27 | type_VARBIT       | i               |      1 |           |            |     64 |       2 |      0 |    
+ 27 | type_VARBIT       | b               |      2 |         1 |            |        |         |        |    
+ 28 | type_UUIDpk       | col             |      1 |           |            |        |         |        |    
+ 29 | type_UUID         | i               |      1 |           |            |     64 |       2 |      0 |    
+ 29 | type_UUID         | u               |      2 |           |            |        |         |        |    
+ 30 | type_MACADDRpk    | col             |      1 |           |            |        |         |        |    
+ 31 | type_MACADDR      | i               |      1 |           |            |     64 |       2 |      0 |    
+ 31 | type_MACADDR      | m               |      2 |           |            |        |         |        |    
+ 32 | type_MACADDR8pk   | col             |      1 |           |            |        |         |        |    
+ 33 | type_MACADDR8     | i               |      1 |           |            |     64 |       2 |      0 |    
+ 33 | type_MACADDR8     | m               |      2 |           |            |        |         |        |    
+ 34 | types_PostGIS     | i               |      1 |           |            |     64 |       2 |      0 |    
+ 34 | types_PostGIS     | gm              |      2 |           |            |        |         |        |    
+ 34 | types_PostGIS     | gg              |      3 |           |            |        |         |        |    
+ 34 | types_PostGIS     | r               |      4 |           |            |        |      10 |        |    
+ 34 | types_PostGIS     | t               |      5 |           | 1073741824 |        |         |        |    
+ 34 | types_PostGIS     | gm1             |      6 |           |            |        |         |        |    
+ 34 | types_PostGIS     | gg1             |      7 |           |            |        |         |        |    
+ 35 | type_JSON         | i               |      1 |           |            |     64 |       2 |      0 |    
+ 35 | type_JSON         | j               |      2 |           |            |        |         |        |    
+ 35 | type_JSON         | ot              |      3 |         8 |         32 |        |         |        |    
+ 35 | type_JSON         | oi              |      4 |           |            |     64 |       2 |      0 |    
+ 35 | type_JSON         | q               |      5 |           | 1073741824 |        |         |        |    
+ 35 | type_JSON         | j1              |      6 |           |            |        |         |        |    
+ 35 | type_JSON         | ot1             |      7 |           | 1073741824 |        |         |        |    
+ 35 | type_JSON         | oi1             |      8 |           |            |     64 |       2 |      0 |    
+ 36 | type_JSONB        | i               |      1 |           |            |     64 |       2 |      0 |    
+ 36 | type_JSONB        | j               |      2 |           |            |        |         |        |    
+ 36 | type_JSONB        | ot              |      3 |         8 |         32 |        |         |        |    
+ 36 | type_JSONB        | oi              |      4 |           |            |     64 |       2 |      0 |    
+ 36 | type_JSONB        | q               |      5 |           | 1073741824 |        |         |        |    
+ 36 | type_JSONB        | j1              |      6 |           |            |        |         |        |    
+ 36 | type_JSONB        | ot1             |      7 |           | 1073741824 |        |         |        |    
+ 36 | type_JSONB        | oi1             |      8 |           |            |     64 |       2 |      0 |    
+ 37 | BitT              | p               |      1 |           |            |     64 |       2 |      0 |    
+ 37 | BitT              | a               |      2 |         3 |            |        |         |        |    
+ 37 | BitT              | b               |      3 |         5 |            |        |         |        |    
+ 38 | notype            | a               |      1 |           |            |        |         |        |    
+ 39 | typetest          | i               |      1 |           |            |     64 |       2 |      0 |    
+ 39 | typetest          | v               |      2 |        10 |         40 |        |         |        |    
+ 39 | typetest          | c               |      3 |        10 |         40 |        |         |        |    
+ 39 | typetest          | t               |      4 |           | 1073741824 |        |         |        |    
+ 39 | typetest          | d               |      5 |           |            |        |         |        |   6
+ 39 | typetest          | ti              |      6 |           |            |        |         |        |   6
+ 40 | type_TEXT         | col             |      1 |           | 1073741824 |        |         |        |    
+ 41 | alltypetest       | c1              |      1 |           |            |     64 |       2 |      0 |    
+ 41 | alltypetest       | c2              |      2 |           |            |     64 |       2 |      0 |    
+ 41 | alltypetest       | c3              |      3 |           |            |     64 |       2 |      0 |    
+ 41 | alltypetest       | c4              |      4 |           |            |     64 |       2 |      0 |    
+ 41 | alltypetest       | c5              |      5 |           |            |     64 |       2 |      0 |    
+ 41 | alltypetest       | c6              |      6 |           |            |     64 |       2 |      0 |    
+ 41 | alltypetest       | c7              |      7 |           |            |     64 |       2 |      0 |    
+ 41 | alltypetest       | c8              |      8 |        10 |         40 |        |         |        |    
+ 41 | alltypetest       | c9              |      9 |       255 |       1020 |        |         |        |    
+ 41 | alltypetest       | c10             |     10 |       255 |       1020 |        |         |        |    
+ 41 | alltypetest       | c11             |     11 |           | 1073741824 |        |         |        |    
+ 41 | alltypetest       | c12             |     12 |           | 1073741824 |        |         |        |    
+ 41 | alltypetest       | c13             |     13 |           | 1073741824 |        |         |        |    
+ 41 | alltypetest       | c14             |     14 |           | 1073741824 |        |         |        |    
+ 41 | alltypetest       | c15             |     15 |           | 1073741824 |        |         |        |    
+ 41 | alltypetest       | c16             |     16 |           |            |        |         |        |    
+ 41 | alltypetest       | c17             |     17 |           |            |     53 |       2 |        |    
+ 41 | alltypetest       | c18             |     18 |           |            |     53 |       2 |        |    
+ 41 | alltypetest       | c19             |     19 |           |            |     53 |       2 |        |    
+ 41 | alltypetest       | c20             |     20 |           |            |     53 |       2 |        |    
+ 41 | alltypetest       | c21             |     21 |           |            |        |      10 |        |    
+ 41 | alltypetest       | c22             |     22 |           |            |        |      10 |        |    
+ 41 | alltypetest       | c23             |     23 |           |            |        |         |        |   0
+ 41 | alltypetest       | c24             |     24 |           |            |        |         |        |   6
+ 42 | json_osm_test     | wkt             |      1 |           | 1073741824 |        |         |        |    
+ 42 | json_osm_test     | osm_type        |      2 |         8 |         32 |        |         |        |    
+ 42 | json_osm_test     | osm_id          |      3 |           |            |     64 |       2 |      0 |    
+ 42 | json_osm_test     | tags            |      4 |           |            |        |         |        |    
+ 42 | json_osm_test     | way_nodes       |      5 |           |            |     64 |       2 |      0 |    
+ 43 | shorty            | id              |      1 |           |            |     64 |       2 |      0 |    
+ 43 | shorty            | c               |      2 |        10 |         40 |        |         |        |    
+ 44 | A a               | col             |      1 |           |            |     64 |       2 |      0 |    
+ 45 | fts_table         | name            |      1 |           |            |        |         |        |    
+ 45 | fts_table         | description     |      2 |           |            |        |         |        |    
+ 46 | fts_table_data    | id              |      1 |           |            |     64 |       2 |      0 |    
+ 46 | fts_table_data    | block           |      2 |           |            |        |         |        |    
+ 47 | fts_table_idx     | segid           |      1 |           |            |        |         |        |    
+ 47 | fts_table_idx     | term            |      2 |           |            |        |         |        |    
+ 47 | fts_table_idx     | pgno            |      3 |           |            |        |         |        |    
+ 48 | fts_table_content | id              |      1 |           |            |     64 |       2 |      0 |    
+ 48 | fts_table_content | c0              |      2 |           |            |        |         |        |    
+ 48 | fts_table_content | c1              |      3 |           |            |        |         |        |    
+ 49 | fts_table_docsize | id              |      1 |           |            |     64 |       2 |      0 |    
+ 49 | fts_table_docsize | sz              |      2 |           |            |        |         |        |    
+ 50 | fts_table_config  | k               |      1 |           |            |        |         |        |    
+ 50 | fts_table_config  | v               |      2 |           |            |        |         |        |    
+ 51 | RO_RW_test        | i               |      1 |           |            |     64 |       2 |      0 |    
+ 51 | RO_RW_test        | a               |      2 |           | 1073741824 |        |         |        |    
+ 51 | RO_RW_test        | b               |      3 |           |            |     53 |       2 |        |    
+ 51 | RO_RW_test        | c               |      4 |           |            |     64 |       2 |      0 |    
+ 52 | Unicode data      | i               |      1 |           | 1073741824 |        |         |        |    
+ 52 | Unicode data      | t               |      2 |           | 1073741824 |        |         |        |    
+ 53 | type_BOOLEAN_oper | i               |      1 |           |            |        |         |        |    
+ 53 | type_BOOLEAN_oper | i1              |      2 |           |            |        |         |        |    
+ 53 | type_BOOLEAN_oper | b1              |      3 |           |            |        |         |        |    
+ 53 | type_BOOLEAN_oper | i2              |      4 |           |            |        |         |        |    
+ 53 | type_BOOLEAN_oper | b2              |      5 |           |            |        |         |        |    
+ 54 | ♁                 | geom            |      1 |           |            |        |         |        |    
+ 54 | ♁                 | osm_type        |      2 |        16 |         64 |        |         |        |    
+ 54 | ♁                 | osm_id          |      3 |           |            |     64 |       2 |      0 |    
+ 54 | ♁                 | ver             |      4 |           |            |     64 |       2 |      0 |    
+ 54 | ♁                 | arr             |      5 |           | 1073741824 |        |         |        |    
+ 54 | ♁                 | t               |      6 |           |            |        |         |        |    
+ 55 | ♂                 | id              |      1 |           |            |     64 |       2 |      0 |    
+ 55 | ♂                 | UAI             |      2 |       254 |       1016 |        |         |        |    
+ 55 | ♂                 | ⌖               |      3 |           |            |        |         |        |    
+ 55 | ♂                 | geom            |      4 |           |            |        |         |        |    
+ 55 | ♂                 | t₀              |      5 |           |            |        |         |        |   0
+ 55 | ♂                 | class           |      6 |           | 1073741824 |        |         |        |    
+ 55 | ♂                 | URL             |      7 |        80 |        320 |        |         |        |    
+(159 rows)
+
+--Testcase 10: other metadata
+SELECT n, table_name, column_name, tab_no, it, ip, max_crd, dtdid, sref, ididt, isgen FROM fc;
+ n  |    table_name     |   column_name   | tab_no | it | ip | max_crd | dtdid | sref | ididt | isgen 
+----+-------------------+-----------------+--------+----+----+---------+-------+------+-------+-------
+  1 | department        | department_id   |      1 |    |    |         | 1     | NO   | NO    | NEVER
+  1 | department        | department_name |      2 |    |    |         | 2     | NO   | NO    | NEVER
+  2 | employee          | emp_id          |      1 |    |    |         | 1     | NO   | NO    | NEVER
+  2 | employee          | emp_name        |      2 |    |    |         | 2     | NO   | NO    | NEVER
+  2 | employee          | emp_dept_id     |      3 |    |    |         | 3     | NO   | NO    | NEVER
+  3 | empdata           | emp_id          |      1 |    |    |         | 1     | NO   | NO    | NEVER
+  3 | empdata           | emp_dat         |      2 |    |    |         | 2     | NO   | NO    | NEVER
+  4 | numbers           | a               |      1 |    |    |         | 1     | NO   | NO    | NEVER
+  4 | numbers           | b               |      2 |    |    |         | 2     | NO   | NO    | NEVER
+  5 | t                 | a               |      1 |    |    |         | 1     | NO   | NO    | NEVER
+  5 | t                 | b               |      2 |    |    |         | 2     | NO   | NO    | NEVER
+  6 | multiprimary      | a               |      1 |    |    |         | 1     | NO   | NO    | NEVER
+  6 | multiprimary      | b               |      2 |    |    |         | 2     | NO   | NO    | NEVER
+  6 | multiprimary      | c               |      3 |    |    |         | 3     | NO   | NO    | NEVER
+  7 | columntest        | a a             |      1 |    |    |         | 1     | NO   | NO    | NEVER
+  7 | columntest        | b b             |      2 |    |    |         | 2     | NO   | NO    | NEVER
+  7 | columntest        | c c             |      3 |    |    |         | 3     | NO   | NO    | NEVER
+  8 | noprimary         | a               |      1 |    |    |         | 1     | NO   | NO    | NEVER
+  8 | noprimary         | b               |      2 |    |    |         | 2     | NO   | NO    | NEVER
+  9 | limittest         | id              |      1 |    |    |         | 1     | NO   | NO    | NEVER
+  9 | limittest         | x               |      2 |    |    |         | 2     | NO   | NO    | NEVER
+  9 | limittest         | y               |      3 |    |    |         | 3     | NO   | NO    | NEVER
+ 10 | grem1_1           | a               |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 11 | grem1_2           | a               |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 12 | case_exp          | c1              |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 12 | case_exp          | c3              |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 12 | case_exp          | c6              |      3 |    |    |         | 3     | NO   | NO    | NEVER
+ 13 | type_STRING       | col             |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 14 | type_BOOLEANpk    | col             |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 15 | type_BOOLEAN      | i               |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 15 | type_BOOLEAN      | b               |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 16 | type_BYTE         | col             |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 17 | type_SINT         | col             |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 18 | type_BINT         | col             |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 19 | type_INTEGER      | col             |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 20 | type_FLOAT        | col             |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 21 | type_DOUBLE       | col             |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 22 | type_TIMESTAMP    | col             |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 22 | type_TIMESTAMP    | b               |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 23 | type_BLOB         | col             |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 24 | type_DATE         | col             |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 25 | type_TIME         | col             |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 26 | type_BIT          | i               |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 26 | type_BIT          | b               |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 27 | type_VARBIT       | i               |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 27 | type_VARBIT       | b               |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 28 | type_UUIDpk       | col             |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 29 | type_UUID         | i               |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 29 | type_UUID         | u               |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 30 | type_MACADDRpk    | col             |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 31 | type_MACADDR      | i               |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 31 | type_MACADDR      | m               |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 32 | type_MACADDR8pk   | col             |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 33 | type_MACADDR8     | i               |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 33 | type_MACADDR8     | m               |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 34 | types_PostGIS     | i               |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 34 | types_PostGIS     | gm              |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 34 | types_PostGIS     | gg              |      3 |    |    |         | 3     | NO   | NO    | NEVER
+ 34 | types_PostGIS     | r               |      4 |    |    |         | 4     | NO   | NO    | NEVER
+ 34 | types_PostGIS     | t               |      5 |    |    |         | 5     | NO   | NO    | NEVER
+ 34 | types_PostGIS     | gm1             |      6 |    |    |         | 6     | NO   | NO    | NEVER
+ 34 | types_PostGIS     | gg1             |      7 |    |    |         | 7     | NO   | NO    | NEVER
+ 35 | type_JSON         | i               |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 35 | type_JSON         | j               |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 35 | type_JSON         | ot              |      3 |    |    |         | 3     | NO   | NO    | NEVER
+ 35 | type_JSON         | oi              |      4 |    |    |         | 4     | NO   | NO    | NEVER
+ 35 | type_JSON         | q               |      5 |    |    |         | 5     | NO   | NO    | NEVER
+ 35 | type_JSON         | j1              |      6 |    |    |         | 6     | NO   | NO    | NEVER
+ 35 | type_JSON         | ot1             |      7 |    |    |         | 7     | NO   | NO    | NEVER
+ 35 | type_JSON         | oi1             |      8 |    |    |         | 8     | NO   | NO    | NEVER
+ 36 | type_JSONB        | i               |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 36 | type_JSONB        | j               |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 36 | type_JSONB        | ot              |      3 |    |    |         | 3     | NO   | NO    | NEVER
+ 36 | type_JSONB        | oi              |      4 |    |    |         | 4     | NO   | NO    | NEVER
+ 36 | type_JSONB        | q               |      5 |    |    |         | 5     | NO   | NO    | NEVER
+ 36 | type_JSONB        | j1              |      6 |    |    |         | 6     | NO   | NO    | NEVER
+ 36 | type_JSONB        | ot1             |      7 |    |    |         | 7     | NO   | NO    | NEVER
+ 36 | type_JSONB        | oi1             |      8 |    |    |         | 8     | NO   | NO    | NEVER
+ 37 | BitT              | p               |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 37 | BitT              | a               |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 37 | BitT              | b               |      3 |    |    |         | 3     | NO   | NO    | NEVER
+ 38 | notype            | a               |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 39 | typetest          | i               |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 39 | typetest          | v               |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 39 | typetest          | c               |      3 |    |    |         | 3     | NO   | NO    | NEVER
+ 39 | typetest          | t               |      4 |    |    |         | 4     | NO   | NO    | NEVER
+ 39 | typetest          | d               |      5 |    |    |         | 5     | NO   | NO    | NEVER
+ 39 | typetest          | ti              |      6 |    |    |         | 6     | NO   | NO    | NEVER
+ 40 | type_TEXT         | col             |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 41 | alltypetest       | c1              |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 41 | alltypetest       | c2              |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 41 | alltypetest       | c3              |      3 |    |    |         | 3     | NO   | NO    | NEVER
+ 41 | alltypetest       | c4              |      4 |    |    |         | 4     | NO   | NO    | NEVER
+ 41 | alltypetest       | c5              |      5 |    |    |         | 5     | NO   | NO    | NEVER
+ 41 | alltypetest       | c6              |      6 |    |    |         | 6     | NO   | NO    | NEVER
+ 41 | alltypetest       | c7              |      7 |    |    |         | 7     | NO   | NO    | NEVER
+ 41 | alltypetest       | c8              |      8 |    |    |         | 8     | NO   | NO    | NEVER
+ 41 | alltypetest       | c9              |      9 |    |    |         | 9     | NO   | NO    | NEVER
+ 41 | alltypetest       | c10             |     10 |    |    |         | 10    | NO   | NO    | NEVER
+ 41 | alltypetest       | c11             |     11 |    |    |         | 11    | NO   | NO    | NEVER
+ 41 | alltypetest       | c12             |     12 |    |    |         | 12    | NO   | NO    | NEVER
+ 41 | alltypetest       | c13             |     13 |    |    |         | 13    | NO   | NO    | NEVER
+ 41 | alltypetest       | c14             |     14 |    |    |         | 14    | NO   | NO    | NEVER
+ 41 | alltypetest       | c15             |     15 |    |    |         | 15    | NO   | NO    | NEVER
+ 41 | alltypetest       | c16             |     16 |    |    |         | 16    | NO   | NO    | NEVER
+ 41 | alltypetest       | c17             |     17 |    |    |         | 17    | NO   | NO    | NEVER
+ 41 | alltypetest       | c18             |     18 |    |    |         | 18    | NO   | NO    | NEVER
+ 41 | alltypetest       | c19             |     19 |    |    |         | 19    | NO   | NO    | NEVER
+ 41 | alltypetest       | c20             |     20 |    |    |         | 20    | NO   | NO    | NEVER
+ 41 | alltypetest       | c21             |     21 |    |    |         | 21    | NO   | NO    | NEVER
+ 41 | alltypetest       | c22             |     22 |    |    |         | 22    | NO   | NO    | NEVER
+ 41 | alltypetest       | c23             |     23 |    |    |         | 23    | NO   | NO    | NEVER
+ 41 | alltypetest       | c24             |     24 |    |    |         | 24    | NO   | NO    | NEVER
+ 42 | json_osm_test     | wkt             |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 42 | json_osm_test     | osm_type        |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 42 | json_osm_test     | osm_id          |      3 |    |    |         | 3     | NO   | NO    | NEVER
+ 42 | json_osm_test     | tags            |      4 |    |    |         | 4     | NO   | NO    | NEVER
+ 42 | json_osm_test     | way_nodes       |      5 |    |    |         | 5     | NO   | NO    | NEVER
+ 43 | shorty            | id              |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 43 | shorty            | c               |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 44 | A a               | col             |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 45 | fts_table         | name            |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 45 | fts_table         | description     |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 46 | fts_table_data    | id              |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 46 | fts_table_data    | block           |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 47 | fts_table_idx     | segid           |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 47 | fts_table_idx     | term            |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 47 | fts_table_idx     | pgno            |      3 |    |    |         | 3     | NO   | NO    | NEVER
+ 48 | fts_table_content | id              |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 48 | fts_table_content | c0              |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 48 | fts_table_content | c1              |      3 |    |    |         | 3     | NO   | NO    | NEVER
+ 49 | fts_table_docsize | id              |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 49 | fts_table_docsize | sz              |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 50 | fts_table_config  | k               |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 50 | fts_table_config  | v               |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 51 | RO_RW_test        | i               |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 51 | RO_RW_test        | a               |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 51 | RO_RW_test        | b               |      3 |    |    |         | 3     | NO   | NO    | NEVER
+ 51 | RO_RW_test        | c               |      4 |    |    |         | 4     | NO   | NO    | NEVER
+ 52 | Unicode data      | i               |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 52 | Unicode data      | t               |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 53 | type_BOOLEAN_oper | i               |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 53 | type_BOOLEAN_oper | i1              |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 53 | type_BOOLEAN_oper | b1              |      3 |    |    |         | 3     | NO   | NO    | NEVER
+ 53 | type_BOOLEAN_oper | i2              |      4 |    |    |         | 4     | NO   | NO    | NEVER
+ 53 | type_BOOLEAN_oper | b2              |      5 |    |    |         | 5     | NO   | NO    | NEVER
+ 54 | ♁                 | geom            |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 54 | ♁                 | osm_type        |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 54 | ♁                 | osm_id          |      3 |    |    |         | 3     | NO   | NO    | NEVER
+ 54 | ♁                 | ver             |      4 |    |    |         | 4     | NO   | NO    | NEVER
+ 54 | ♁                 | arr             |      5 |    |    |         | 5     | NO   | NO    | NEVER
+ 54 | ♁                 | t               |      6 |    |    |         | 6     | NO   | NO    | NEVER
+ 55 | ♂                 | id              |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 55 | ♂                 | UAI             |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 55 | ♂                 | ⌖               |      3 |    |    |         | 3     | NO   | NO    | NEVER
+ 55 | ♂                 | geom            |      4 |    |    |         | 4     | NO   | NO    | NEVER
+ 55 | ♂                 | t₀              |      5 |    |    |         | 5     | NO   | NO    | NEVER
+ 55 | ♂                 | class           |      6 |    |    |         | 6     | NO   | NO    | NEVER
+ 55 | ♂                 | URL             |      7 |    |    |         | 7     | NO   | NO    | NEVER
+(159 rows)
+
+--Testcase 11:
+SELECT * FROM information_schema.column_options
+WHERE (table_catalog, table_schema, table_name)
+IN (SELECT foreign_table_catalog, foreign_table_schema, foreign_table_name FROM ft);
+   table_catalog    | table_schema |    table_name     |  column_name  | option_name | option_value 
+--------------------+--------------+-------------------+---------------+-------------+--------------
+ contrib_regression | public       | department        | department_id | key         | true
+ contrib_regression | public       | employee          | emp_id        | key         | true
+ contrib_regression | public       | empdata           | emp_id        | key         | true
+ contrib_regression | public       | numbers           | a             | key         | true
+ contrib_regression | public       | t                 | a             | key         | true
+ contrib_regression | public       | multiprimary      | b             | key         | true
+ contrib_regression | public       | multiprimary      | c             | key         | true
+ contrib_regression | public       | columntest        | a a           | key         | true
+ contrib_regression | public       | columntest        | b b           | key         | true
+ contrib_regression | public       | limittest         | id            | key         | true
+ contrib_regression | public       | grem1_1           | a             | key         | true
+ contrib_regression | public       | grem1_2           | a             | key         | true
+ contrib_regression | public       | case_exp          | c1            | key         | true
+ contrib_regression | public       | type_STRING       | col           | key         | true
+ contrib_regression | public       | type_BOOLEANpk    | col           | key         | true
+ contrib_regression | public       | type_BOOLEAN      | i             | key         | true
+ contrib_regression | public       | type_BYTE         | col           | key         | true
+ contrib_regression | public       | type_SINT         | col           | key         | true
+ contrib_regression | public       | type_BINT         | col           | key         | true
+ contrib_regression | public       | type_INTEGER      | col           | key         | true
+ contrib_regression | public       | type_FLOAT        | col           | key         | true
+ contrib_regression | public       | type_DOUBLE       | col           | key         | true
+ contrib_regression | public       | type_TIMESTAMP    | col           | key         | true
+ contrib_regression | public       | type_BLOB         | col           | key         | true
+ contrib_regression | public       | type_DATE         | col           | key         | true
+ contrib_regression | public       | type_TIME         | col           | key         | true
+ contrib_regression | public       | type_UUIDpk       | col           | key         | true
+ contrib_regression | public       | type_MACADDRpk    | col           | key         | true
+ contrib_regression | public       | type_MACADDR8pk   | col           | key         | true
+ contrib_regression | public       | BitT              | p             | key         | true
+ contrib_regression | public       | type_TEXT         | col           | key         | true
+ contrib_regression | public       | shorty            | id            | key         | true
+ contrib_regression | public       | A a               | col           | key         | true
+ contrib_regression | public       | fts_table_data    | id            | key         | true
+ contrib_regression | public       | fts_table_idx     | segid         | key         | true
+ contrib_regression | public       | fts_table_idx     | term          | key         | true
+ contrib_regression | public       | fts_table_content | id            | key         | true
+ contrib_regression | public       | fts_table_docsize | id            | key         | true
+ contrib_regression | public       | fts_table_config  | k             | key         | true
+ contrib_regression | public       | RO_RW_test        | i             | key         | true
+ contrib_regression | public       | Unicode data      | i             | key         | true
+(41 rows)
+
+--Testcase 11:
+DROP VIEW fc;
+--Testcase 12:
+DROP VIEW ft;
+--Testcase 20:
+SET client_min_messages TO ERROR;
+--Testcase 21: no details
+DROP EXTENSION sqlite_fdw CASCADE;

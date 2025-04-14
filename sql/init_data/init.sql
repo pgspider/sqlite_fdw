@@ -41,7 +41,13 @@ CREATE TABLE "type_VARBIT" (i int, b bit);
 CREATE VIEW  "type_VARBIT+" AS SELECT *, typeof(b) t, length(b) l FROM "type_VARBIT";
 CREATE TABLE "type_UUIDpk" (col uuid primary key);
 CREATE TABLE "type_UUID" (i int, u uuid);
-CREATE VIEW  "type_UUID+" AS SELECT *, typeof("u") t, length("u") l FROM "type_UUID";
+CREATE VIEW  "type_UUID+" AS SELECT
+	*,
+	typeof(u) t,
+	length(u) l
+	-- blob affinity normalization form for "type_UUID+" view for better visual comparing during uuid test output, will be used later
+	-- case when typeof(u) = 'blob' then substr(lower(hex(u)),1,8) || '-' || substr(lower(hex(u)),9,4) || '-' || substr(lower(hex(u)),13,4) || '-' || substr(lower(hex(u)),17,4) || '-' || substr(lower(hex(u)),21,12) else null end uuid_blob_canon
+FROM "type_UUID";
 CREATE TABLE "type_MACADDRpk" (col macaddr primary key);
 CREATE TABLE "type_MACADDR" (i int, m macaddr);
 CREATE VIEW  "type_MACADDR+" AS SELECT *, typeof("m") t, length("m") l, cast("m" as text) tx FROM "type_macaddr";
@@ -49,6 +55,14 @@ CREATE TABLE "type_MACADDR8pk" (col macaddr8 primary key);
 CREATE TABLE "type_MACADDR8" (i int, m macaddr8);
 CREATE VIEW  "type_MACADDR8+" AS SELECT *, typeof("m") t, length("m") l, cast("m" as text) tx FROM "type_macaddr8";
 CREATE TABLE "types_PostGIS" (i int, gm geometry, gg geography, r raster, t text, gm1 geometry, gg1 geography);
+CREATE TABLE "type_JSON" (i int, j json, ot varchar(8), oi int, q text[], j1 json, ot1 text, oi1 int2);
+CREATE TABLE "type_JSONB" (i int, j jsonb, ot varchar(8), oi int, q text[], j1 jsonb, ot1 text, oi1 int2);
+CREATE VIEW  "type_JSONB+" AS SELECT
+	*,
+	typeof("j") t,
+	length("j") l,
+	substr(hex(cast("j" as text)), 1, 16) || '...' tx
+FROM "type_JSONB";
 CREATE TABLE BitT (p integer primary key, a BIT(3), b BIT VARYING(5));
 CREATE TABLE notype (a);
 CREATE TABLE typetest (i integer, v varchar(10) , c char(10), t text, d datetime, ti timestamp);
@@ -79,6 +93,14 @@ CREATE TABLE alltypetest (
 	c23 date,
 	c24 datetime);
 INSERT INTO  alltypetest VALUES (583647,   127,        12767,       388607,      2036854775807,          573709551615,      2036854775807,             'abcdefghij',       'abcdefghijjhgfjfuafh',       'Côte dIvoire Fijifoxju',        'Hôm nay tôi rất vui',                 'I am happy today',              '今日はとても幸せです 今日はとても幸せです',            'The quick brown fox jumps o'       ,  'ABCDEFGHIJKLMNOPQRSTUVWX',          x'4142434445',                       3.40E+18,          1.79769E+108,          1.79769E+88,          1.79E+108,          1234,        99999.99999,        '9999-12-31',         '9999-12-31 23:59:59');
+
+CREATE TABLE json_osm_test (
+	wkt text NULL,
+	osm_type varchar(8) NULL,
+	osm_id int8 NULL,
+	tags json NULL,
+	way_nodes int8[] NULL
+);
 
 -- a table that is missing some fields
 CREATE TABLE shorty (

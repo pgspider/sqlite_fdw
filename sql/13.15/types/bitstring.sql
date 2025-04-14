@@ -6,9 +6,6 @@ CREATE EXTENSION sqlite_fdw;
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 
---Testcase 003:
-CREATE SERVER sqlite2 FOREIGN DATA WRAPPER sqlite_fdw;
-
 --Testcase 02:
 CREATE FOREIGN TABLE "type_BIT"( "i" int OPTIONS (key 'true'), "b" bit(6)) SERVER sqlite_svr OPTIONS (table 'type_BIT');
 --Testcase 03:

@@ -5,8 +5,6 @@ CREATE EXTENSION sqlite_fdw;
 --Testcase 002:
 CREATE SERVER sqlite_svr FOREIGN DATA WRAPPER sqlite_fdw
 OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
---Testcase 003:
-CREATE SERVER sqlite2 FOREIGN DATA WRAPPER sqlite_fdw;
 --Testcase 009:
 CREATE FOREIGN TABLE "type_MACADDR"( "i" int OPTIONS (key 'true'), "m" macaddr) SERVER sqlite_svr OPTIONS (table 'type_MACADDR');
 --Testcase 010:
@@ -840,7 +838,7 @@ ALTER FOREIGN TABLE "type_MACADDRpk" ALTER COLUMN col OPTIONS (SET column_type '
 --Testcase 158: ERR - primary key
 INSERT INTO "type_MACADDRpk" VALUES ('01-02-03-04-05-06');
 ERROR:  Failed to execute remote SQL
-HINT:  SQLite error 'UNIQUE constraint failed: type_MACADDRpk.col', SQLite result code 19
+HINT:  SQLite error 'UNIQUE constraint failed: type_MACADDRpk.col', SQLite primary result code 19, extended result code 1555
 CONTEXT:  SQL query: INSERT INTO main."type_MACADDRpk"(`col`) VALUES (?)
 --Testcase 159:
 SELECT * FROM "type_MACADDRpk";
@@ -946,9 +944,8 @@ SELECT "m" != '01:02:03:04:05:06' FROM "type_MACADDR";
 
 --Testcase 200:
 DROP EXTENSION sqlite_fdw CASCADE;
-NOTICE:  drop cascades to 5 other objects
+NOTICE:  drop cascades to 4 other objects
 DETAIL:  drop cascades to server sqlite_svr
 drop cascades to foreign table "type_MACADDR"
 drop cascades to foreign table "type_MACADDR+"
 drop cascades to foreign table "type_MACADDRpk"
-drop cascades to server sqlite2

@@ -2,7 +2,7 @@
 
 ################################################################################
 #
-# This script downloads PostgreSQL from the official web site into ./workdir
+# This script downloads PostGIS from the official web site into ./workdir
 # then builds it.
 #
 # Usage: ./build_postgis.sh pg_version postgis_version
@@ -17,23 +17,18 @@
 POSTGRESQL_VERSION=$1
 POSTGIS_VERSION=$2
 
-cd ./workdir
-cd postgresql-${POSTGRESQL_VERSION}
-
 # Install necessary dependencies
 sudo apt update
 sudo apt install -y build-essential libxml2-dev libgeos-dev libproj-dev libgdal-dev libjson-c-dev libprotobuf-c-dev protobuf-c-compiler
 
-GEOS_CONFIG_PATH=$(which geos-config)
-
+cd ./workdir
 # Download and compile PostGIS
-cd contrib
-wget http://download.osgeo.org/postgis/source/postgis-${POSTGIS_VERSION}.tar.gz
-tar -xzf postgis-${POSTGIS_VERSION}.tar.gz
-mv postgis-${POSTGIS_VERSION} postgis -v
-cd postgis
+cp -vr postgis postgresql-${POSTGRESQL_VERSION}/contrib
+cd postgresql-${POSTGRESQL_VERSION}/contrib/postgis
 echo " - PostGIS directory"
+GEOS_CONFIG_PATH=$(which geos-config)
 export LD_LIBRARY_PATH=/usr/local/lib/:$LD_LIBRARY_PATH
 ./configure --with-pgconfig=/usr/local/pgsql/bin/pg_config --with-geosconfig=$GEOS_CONFIG_PATH
 make
 sudo make install
+

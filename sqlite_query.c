@@ -26,6 +26,7 @@
 #include "parser/parse_type.h"
 #include "utils/builtins.h"
 #include "utils/inet.h"
+#include "utils/jsonb.h"
 #include "utils/lsyscache.h"
 #include "utils/timestamp.h"
 #include "utils/uuid.h"
@@ -37,6 +38,8 @@ static char *
 			sqlite_text_value_to_pg_db_encoding(sqlite3_value *val);
 static char *
 			int642binstr(sqlite3_int64 num, char *s, size_t len);
+static inline blobOutput
+			sqlite_make_JSONb (char* s);
 
 /*
  * sqlite_value_to_pg_error
@@ -76,6 +79,19 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 
 	switch (pgtyp)
 	{
+		/* popular first */
+		case VARCHAROID:
+		case CHAROID:
+		case TEXTOID:
+		case DATEOID:
+		case TIMEOID:
+		case NAMEOID:
+		case BPCHAROID:
+			{
+				valstr = sqlite_text_value_to_pg_db_encoding(val);
+				/* use valstr after switch */
+				break;
+			}
 		case BOOLOID:
 			{
 				switch (sqlite_value_affinity)
@@ -520,17 +536,71 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 				}
 				break;
 			}
-		case BPCHAROID:
-		case VARCHAROID:
-		case CHAROID:
-		case TEXTOID:
 		case JSONOID:
-		case JSONBOID:
-		case NAMEOID:
-		case DATEOID:
-		case TIMEOID:
 			{
-				valstr = sqlite_text_value_to_pg_db_encoding(val);
+				switch (sqlite_value_affinity)
+				{
+					case SQLITE_INTEGER:
+					case SQLITE_FLOAT:
+						{
+							sqlite_value_to_pg_error();
+							break;
+						}
+					case SQLITE_BLOB:
+						{
+							ereport(ERROR, (errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+											errmsg("you should disable column_type = text for this column, because there is possible jsonb value")));
+							break;
+						}
+					case SQLITE3_TEXT:/* <-- proper and recommended SQLite affinity of value for pgtyp */
+						{
+							if (value_byte_size_blob_or_utf8)
+							{
+								valstr = sqlite_text_value_to_pg_db_encoding(val);
+								/* use valstr after switch */
+								break;
+							}
+							else
+								pg_column_void_text_error();
+							break;
+						}
+					default:
+						{
+							sqlite_value_to_pg_error();
+							break;
+						}
+				}
+				break;
+			}
+		case JSONBOID:
+			{
+				switch (sqlite_value_affinity)
+				{
+					case SQLITE_INTEGER:
+					case SQLITE_FLOAT:
+					case SQLITE_BLOB:
+						{
+							sqlite_value_to_pg_error();
+							break;
+						}
+					case SQLITE3_TEXT:/* <-- there is normalization function for text affinity only output  */
+						{
+							if (value_byte_size_blob_or_utf8)
+							{
+								valstr = sqlite_text_value_to_pg_db_encoding(val);
+								/* use valstr after switch */
+								break;
+							}
+							else
+								pg_column_void_text_error();
+							break;
+						}
+					default:
+						{
+							sqlite_value_to_pg_error();
+							break;
+						}
+				}
 				break;
 			}
 		default:
@@ -692,6 +762,33 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 
 	switch (type)
 	{
+		/* popular first */
+		case TEXTOID:
+		case VARCHAROID:
+		case JSONOID:
+		case TIMESTAMPTZOID:
+		case DATEOID:
+		case NAMEOID:
+		case TIMEOID:
+		case TIMESTAMPOID:
+		case BPCHAROID:
+			{
+				/* Bind as text because SQLite does not have these types */
+				char	   *outputString = NULL;
+				Oid			outputFunctionId = InvalidOid;
+				bool		typeVarLength = false;
+				int			pg_database_encoding = GetDatabaseEncoding(); /* very fast call, see PostgreSQL mbutils.c */
+				char	   *utf8_text_value = NULL;
+
+				getTypeOutputInfo(type, &outputFunctionId, &typeVarLength);
+				outputString = OidOutputFunctionCall(outputFunctionId, value);
+				if (pg_database_encoding == PG_UTF8)
+					utf8_text_value = outputString;
+				else
+					utf8_text_value = (char *) pg_do_encoding_conversion((unsigned char *) outputString, strlen(outputString), pg_database_encoding, PG_UTF8);
+				ret = sqlite3_bind_text(stmt, attnum, utf8_text_value, -1, SQLITE_TRANSIENT);
+				break;
+			}
 		case INT2OID:
 			{
 				int16		dat = DatumGetInt16(value);
@@ -743,33 +840,6 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 				int32		dat = DatumGetInt32(value);
 
 				ret = sqlite3_bind_int(stmt, attnum, dat);
-				break;
-			}
-
-		case BPCHAROID:
-		case VARCHAROID:
-		case TEXTOID:
-		case JSONOID:
-		case NAMEOID:
-		case TIMEOID:
-		case TIMESTAMPOID:
-		case TIMESTAMPTZOID:
-		case DATEOID:
-			{
-				/* Bind as text because SQLite does not have these types */
-				char	   *outputString = NULL;
-				Oid			outputFunctionId = InvalidOid;
-				bool		typeVarLength = false;
-				int			pg_database_encoding = GetDatabaseEncoding(); /* very fast call, see PostgreSQL mbutils.c */
-				char	   *utf8_text_value = NULL;
-
-				getTypeOutputInfo(type, &outputFunctionId, &typeVarLength);
-				outputString = OidOutputFunctionCall(outputFunctionId, value);
-				if (pg_database_encoding == PG_UTF8)
-					utf8_text_value = outputString;
-				else
-					utf8_text_value = (char *) pg_do_encoding_conversion((unsigned char *) outputString, strlen(outputString), pg_database_encoding, PG_UTF8);
-				ret = sqlite3_bind_text(stmt, attnum, utf8_text_value, -1, SQLITE_TRANSIENT);
 				break;
 			}
 		case BYTEAOID:
@@ -923,6 +993,24 @@ sqlite_bind_sql_var(Form_pg_attribute att, int attnum, Datum value, sqlite3_stmt
 				}
 				dat = binstr2int64(outputString);
 				ret = sqlite3_bind_int64(stmt, attnum, dat);
+				break;
+			}
+		case JSONBOID:
+			{
+				/* Bind as text because there are different JSONb presentation formats in PostgreSQL and SQLite */
+				int			pg_database_encoding = GetDatabaseEncoding(); /* very fast call, see PostgreSQL mbutils.c */
+				char	   *utf8_text_value = NULL;
+				Datum		d = DirectFunctionCall1(jsonb_out, JsonbPGetDatum((const Jsonb *) value));
+				char	   *outputString = DatumGetCString(d);
+				blobOutput	jsonb;
+
+				if (pg_database_encoding == PG_UTF8)
+					utf8_text_value = outputString;
+				else
+					utf8_text_value = (char *)pg_do_encoding_conversion((unsigned char *) outputString, strlen(outputString), pg_database_encoding, PG_UTF8);
+				jsonb = sqlite_make_JSONb(utf8_text_value);
+				ret = sqlite3_bind_blob(stmt, attnum, jsonb.dat, jsonb.len, SQLITE_TRANSIENT);
+				pfree((char *)jsonb.dat);
 				break;
 			}
 		default:
@@ -1090,5 +1178,62 @@ listed_datatype_oid(Oid atttypid, int32 atttypmod, const char** arr)
 
 	elog(DEBUG2, "sqlite_fdw : %s : unusual data type %s, listed = %d", __func__, pg_dataTypeName, listed);
 	return listed;
+}
+
+static inline blobOutput
+sqlite_make_JSONb (char* s)
+{
+	int			len = 0;
+	char	   *dat = NULL;
+	sqlite3	   *conn = NULL;
+	const char *err;
+	sqlite3_stmt *res;
+	char	   *query;
+	int			rc = sqlite3_open_v2("", &conn, SQLITE_OPEN_MEMORY|SQLITE_OPEN_READONLY, NULL);
+
+	if (rc != SQLITE_OK) {
+		sqlite3_close(conn);
+		ereport(ERROR,
+				(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
+				 errmsg("Failed to open in-memory SQLite for JSONB creating, result code %d", rc)));
+	}
+
+	query = psprintf("select jsonb('%s') j;", s);
+	rc = sqlite3_prepare_v2(conn, query, -1, &res, 0);
+
+	if (rc != SQLITE_OK) {
+		err = sqlite3_errmsg(conn);
+		sqlite3_close(conn);
+		pfree(query);
+		ereport(ERROR,
+				(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
+				 errmsg("Failed to fetch JSONb, result code %d, error %s", rc, err)));
+	}
+
+	rc = sqlite3_step(res);
+	if (rc == SQLITE_ROW) {
+		sqlite3_value	   *val = sqlite3_column_value(res, 0);
+		int					sqlite_value_affinity = sqlite3_value_type(val);
+		const char		   *dat1 = sqlite3_value_blob(val);
+
+		if(sqlite_value_affinity != SQLITE_BLOB)
+		{
+			sqlite3_finalize(res);
+			pfree(query);
+			sqlite3_close(conn);
+			ereport(ERROR,
+					(errcode(ERRCODE_FDW_UNABLE_TO_ESTABLISH_CONNECTION),
+					 errmsg("Failed to fetch JSONb, not a BLOB result, affinity code %d, %s", sqlite_value_affinity, query)));
+		}
+
+		len = sqlite3_column_bytes(res, 0);
+		dat = palloc(len + 1);
+		memcpy(dat, dat1, len);
+	}
+
+	sqlite3_finalize(res);
+	pfree(query);
+	sqlite3_close(conn);
+	return (struct blobOutput){dat, len};
 }
 
