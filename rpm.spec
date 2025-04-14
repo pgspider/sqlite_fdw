@@ -2,7 +2,7 @@
 
 Summary:	SQLite Foreign Data Wrapper for PostgreSQL
 Name:		%{sname}_%{pgmajorversion}
-Version:	2.3.0
+Version:	2.5.0
 Release:	1%{?dist}
 License:	PostgreSQL https://github.com/pgspider/sqlite_fdw/blob/master/License
 URL:		https://github.com/pgspider/%{sname}
@@ -21,33 +21,6 @@ Obsoletes:	%{sname}%{pgmajorversion} < 1.3.0-2
 
 %description
 SQLite Foreign Data Wrapper for PostgreSQL
-
-%if %llvm
-%package llvmjit
-Summary:	Just-in-time compilation support for sqlite_fdw
-Requires:	%{name}%{?_isa} = %{version}-%{release}
-%if 0%{?rhel} && 0%{?rhel} == 7
-%ifarch aarch64
-Requires:	llvm-toolset-7.0-llvm >= 7.0.1
-%else
-Requires:	llvm5.0 >= 5.0
-%endif
-%endif
-%if 0%{?suse_version} >= 1315 && 0%{?suse_version} <= 1499
-BuildRequires:  llvm6-devel clang6-devel
-Requires:	llvm6
-%endif
-%if 0%{?suse_version} >= 1500
-BuildRequires:  llvm13-devel clang13-devel
-Requires:	llvm13
-%endif
-%if 0%{?fedora} || 0%{?rhel} >= 8
-Requires:	llvm => 13.0
-%endif
-
-%description llvmjit
-This packages provides JIT support for sqlite_fdw
-%endif
 
 %prep
 %setup -q -n %{sname}-%{version}
@@ -83,6 +56,24 @@ USE_PGXS=1 PATH=%{pginstdir}/bin/:$PATH %{__make} %{?_smp_mflags} install DESTDI
 %endif
 
 %changelog
+
+* 10 Dec 2024 t-kataym - 2.5.0
+  * Support PostgreSQL 17.0
+  * Add CI environment using GitHub Actions
+  * Add force_readonly option (#78), readonly mode for SQLite database
+  * Support uuid (#82,#95)
+  * Support bit and varbit (#83)
+  * Support bool as mixed affinity column (#88)
+  * NaN detecting (#100)
+  * Support ∞ values for numeric context (#97)
+  * Support mixed (selected) affinity for UPDATE (#95)
+  
+ * 27Sep 2023 t-kataym - 2.4.0
+  * Support PosgreSQL 16.0
+  * Add text transformations for pg DB encoding, encodings support
+  * Add updatable option on different levels
+  * Improve error message
+  * Fix bugs
 
 * 17 Jan 2023 t-kataym - 2.3.0
 - Support PostgreSQL 15.0
