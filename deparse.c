@@ -2384,12 +2384,22 @@ sqlite_deparse_column_ref(StringInfo buf, int varno, int varattno, PlannerInfo *
 				case FLOAT4OID:
 				case NUMERICOID:
 				{
-					elog(DEBUG2, "floatN unification for \"%s\"", colname);
-					appendStringInfoString(buf, "sqlite_fdw_float(");
-					if (qualify_col)
-						ADD_REL_QUALIFIER(buf, varno);
-					appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
-					appendStringInfoString(buf, ")");
+					if (colaff != SQLITE_FLOAT)
+					{
+						elog(DEBUG2, "floatN unification for \"%s\"", colname);
+						appendStringInfoString(buf, "sqlite_fdw_float(");
+						if (qualify_col)
+							ADD_REL_QUALIFIER(buf, varno);
+						appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+						appendStringInfoString(buf, ")");
+					}
+					else
+					{
+						elog(DEBUG2, "floatN real affinity only for \"%s\"", colname);
+						if (qualify_col)
+							ADD_REL_QUALIFIER(buf, varno);
+						appendStringInfoString(buf, sqlite_quote_identifier(colname, '`'));
+					}
 					break;
 				}
 				case BOOLOID:
@@ -3048,6 +3058,21 @@ get_complementary_var_node(Expr *node)
 	}
 }
 
+/* IEEE 754-2008 : ∞ and NaN */
+const char * CHAR_INF_SHORT = "Inf";
+const char * CHAR_INF_LONG = "Infinity";
+const char * CHAR_NAN = "NaN";
+
+bool
+isInfinity (const char * s)
+{
+return strcasecmp(s, CHAR_INF_SHORT) == 0 ||
+	   strcasecmp(s, CHAR_INF_LONG) == 0 ||
+	   strcasecmp(s + sizeof(char), CHAR_INF_SHORT) == 0 ||
+	   strcasecmp(s + sizeof(char), CHAR_INF_LONG) == 0;
+}
+
+
 /*
  * Deparse given constant value into context->buf.
  *
@@ -3127,10 +3152,7 @@ sqlite_deparse_const(Const *node, deparse_expr_cxt *context, int showtype)
 					else
 						appendStringInfoString(buf, extval);
 				}
-				else if (strcasecmp(extval, infs) == 0 ||
-						 strcasecmp(extval, infl) == 0 ||
-						 strcasecmp(extval + 1, infs) == 0 ||
-						 strcasecmp(extval + 1, infl) == 0)
+				else if (isInfinity(extval))
 				{
 					bool is_negative_or_positive = false;
 					if (extval[0] == '-' || extval[0] == '+')

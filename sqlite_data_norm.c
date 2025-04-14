@@ -349,31 +349,28 @@ sqlite_fdw_data_norm_bool(sqlite3_context* context, int argc, sqlite3_value** ar
 	sqlite3_result_value(context, arg);
 }
 
-/* Base ∞ constants */
-const char * infs = "Inf";
-const char * infl = "Infinity";
 
 /*
  * Try to check SQLite value if there is any ∞ value with text affinity
  */
-static bool
+static bool inline
 infinity_processing (double* d, const char* t)
 {
-	static const char * neg_infs = "-Inf";
-	static const char * neg_infl = "-Infinity";
-	static const char * pos_infs = "+Inf";
-	static const char * pos_infl = "+Infinity";
-
-	if (strcasecmp(t, infs) == 0 ||
-		strcasecmp(t, pos_infs) == 0 ||
-		strcasecmp(t, infl) == 0 ||
-		strcasecmp(t, pos_infl) == 0)
+	if (strcasecmp(t, CHAR_INF_SHORT) == 0 ||
+		strcasecmp(t, CHAR_INF_LONG) == 0 ||
+		(t[0] == '+' &&
+		   (strcasecmp(t + sizeof(char), CHAR_INF_SHORT) == 0 ||
+			strcasecmp(t + sizeof(char), CHAR_INF_LONG) == 0)
+		)
+	   )
 	{
 		*d = INFINITY;
 		return true;
 	}
-	if (strcasecmp(t, neg_infs) == 0 ||
-		strcasecmp(t, neg_infl) == 0)
+	if (t[0] == '-' &&
+		   (strcasecmp(t + sizeof(char), CHAR_INF_SHORT) == 0 ||
+			strcasecmp(t + sizeof(char), CHAR_INF_LONG) == 0)
+	   )
 	{
 		*d = -INFINITY;
 		return true;
@@ -410,7 +407,7 @@ sqlite_fdw_data_norm_float(sqlite3_context* context, int argc, sqlite3_value** a
 	}
 
 	l = sqlite3_value_bytes(arg);
-	if (l > strlen(infl) + 2 || l < strlen(infs))
+	if (l > strlen(CHAR_INF_LONG) + 2 || l < strlen(CHAR_INF_SHORT))
 	{
 		sqlite3_result_value(context, arg);
 		return;

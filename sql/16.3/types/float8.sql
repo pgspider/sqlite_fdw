@@ -1286,13 +1286,30 @@ EXPLAIN (VERBOSE, COSTS OFF)
 SELECT * FROM "type_FLOAT_INF+" WHERE f = 'NaN' ORDER BY i;
 
 --Testcase 351:
-DELETE FROM "type_FLOAT_INF" WHERE i >= 10;
+ALTER FOREIGN TABLE "type_FLOAT_INF" ALTER COLUMN f OPTIONS (ADD column_type 'real');
 --Testcase 352:
-DROP FOREIGN TABLE "type_FLOAT_INF";
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF";
 --Testcase 353:
+EXPLAIN (VERBOSE, COSTS OFF)
+SELECT * FROM "type_FLOAT_INF+";
+--Testcase 354: ERR - remove real
+SELECT * FROM "type_FLOAT_INF";
+--Testcase 355:
+DELETE FROM "type_FLOAT_INF" WHERE i IN (SELECT i FROM "type_FLOAT_INF+" WHERE t = 'text');
+--Testcase 356:
+SELECT * FROM "type_FLOAT_INF";
+--Testcase 357:
+SELECT * FROM "type_FLOAT_INF+";
+
+--Testcase 358:
+DELETE FROM "type_FLOAT_INF" WHERE i >= 10;
+--Testcase 359:
+DROP FOREIGN TABLE "type_FLOAT_INF";
+--Testcase 360:
 DROP FOREIGN TABLE "type_FLOAT_INF+";
 
---Testcase 270:
+--Testcase 390:
 DROP SERVER sqlite_svr;
---Testcase 271:
+--Testcase 391:
 DROP EXTENSION sqlite_fdw CASCADE;
