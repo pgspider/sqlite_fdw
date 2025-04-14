@@ -735,6 +735,7 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 					/* common, not PostGIS case */
 					valstr = sqlite_text_value_to_pg_db_encoding(val);
 				}
+				break;
 			}
 	}
 	/* convert string value to appropriate type value */
@@ -744,7 +745,6 @@ sqlite_convert_to_pg(Form_pg_attribute att, sqlite3_value * val, AttInMetadata *
 									attinmeta->atttypmods[attnum]);
 	return (struct NullableDatum){value_datum, false};
 }
-
 
 /*
  * sqlite_datum_to_blob
