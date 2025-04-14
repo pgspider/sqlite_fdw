@@ -23,10 +23,14 @@
 #include "sqlite3.h"
 #include "postgres.h"
 #include "sqlite_fdw.h"
+#include "utils/builtins.h"
+#include <sys/socket.h>
+#include "utils/inet.h"
 #include "utils/uuid.h"
 
 static void error_catcher(sqlite3* db, int rc);
 static bool infinity_processing (double* d, const char* t);
+static sqlite_uint64 ipaddr_v4_int (const unsigned char *pBlob, int len);
 
 /* Also used for BLOBs in sqlite_gis.c */
 const char hex_dig[] = "0123456789abcdef";
@@ -42,6 +46,8 @@ if (count != MACADDR_LEN)  \
 #define PARSE_MACADDR8(format) \
 if (count != MACADDR8_LEN)  \
 	count = sscanf(str, format, &a, &b, &c, &d, &e, &f, &g, &h, junk);
+
+#define MAX_IP_TEXT_CHAR_LENGTH 52
 
 /*
  * This UUID SQLite extension as a group of UUID C functions
@@ -147,20 +153,19 @@ sqlite_fdw_uuid_blob (const unsigned char* s0, unsigned char* Blob)
  *
  *static void uuid_generate(sqlite3_context* context, int argc, sqlite3_value** argv)
  *{
- *   unsigned char aBlob[16];
- *   unsigned char zs[37];
- *   sqlite3_randomness(16, aBlob);
- *   aBlob[6] = (aBlob[6] & 0x0f) + 0x40;
- *   aBlob[8] = (aBlob[8] & 0x3f) + 0x80;
- *   sqlite_fdw_data_norm_uuid_blob_to_str(aBlob, zs);
- *   sqlite3_result_text(context, (char*)zs, 36, SQLITE_TRANSIENT);
+ *	unsigned char aBlob[16];
+ *	unsigned char zs[37];
+ *	sqlite3_randomness(16, aBlob);
+ *	aBlob[6] = (aBlob[6] & 0x0f) + 0x40;
+ *	aBlob[8] = (aBlob[8] & 0x3f) + 0x80;
+ *	sqlite_fdw_data_norm_uuid_blob_to_str(aBlob, zs);
+ *	sqlite3_result_text(context, (char*)zs, 36, SQLITE_TRANSIENT);
  *}
  */
 
 /*
  * aBlob to RFC UUID string with 36 characters
  */
-
 static void
 sqlite3UuidBlobToStr( const unsigned char *aBlob, unsigned char *zs)
 {
@@ -356,7 +361,7 @@ const char * infl = "Infinity";
 /*
  * Try to check SQLite value if there is any ∞ value with text affinity
  */
-static bool
+static inline bool
 infinity_processing (double* d, const char* t)
 {
 	static const char * neg_infs = "-Inf";
@@ -581,7 +586,8 @@ sqlite_fdw_macaddr8_int (const unsigned char* s, sqlite_uint64*	i)
 }
 
 /*
- * sqlite_fdw_data_norm_macaddr normalize text or ineger or blob macaddr argv[0] into 6 or 8 byte blob.
+ * sqlite_fdw_data_norm_macaddr
+ *		normalize text or integer or blob MAC address argv[0] into sqlite_int64.
  */
 static void
 sqlite_fdw_data_norm_macaddr(sqlite3_context* context, int argc, sqlite3_value** argv)
@@ -661,7 +667,7 @@ sqlite_fdw_data_norm_macaddr(sqlite3_context* context, int argc, sqlite3_value**
 }
 
 /*
- * Converts argument int-MAC address (both 6 or 8 bytes) to MAC-BLOB address integer.
+ * Converts argv[0] int-MAC address (both 6 or 8 bytes) to MAC-address BLOB.
  */
 static void
 sqlite_fdw_macaddr_blob(sqlite3_context* context, int argc, sqlite3_value** argv)
@@ -713,6 +719,250 @@ sqlite_fdw_macaddr_blob(sqlite3_context* context, int argc, sqlite3_value** argv
 	}
 }
 
+static void
+ipaddr_str(const unsigned char* pBlob, int len, char* tmp)
+{
+
+	int						ipfamily = (len <= 5) ? PGSQL_AF_INET : PGSQL_AF_INET6;
+	bool					is_cidr = len == 5 || len == 17;
+	int						ip_len = ipfamily == PGSQL_AF_INET ? 4 : 16;
+	unsigned char			bits = is_cidr ? pBlob[len - 1] : (ip_len * CHAR_BIT);
+	char   				   *dst;
+
+	memset(tmp, '\0', MAX_IP_TEXT_CHAR_LENGTH +1);
+	dst = pg_inet_net_ntop(ipfamily, pBlob, bits,
+						   tmp, MAX_IP_TEXT_CHAR_LENGTH);
+	if (dst == NULL)
+		ereport(ERROR,
+				(errcode(ERRCODE_INVALID_BINARY_REPRESENTATION),
+				 errmsg("could not format inet value: %m")));
+
+	/* For CIDR, add /n if not present */
+	if (is_cidr && strchr(tmp, '/') == NULL)
+	{
+		len = strlen(tmp);
+		snprintf(tmp + len, MAX_IP_TEXT_CHAR_LENGTH - len, "/%u", bits);
+	}
+}
+
+/*
+ * Converts argv[0] blob IP address into a well-formed IP address string.
+ */
+static void
+sqlite_fdw_ipaddr_str(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+	sqlite3_value		   *arg = argv[0];
+	int						val_aff = sqlite3_value_type(arg);
+	int						len = sqlite3_value_bytes(arg);
+	const unsigned char	   *pBlob;
+	char					tmp[MAX_IP_TEXT_CHAR_LENGTH + 1];
+
+	if (val_aff != SQLITE_BLOB || !(len == 4 || len == 5 || len == 16 || len == 17))
+		ereport(ERROR,
+		(errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+		 errmsg("could not create SQLite text of IP address"),
+		 errhint("can be based only on BLOB input affinity value with 4,5,16 or 17 bytes length")));
+
+	pBlob = sqlite3_value_blob(arg);
+	ipaddr_str(pBlob, len, tmp);
+	sqlite3_result_text(context, (char*)tmp, strlen(tmp), SQLITE_TRANSIENT);
+}
+
+/*
+ * Verify a CIDR address is OK (doesn't have bits set past the masklen)
+ */
+static bool
+addressOK(unsigned char *a, int bits, int family)
+{
+	int		byte;
+	int		nbits;
+	int		maxbits;
+	int		maxbytes;
+	unsigned char mask;
+
+	if (family == PGSQL_AF_INET)
+	{
+		maxbits = 32;
+		maxbytes = 4;
+	}
+	else
+	{
+		maxbits = 128;
+		maxbytes = 16;
+	}
+	Assert(bits <= maxbits);
+
+	if (bits == maxbits)
+		return true;
+
+	byte = bits / 8;
+
+	nbits = bits % 8;
+	mask = 0xff;
+	if (bits != 0)
+		mask >>= nbits;
+
+	while (byte < maxbytes)
+	{
+		if ((a[byte] & mask) != 0)
+			return false;
+		mask = 0xff;
+		byte++;
+	}
+
+	return true;
+}
+
+/*
+ * Converts argument IP address (both v4 or v6) to IP-BLOB.
+ */
+static void
+sqlite_fdw_ipaddr_blob(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+	sqlite3_value* arg = argv[0];
+	int val_aff = sqlite3_value_type(arg);
+
+	/* fastest */
+	if (val_aff == SQLITE_BLOB)
+		sqlite3_result_value(context, arg);
+
+	if (val_aff == SQLITE_INTEGER)
+	{
+		unsigned char	aBlob[5]; /* max possible for IP v4 + bits */
+		sqlite_uint64	v = sqlite3_value_int64(arg);
+		bool			is_cidr = v >= 0x100000000ULL; /* more than 4 bytes integer */
+
+		aBlob[0] = (v >> (CHAR_BIT * 3)) & 0xff;
+		aBlob[1] = (v >> (CHAR_BIT * 2)) & 0xff;
+		aBlob[2] = (v >> (CHAR_BIT * 1)) & 0xff;
+		aBlob[3] = (v >> (CHAR_BIT * 0)) & 0xff;
+		if (is_cidr)
+			aBlob[4] = (v >> (CHAR_BIT * 4)) & 0xff;
+
+		sqlite3_result_blob(context, aBlob, is_cidr ? 5 : 4, SQLITE_TRANSIENT);
+		return;
+	}
+	if (val_aff == SQLITE_TEXT && sqlite3_value_bytes(arg) <= MAX_IP_TEXT_CHAR_LENGTH)
+	{
+		const char	   *txt = (const char *)sqlite3_value_text(arg);
+		unsigned char	aBlob[17]; /* max possible for in v6 + cidr */
+		/*
+		 * First, check to see if this is an IPv6 or IPv4 address.  IPv6 addresses
+		 * will have a : somewhere in them (several, in fact) so if there is one
+		 * present, assume it's V6, otherwise assume it's V4.
+		 */
+		int				family = (strchr(txt, ':') != NULL) ? PGSQL_AF_INET6 : PGSQL_AF_INET;
+		bool			is_cidr = (strchr(txt, '/') != NULL);
+		unsigned char	bits = pg_inet_net_pton(family, txt, aBlob, -1);
+		int				ip_len = family == PGSQL_AF_INET ? 4 : 16;
+		int				maxbits = ip_len * CHAR_BIT;
+
+		if ((bits < 0) || (bits > maxbits))
+   			ereport(ERROR,
+					(errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+			/* translator: first %s is inet or cidr */
+					 errmsg("invalid input syntax for type %s: \"%s\"",
+							is_cidr ? "cidr" : "inet", txt)));
+
+		/*
+		 * Error check: CIDR values must not have any bits set beyond the masklen.
+		 */
+		if (is_cidr)
+		{
+			if (!addressOK(aBlob, bits, family))
+				ereport(ERROR,
+						(errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+						 errmsg("invalid cidr value: \"%s\"", txt),
+						 errdetail("Value has bits set to right of mask.")));
+			aBlob[ip_len] = bits;
+		}
+		sqlite3_result_blob(context, aBlob, ip_len + is_cidr, SQLITE_TRANSIENT);
+		return;
+	}
+	sqlite3_result_value(context, arg);
+}
+
+/*
+ * Returns integer for BLOB IP address value
+ */
+static sqlite_uint64
+ipaddr_v4_int (const unsigned char *pBlob, int len)
+{
+	sqlite_uint64 res =
+		(((sqlite_int64)(pBlob[0])) << (CHAR_BIT * 3)) +
+		(((sqlite_int64)(pBlob[1])) << (CHAR_BIT * 2)) +
+		(((sqlite_int64)(pBlob[2])) << (CHAR_BIT * 1)) +
+		(((sqlite_int64)(pBlob[3])) << (CHAR_BIT * 0));
+
+	if (len == 5)
+		res += (((sqlite_int64)(pBlob[4])) << (CHAR_BIT * 4));
+	return res;
+}
+
+/*
+ * Converts BLOB argument IP address (both v4 or v6) to
+ * IP-BLOB for IPv6 and IP-integer for IPv4.
+ */
+static void
+sqlite_fdw_ipaddr_native(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+	sqlite3_value  *arg = argv[0];
+	int				len = sqlite3_value_bytes(arg);
+
+	if (sqlite3_value_type(arg) != SQLITE_BLOB)
+		ereport(ERROR,
+		(errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+		 errmsg("Native form of IP address exists only for BLOB input affinity value")));
+
+	if (len == 16 || len == 17)
+	{
+		sqlite3_result_value(context, arg);
+		return;
+	}
+
+	if (len == 4 || len == 5)
+	{
+		sqlite_uint64 res = ipaddr_v4_int(sqlite3_value_blob(arg), len);
+		sqlite3_result_int64(context, res);
+		return;
+	}
+	ereport(ERROR,
+		(errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+		 errmsg("Invalid input for IP address"),
+		 errhint("Wrong length or not BLOB affinity")));
+}
+
+/*
+ * Converts BLOB argument IP address (both v4 or v6) to
+ *  IP-integer for IPv4.
+ */
+static void
+sqlite_fdw_ipaddr_int(sqlite3_context* context, int argc, sqlite3_value** argv)
+{
+	sqlite3_value		   *arg = argv[0];
+	int						val_aff = sqlite3_value_type(arg);
+	int						len = sqlite3_value_bytes(arg);
+	const unsigned char	   *pBlob;
+	sqlite_uint64			res = 0;
+
+	if (val_aff != SQLITE_BLOB)
+		ereport(ERROR,
+		(errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+		 errmsg("Native form of IP address exists only for BLOB input affinity value")));
+
+	pBlob = sqlite3_value_blob(arg);
+	if (len == 4 || len == 5)
+	{
+		res = ipaddr_v4_int(pBlob, len);
+		sqlite3_result_int64(context, res);
+		return;
+	}
+	ereport(ERROR,
+		(errcode(ERRCODE_FDW_INVALID_DATA_TYPE),
+		 errmsg("You can write with integer affinity only IP v4 value"),
+		 errhint("Wrong length or not BLOB input affinity")));
+}
+
 /*
  * Makes pg error from SQLite error.
  * Interrupts normal executing, no need return after place of calling
@@ -755,6 +1005,14 @@ sqlite_fdw_data_norm_functs_init(sqlite3* db)
 	rc = sqlite3_create_function(db, "sqlite_fdw_macaddr_str", 2, det_flags, 0, sqlite_fdw_macaddr_str, 0, 0);
 	error_catcher(db, rc);
 	rc = sqlite3_create_function(db, "sqlite_fdw_macaddr_blob", 2, det_flags, 0, sqlite_fdw_macaddr_blob, 0, 0);
+	error_catcher(db, rc);
+	rc = sqlite3_create_function(db, "sqlite_fdw_ipaddr_blob", 1, det_flags, 0, sqlite_fdw_ipaddr_blob, 0, 0);
+	error_catcher(db, rc);
+	rc = sqlite3_create_function(db, "sqlite_fdw_ipaddr_str", 1, det_flags, 0, sqlite_fdw_ipaddr_str, 0, 0);
+	error_catcher(db, rc);
+	rc = sqlite3_create_function(db, "sqlite_fdw_ipaddr_int", 1, det_flags, 0, sqlite_fdw_ipaddr_int, 0, 0);
+	error_catcher(db, rc);
+	rc = sqlite3_create_function(db, "sqlite_fdw_ipaddr_native", 1, det_flags, 0, sqlite_fdw_ipaddr_native, 0, 0);
 	error_catcher(db, rc);
 
 	/*

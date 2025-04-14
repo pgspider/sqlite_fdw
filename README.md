@@ -49,18 +49,20 @@ Features
 	- `double precision`, `float` and `numeric`: `real` values and special values with `text` affinity (`+Infinity`, `-Infinity`, `NaN`),
 	- `macaddr`: `text`(12..17) or `blob`(6) or `integer`,
 	- `macaddr8`: `text`(16..23) or `blob`(8) or `integer`,
-	- `json`: `text`(default) or `blob` as SQLite `jsonb` object.
+	- `json`: `text`(default) or `blob` as SQLite `jsonb` object,
+	- `inet`: `text`(8..49) or `blob`(4..5 IP v4, 16..17 IP v6) or `integer` (IP v4).
 - Support mixed SQLite [data affinity](https://www.sqlite.org/datatype3.html) output (`INSERT`/`UPDATE`) for such data types as
 	- `timestamp`: `text`(default) or `int`,
 	- `uuid`: `text`(36) or `blob`(16)(default),
 	- `macaddr`: `text`(17) or `blob`(6) or `integer`(default),
-	- `macaddr8`: `text`(23) or `blob`(8) or `integer`(default).
+	- `macaddr8`: `text`(23) or `blob`(8) or `integer`(default),
+	- `inet`: `integer` (default for IP v4) or `blob`(4..5 IP v4, 16..17 default for IP v6) or `text`(8..49).
 - Full support for `+Infinity` (means ∞) and `-Infinity` (means -∞) special values for IEEE 754-2008 numbers in `double precision`, `float` and `numeric` columns including such conditions as ` n < '+Infinity'` or ` m > '-Infinity'`.
 - Bidirectional data transformation for `geometry` and `geography` data types for SpatiaLite ↔ PostGIS. [EWKB](https://libgeos.org/specifications/wkb/#extended-wkb) data transport is used. See [GIS support description](GIS.md).
 
 ### Pushing down
 - `WHERE` clauses are pushdowned
-- Aggregate function are pushdowned
+- Aggregate functions are pushdowned
 - `ORDER BY` is pushdowned
 - Joins (left/right/inner/cross/semi) are pushdowned
 - `CASE` expressions are pushdowned.
@@ -267,6 +269,7 @@ SQLite `NULL` affinity always can be transparent converted for a nullable column
 |       float8 |      V+      |       ✔      |      ∅       |      i       |    `NULL`    | REAL         |
 |[geometry](GIS.md)| ∅       |       ∅      |      V+      |      ∅       |      ∅       | BLOB         |
 |[geography](GIS.md)|∅       |       ∅      |      V+      |      ∅       |      ∅       | BLOB         |
+|         inet |      ✔-      |       ∅      |V<br>(Len=4..5, 16..17)|  V+  |    `NULL`    | INT v4, BLOB v6 |
 |         int2 |      ✔-      |       ?      |      ∅       |      ∅       |    `NULL`    | INT          |
 |         int4 |      ✔-      |       ?      |      ∅       |      ∅       |    `NULL`    | INT          |
 |         int8 |      ✔       |       ?      |      ∅       |      ∅       |    `NULL`    | INT          |
@@ -641,6 +644,17 @@ Array support is experimental. Please be careful.
 - `sqlite_fdw` UUID values support exists only for `uuid` columns in foreign table. SQLite documentation recommends to store UUID as value with both `blob` and `text` [affinity](https://www.sqlite.org/datatype3.html). `sqlite_fdw` can pushdown both reading and filtering both `text` and `blob` values.
 - Expected affinity of UUID value in SQLite table determined by `column_type` option of the column
 for `INSERT` and `UPDATE` commands. PostgreSQL supports both `blob` and `text` [affinity](https://www.sqlite.org/datatype3.html).
+- Usual form of UUID from a value with `blob` affinity can be generated with such SQLite query as
+```sql
+select case when typeof(u) = 'blob' then
+	substr(lower(hex(u)),1,8) || '-' ||
+	substr(lower(hex(u)),9,4) || '-' ||
+	substr(lower(hex(u)),13,4) || '-' ||
+	substr(lower(hex(u)),17,4) || '-' ||
+	substr(lower(hex(u)),21,12)
+	else null end uuid_canon
+from "type_UUID";
+```
 
 ### bit and varbit support
 - `sqlite_fdw` PostgreSQL `bit`/`varbit` values support based on `int` SQLite data affinity, because there is no per bit operations for SQLite `blob` affinity data. Maximum SQLite `int` affinity value is 8 bytes length, hence maximum `bit`/`varbit` values length is 64 bits.
@@ -649,6 +663,98 @@ for `INSERT` and `UPDATE` commands. PostgreSQL supports both `blob` and `text` [
 ### MAC address support
 - `sqlite_fdw` PostgreSQL `macaddr`/`macaddr8` values support based on `int` SQLite data affinity, because there is no per bit operations for SQLite `blob` affinity data. For `macaddr` out of range error is possible because this type is 6 bytes length, but SQLite `int` can store value up to 8 bytes.
 - `sqlite_fdw` doesn't pushdown any operations with MAC adresses because there is 3 possible affinities for it in SQLite: `integer`, `blob` and `text`.
+### IP address support
+- `sqlite_fdw` PostgreSQL `inet` values support based on `int` SQLite data affinity for IP v4 and `blob` SQLite data affinity for IP v6.
+- Usual form of IP v4 address with cidr from a value with `integer` affinity can be generated with such SQLite query as
+```sql
+select  case when typeof(ip) = 'integer'
+		then ((ip >> 24) & 255) || '.' || ((ip >> 16) & 255) || '.' || ((ip >> 8) & 255) || '.' || (ip & 255) ||
+			case when (ip >> 32) > 0 then '/' || (ip >> 32) else '' end
+		else null
+		end ipv4_text,
+		ip
+from "type_INET";
+```
+- Usual form of IP v6 or IP v4 address from a value with `blob` affinity can be generated with such SQLite query as
+```sql
+select
+    case
+        when typeof(ip) = 'blob' and (length(ip) = 16 or length(ip) = 17) then
+            lower(
+                substr(hex(ip),1,4)  || ':' ||
+                substr(hex(ip),5,4)  || ':' ||
+                substr(hex(ip),9,4)  || ':' ||
+                substr(hex(ip),13,4) || ':' ||
+                substr(hex(ip),17,4) || ':' ||
+                substr(hex(ip),21,4) || ':' ||
+                substr(hex(ip),25,4) || ':' ||
+                substr(hex(ip),29,4)
+            ) ||
+            case
+                when length(ip) = 17 then
+                    '/' || ((instr('123456789ABCDEF', substr(hex(ip),33,1)) << 4) + instr('123456789ABCDEF', substr(hex(ip),34,1)))
+                else ''
+            end
+        when typeof(ip) = 'blob' and (length(ip) = 4 or length(ip) = 5) then
+                ((instr('123456789ABCDEF', substr(hex(ip),1,1)) << 4) + instr('123456789ABCDEF', substr(hex(ip),2,1))) || '.' ||
+                ((instr('123456789ABCDEF', substr(hex(ip),3,1)) << 4) + instr('123456789ABCDEF', substr(hex(ip),4,1))) || '.' ||
+                ((instr('123456789ABCDEF', substr(hex(ip),5,1)) << 4) + instr('123456789ABCDEF', substr(hex(ip),6,1))) || '.' ||
+                ((instr('123456789ABCDEF', substr(hex(ip),7,1)) << 4) + instr('123456789ABCDEF', substr(hex(ip),8,1)))
+            ||
+            case
+                when length(ip) = 5 then
+                    '/' || ((instr('123456789ABCDEF', substr(hex(ip),9,1)) << 4) + instr('123456789ABCDEF', substr(hex(ip),10,1)))
+                else ''
+            end
+        else null
+    end as ip_text
+from "type_INET";
+```
+- IP address with possible cidr addition enconing as SQLite BLOB value based on such conventions
+```
+ m - mask as number of bits
+ a - bytes of IP address
+
+ IP v4 + cidr
+┏━━━┳━━━┳━━━┳━━━┳━━━┓
+┃ a ┃ a ┃ a ┃ a ┃ m ┃
+┗━━━┻━━━┻━━━┻━━━┻━━━┛
+  0   1   2   3   4  - byte index
+ IP v6 + cidr
+┏━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┓
+┃ a ┃ a ┃ a ┃ a ┃ a ┃ a ┃ a ┃ a ┃ a ┃ a ┃ a ┃ a ┃ a ┃ a ┃ a ┃ a ┃ a ┃ m ┃
+┗━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┛
+  0   1   2   3   4   5   5   7   8   9   10  11  12  13  14  15  16  17 - byte index
+
+ IP v4
+┏━━━┳━━━┳━━━┳━━━┓
+┃ a ┃ a ┃ a ┃ a ┃
+┗━━━┻━━━┻━━━┻━━━┛
+  0   1   2   3  - byte index
+ IP v6
+┏━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┓
+┃ a ┃ a ┃ a ┃ a ┃ a ┃ a ┃ a ┃ a ┃ a ┃ a ┃ a ┃ a ┃ a ┃ a ┃ a ┃ a ┃ a ┃
+┗━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┛
+  0   1   2   3   4   5   5   7   8   9   10  11  12  13  14  15  16 - byte index
+```
+- IP address v4 with possible cidr addition enconing as SQLite integer based on such conventions
+```
+ m - mask as number of bits
+ a - IP address bytes
+
+ IP v4 + cidr
+┏━━━┳━━━┳━━━┳━━━┳━━━┓
+┃ m ┃ a ┃ a ┃ a ┃ a ┃
+┗━━━┻━━━┻━━━┻━━━┻━━━┛
+  0   1   2   3   4  - byte index
+
+ IP v4
+┏━━━┳━━━┳━━━┳━━━┓
+┃ a ┃ a ┃ a ┃ a ┃
+┗━━━┻━━━┻━━━┻━━━┛
+  0   1   2   3  - byte index
+```
+- `sqlite_fdw` doesn't pushdown any operations with IP adresses because there is 3 possible affinities for it in SQLite: `integer`, `blob` and `text`.
 
 ### JSON support and operators
 - Operators `->` and `->>` for `json` and `jsonb` are pushed down. This means if you deal with a foreign table only, you can use SQLite syntax of `->` and `->>` operators which is more rich than PostgreSQL syntax. In PostgreSQL this operators means only 1-leveled extraction after one call, but possible multilevel extraction in one call of the operator in SQLite. You can extract `'{"a": 2, "c": [4, 5, {"f": 7}]}' ->'c' -> 2` with result `{"f":7}` both for PostgreSQL and SQLite tables, but `'{"a": 2, "c": [4, 5, {"f": 7}]}' ->'$.c[2]'` possible only in SQLite and for a foreign table.
