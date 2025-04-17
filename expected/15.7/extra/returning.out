@@ -507,10 +507,11 @@ INSERT INTO "type_STRING"(col) VALUES ('string_ocdn') ON CONFLICT DO NOTHING;
              QUERY PLAN              
 -------------------------------------
  Insert on public."type_STRING"
+   Batch Size: 1
    Conflict Resolution: NOTHING
    ->  Result
          Output: 'string_ocdn'::text
-(4 rows)
+(5 rows)
 
 --Testcase 142:
 DELETE FROM "type_STRING";
