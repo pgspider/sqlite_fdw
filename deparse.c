@@ -2127,7 +2127,8 @@ sqlite_deparseInsertSql(StringInfo buf, PlannerInfo *root,
 	else
 		appendStringInfoString(buf, " DEFAULT VALUES");
 
-	/* postgres_fdw if (doNothing)
+	/*
+	 * postgres_fdw if (doNothing)
 	 * see INSERT OR IGNORE at begin
 	 */
 

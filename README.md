@@ -35,7 +35,6 @@ Features
 ### Common features
 - Transactions
 - Support `INSERT`/`UPDATE`/`DELETE` (both Direct modification and Foreign modification), see [access control](#connection-to-sqlite-database-file-and-access-control) about conditions of succesfully data modification.
-- Support `RETURNING` for `INSERT`/`UPDATE`/`DELETE`.
 - Support `TRUNCATE` by deparsing into `DELETE` statement without `WHERE` clause.
 - Allow control over whether foreign servers keep connections open after transaction completion. This is controlled by `keep_connections` and defaults to on.
 - Support list cached connections to foreign servers by using function `sqlite_fdw_get_connections()`
@@ -62,7 +61,6 @@ Features
 
 ### Pushing down
 - `WHERE` clauses are pushdowned
-- `RETURNING` clauses are pushdowned
 - Some aggregate functions are pushdowned
 - `ORDER BY` is pushdowned
 - Joins (left/right/inner/cross/semi) are pushdowned

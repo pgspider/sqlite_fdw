@@ -86,7 +86,7 @@ SELECT * FROM typetest;
 INSERT INTO "type_STRING"(col) VALUES ('string') ON CONFLICT DO NOTHING RETURNING *;
 --Testcase 37:
 EXPLAIN (VERBOSE, COSTS OFF)
-INSERT INTO "type_STRING"(col) VALUES ('string') RETURNING *;
+INSERT INTO "type_STRING"(col) VALUES ('string') ON CONFLICT DO NOTHING RETURNING *;
 --Testcase 38:
 INSERT INTO "type_BYTE"(col) VALUES ('c') RETURNING *;
 --Testcase 39:
@@ -342,6 +342,14 @@ INSERT INTO inserttest01_view values(11, 42, 'uuuuu') RETURNING *;
 ALTER TABLE inserttest01 ALTER COLUMN col1 OPTIONS (ADD key 'true');
 --Testcase 139:
 DELETE FROM inserttest01 RETURNING *;
+
+--Testcase 140:
+INSERT INTO "type_STRING"(col) VALUES ('string_ocdn') ON CONFLICT DO NOTHING;
+--Testcase 141:
+EXPLAIN (VERBOSE, COSTS OFF)
+INSERT INTO "type_STRING"(col) VALUES ('string_ocdn') ON CONFLICT DO NOTHING;
+--Testcase 142:
+DELETE FROM "type_STRING";
 
 --Testcase 200:
 DROP EXTENSION sqlite_fdw CASCADE;

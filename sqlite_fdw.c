@@ -1805,9 +1805,14 @@ sqlitePlanForeignModify(PlannerInfo *root,
 
 	/*
 	 * Extract the relevant RETURNING list if any.
+	 *
+	 * after RETURNING implememntation here should be
+	 * returningList = (List *) list_nth(plan->returningLists, subplan_index);
 	 */
 	if (plan->returningLists)
-		returningList = (List *) list_nth(plan->returningLists, subplan_index);
+		ereport(ERROR,
+				(errcode(ERRCODE_FDW_UNABLE_TO_CREATE_EXECUTION),
+				 errmsg("RETURNING clause is not supported")));
 
 	/*
 	 * ON CONFLICT DO UPDATE and DO NOTHING case with inference specification
@@ -2434,6 +2439,9 @@ sqlitePlanDirectModify(PlannerInfo *root,
 	if (subplan->qual != NIL)
 #endif
 		return false;
+
+	if (plan->returningLists)
+		return false; /* still not supported  RETURNING clause by this FDW */
 
 	/* Safe to fetch data about the target foreign rel */
 	if (fscan->scan.scanrelid == 0)
@@ -5499,69 +5507,12 @@ static int sqlite_foreign_modify_bind (SqliteFdwExecState *fmstate, TupleTableSl
 /*
  * store_returning_result
  *		Store the result of a RETURNING clause
- *
- * On error, be sure to release the sqlite3_reset on the way out.  Callers do not
- * have PG_TRY blocks to ensure this happens.
+ *		NOT IMPLEMENTED
  */
 static void
 sqlite_store_returning_result(SqliteFdwExecState *fmstate,
 							  TupleTableSlot *tupleSlot)
 {
-	int					rc = SQLITE_ROW;
-
-	PG_TRY();
-	{
-		while (1)
-		{
-			if (SQLITE_ROW == rc )
-			{/*
-				HeapTuple	tuple;
-				Datum	   *values;
-				bool	   *nulls;
-				TupleDesc			tupdesc = tupleSlot->tts_tupleDescriptor;
-
-				values = (Datum *) palloc0(tupdesc->natts * sizeof(Datum));
-				nulls = (bool *) palloc(tupdesc->natts * sizeof(bool));
-				/* Initialize to nulls for any columns not present in result * /
-				memset(nulls, true, tupdesc->natts * sizeof(bool));
-
-
-				sqlite_make_tuple_from_result_row(fmstate->stmt,
-												  fmstate->rel,
-												  fmstate->attinmeta,
-												  fmstate->retrieved_attrs,
-												  NULL,
-												  values,
-												  nulls);
-
-				HeapTuple	tuple;
-				tuple = heap_form_tuple(tupdesc, values, nulls);
-
-				HeapTupleHeaderSetXmax(tuple->t_data, InvalidTransactionId);
-				HeapTupleHeaderSetXmin(tuple->t_data, InvalidTransactionId);
-				HeapTupleHeaderSetCmin(tuple->t_data, InvalidTransactionId);
-
-				ExecStoreHeapTuple(tuple, tupleSlot, false);
-				*/
-			}
-			else if (SQLITE_DONE == rc)
-			{
-				/* No more rows/data exists */
-				break;
-			}
-			else
-			{
-				sqlitefdw_report_error(ERROR, fmstate->stmt, fmstate->conn, __func__, rc);
-			}
-			rc = sqlite3_step(fmstate->stmt);
-		} /* while (1) */
-	}
-	PG_CATCH();
-	{
-		sqlite3_reset(fmstate->stmt);
-		PG_RE_THROW();
-	}
-	PG_END_TRY();
 }
 
 /*
@@ -5585,9 +5536,6 @@ sqlite_execute_foreign_modify (EState *estate,
 	int			nestlevel;
 	Relation	rel = resultRelInfo->ri_RelationDesc;
 	Oid			foreignTableId = RelationGetRelid(rel);
-#if PG_VERSION_NUM >= 140000
-	TupleDesc	tupdesc = RelationGetDescr(rel);
-#endif
 
 	elog(DEBUG1, "sqlite_fdw : %s for RelId %u", __func__, foreignTableId);
 	/* The operation should be INSERT, UPDATE, or DELETE */
