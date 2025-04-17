@@ -71,9 +71,12 @@ SELECT * FROM ft;
  contrib_regression    | public               | RO_RW_test         | contrib_regression     | sqlite_svr          | 51
  contrib_regression    | public               | Unicode data       | contrib_regression     | sqlite_svr          | 52
  contrib_regression    | public               | type_BOOLEAN_oper  | contrib_regression     | sqlite_svr          | 53
- contrib_regression    | public               | ♁                  | contrib_regression     | sqlite_svr          | 54
- contrib_regression    | public               | ♂                  | contrib_regression     | sqlite_svr          | 55
-(55 rows)
+ contrib_regression    | public               | ret_base           | contrib_regression     | sqlite_svr          | 54
+ contrib_regression    | public               | ret_j1t            | contrib_regression     | sqlite_svr          | 55
+ contrib_regression    | public               | ret_j2t            | contrib_regression     | sqlite_svr          | 56
+ contrib_regression    | public               | ♁                  | contrib_regression     | sqlite_svr          | 57
+ contrib_regression    | public               | ♂                  | contrib_regression     | sqlite_svr          | 58
+(58 rows)
 
 --Testcase 07:
 CREATE VIEW fc AS (
@@ -232,20 +235,29 @@ SELECT n, table_name, column_name, tab_no, def, "null", data_type, udt_schema, u
  53 | type_BOOLEAN_oper | b1              |      3 |     | YES  | bytea                       | pg_catalog | bytea
  53 | type_BOOLEAN_oper | i2              |      4 |     | YES  | bytea                       | pg_catalog | bytea
  53 | type_BOOLEAN_oper | b2              |      5 |     | YES  | bytea                       | pg_catalog | bytea
- 54 | ♁                 | geom            |      1 |     | NO   | bytea                       | pg_catalog | bytea
- 54 | ♁                 | osm_type        |      2 |     | NO   | character varying           | pg_catalog | varchar
- 54 | ♁                 | osm_id          |      3 |     | NO   | bigint                      | pg_catalog | int8
- 54 | ♁                 | ver             |      4 |     | NO   | bigint                      | pg_catalog | int8
- 54 | ♁                 | arr             |      5 |     | YES  | text                        | pg_catalog | text
- 54 | ♁                 | t               |      6 |     | YES  | jsonb                       | pg_catalog | jsonb
- 55 | ♂                 | id              |      1 |     | YES  | bigint                      | pg_catalog | int8
- 55 | ♂                 | UAI             |      2 |     | YES  | character varying           | pg_catalog | varchar
- 55 | ♂                 | ⌖               |      3 |     | YES  | bytea                       | pg_catalog | bytea
- 55 | ♂                 | geom            |      4 |     | YES  | bytea                       | pg_catalog | bytea
- 55 | ♂                 | t₀              |      5 |     | YES  | date                        | pg_catalog | date
- 55 | ♂                 | class           |      6 |     | YES  | text                        | pg_catalog | text
- 55 | ♂                 | URL             |      7 |     | YES  | character varying           | pg_catalog | varchar
-(159 rows)
+ 54 | ret_base          | c1              |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 54 | ret_base          | c2              |      2 |     | YES  | bigint                      | pg_catalog | int8
+ 54 | ret_base          | c3              |      3 |     | YES  | text                        | pg_catalog | text
+ 55 | ret_j1t           | c1              |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 55 | ret_j1t           | c2              |      2 |     | YES  | bigint                      | pg_catalog | int8
+ 55 | ret_j1t           | c3              |      3 |     | YES  | double precision            | pg_catalog | float8
+ 56 | ret_j2t           | c1              |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 56 | ret_j2t           | c2              |      2 |     | YES  | bigint                      | pg_catalog | int8
+ 56 | ret_j2t           | c3              |      3 |     | YES  | double precision            | pg_catalog | float8
+ 57 | ♁                 | geom            |      1 |     | NO   | bytea                       | pg_catalog | bytea
+ 57 | ♁                 | osm_type        |      2 |     | NO   | character varying           | pg_catalog | varchar
+ 57 | ♁                 | osm_id          |      3 |     | NO   | bigint                      | pg_catalog | int8
+ 57 | ♁                 | ver             |      4 |     | NO   | bigint                      | pg_catalog | int8
+ 57 | ♁                 | arr             |      5 |     | YES  | text                        | pg_catalog | text
+ 57 | ♁                 | t               |      6 |     | YES  | jsonb                       | pg_catalog | jsonb
+ 58 | ♂                 | id              |      1 |     | YES  | bigint                      | pg_catalog | int8
+ 58 | ♂                 | UAI             |      2 |     | YES  | character varying           | pg_catalog | varchar
+ 58 | ♂                 | ⌖               |      3 |     | YES  | bytea                       | pg_catalog | bytea
+ 58 | ♂                 | geom            |      4 |     | YES  | bytea                       | pg_catalog | bytea
+ 58 | ♂                 | t₀              |      5 |     | YES  | date                        | pg_catalog | date
+ 58 | ♂                 | class           |      6 |     | YES  | text                        | pg_catalog | text
+ 58 | ♂                 | URL             |      7 |     | YES  | character varying           | pg_catalog | varchar
+(168 rows)
 
 --Testcase 09: size/length/presision metadata
 SELECT n, table_name, column_name, tab_no, c_max_len, c_oct_len, num_pr, num_rdx, num_sc, dtp FROM fc;
@@ -397,20 +409,29 @@ SELECT n, table_name, column_name, tab_no, c_max_len, c_oct_len, num_pr, num_rdx
  53 | type_BOOLEAN_oper | b1              |      3 |           |            |        |         |        |    
  53 | type_BOOLEAN_oper | i2              |      4 |           |            |        |         |        |    
  53 | type_BOOLEAN_oper | b2              |      5 |           |            |        |         |        |    
- 54 | ♁                 | geom            |      1 |           |            |        |         |        |    
- 54 | ♁                 | osm_type        |      2 |        16 |         64 |        |         |        |    
- 54 | ♁                 | osm_id          |      3 |           |            |     64 |       2 |      0 |    
- 54 | ♁                 | ver             |      4 |           |            |     64 |       2 |      0 |    
- 54 | ♁                 | arr             |      5 |           | 1073741824 |        |         |        |    
- 54 | ♁                 | t               |      6 |           |            |        |         |        |    
- 55 | ♂                 | id              |      1 |           |            |     64 |       2 |      0 |    
- 55 | ♂                 | UAI             |      2 |       254 |       1016 |        |         |        |    
- 55 | ♂                 | ⌖               |      3 |           |            |        |         |        |    
- 55 | ♂                 | geom            |      4 |           |            |        |         |        |    
- 55 | ♂                 | t₀              |      5 |           |            |        |         |        |   0
- 55 | ♂                 | class           |      6 |           | 1073741824 |        |         |        |    
- 55 | ♂                 | URL             |      7 |        80 |        320 |        |         |        |    
-(159 rows)
+ 54 | ret_base          | c1              |      1 |           |            |     64 |       2 |      0 |    
+ 54 | ret_base          | c2              |      2 |           |            |     64 |       2 |      0 |    
+ 54 | ret_base          | c3              |      3 |           | 1073741824 |        |         |        |    
+ 55 | ret_j1t           | c1              |      1 |           |            |     64 |       2 |      0 |    
+ 55 | ret_j1t           | c2              |      2 |           |            |     64 |       2 |      0 |    
+ 55 | ret_j1t           | c3              |      3 |           |            |     53 |       2 |        |    
+ 56 | ret_j2t           | c1              |      1 |           |            |     64 |       2 |      0 |    
+ 56 | ret_j2t           | c2              |      2 |           |            |     64 |       2 |      0 |    
+ 56 | ret_j2t           | c3              |      3 |           |            |     53 |       2 |        |    
+ 57 | ♁                 | geom            |      1 |           |            |        |         |        |    
+ 57 | ♁                 | osm_type        |      2 |        16 |         64 |        |         |        |    
+ 57 | ♁                 | osm_id          |      3 |           |            |     64 |       2 |      0 |    
+ 57 | ♁                 | ver             |      4 |           |            |     64 |       2 |      0 |    
+ 57 | ♁                 | arr             |      5 |           | 1073741824 |        |         |        |    
+ 57 | ♁                 | t               |      6 |           |            |        |         |        |    
+ 58 | ♂                 | id              |      1 |           |            |     64 |       2 |      0 |    
+ 58 | ♂                 | UAI             |      2 |       254 |       1016 |        |         |        |    
+ 58 | ♂                 | ⌖               |      3 |           |            |        |         |        |    
+ 58 | ♂                 | geom            |      4 |           |            |        |         |        |    
+ 58 | ♂                 | t₀              |      5 |           |            |        |         |        |   0
+ 58 | ♂                 | class           |      6 |           | 1073741824 |        |         |        |    
+ 58 | ♂                 | URL             |      7 |        80 |        320 |        |         |        |    
+(168 rows)
 
 --Testcase 10: other metadata
 SELECT n, table_name, column_name, tab_no, it, ip, max_crd, dtdid, sref, ididt, isgen FROM fc;
@@ -562,20 +583,29 @@ SELECT n, table_name, column_name, tab_no, it, ip, max_crd, dtdid, sref, ididt, 
  53 | type_BOOLEAN_oper | b1              |      3 |    |    |         | 3     | NO   | NO    | NEVER
  53 | type_BOOLEAN_oper | i2              |      4 |    |    |         | 4     | NO   | NO    | NEVER
  53 | type_BOOLEAN_oper | b2              |      5 |    |    |         | 5     | NO   | NO    | NEVER
- 54 | ♁                 | geom            |      1 |    |    |         | 1     | NO   | NO    | NEVER
- 54 | ♁                 | osm_type        |      2 |    |    |         | 2     | NO   | NO    | NEVER
- 54 | ♁                 | osm_id          |      3 |    |    |         | 3     | NO   | NO    | NEVER
- 54 | ♁                 | ver             |      4 |    |    |         | 4     | NO   | NO    | NEVER
- 54 | ♁                 | arr             |      5 |    |    |         | 5     | NO   | NO    | NEVER
- 54 | ♁                 | t               |      6 |    |    |         | 6     | NO   | NO    | NEVER
- 55 | ♂                 | id              |      1 |    |    |         | 1     | NO   | NO    | NEVER
- 55 | ♂                 | UAI             |      2 |    |    |         | 2     | NO   | NO    | NEVER
- 55 | ♂                 | ⌖               |      3 |    |    |         | 3     | NO   | NO    | NEVER
- 55 | ♂                 | geom            |      4 |    |    |         | 4     | NO   | NO    | NEVER
- 55 | ♂                 | t₀              |      5 |    |    |         | 5     | NO   | NO    | NEVER
- 55 | ♂                 | class           |      6 |    |    |         | 6     | NO   | NO    | NEVER
- 55 | ♂                 | URL             |      7 |    |    |         | 7     | NO   | NO    | NEVER
-(159 rows)
+ 54 | ret_base          | c1              |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 54 | ret_base          | c2              |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 54 | ret_base          | c3              |      3 |    |    |         | 3     | NO   | NO    | NEVER
+ 55 | ret_j1t           | c1              |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 55 | ret_j1t           | c2              |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 55 | ret_j1t           | c3              |      3 |    |    |         | 3     | NO   | NO    | NEVER
+ 56 | ret_j2t           | c1              |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 56 | ret_j2t           | c2              |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 56 | ret_j2t           | c3              |      3 |    |    |         | 3     | NO   | NO    | NEVER
+ 57 | ♁                 | geom            |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 57 | ♁                 | osm_type        |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 57 | ♁                 | osm_id          |      3 |    |    |         | 3     | NO   | NO    | NEVER
+ 57 | ♁                 | ver             |      4 |    |    |         | 4     | NO   | NO    | NEVER
+ 57 | ♁                 | arr             |      5 |    |    |         | 5     | NO   | NO    | NEVER
+ 57 | ♁                 | t               |      6 |    |    |         | 6     | NO   | NO    | NEVER
+ 58 | ♂                 | id              |      1 |    |    |         | 1     | NO   | NO    | NEVER
+ 58 | ♂                 | UAI             |      2 |    |    |         | 2     | NO   | NO    | NEVER
+ 58 | ♂                 | ⌖               |      3 |    |    |         | 3     | NO   | NO    | NEVER
+ 58 | ♂                 | geom            |      4 |    |    |         | 4     | NO   | NO    | NEVER
+ 58 | ♂                 | t₀              |      5 |    |    |         | 5     | NO   | NO    | NEVER
+ 58 | ♂                 | class           |      6 |    |    |         | 6     | NO   | NO    | NEVER
+ 58 | ♂                 | URL             |      7 |    |    |         | 7     | NO   | NO    | NEVER
+(168 rows)
 
 --Testcase 11:
 SELECT * FROM information_schema.column_options
@@ -624,7 +654,10 @@ IN (SELECT foreign_table_catalog, foreign_table_schema, foreign_table_name FROM 
  contrib_regression | public       | fts_table_config  | k             | key         | true
  contrib_regression | public       | RO_RW_test        | i             | key         | true
  contrib_regression | public       | Unicode data      | i             | key         | true
-(41 rows)
+ contrib_regression | public       | ret_base          | c1            | key         | true
+ contrib_regression | public       | ret_j1t           | c1            | key         | true
+ contrib_regression | public       | ret_j2t           | c1            | key         | true
+(44 rows)
 
 --Testcase 11:
 DROP VIEW fc;

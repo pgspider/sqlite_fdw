@@ -41,7 +41,8 @@ Features
 - Support discard cached connections to foreign servers by using function `sqlite_fdw_disconnect()`, `sqlite_fdw_disconnect_all()`.
 - Support Bulk `INSERT` by using `batch_size` option
 - Support `INSERT`/`UPDATE` with generated column
-- Support `ON CONFLICT DO NOTHING`
+- Support `INSERT` ... `ON CONFLICT DO NOTHING`
+- Support `WITH CHECK OPTION` views after a foreign table
 - Support mixed SQLite [data affinity](https://www.sqlite.org/datatype3.html) input and filtering (`SELECT`/`WHERE` usage) for such data types as
 	- `timestamp`: `text` and `int`,
 	- `uuid`: `text`(32..39) and `blob`(16),
@@ -60,7 +61,7 @@ Features
 
 ### Pushing down
 - `WHERE` clauses are pushdowned
-- Aggregate function are pushdowned
+- Some aggregate functions are pushdowned
 - `ORDER BY` is pushdowned
 - Joins (left/right/inner/cross/semi) are pushdowned
 - `CASE` expressions are pushdowned.
@@ -744,6 +745,13 @@ funct_name (type arg ...)
 	}
 }
 ```
+
+To debug, you need to build PostgreSQL in debug mode. Use the following options.
+```bash
+./configure --prefix=<path_to_postgresql_build_folder> --enable-cassert --enable-debug CFLAGS="-ggdb -O0 -g3 -fno-omit-frame-pointer"
+```
+Also please refer https://wiki.postgresql.org/wiki/Developer_FAQ#What_debugging_features_are_available.3F
+
 Useful links
 ------------
 

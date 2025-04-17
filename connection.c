@@ -184,6 +184,7 @@ sqlite_get_connection(ForeignServer *server, bool truncatable)
 }
 
 /*
+ * sqlite_open_db
  * Open remote sqlite database using specified database path
  * and flags of opened file descriptor mode.
  */
@@ -230,7 +231,7 @@ sqlite_make_new_connection(ConnCacheEntry *entry, ForeignServer *server)
 {
 	const char *dbpath = NULL;
 	ListCell   *lc;
-	int flags = 0;
+	int			flags = 0;
 
 	Assert(entry->conn == NULL);
 
@@ -389,9 +390,9 @@ sqlite_begin_remote_xact(ConnCacheEntry *entry)
 	}
 }
 
-
 /*
- * Report an SQLite execution error.
+ * sqlitefdw_report_error
+ * Report an sqlite execution error
  */
 void
 sqlitefdw_report_error(int elevel, sqlite3_stmt * stmt, sqlite3 * conn,
@@ -401,7 +402,7 @@ sqlitefdw_report_error(int elevel, sqlite3_stmt * stmt, sqlite3 * conn,
 	int			erc = sqlite3_extended_errcode(conn);
 	int			sqlstate = ERRCODE_FDW_ERROR;
 
-	/* copy sql before callling another SQLite API */
+	/* copy sql before calling another SQLite API */
 	if (message)
 		message = pstrdup(message);
 
@@ -420,7 +421,8 @@ sqlitefdw_report_error(int elevel, sqlite3_stmt * stmt, sqlite3 * conn,
 }
 
 /*
- * sqlitefdw_xact_callback --- cleanup at main-transaction end.
+ * sqlitefdw_xact_callback
+ * cleanup at main-transaction end.
  */
 static void
 sqlitefdw_xact_callback(XactEvent event, void *arg)
@@ -1038,7 +1040,7 @@ sqlite_cache_stmt(ForeignServer *server, sqlite3_stmt * *stmt)
 }
 
 /*
- * finalize all sqlite statement
+ * finalize all SQLite statement
  */
 static void
 sqlite_finalize_list_stmt(List **list)
