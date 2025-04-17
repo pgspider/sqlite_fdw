@@ -8,7 +8,7 @@ OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 --Testcase 03:
 CREATE SERVER sqlite2 FOREIGN DATA WRAPPER sqlite_fdw;
 --Testcase 04:
-IMPORT FOREIGN SCHEMA main FROM SERVER sqlite_svr INTO public;
+IMPORT FOREIGN SCHEMA main EXCEPT ("types_PostGIS") FROM SERVER sqlite_svr INTO public;
 --Testcase 05:
 SELECT * FROM "type_STRING";
  col 
@@ -507,17 +507,16 @@ INSERT INTO "type_STRING"(col) VALUES ('string_ocdn') ON CONFLICT DO NOTHING;
              QUERY PLAN              
 -------------------------------------
  Insert on public."type_STRING"
-   Batch Size: 1
    Conflict Resolution: NOTHING
    ->  Result
          Output: 'string_ocdn'::text
-(5 rows)
+(4 rows)
 
 --Testcase 142:
 DELETE FROM "type_STRING";
 --Testcase 200:
 DROP EXTENSION sqlite_fdw CASCADE;
-NOTICE:  drop cascades to 65 other objects
+NOTICE:  drop cascades to 64 other objects
 DETAIL:  drop cascades to server sqlite_svr
 drop cascades to foreign table department
 drop cascades to foreign table employee
@@ -552,7 +551,6 @@ drop cascades to foreign table "type_MACADDRpk"
 drop cascades to foreign table "type_MACADDR"
 drop cascades to foreign table "type_MACADDR8pk"
 drop cascades to foreign table "type_MACADDR8"
-drop cascades to foreign table "types_PostGIS"
 drop cascades to foreign table "type_JSON"
 drop cascades to foreign table "type_JSONB"
 drop cascades to foreign table "BitT"
