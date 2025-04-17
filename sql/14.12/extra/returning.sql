@@ -9,7 +9,7 @@ OPTIONS (database '/tmp/sqlite_fdw_test/common.db');
 --Testcase 03:
 CREATE SERVER sqlite2 FOREIGN DATA WRAPPER sqlite_fdw;
 --Testcase 04:
-IMPORT FOREIGN SCHEMA main EXCEPT ("types_PostGIS") FROM SERVER sqlite_svr INTO public;
+IMPORT FOREIGN SCHEMA main EXCEPT ("types_PostGIS", "♁", "♂") FROM SERVER sqlite_svr INTO public;
 
 --Testcase 05:
 SELECT * FROM "type_STRING";
