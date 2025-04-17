@@ -516,7 +516,7 @@ INSERT INTO "type_STRING"(col) VALUES ('string_ocdn') ON CONFLICT DO NOTHING;
 DELETE FROM "type_STRING";
 --Testcase 200:
 DROP EXTENSION sqlite_fdw CASCADE;
-NOTICE:  drop cascades to 64 other objects
+NOTICE:  drop cascades to 62 other objects
 DETAIL:  drop cascades to server sqlite_svr
 drop cascades to foreign table department
 drop cascades to foreign table employee
@@ -573,8 +573,6 @@ drop cascades to foreign table "type_BOOLEAN_oper"
 drop cascades to foreign table ret_base
 drop cascades to foreign table ret_j1t
 drop cascades to foreign table ret_j2t
-drop cascades to foreign table "♁"
-drop cascades to foreign table "♂"
 drop cascades to foreign table type_json
 drop cascades to server sqlite2
 drop cascades to server sqlite_svr_ins
